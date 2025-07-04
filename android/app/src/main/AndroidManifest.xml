@@ -48,6 +48,23 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- disable all performance data collection at build time -->
+        <meta-data
+            android:name="firebase_performance_collection_enabled"
+            android:value="false"/>
+        <!-- Deactivate firebase (no runtime re-enable) -->
+        <meta-data
+            android:name="firebase_performance_collection_deactivated"
+            android:value="true"/>
+        <!-- Prevent the DataTransport job service from ever being scheduled -->
+        <service
+            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+            tools:node="remove"/>
+        <!-- Stop Firebase from auto-initializing itself -->
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            tools:node="remove"
+            tools:ignore="ExportedContentProvider"/>
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />
