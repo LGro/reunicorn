@@ -3,6 +3,8 @@
 
 import 'package:veilid_support/veilid_support.dart';
 
+import 'models/coag_contact.dart';
+
 Future<TypedKeyPair> generateTypedKeyPairBest() async =>
     DHTRecordPool.instance.veilid.bestCryptoSystem().then((cs) => cs
         .generateKeyPair()
@@ -10,3 +12,20 @@ Future<TypedKeyPair> generateTypedKeyPairBest() async =>
 
 Future<FixedEncodedString43> generateRandomSharedSecretBest() async =>
     Veilid.instance.bestCryptoSystem().then((cs) => cs.randomSharedSecret());
+
+Map<String, String> knownContacts(
+    String coagContactId, Map<String, CoagContact> contacts) {
+  final contact = contacts[coagContactId];
+  if (contact == null) {
+    return {};
+  }
+
+  final attestations = contact.connectionAttestations.toSet();
+
+  return Map.fromEntries(contacts.values
+      .where((c) =>
+          c.coagContactId != coagContactId &&
+          c.connectionAttestations.toSet().intersection(attestations).length ==
+              1)
+      .map((c) => MapEntry(c.coagContactId, c.name)));
+}

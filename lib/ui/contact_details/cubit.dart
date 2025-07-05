@@ -9,26 +9,10 @@ import 'package:json_annotation/json_annotation.dart';
 
 import '../../data/models/coag_contact.dart';
 import '../../data/repositories/contacts.dart';
+import '../../data/utils.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
-
-Map<String, String> knownContacts(
-    String coagContactId, Map<String, CoagContact> contacts) {
-  final contact = contacts[coagContactId];
-  if (contact == null) {
-    return {};
-  }
-
-  final attestations = contact.connectionAttestations.toSet();
-
-  return Map.fromEntries(contacts.values
-      .where((c) =>
-          c.coagContactId != coagContactId &&
-          c.connectionAttestations.toSet().intersection(attestations).length ==
-              1)
-      .map((c) => MapEntry(c.coagContactId, c.name)));
-}
 
 class ContactDetailsCubit extends Cubit<ContactDetailsState> {
   ContactDetailsCubit(this.contactsRepository, String coagContactId)

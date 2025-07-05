@@ -1,27 +1,13 @@
 // Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'dart:typed_data';
-
 import 'package:coagulate/data/models/coag_contact.dart';
 import 'package:coagulate/data/models/contact_location.dart';
 import 'package:coagulate/ui/utils.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:veilid/veilid.dart';
-import 'package:veilid_support/veilid_support.dart';
 
-final dummyKeyPair = TypedKeyPair(
-    kind: 0,
-    key: FixedEncodedString43.fromBytes(Uint8List(32)),
-    secret: FixedEncodedString43.fromBytes(Uint8List(32)));
-
-final dummyBaseContact = CoagContact(
-    coagContactId: '',
-    name: 'dummy',
-    myIdentity: dummyKeyPair,
-    myIntroductionKeyPair: dummyKeyPair,
-    dhtSettings: const DhtSettings());
+import '../utils.dart';
 
 void main() {
   test('compare contact details no difference', () {
