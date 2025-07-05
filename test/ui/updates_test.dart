@@ -21,7 +21,7 @@ final dummyBaseContact = CoagContact(
     name: 'dummy',
     myIdentity: dummyKeyPair,
     myIntroductionKeyPair: dummyKeyPair,
-    dhtSettings: DhtSettings(myNextKeyPair: dummyKeyPair));
+    dhtSettings: const DhtSettings());
 
 void main() {
   test('compare contact details no difference', () {
@@ -288,12 +288,87 @@ void main() {
         reason: 'Removing temporary location should not register as update');
   });
 
-  test('compare adding name does qualify', () {
-    final result = contactUpdateSummary(
-        dummyBaseContact.copyWith(
-            details: const ContactDetails(names: const {})),
-        dummyBaseContact.copyWith(
-            details: const ContactDetails(names: {'0': 'a'})));
-    expect(result, 'names');
+  test('compare adding detail does qualify', () {
+    expect(
+        contactUpdateSummary(
+            dummyBaseContact,
+            dummyBaseContact.copyWith(
+                details: const ContactDetails(picture: [1, 2, 3]))),
+        'picture');
+
+    expect(
+        contactUpdateSummary(
+            dummyBaseContact,
+            dummyBaseContact.copyWith(
+                details: const ContactDetails(names: {'0': 'a'}))),
+        'names');
+
+    expect(
+        contactUpdateSummary(
+            dummyBaseContact,
+            dummyBaseContact.copyWith(
+                details: const ContactDetails(phones: {'landline': '123'}))),
+        'phones');
+
+    expect(
+        contactUpdateSummary(
+            dummyBaseContact,
+            dummyBaseContact.copyWith(
+                details: const ContactDetails(emails: {'work': 'hi@mail'}))),
+        'emails');
+
+    expect(
+        contactUpdateSummary(
+            dummyBaseContact,
+            dummyBaseContact.copyWith(
+                details: const ContactDetails(websites: {'web': 'www.tld'}))),
+        'websites');
+
+    expect(
+        contactUpdateSummary(
+            dummyBaseContact,
+            dummyBaseContact.copyWith(
+                details: const ContactDetails(
+                    socialMedias: {'mastodon': '@profile'}))),
+        'socials');
+
+    expect(
+        contactUpdateSummary(
+            dummyBaseContact,
+            dummyBaseContact.copyWith(
+                details: ContactDetails(events: {'birthday': DateTime(2000)}))),
+        'dates');
+
+    expect(
+        contactUpdateSummary(
+            dummyBaseContact,
+            dummyBaseContact.copyWith(
+                details: ContactDetails(
+                    organizations: {'job': Organization(company: 'corp')}))),
+        'organizations');
+  });
+
+  test('compare add location does qualify', () {
+    expect(
+        contactUpdateSummary(
+            dummyBaseContact,
+            dummyBaseContact.copyWith(addressLocations: {
+              '': const ContactAddressLocation(longitude: 0, latitude: 0)
+            })),
+        'addresses');
+
+    expect(
+        contactUpdateSummary(
+            dummyBaseContact,
+            dummyBaseContact.copyWith(temporaryLocations: {
+              '': ContactTemporaryLocation(
+                  longitude: 0,
+                  latitude: 0,
+                  name: '',
+                  start: DateTime(2000),
+                  end: DateTime(3000),
+                  details: '')
+            })),
+        'locations');
   });
 }

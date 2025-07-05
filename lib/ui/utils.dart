@@ -107,7 +107,7 @@ String contactUpdateSummary(CoagContact oldContact, CoagContact newContact) {
   }
 
   if (addedOrUpdatedValue(oldDetails.events, newDetails.events)) {
-    results.add('events');
+    results.add('dates');
   }
 
   if (addedOrUpdatedValue(oldDetails.organizations, newDetails.organizations)) {
