@@ -1,4 +1,4 @@
-// Copyright 2024 The Coagulate Authors. All rights reserved.
+// Copyright 2024 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 part of 'cubit.dart';
@@ -13,10 +13,12 @@ extension ContactListStatusX on ContactListStatus {
 
 @JsonSerializable()
 final class ContactListState extends Equatable {
-  const ContactListState(this.status,
-      {this.contacts = const [],
-      this.circleMemberships = const {},
-      this.circles = const {}});
+  const ContactListState(
+    this.status, {
+    this.contacts = const [],
+    this.circleMemberships = const {},
+    this.circles = const {},
+  });
 
   factory ContactListState.fromJson(Map<String, dynamic> json) =>
       _$ContactListStateFromJson(json);
@@ -26,17 +28,17 @@ final class ContactListState extends Equatable {
   final Map<String, String> circles;
   final ContactListStatus status;
 
-  ContactListState copyWith(
-          {ContactListStatus? status,
-          Map<String, List<String>>? circleMemberships,
-          Map<String, String>? circles,
-          Iterable<CoagContact>? contacts}) =>
-      ContactListState(
-        status ?? this.status,
-        circleMemberships: circleMemberships ?? this.circleMemberships,
-        circles: circles ?? this.circles,
-        contacts: contacts ?? this.contacts,
-      );
+  ContactListState copyWith({
+    ContactListStatus? status,
+    Map<String, List<String>>? circleMemberships,
+    Map<String, String>? circles,
+    Iterable<CoagContact>? contacts,
+  }) => ContactListState(
+    status ?? this.status,
+    circleMemberships: circleMemberships ?? this.circleMemberships,
+    circles: circles ?? this.circles,
+    contacts: contacts ?? this.contacts,
+  );
 
   Map<String, dynamic> toJson() => _$ContactListStateToJson(this);
 

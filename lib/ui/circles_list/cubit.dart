@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -16,18 +16,25 @@ part 'state.dart';
 
 class CirclesListCubit extends Cubit<CirclesListState> {
   CirclesListCubit(this.contactsRepository)
-      : super(const CirclesListState(CirclesListStatus.initial)) {
+    : super(const CirclesListState(CirclesListStatus.initial)) {
     _circlesSuscription = contactsRepository.getCirclesStream().listen((_) {
       if (!isClosed) {
-        emit(state.copyWith(
+        emit(
+          state.copyWith(
             circleMemberships: contactsRepository.getCircleMemberships(),
-            circles: contactsRepository.getCircles()));
+            circles: contactsRepository.getCircles(),
+          ),
+        );
       }
     });
 
-    emit(CirclesListState(CirclesListStatus.success,
+    emit(
+      CirclesListState(
+        CirclesListStatus.success,
         circles: contactsRepository.getCircles(),
-        circleMemberships: contactsRepository.getCircleMemberships()));
+        circleMemberships: contactsRepository.getCircleMemberships(),
+      ),
+    );
   }
 
   final ContactsRepository contactsRepository;

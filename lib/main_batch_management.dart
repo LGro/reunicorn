@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -22,7 +22,7 @@ void main() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     // Observer for logging Bloc related things
-    Bloc.observer = const CoagulateBlocObserver();
+    Bloc.observer = const AppBlocObserver();
 
     runApp(const CoagulateBatchManagementApp());
   }

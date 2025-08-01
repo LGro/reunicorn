@@ -4,7 +4,7 @@
 <dict>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:coagulate.social</string>
+		<string>applinks:reunicorn.app</string>
 	</array>
 </dict>
 </plist>

@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -6,15 +6,15 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:coagulate/data/models/batch_invites.dart';
-import 'package:coagulate/data/models/coag_contact.dart';
-import 'package:coagulate/data/models/contact_update.dart';
-import 'package:coagulate/data/models/profile_sharing_settings.dart';
-import 'package:coagulate/data/providers/distributed_storage/dht.dart';
-import 'package:coagulate/data/providers/persistent_storage/base.dart';
-import 'package:coagulate/data/providers/system_contacts/base.dart';
-import 'package:coagulate/data/providers/system_contacts/system_contacts.dart';
-import 'package:coagulate/data/repositories/contacts.dart';
+import 'package:reunicorn/data/models/batch_invites.dart';
+import 'package:reunicorn/data/models/coag_contact.dart';
+import 'package:reunicorn/data/models/contact_update.dart';
+import 'package:reunicorn/data/models/profile_sharing_settings.dart';
+import 'package:reunicorn/data/providers/distributed_storage/dht.dart';
+import 'package:reunicorn/data/providers/persistent_storage/base.dart';
+import 'package:reunicorn/data/providers/system_contacts/base.dart';
+import 'package:reunicorn/data/providers/system_contacts/system_contacts.dart';
+import 'package:reunicorn/data/repositories/contacts.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:veilid_support/veilid_support.dart';
@@ -28,35 +28,42 @@ Uint8List randomUint8List(int length) {
 
 Typed<FixedEncodedString43> dummyDhtRecordKey([int? i]) =>
     Typed<FixedEncodedString43>(
-        kind: cryptoKindVLD0,
-        value: (i == null)
-            ? FixedEncodedString43.fromBytes(randomUint8List(32))
-            : FixedEncodedString43.fromBytes(
-                Uint8List.fromList(List.filled(32, i))));
+      kind: cryptoKindVLD0,
+      value: (i == null)
+          ? FixedEncodedString43.fromBytes(randomUint8List(32))
+          : FixedEncodedString43.fromBytes(
+              Uint8List.fromList(List.filled(32, i)),
+            ),
+    );
 
 FixedEncodedString43 dummyPsk(int i) =>
     FixedEncodedString43.fromBytes(Uint8List.fromList(List.filled(32, i)));
 
 TypedKeyPair dummyTypedKeyPair([int pub = 0, int sec = 1]) =>
     TypedKeyPair.fromKeyPair(
-        cryptoKindVLD0,
-        KeyPair(
-            key: FixedEncodedString43.fromBytes(
-                Uint8List.fromList(List.filled(32, pub))),
-            secret: FixedEncodedString43.fromBytes(
-                Uint8List.fromList(List.filled(32, sec)))));
+      cryptoKindVLD0,
+      KeyPair(
+        key: FixedEncodedString43.fromBytes(
+          Uint8List.fromList(List.filled(32, pub)),
+        ),
+        secret: FixedEncodedString43.fromBytes(
+          Uint8List.fromList(List.filled(32, sec)),
+        ),
+      ),
+    );
 
-Future<ContactsRepository> contactsRepositoryFromContacts(
-        {required List<CoagContact> contacts,
-        required Map<Typed<FixedEncodedString43>, CoagContactDHTSchema?>
-            initialDht,
-        String appUserName = dummyAppUserName}) async =>
-    ContactsRepository(
-        DummyPersistentStorage(
-            Map.fromEntries(contacts.map((c) => MapEntry(c.coagContactId, c)))),
-        DummyDistributedStorage(initialDht: initialDht),
-        DummySystemContacts([]),
-        appUserName);
+Future<ContactsRepository> contactsRepositoryFromContacts({
+  required List<CoagContact> contacts,
+  required Map<Typed<FixedEncodedString43>, CoagContactDHTSchema?> initialDht,
+  String appUserName = dummyAppUserName,
+}) async => ContactsRepository(
+  DummyPersistentStorage(
+    Map.fromEntries(contacts.map((c) => MapEntry(c.coagContactId, c))),
+  ),
+  DummyDistributedStorage(initialDht: initialDht),
+  DummySystemContacts([]),
+  appUserName,
+);
 
 class DummyPersistentStorage extends PersistentStorage {
   DummyPersistentStorage(this.contacts, {this.profileContactId});
@@ -122,7 +129,8 @@ class DummyPersistentStorage extends PersistentStorage {
 
   @override
   Future<void> updateCircleMemberships(
-      Map<String, List<String>> circleMemberships) async {
+    Map<String, List<String>> circleMemberships,
+  ) async {
     log.add('updateCircleMemberships');
     this.circleMemberships = circleMemberships;
   }
@@ -154,9 +162,10 @@ class DummyPersistentStorage extends PersistentStorage {
 }
 
 class DummyDistributedStorage extends VeilidDhtStorage {
-  DummyDistributedStorage(
-      {Map<Typed<FixedEncodedString43>, CoagContactDHTSchema?>? initialDht,
-      this.transparent = false}) {
+  DummyDistributedStorage({
+    Map<Typed<FixedEncodedString43>, CoagContactDHTSchema?>? initialDht,
+    this.transparent = false,
+  }) {
     if (initialDht != null) {
       dht = {...initialDht};
     }
@@ -164,13 +173,16 @@ class DummyDistributedStorage extends VeilidDhtStorage {
   final bool transparent;
   List<String> log = [];
   Map<Typed<FixedEncodedString43>, CoagContactDHTSchema?> dht = {};
-  Map<Typed<FixedEncodedString43>,
-          Future<void> Function(Typed<FixedEncodedString43> key)>
-      watchedRecords = {};
+  Map<
+    Typed<FixedEncodedString43>,
+    Future<void> Function(Typed<FixedEncodedString43> key)
+  >
+  watchedRecords = {};
 
   @override
-  Future<(Typed<FixedEncodedString43>, KeyPair)> createRecord(
-      {String? writer}) async {
+  Future<(Typed<FixedEncodedString43>, KeyPair)> createRecord({
+    String? writer,
+  }) async {
     log.add('createDHTRecord');
     if (transparent) {
       final recordAndWriter = await super.createRecord(writer: writer);
@@ -183,34 +195,38 @@ class DummyDistributedStorage extends VeilidDhtStorage {
   }
 
   @override
-  Future<(PublicKey?, TypedKeyPair?, String?, Uint8List?)> readRecord(
-      {required Typed<FixedEncodedString43> recordKey,
-      TypedKeyPair? keyPair,
-      TypedKeyPair? nextKeyPair,
-      SecretKey? psk,
-      PublicKey? publicKey,
-      PublicKey? nextPublicKey,
-      Iterable<TypedKeyPair> myMiscKeyPairs = const [],
-      int maxRetries = 3,
-      DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.network}) async {
+  Future<(PublicKey?, TypedKeyPair?, String?, Uint8List?)> readRecord({
+    required Typed<FixedEncodedString43> recordKey,
+    TypedKeyPair? keyPair,
+    TypedKeyPair? nextKeyPair,
+    SecretKey? psk,
+    PublicKey? publicKey,
+    PublicKey? nextPublicKey,
+    Iterable<TypedKeyPair> myMiscKeyPairs = const [],
+    int maxRetries = 3,
+    DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.network,
+  }) async {
     if (transparent) {
       return super.readRecord(
-          recordKey: recordKey,
-          keyPair: keyPair,
-          nextKeyPair: nextKeyPair,
-          psk: psk,
-          publicKey: publicKey,
-          nextPublicKey: nextPublicKey,
-          maxRetries: maxRetries,
-          myMiscKeyPairs: myMiscKeyPairs,
-          refreshMode: DHTRecordRefreshMode.local);
+        recordKey: recordKey,
+        keyPair: keyPair,
+        nextKeyPair: nextKeyPair,
+        psk: psk,
+        publicKey: publicKey,
+        nextPublicKey: nextPublicKey,
+        maxRetries: maxRetries,
+        myMiscKeyPairs: myMiscKeyPairs,
+        refreshMode: DHTRecordRefreshMode.local,
+      );
     }
     return (publicKey, keyPair, jsonEncode(dht[recordKey]?.toJson()), null);
   }
 
   @override
   Future<void> updateRecord(
-      CoagContactDHTSchema? sharedProfile, DhtSettings settings) async {
+    CoagContactDHTSchema? sharedProfile,
+    DhtSettings settings,
+  ) async {
     if (settings.recordKeyMeSharing == null ||
         settings.writerMeSharing == null) {
       return;
@@ -224,9 +240,9 @@ class DummyDistributedStorage extends VeilidDhtStorage {
 
   @override
   Future<void> watchRecord(
-      Typed<FixedEncodedString43> key,
-      Future<void> Function(Typed<FixedEncodedString43> key)
-          onNetworkUpdate) async {
+    Typed<FixedEncodedString43> key,
+    Future<void> Function(Typed<FixedEncodedString43> key) onNetworkUpdate,
+  ) async {
     log.add('watchRecord:$key');
     if (transparent) {
       return super.watchRecord(key, onNetworkUpdate);
@@ -268,8 +284,9 @@ class DummySystemContacts extends SystemContactsBase {
     }
     log.add('updateContact:${json.encode(contact.toJson())}');
     if (contacts.where((c) => c.id == contact.id).isNotEmpty) {
-      contacts =
-          contacts.map((c) => (c.id == contact.id) ? contact : c).asList();
+      contacts = contacts
+          .map((c) => (c.id == contact.id) ? contact : c)
+          .asList();
     } else {
       contacts.add(contact);
     }

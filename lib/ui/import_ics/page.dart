@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -36,10 +36,11 @@ class _ImportIcsPageState extends State<ImportIcsPage>
   Future<void> _geocodeEventLocation() async {
     if (_event?.location != null && _event!.location!.isNotEmpty) {
       final options = await searchLocation(
-          query: _event!.location!,
-          apiKey: maptilerToken(),
-          userAgentHeader: 'social.coagulate.app',
-          limit: 1);
+        query: _event!.location!,
+        apiKey: maptilerToken(),
+        userAgentHeader: 'social.coagulate.app',
+        limit: 1,
+      );
       if (options.isNotEmpty) {
         final location = ContactTemporaryLocation(
           longitude: options.first.longitude,
@@ -64,25 +65,29 @@ class _ImportIcsPageState extends State<ImportIcsPage>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: Text('Import ${_event?.summary ?? 'Event'}'),
-        ),
-        body: Container(
-            padding: const EdgeInsets.all(10),
-            child:
-                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              if (!_initialized)
-                const Center(child: CircularProgressIndicator())
-              else if (_event == null)
-                const Text('Unable to import calendar event.',
-                    textScaler: TextScaler.linear(1.2))
-              else
-                // TODO: Allow displaying schedule location widget with name, dates and no location to allow folks to pick a location from the map
-                Text(
-                    (_event!.location?.isEmpty ?? true)
-                        ? 'The imported event "${_event?.summary}" has no location.'
-                        : 'Unable to determine coordinates for location ${_event?.location}.',
-                    textScaler: const TextScaler.linear(1.2))
-            ])),
-      );
+    appBar: AppBar(title: Text('Import ${_event?.summary ?? 'Event'}')),
+    body: Container(
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (!_initialized)
+            const Center(child: CircularProgressIndicator())
+          else if (_event == null)
+            const Text(
+              'Unable to import calendar event.',
+              textScaler: TextScaler.linear(1.2),
+            )
+          else
+            // TODO: Allow displaying schedule location widget with name, dates and no location to allow folks to pick a location from the map
+            Text(
+              (_event!.location?.isEmpty ?? true)
+                  ? 'The imported event "${_event?.summary}" has no location.'
+                  : 'Unable to determine coordinates for location ${_event?.location}.',
+              textScaler: const TextScaler.linear(1.2),
+            ),
+        ],
+      ),
+    ),
+  );
 }

@@ -1,4 +1,4 @@
-// Copyright 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -15,8 +15,10 @@ part 'state.dart';
 // TODO: Refactor status to enum or switch to signal meter without options?
 class VeilidStatusCubit extends Cubit<VeilidStatusState> {
   VeilidStatusCubit() : super(const VeilidStatusState('initial')) {
-    timerPersistentStorageRefresh =
-        Timer.periodic(const Duration(seconds: 5), (_) async => updateStatus());
+    timerPersistentStorageRefresh = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) async => updateStatus(),
+    );
 
     unawaited(updateStatus());
   }
@@ -26,9 +28,11 @@ class VeilidStatusCubit extends Cubit<VeilidStatusState> {
   Future<void> updateStatus() async {
     final veilidState = await Veilid.instance.getVeilidState();
     final numConnectedNodes = veilidState.network.peers
-        .where((p) =>
-            p.peerStats.latency?.average != null &&
-            p.peerStats.latency!.average < TimestampDuration.fromMillis(5000))
+        .where(
+          (p) =>
+              p.peerStats.latency?.average != null &&
+              p.peerStats.latency!.average < TimestampDuration.fromMillis(5000),
+        )
         .length;
     if (!isClosed) {
       return emit(VeilidStatusState('$numConnectedNodes connected'));

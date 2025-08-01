@@ -1,4 +1,4 @@
-// Copyright 2024 The Coagulate Authors. All rights reserved.
+// Copyright 2024 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 part of 'cubit.dart';
@@ -12,7 +12,7 @@ enum CheckInStatus {
   // TODO: This can't happen anymore, right? Remove it.
   noProfile,
   readyForCheckIn,
-  checkingIn
+  checkingIn,
 }
 
 extension CheckInStatusX on CheckInStatus {
@@ -29,10 +29,11 @@ extension CheckInStatusX on CheckInStatus {
 
 @JsonSerializable()
 final class CheckInState extends Equatable {
-  const CheckInState(
-      {required this.status,
-      required this.circles,
-      required this.circleMemberships});
+  const CheckInState({
+    required this.status,
+    required this.circles,
+    required this.circleMemberships,
+  });
 
   factory CheckInState.fromJson(Map<String, dynamic> json) =>
       _$CheckInStateFromJson(json);
@@ -43,14 +44,15 @@ final class CheckInState extends Equatable {
 
   Map<String, dynamic> toJson() => _$CheckInStateToJson(this);
 
-  CheckInState copyWith(
-          {CheckInStatus? status,
-          Map<String, String>? circles,
-          Map<String, List<String>>? circleMemberships}) =>
-      CheckInState(
-          status: status ?? this.status,
-          circles: circles ?? this.circles,
-          circleMemberships: circleMemberships ?? this.circleMemberships);
+  CheckInState copyWith({
+    CheckInStatus? status,
+    Map<String, String>? circles,
+    Map<String, List<String>>? circleMemberships,
+  }) => CheckInState(
+    status: status ?? this.status,
+    circles: circles ?? this.circles,
+    circleMemberships: circleMemberships ?? this.circleMemberships,
+  );
 
   @override
   List<Object?> get props => [status, circles, circleMemberships];

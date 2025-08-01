@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import '../../models/batch_invites.dart';
@@ -18,7 +18,8 @@ abstract class PersistentStorage {
 
   Future<Map<String, List<String>>> getCircleMemberships();
   Future<void> updateCircleMemberships(
-      Map<String, List<String>> circleMemberships);
+    Map<String, List<String>> circleMemberships,
+  );
 
   Future<ProfileInfo?> getProfileInfo();
   Future<void> updateProfileInfo(ProfileInfo info);

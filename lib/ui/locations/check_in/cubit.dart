@@ -1,4 +1,4 @@
-// Copyright 2024 The Coagulate Authors. All rights reserved.
+// Copyright 2024 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -50,10 +50,13 @@ Future<CheckInStatus> checkLocationAccess() async {
 
 class CheckInCubit extends Cubit<CheckInState> {
   CheckInCubit(this.contactsRepository)
-      : super(CheckInState(
-            status: CheckInStatus.initial,
-            circles: contactsRepository.getCircles(),
-            circleMemberships: contactsRepository.getCircleMemberships())) {
+    : super(
+        CheckInState(
+          status: CheckInStatus.initial,
+          circles: contactsRepository.getCircles(),
+          circleMemberships: contactsRepository.getCircleMemberships(),
+        ),
+      ) {
     unawaited(initialPermissionsCheck());
   }
 
@@ -67,11 +70,12 @@ class CheckInCubit extends Cubit<CheckInState> {
 
   // TODO: Check in is e.g. called as the on submit callback in the check in form,
   // but the errors are not handled transparently for the user
-  Future<bool> checkIn(
-      {required String name,
-      required String details,
-      required List<String> circles,
-      required DateTime end}) async {
+  Future<bool> checkIn({
+    required String name,
+    required String details,
+    required List<String> circles,
+    required DateTime end,
+  }) async {
     if (!isClosed) {
       emit(state.copyWith(status: CheckInStatus.checkingIn));
     }
@@ -82,18 +86,22 @@ class CheckInCubit extends Cubit<CheckInState> {
     }
     try {
       final location = await Geolocator.getCurrentPosition(
-          locationSettings:
-              const LocationSettings(timeLimit: Duration(seconds: 30)));
+        locationSettings: const LocationSettings(
+          timeLimit: Duration(seconds: 30),
+        ),
+      );
 
-      await contactsRepository.setProfileInfo(profileInfo.copyWith(
+      await contactsRepository.setProfileInfo(
+        profileInfo.copyWith(
           temporaryLocations: Map.fromEntries([
-        // Ensure all others are checked out
-        ...profileInfo.temporaryLocations.entries
-            .map((l) => MapEntry(l.key, l.value.copyWith(checkedIn: false))),
-        // Add new one as checked in
-        MapEntry(
-            Uuid().v4(),
-            ContactTemporaryLocation(
+            // Ensure all others are checked out
+            ...profileInfo.temporaryLocations.entries.map(
+              (l) => MapEntry(l.key, l.value.copyWith(checkedIn: false)),
+            ),
+            // Add new one as checked in
+            MapEntry(
+              Uuid().v4(),
+              ContactTemporaryLocation(
                 longitude: location.longitude,
                 latitude: location.latitude,
                 start: DateTime.now(),
@@ -101,8 +109,12 @@ class CheckInCubit extends Cubit<CheckInState> {
                 details: details,
                 end: end,
                 circles: circles,
-                checkedIn: true)),
-      ])));
+                checkedIn: true,
+              ),
+            ),
+          ]),
+        ),
+      );
 
       // TODO: Emit success status?
       // if (!isClosed) {

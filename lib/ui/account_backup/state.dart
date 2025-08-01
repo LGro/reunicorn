@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 part of 'cubit.dart';
@@ -14,8 +14,11 @@ extension BackupStatusX on BackupStatus {
 
 @JsonSerializable()
 final class BackupState extends Equatable {
-  const BackupState(
-      {this.status = BackupStatus.initial, this.dhtRecordKey, this.secret});
+  const BackupState({
+    this.status = BackupStatus.initial,
+    this.dhtRecordKey,
+    this.secret,
+  });
 
   factory BackupState.fromJson(Map<String, dynamic> json) =>
       _$BackupStateFromJson(json);

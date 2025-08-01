@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:equatable/equatable.dart';
@@ -22,12 +22,14 @@ class ContactIntroduction extends Equatable {
       // Backwards compatibility for previously missing and now non existing
       // public key field
       // TODO: Would it be better to make publicKey nullable?
-      _$ContactIntroductionFromJson(json.containsKey('public_key')
-          ? json
-          : {
-              'public_key': 'DUMMYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
-              ...json
-            });
+      _$ContactIntroductionFromJson(
+        json.containsKey('public_key')
+            ? json
+            : {
+                'public_key': 'DUMMYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+                ...json,
+              },
+      );
 
   /// Name of the contact this is not the introduction for
   final String otherName;
@@ -54,12 +56,12 @@ class ContactIntroduction extends Equatable {
 
   @override
   List<Object?> get props => [
-        otherName,
-        otherPublicKey,
-        publicKey,
-        message,
-        dhtRecordKeyReceiving,
-        dhtRecordKeySharing,
-        dhtWriterSharing,
-      ];
+    otherName,
+    otherPublicKey,
+    publicKey,
+    message,
+    dhtRecordKeyReceiving,
+    dhtRecordKeySharing,
+    dhtWriterSharing,
+  ];
 }

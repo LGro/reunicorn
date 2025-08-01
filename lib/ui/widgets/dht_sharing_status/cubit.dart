@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -13,15 +13,18 @@ part 'cubit.g.dart';
 part 'state.dart';
 
 Future<DHTRecordReport?> getRecordReport(
-    Typed<FixedEncodedString43> recordKey) async {
+  Typed<FixedEncodedString43> recordKey,
+) async {
   try {
     return DHTRecordPool.instance
         .openRecordRead(recordKey, debugName: 'coag::read::stats')
         .then((record) async {
-      final report = await record.routingContext.inspectDHTRecord(recordKey);
-      await record.close();
-      return report;
-    });
+          final report = await record.routingContext.inspectDHTRecord(
+            recordKey,
+          );
+          await record.close();
+          return report;
+        });
   } on VeilidAPIExceptionTryAgain catch (e) {
     return null;
   }
@@ -30,7 +33,7 @@ Future<DHTRecordReport?> getRecordReport(
 class DhtSharingStatusCubit extends Cubit<DhtSharingStatusState>
     with WidgetsBindingObserver {
   DhtSharingStatusCubit({required this.recordKeys})
-      : super(const DhtSharingStatusState('initial')) {
+    : super(const DhtSharingStatusState('initial')) {
     WidgetsBinding.instance.addObserver(this);
     _startTimer();
     unawaited(updateStatus());
@@ -40,8 +43,10 @@ class DhtSharingStatusCubit extends Cubit<DhtSharingStatusState>
   late final Timer? timerPersistentStorageRefresh;
 
   void _startTimer() {
-    timerPersistentStorageRefresh =
-        Timer.periodic(const Duration(seconds: 5), (_) async => updateStatus());
+    timerPersistentStorageRefresh = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) async => updateStatus(),
+    );
   }
 
   void _stopTimer() => timerPersistentStorageRefresh?.cancel();
@@ -60,12 +65,16 @@ class DhtSharingStatusCubit extends Cubit<DhtSharingStatusState>
   Future<void> updateStatus() async {
     final numSubkeys = recordKeys.length * 32;
     try {
-      final offlineSubkeysPerContact = await Future.wait(recordKeys.map(
-          (k) async =>
-              getRecordReport(k).then((r) => r?.offlineSubkeys.length)));
+      final offlineSubkeysPerContact = await Future.wait(
+        recordKeys.map(
+          (k) async => getRecordReport(k).then((r) => r?.offlineSubkeys.length),
+        ),
+      );
 
-      final numOfflineSubkeys =
-          offlineSubkeysPerContact.whereType<int>().fold(0, (a, b) => a + b);
+      final numOfflineSubkeys = offlineSubkeysPerContact.whereType<int>().fold(
+        0,
+        (a, b) => a + b,
+      );
 
       if (!isClosed) {
         // TODO: Move rendering to widget
@@ -73,8 +82,8 @@ class DhtSharingStatusCubit extends Cubit<DhtSharingStatusState>
         if (numSubkeys == 0) {
           return emit(const DhtSharingStatusState(''));
         }
-        final percentageSynced =
-            ((1 - (numOfflineSubkeys / numSubkeys)) * 100).round();
+        final percentageSynced = ((1 - (numOfflineSubkeys / numSubkeys)) * 100)
+            .round();
         return emit(DhtSharingStatusState('$percentageSynced% synced'));
       }
     } on DHTExceptionNotAvailable {

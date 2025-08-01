@@ -32,7 +32,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-For the changes: Copyright 2024 - 2025 by the Coagulate authors
+For the changes: Copyright 2024 - 2025 by The Reunicorn Authors
 */
 import 'dart:async';
 
@@ -51,8 +51,9 @@ class BarcodeScannerPageView extends StatefulWidget {
 class _BarcodeScannerPageViewState extends State<BarcodeScannerPageView> {
   _BarcodeScannerPageViewState({required this.onDetectCallback});
 
-  final MobileScannerController controller =
-      MobileScannerController(autoStart: false);
+  final MobileScannerController controller = MobileScannerController(
+    autoStart: false,
+  );
 
   final PageController pageController = PageController();
 
@@ -66,26 +67,26 @@ class _BarcodeScannerPageViewState extends State<BarcodeScannerPageView> {
 
   @override
   Widget build(BuildContext context) => PageView(
-        controller: pageController,
-        onPageChanged: (index) async {
-          // Stop the camera view for the current page,
-          // and then restart the camera for the new page.
-          await controller.stop();
+    controller: pageController,
+    onPageChanged: (index) async {
+      // Stop the camera view for the current page,
+      // and then restart the camera for the new page.
+      await controller.stop();
 
-          // When switching pages, add a delay to the next start call.
-          // Otherwise the camera will start before the next page is displayed
-          await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+      // When switching pages, add a delay to the next start call.
+      // Otherwise the camera will start before the next page is displayed
+      await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
 
-          if (!mounted) {
-            return;
-          }
+      if (!mounted) {
+        return;
+      }
 
-          unawaited(controller.start());
-        },
-        children: [
-          MobileScanner(controller: controller, onDetect: onDetectCallback)
-        ],
-      );
+      unawaited(controller.start());
+    },
+    children: [
+      MobileScanner(controller: controller, onDetect: onDetectCallback),
+    ],
+  );
 
   @override
   Future<void> dispose() async {

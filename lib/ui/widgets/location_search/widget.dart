@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
@@ -24,36 +24,38 @@ class _LocationSearchWidgetState extends State<LocationSearchWidget> {
 
   @override
   Widget build(BuildContext context) => Autocomplete<SearchResult>(
-        optionsBuilder: (textEditingValue) async {
-          _searchingWithQuery = textEditingValue.text;
-          final options = await searchLocation(
-              query: _searchingWithQuery!,
-              apiKey: maptilerToken(),
-              userAgentHeader: 'social.coagulate.app');
-
-          // If another search happened after this one, throw away these options.
-          // Use the previous options instead and wait for the newer request to
-          // finish.
-          if (_searchingWithQuery != textEditingValue.text) {
-            return _lastOptions;
-          }
-
-          _lastOptions = options;
-          return options;
-        },
-        onSelected: widget.onSelected,
-        displayStringForOption: (option) => option.placeName,
-        fieldViewBuilder:
-            (context, textEditingController, focusNode, onFieldSubmitted) =>
-                TextFormField(
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      filled: true,
-                      border: OutlineInputBorder(),
-                    ),
-                    controller: textEditingController
-                      ..text = widget.initialValue ?? '',
-                    focusNode: focusNode,
-                    onFieldSubmitted: (_) => onFieldSubmitted),
+    optionsBuilder: (textEditingValue) async {
+      _searchingWithQuery = textEditingValue.text;
+      final options = await searchLocation(
+        query: _searchingWithQuery!,
+        apiKey: maptilerToken(),
+        userAgentHeader: 'social.coagulate.app',
       );
+
+      // If another search happened after this one, throw away these options.
+      // Use the previous options instead and wait for the newer request to
+      // finish.
+      if (_searchingWithQuery != textEditingValue.text) {
+        return _lastOptions;
+      }
+
+      _lastOptions = options;
+      return options;
+    },
+    onSelected: widget.onSelected,
+    displayStringForOption: (option) => option.placeName,
+    fieldViewBuilder:
+        (context, textEditingController, focusNode, onFieldSubmitted) =>
+            TextFormField(
+              decoration: const InputDecoration(
+                isDense: true,
+                filled: true,
+                border: OutlineInputBorder(),
+              ),
+              controller: textEditingController
+                ..text = widget.initialValue ?? '',
+              focusNode: focusNode,
+              onFieldSubmitted: (_) => onFieldSubmitted,
+            ),
+  );
 }

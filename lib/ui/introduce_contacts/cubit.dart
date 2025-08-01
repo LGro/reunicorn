@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -16,12 +16,20 @@ part 'state.dart';
 
 class IntroduceContactsCubit extends Cubit<IntroduceContactsState> {
   IntroduceContactsCubit(this.contactsRepository)
-      : super(IntroduceContactsState(IntroduceContactsStatus.initial,
-            contacts: contactsRepository.getContacts().values.asList())) {
+    : super(
+        IntroduceContactsState(
+          IntroduceContactsStatus.initial,
+          contacts: contactsRepository.getContacts().values.asList(),
+        ),
+      ) {
     _contactsSubscription = contactsRepository.getContactStream().listen((_) {
       if (!isClosed) {
-        emit(IntroduceContactsState(IntroduceContactsStatus.success,
-            contacts: contactsRepository.getContacts().values.asList()));
+        emit(
+          IntroduceContactsState(
+            IntroduceContactsStatus.success,
+            contacts: contactsRepository.getContacts().values.asList(),
+          ),
+        );
       }
     });
   }
@@ -29,18 +37,19 @@ class IntroduceContactsCubit extends Cubit<IntroduceContactsState> {
   ContactsRepository contactsRepository;
   late final StreamSubscription<String> _contactsSubscription;
 
-  Future<bool> introduce(
-          {required String contactIdA,
-          required String nameA,
-          required String contactIdB,
-          required String nameB,
-          String? message}) async =>
-      contactsRepository.introduce(
-          contactIdA: contactIdA,
-          nameA: nameA,
-          contactIdB: contactIdB,
-          nameB: nameB,
-          message: message);
+  Future<bool> introduce({
+    required String contactIdA,
+    required String nameA,
+    required String contactIdB,
+    required String nameB,
+    String? message,
+  }) async => contactsRepository.introduce(
+    contactIdA: contactIdA,
+    nameA: nameA,
+    contactIdB: contactIdB,
+    nameB: nameB,
+    message: message,
+  );
 
   @override
   Future<void> close() {

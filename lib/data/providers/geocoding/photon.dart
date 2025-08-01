@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:convert';
@@ -49,12 +49,15 @@ class SearchResult {
 /// Search function
 Future<List<SearchResult>> searchLocation(String query) async {
   final url = Uri(
-      scheme: 'https',
-      host: 'photon.komoot.io',
-      path: '/api',
-      queryParameters: {'q': query});
-  final response = await http
-      .get(url, headers: {'User-Agent': 'social.coagulate.app / testing'});
+    scheme: 'https',
+    host: 'photon.komoot.io',
+    path: '/api',
+    queryParameters: {'q': query},
+  );
+  final response = await http.get(
+    url,
+    headers: {'User-Agent': 'social.coagulate.app / testing'},
+  );
 
   if (response.statusCode == 200) {
     final data = json.decode(response.body);

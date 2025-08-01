@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -19,7 +19,7 @@ part 'state.dart';
 class DhtBatchInviteStatusCubit extends Cubit<DhtBatchInviteStatusState>
     with WidgetsBindingObserver {
   DhtBatchInviteStatusCubit({required this.batch})
-      : super(const DhtBatchInviteStatusState('initial')) {
+    : super(const DhtBatchInviteStatusState('initial')) {
     WidgetsBinding.instance.addObserver(this);
     _startTimer();
     unawaited(updateStatus());
@@ -30,7 +30,9 @@ class DhtBatchInviteStatusCubit extends Cubit<DhtBatchInviteStatusState>
 
   void _startTimer() {
     timerPersistentStorageRefresh = Timer.periodic(
-        const Duration(seconds: 15), (_) async => updateStatus());
+      const Duration(seconds: 15),
+      (_) async => updateStatus(),
+    );
   }
 
   void _stopTimer() => timerPersistentStorageRefresh?.cancel();
@@ -47,23 +49,30 @@ class DhtBatchInviteStatusCubit extends Cubit<DhtBatchInviteStatusState>
   }
 
   Future<void> updateStatus() async {
-    final subkeyIndices =
-        List.generate(batch.subkeyWriters.length, (i) => i + 1);
+    final subkeyIndices = List.generate(
+      batch.subkeyWriters.length,
+      (i) => i + 1,
+    );
     final subkeyNames = Map<int, String?>.fromEntries(
-        subkeyIndices.map((i) => MapEntry(i, null)));
+      subkeyIndices.map((i) => MapEntry(i, null)),
+    );
     try {
       final crypto = await VeilidCryptoPrivate.fromSharedSecret(
-          batch.dhtRecordKey.kind, batch.psk);
+        batch.dhtRecordKey.kind,
+        batch.psk,
+      );
       final record = await DHTRecordPool.instance.openRecordRead(
-          batch.dhtRecordKey,
-          crypto: crypto,
-          debugName: 'coag::read::batch');
+        batch.dhtRecordKey,
+        crypto: crypto,
+        debugName: 'coag::read::batch',
+      );
       for (final i in subkeyIndices) {
         try {
           final subkeyContent = await record.get(
-              crypto: crypto,
-              refreshMode: DHTRecordRefreshMode.network,
-              subkey: i);
+            crypto: crypto,
+            refreshMode: DHTRecordRefreshMode.network,
+            subkey: i,
+          );
           final subkeyJson =
               jsonDecode(utf8.decode(subkeyContent!)) as Map<String, dynamic>;
           final subkeyInfo = BatchSubkeySchema.fromJson(subkeyJson);

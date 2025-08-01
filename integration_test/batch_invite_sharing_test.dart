@@ -1,11 +1,11 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'package:coagulate/data/repositories/contacts.dart';
-import 'package:coagulate/ui/batch_invite_management/cubit.dart';
-import 'package:coagulate/ui/receive_request/cubit.dart';
-import 'package:coagulate/ui/utils.dart';
-import 'package:coagulate/veilid_init.dart';
+import 'package:reunicorn/data/repositories/contacts.dart';
+import 'package:reunicorn/ui/batch_invite_management/cubit.dart';
+import 'package:reunicorn/ui/receive_request/cubit.dart';
+import 'package:reunicorn/ui/utils.dart';
+import 'package:reunicorn/veilid_init.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -22,13 +22,21 @@ void main() {
   setUp(() async {
     await CoagulateGlobalInit.initialize();
     _distStorage = DummyDistributedStorage(transparent: true);
-    _cRepoA = ContactsRepository(DummyPersistentStorage({}), _distStorage,
-        DummySystemContacts([]), 'UserA',
-        initialize: false);
+    _cRepoA = ContactsRepository(
+      DummyPersistentStorage({}),
+      _distStorage,
+      DummySystemContacts([]),
+      'UserA',
+      initialize: false,
+    );
     await _cRepoA.initialize(listenToVeilidNetworkChanges: false);
-    _cRepoB = ContactsRepository(DummyPersistentStorage({}), _distStorage,
-        DummySystemContacts([]), 'UserB',
-        initialize: false);
+    _cRepoB = ContactsRepository(
+      DummyPersistentStorage({}),
+      _distStorage,
+      DummySystemContacts([]),
+      'UserB',
+      initialize: false,
+    );
     await _cRepoB.initialize(listenToVeilidNetworkChanges: false);
   });
 
@@ -37,19 +45,26 @@ void main() {
     debugPrint('PETER ACTING');
     final biCubitP = BatchInvitesCubit();
     await biCubitP.generateInvites(
-        'Party Batch', 2, DateTime.now().add(const Duration(hours: 1)));
-    final inviteLinks =
-        generateBatchInviteLinks(biCubitP.state.batches.values.first);
+      'Party Batch',
+      2,
+      DateTime.now().add(const Duration(hours: 1)),
+    );
+    final inviteLinks = generateBatchInviteLinks(
+      biCubitP.state.batches.values.first,
+    );
     final batchInviteUrlAlice = Uri.parse(inviteLinks.first);
     final batchInviteUrlBob = Uri.parse(inviteLinks.last);
 
     // Alice prepares invite for Bob using Bob's profile public key
     debugPrint('---');
     debugPrint('ALICE ACTING');
-    final rrCubitA = ReceiveRequestCubit(_cRepoA,
-        initialState: ReceiveRequestState(
-            ReceiveRequestStatus.handleBatchInvite,
-            fragment: batchInviteUrlAlice.fragment));
+    final rrCubitA = ReceiveRequestCubit(
+      _cRepoA,
+      initialState: ReceiveRequestState(
+        ReceiveRequestStatus.handleBatchInvite,
+        fragment: batchInviteUrlAlice.fragment,
+      ),
+    );
     final batchNameIdA = _cRepoA.getProfileInfo()!.details.names.keys.first;
     await rrCubitA.handleBatchInvite(myNameId: batchNameIdA);
     expect(
@@ -61,10 +76,13 @@ void main() {
     // Bob accepts batch based offer from Alice and starts sharing
     debugPrint('---');
     debugPrint('BOB ACTING');
-    final rrCubitB = ReceiveRequestCubit(_cRepoB,
-        initialState: ReceiveRequestState(
-            ReceiveRequestStatus.handleBatchInvite,
-            fragment: batchInviteUrlBob.fragment));
+    final rrCubitB = ReceiveRequestCubit(
+      _cRepoB,
+      initialState: ReceiveRequestState(
+        ReceiveRequestStatus.handleBatchInvite,
+        fragment: batchInviteUrlBob.fragment,
+      ),
+    );
     final batchNameIdB = _cRepoB.getProfileInfo()!.details.names.keys.first;
     await rrCubitB.handleBatchInvite(myNameId: batchNameIdB);
     var contactAliceFromBobsRepo = _cRepoB.getContacts().values.first;
@@ -79,14 +97,18 @@ void main() {
       reason: 'No details available yet, since Alice has not seen Bob yet',
     );
     expect(
-        contactAliceFromBobsRepo.sharedProfile?.details.names.keys.firstOrNull,
-        batchNameIdB);
+      contactAliceFromBobsRepo.sharedProfile?.details.names.keys.firstOrNull,
+      batchNameIdB,
+    );
 
     // Alice finds bob in the batch, sees stuff from Bob and starts sharing
     debugPrint('---');
     debugPrint('ALICE ACTING');
-    expect(_cRepoA.getBatchInvites().length, 1,
-        reason: 'Alice received only one batch invite');
+    expect(
+      _cRepoA.getBatchInvites().length,
+      1,
+      reason: 'Alice received only one batch invite',
+    );
     await _cRepoA.batchInviteUpdate(_cRepoA.getBatchInvites().values.first);
     var contactBobFromAlicesRepo = _cRepoA.getContacts().values.first;
     expect(
@@ -110,14 +132,18 @@ void main() {
       reason: 'Alice knows public key of Bob',
     );
     expect(
-        contactBobFromAlicesRepo.sharedProfile?.details.names.keys.firstOrNull,
-        batchNameIdA);
+      contactBobFromAlicesRepo.sharedProfile?.details.names.keys.firstOrNull,
+      batchNameIdA,
+    );
 
     // Bob learns about Alice
     debugPrint('---');
     debugPrint('BOB ACTING');
-    expect(_cRepoB.getBatchInvites().length, 1,
-        reason: 'Bob received only one batch invite');
+    expect(
+      _cRepoB.getBatchInvites().length,
+      1,
+      reason: 'Bob received only one batch invite',
+    );
     await _cRepoB.batchInviteUpdate(_cRepoB.getBatchInvites().values.first);
     expect(_cRepoB.getContacts().length, 1, reason: 'Expecting only Alice');
     contactAliceFromBobsRepo = _cRepoB.getContacts().values.first;
@@ -132,8 +158,9 @@ void main() {
     debugPrint('ALICE ACTING');
     await _cRepoA.updateContactFromDHT(contactBobFromAlicesRepo);
     expect(_cRepoA.getContacts().length, 1, reason: 'Expecting only Bob');
-    contactBobFromAlicesRepo =
-        _cRepoA.getContact(contactBobFromAlicesRepo.coagContactId)!;
+    contactBobFromAlicesRepo = _cRepoA.getContact(
+      contactBobFromAlicesRepo.coagContactId,
+    )!;
     // TODO: Check something that should only be available here
   });
 }

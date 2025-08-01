@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -20,10 +20,12 @@ part 'cubit.g.dart';
 part 'state.dart';
 
 class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
-  ReceiveRequestCubit(this.contactsRepository,
-      {ReceiveRequestState? initialState})
-      : super(initialState ??
-            const ReceiveRequestState(ReceiveRequestStatus.qrcode)) {
+  ReceiveRequestCubit(
+    this.contactsRepository, {
+    ReceiveRequestState? initialState,
+  }) : super(
+         initialState ?? const ReceiveRequestState(ReceiveRequestStatus.qrcode),
+       ) {
     if (initialState == null) {
       return;
     }
@@ -63,9 +65,12 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
           return handleSharingOffer(url.fragment);
         }
         if (path.first == 'b') {
-          return emit(state.copyWith(
+          return emit(
+            state.copyWith(
               status: ReceiveRequestStatus.handleBatchInvite,
-              fragment: url.fragment));
+              fragment: url.fragment,
+            ),
+          );
         }
       } on FormatException {
         // TODO: signal back faulty URL
@@ -79,8 +84,10 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
   void scanQrCode() =>
       emit(const ReceiveRequestState(ReceiveRequestStatus.qrcode));
 
-  Future<void> qrCodeCaptured(BarcodeCapture capture,
-      {bool awaitDhtOperations = false}) async {
+  Future<void> qrCodeCaptured(
+    BarcodeCapture capture, {
+    bool awaitDhtOperations = false,
+  }) async {
     // Avoid duplicate calls, which apparently happen from the qr detect
     // callback and cause creation of multiple (e.g. 2) contacts
     if (state.status.isProcessing) {
@@ -88,7 +95,7 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
     emit(const ReceiveRequestState(ReceiveRequestStatus.processing));
     for (final barcode in capture.barcodes) {
-      if (barcode.rawValue?.startsWith('https://coagulate.social') ?? false) {
+      if (barcode.rawValue?.startsWith('https://reunicorn.app') ?? false) {
         final uri = barcode.rawValue!;
 
         // TODO: Handle malformed Uri, parser error
@@ -107,21 +114,30 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
           continue;
         }
         if (path.first == 'c') {
-          return handleDirectSharing(url.fragment,
-              awaitDhtOperations: awaitDhtOperations);
+          return handleDirectSharing(
+            url.fragment,
+            awaitDhtOperations: awaitDhtOperations,
+          );
         }
         if (path.first == 'p') {
-          return handleProfileLink(url.fragment,
-              awaitDhtOperations: awaitDhtOperations);
+          return handleProfileLink(
+            url.fragment,
+            awaitDhtOperations: awaitDhtOperations,
+          );
         }
         if (path.first == 'o') {
-          return handleSharingOffer(url.fragment,
-              awaitDhtOperations: awaitDhtOperations);
+          return handleSharingOffer(
+            url.fragment,
+            awaitDhtOperations: awaitDhtOperations,
+          );
         }
         if (path.first == 'b') {
-          return emit(state.copyWith(
+          return emit(
+            state.copyWith(
               status: ReceiveRequestStatus.handleBatchInvite,
-              fragment: url.fragment));
+              fragment: url.fragment,
+            ),
+          );
         }
       }
       if (!isClosed) {
@@ -131,8 +147,10 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
   }
 
   // name~recordKey~psk
-  Future<void> handleDirectSharing(String fragment,
-      {bool awaitDhtOperations = false}) async {
+  Future<void> handleDirectSharing(
+    String fragment, {
+    bool awaitDhtOperations = false,
+  }) async {
     if (!isClosed) {
       emit(const ReceiveRequestState(ReceiveRequestStatus.processing));
     }
@@ -159,9 +177,12 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
         .where((c) => c.dhtSettings.recordKeyThemSharing == recordKey);
     if (existingContactsThemSharing.isNotEmpty) {
       if (!isClosed) {
-        emit(state.copyWith(
+        emit(
+          state.copyWith(
             status: ReceiveRequestStatus.success,
-            profile: existingContactsThemSharing.first));
+            profile: existingContactsThemSharing.first,
+          ),
+        );
       }
       return;
     }
@@ -181,16 +202,18 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
 
     // Otherwise, add new contact with the information we already have
     final contact = CoagContact(
-        coagContactId: Uuid().v4(),
-        // TODO: localize default to language
-        name: name,
-        myIdentity: await generateTypedKeyPairBest(),
-        myIntroductionKeyPair: await generateTypedKeyPairBest(),
-        // TODO: Handle fromString parsing errors
-        dhtSettings: DhtSettings(
-            recordKeyThemSharing: recordKey,
-            initialSecret: psk,
-            myNextKeyPair: await contactsRepository.generateTypedKeyPair()));
+      coagContactId: Uuid().v4(),
+      // TODO: localize default to language
+      name: name,
+      myIdentity: await generateTypedKeyPairBest(),
+      myIntroductionKeyPair: await generateTypedKeyPairBest(),
+      // TODO: Handle fromString parsing errors
+      dhtSettings: DhtSettings(
+        recordKeyThemSharing: recordKey,
+        initialSecret: psk,
+        myNextKeyPair: await contactsRepository.generateTypedKeyPair(),
+      ),
+    );
 
     // Save contact and trigger optional DHT update if connected, this allows
     // to scan a QR code offline and fetch data later if not available now
@@ -207,10 +230,13 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     // Update first to get share back settings and then try to share back
     final dhtOperations = contactsRepository
         .updateContactFromDHT(addedContact)
-        .then((success) => success
-            ? contactsRepository
-                .tryShareWithContactDHT(addedContact.coagContactId)
-            : success);
+        .then(
+          (success) => success
+              ? contactsRepository.tryShareWithContactDHT(
+                  addedContact.coagContactId,
+                )
+              : success,
+        );
     if (awaitDhtOperations) {
       await dhtOperations;
     } else {
@@ -218,16 +244,22 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
 
     if (!isClosed) {
-      return emit(state.copyWith(
-          status: ReceiveRequestStatus.success, profile: addedContact));
+      return emit(
+        state.copyWith(
+          status: ReceiveRequestStatus.success,
+          profile: addedContact,
+        ),
+      );
     }
   }
 
   // TODO: Does it make sense to check first if we already know this pubkey?
   // TODO: Allow option to match with existing contact?
   // name~publicKey
-  Future<void> handleProfileLink(String fragment,
-      {bool awaitDhtOperations = false}) async {
+  Future<void> handleProfileLink(
+    String fragment, {
+    bool awaitDhtOperations = false,
+  }) async {
     if (!isClosed) {
       emit(const ReceiveRequestState(ReceiveRequestStatus.processing));
     }
@@ -255,18 +287,24 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
 
     // TODO: Check if contact already exists - key generation can take a moment and this can cause duplicate entries if people resubmit
-    final contact = await contactsRepository.createContactForInvite(name,
-        pubKey: publicKey, awaitDhtSharingAttempt: awaitDhtOperations);
+    final contact = await contactsRepository.createContactForInvite(
+      name,
+      pubKey: publicKey,
+      awaitDhtSharingAttempt: awaitDhtOperations,
+    );
 
     if (!isClosed) {
-      return emit(state.copyWith(
-          status: ReceiveRequestStatus.success, profile: contact));
+      return emit(
+        state.copyWith(status: ReceiveRequestStatus.success, profile: contact),
+      );
     }
   }
 
   // name~typedRecordKey~publicKey
-  Future<void> handleSharingOffer(String fragment,
-      {bool awaitDhtOperations = false}) async {
+  Future<void> handleSharingOffer(
+    String fragment, {
+    bool awaitDhtOperations = false,
+  }) async {
     if (!isClosed) {
       emit(const ReceiveRequestState(ReceiveRequestStatus.processing));
     }
@@ -294,16 +332,18 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
 
     // Otherwise, add new contact with the information we already have
     final contact = CoagContact(
-        coagContactId: Uuid().v4(),
-        name: name,
-        myIdentity: await contactsRepository.generateTypedKeyPair(),
-        myIntroductionKeyPair: await contactsRepository.generateTypedKeyPair(),
-        dhtSettings: DhtSettings(
-            recordKeyThemSharing: recordKey,
-            theirNextPublicKey: publicKey,
-            myNextKeyPair: contactsRepository.getProfileInfo()!.mainKeyPair!,
-            // We skip the DH key exchange and directly start with all pub keys
-            theyAckHandshakeComplete: true));
+      coagContactId: Uuid().v4(),
+      name: name,
+      myIdentity: await contactsRepository.generateTypedKeyPair(),
+      myIntroductionKeyPair: await contactsRepository.generateTypedKeyPair(),
+      dhtSettings: DhtSettings(
+        recordKeyThemSharing: recordKey,
+        theirNextPublicKey: publicKey,
+        myNextKeyPair: contactsRepository.getProfileInfo()!.mainKeyPair!,
+        // We skip the DH key exchange and directly start with all pub keys
+        theyAckHandshakeComplete: true,
+      ),
+    );
 
     // Save contact and trigger optional DHT update if connected, this allows
     // to scan a QR code offline and fetch data later if not available now
@@ -320,10 +360,13 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
 
     final dhtOperations = contactsRepository
         .updateContactFromDHT(addedContact)
-        .then((success) => success
-            ? contactsRepository
-                .tryShareWithContactDHT(addedContact.coagContactId)
-            : success);
+        .then(
+          (success) => success
+              ? contactsRepository.tryShareWithContactDHT(
+                  addedContact.coagContactId,
+                )
+              : success,
+        );
     if (awaitDhtOperations) {
       await dhtOperations;
     } else {
@@ -331,8 +374,12 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
 
     if (!isClosed) {
-      return emit(state.copyWith(
-          status: ReceiveRequestStatus.success, profile: addedContact));
+      return emit(
+        state.copyWith(
+          status: ReceiveRequestStatus.success,
+          profile: addedContact,
+        ),
+      );
     }
   }
 
@@ -377,7 +424,12 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
 
     final batch = await contactsRepository.handleBatchInvite(
-        myNameId, recordKey, psk, subkeyIndex, subkeyWriter);
+      myNameId,
+      recordKey,
+      psk,
+      subkeyIndex,
+      subkeyWriter,
+    );
 
     // TODO: Emit error notice
     if (batch == null) {

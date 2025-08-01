@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 part of 'cubit.dart';
@@ -15,8 +15,12 @@ extension ContactDetailsStatusX on ContactDetailsStatus {
 
 @JsonSerializable()
 final class ContactDetailsState extends Equatable {
-  const ContactDetailsState(this.status,
-      {this.contact, this.circles = const {}, this.knownContacts = const {}});
+  const ContactDetailsState(
+    this.status, {
+    this.contact,
+    this.circles = const {},
+    this.knownContacts = const {},
+  });
 
   factory ContactDetailsState.fromJson(Map<String, dynamic> json) =>
       _$ContactDetailsStateFromJson(json);
@@ -33,13 +37,12 @@ final class ContactDetailsState extends Equatable {
     CoagContact? contact,
     Map<String, String>? circles,
     Map<String, String>? knownContacts,
-  }) =>
-      ContactDetailsState(
-        status ?? this.status,
-        contact: (contact ?? this.contact)?.copyWith(),
-        circles: {...circles ?? this.circles},
-        knownContacts: {...knownContacts ?? this.knownContacts},
-      );
+  }) => ContactDetailsState(
+    status ?? this.status,
+    contact: (contact ?? this.contact)?.copyWith(),
+    circles: {...circles ?? this.circles},
+    knownContacts: {...knownContacts ?? this.knownContacts},
+  );
 
   @override
   List<Object?> get props => [contact, status, circles, knownContacts];

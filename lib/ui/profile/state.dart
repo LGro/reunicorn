@@ -1,4 +1,4 @@
-// Copyright 2024 The Coagulate Authors. All rights reserved.
+// Copyright 2024 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 part of 'cubit.dart';
@@ -35,23 +35,22 @@ final class ProfileState extends Equatable {
     Map<String, String>? circles,
     Map<String, List<String>>? circleMemberships,
     bool? permissionsGranted,
-  }) =>
-      ProfileState(
-        status: status ?? this.status,
-        profileInfo: profileInfo ?? this.profileInfo,
-        circles: circles ?? this.circles,
-        circleMemberships: circleMemberships ?? this.circleMemberships,
-        permissionsGranted: permissionsGranted ?? this.permissionsGranted,
-      );
+  }) => ProfileState(
+    status: status ?? this.status,
+    profileInfo: profileInfo ?? this.profileInfo,
+    circles: circles ?? this.circles,
+    circleMemberships: circleMemberships ?? this.circleMemberships,
+    permissionsGranted: permissionsGranted ?? this.permissionsGranted,
+  );
 
   Map<String, dynamic> toJson() => _$ProfileStateToJson(this);
 
   @override
   List<Object?> get props => [
-        status,
-        profileInfo,
-        circles,
-        circleMemberships,
-        permissionsGranted,
-      ];
+    status,
+    profileInfo,
+    circles,
+    circleMemberships,
+    permissionsGranted,
+  ];
 }

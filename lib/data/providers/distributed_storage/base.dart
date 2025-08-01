@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:typed_data';
@@ -24,20 +24,29 @@ abstract class DistributedStorage {
 
   /// Encrypt the content with the given secret and write it to the DHT at key
   Future<void> updateRecord(
-      CoagContactDHTSchema? sharedProfile, DhtSettings settings);
+    CoagContactDHTSchema? sharedProfile,
+    DhtSettings settings,
+  );
 
-  Future<void> watchRecord(Typed<FixedEncodedString43> key,
-      Future<void> Function(Typed<FixedEncodedString43> key) onNetworkUpdate);
+  Future<void> watchRecord(
+    Typed<FixedEncodedString43> key,
+    Future<void> Function(Typed<FixedEncodedString43> key) onNetworkUpdate,
+  );
 
-  Future<CoagContact?> getContact(CoagContact contact,
-      {Iterable<TypedKeyPair> myMiscKeyPairs = const []});
+  Future<CoagContact?> getContact(
+    CoagContact contact, {
+    Iterable<TypedKeyPair> myMiscKeyPairs = const [],
+  });
 
   Future<void> updateBackupRecord(
-      AccountBackup backup,
-      Typed<FixedEncodedString43> recordKey,
-      KeyPair writer,
-      FixedEncodedString43 secret);
+    AccountBackup backup,
+    Typed<FixedEncodedString43> recordKey,
+    KeyPair writer,
+    FixedEncodedString43 secret,
+  );
 
   Future<String?> readBackupRecord(
-      Typed<FixedEncodedString43> recordKey, FixedEncodedString43 secret);
+    Typed<FixedEncodedString43> recordKey,
+    FixedEncodedString43 secret,
+  );
 }

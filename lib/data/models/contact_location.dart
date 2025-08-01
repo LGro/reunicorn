@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:equatable/equatable.dart';
@@ -88,39 +88,39 @@ class ContactTemporaryLocation extends Equatable {
 
   @override
   List<Object?> get props => [
-        coagContactId,
-        longitude,
-        latitude,
-        name,
-        start,
-        end,
-        details,
-        address,
-        circles,
-        checkedIn,
-      ];
+    coagContactId,
+    longitude,
+    latitude,
+    name,
+    start,
+    end,
+    details,
+    address,
+    circles,
+    checkedIn,
+  ];
 
-  ContactTemporaryLocation copyWith(
-          {String? coagContactId,
-          double? longitude,
-          double? latitude,
-          String? name,
-          DateTime? start,
-          DateTime? end,
-          String? details,
-          String? address,
-          List<String>? circles,
-          bool? checkedIn}) =>
-      ContactTemporaryLocation(
-        coagContactId: coagContactId ?? this.coagContactId,
-        longitude: longitude ?? this.longitude,
-        latitude: latitude ?? this.latitude,
-        name: name ?? this.name,
-        start: start ?? this.start,
-        end: end ?? this.end,
-        details: details ?? this.details,
-        address: address ?? this.address,
-        circles: circles ?? this.circles,
-        checkedIn: checkedIn ?? this.checkedIn,
-      );
+  ContactTemporaryLocation copyWith({
+    String? coagContactId,
+    double? longitude,
+    double? latitude,
+    String? name,
+    DateTime? start,
+    DateTime? end,
+    String? details,
+    String? address,
+    List<String>? circles,
+    bool? checkedIn,
+  }) => ContactTemporaryLocation(
+    coagContactId: coagContactId ?? this.coagContactId,
+    longitude: longitude ?? this.longitude,
+    latitude: latitude ?? this.latitude,
+    name: name ?? this.name,
+    start: start ?? this.start,
+    end: end ?? this.end,
+    details: details ?? this.details,
+    address: address ?? this.address,
+    circles: circles ?? this.circles,
+    checkedIn: checkedIn ?? this.checkedIn,
+  );
 }

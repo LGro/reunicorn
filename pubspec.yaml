@@ -1,7 +1,7 @@
-name: coagulate
-description: Staying in contact, with privacy friendly contact synchronization and location sharing powered by Veilid.
+name: reunicorn
+description: Where & how to get in contact, shared securely and privately.
 publish_to: 'none'
-version: "0.2.0+37"
+version: "0.2.1+39"
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -23,7 +23,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_map: ^7.0.2 # update to v8 depends on flutter_map_marker_cluster 1.4+ release
-  flutter_map_marker_cluster: ^1.4.0
+  flutter_map_marker_cluster: ^1.4.0 # https://github.com/lpongetti/flutter_map_marker_cluster/issues/232
   flutter_platform_widgets: ^7.0.1
   flutter_svg: ^2.0.10
   formz: ^0.7.0
@@ -36,7 +36,7 @@ dependencies:
   json_annotation: ^4.9.0
   latlong2: ^0.9.1
   loggy: ^2.0.3
-  mobile_scanner: ^7.0.0 # TODO: Replace with privacy friendlier alternative
+  mobile_scanner: ^7.0.0
   path: ^1.9.0
   path_provider: ^2.1.3
   permission_handler: ^12.0.0
@@ -50,7 +50,6 @@ dependencies:
   url_launcher: ^6.3.1
   uuid: ^4.4.2
   veilid:
-    #   veilid: ^0.0.1
     path: ../veilid/veilid-flutter
   veilid_support:
     path: packages/veilid_support
@@ -97,8 +96,8 @@ icons_launcher:
       enable: true
       image_path: 'assets/launcher/ic_logo_radius.png'
       notification_image: 'assets/launcher/ic_foreground.png'
-      # adaptive_background_color: '#ffffff'
-      adaptive_background_image: 'assets/launcher/ic_background.png'
+      adaptive_background_color: '#f7f7f9'
+      # adaptive_background_image: 'assets/launcher/ic_background.png'
       adaptive_foreground_image: 'assets/launcher/ic_foreground.png'
       adaptive_round_image: 'assets/launcher/ic_logo_round.png'
       adaptive_monochrome_image: 'assets/launcher/ic_black_white.png'

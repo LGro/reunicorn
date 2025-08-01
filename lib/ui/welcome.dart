@@ -5,9 +5,11 @@ import 'utils.dart';
 
 class WelcomeScreen extends StatefulWidget {
   WelcomeScreen(this.setInitialInfoCallback);
-  final Future<void> Function(
-      {required String name,
-      required String bootstrapUrl}) setInitialInfoCallback;
+  final Future<void> Function({
+    required String name,
+    required String bootstrapUrl,
+  })
+  setInitialInfoCallback;
 
   @override
   _WelcomeScreenState createState() => _WelcomeScreenState();
@@ -21,8 +23,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Future<void> _onSubmit() async {
     if (_nameController.text.isNotEmpty) {
       await widget.setInitialInfoCallback(
-          name: _nameController.text.trim(),
-          bootstrapUrl: _bootstrapServerController.text.trim());
+        name: _nameController.text.trim(),
+        bootstrapUrl: _bootstrapServerController.text.trim(),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.loc.welcomeErrorNameMissing)),
@@ -32,68 +35,71 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
-                child: IntrinsicHeight(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Expanded(child: SizedBox()),
-                      const SizedBox(height: 16),
-                      Text(
-                        context.loc.welcomeHeadline,
-                        style: const TextStyle(
-                            fontSize: 32, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(context.loc.welcomeText,
-                          style: const TextStyle(fontSize: 16)),
-                      const SizedBox(height: 24),
-                      TextField(
-                        controller: _nameController,
-                        decoration: InputDecoration(
-                          labelText: context.loc.name.capitalize(),
-                          border: const OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Align(
-                          alignment: Alignment.centerRight,
-                          child: FilledButton(
-                            onPressed: _onSubmit,
-                            child: Text(context.loc.welcomeCallToActionButton),
-                          )),
-                      const SizedBox(height: 16),
-                      const Expanded(child: SizedBox()),
-                      const Text(
-                        'Disclaimer: Coagulate is still beta software, things '
-                        'might break, please tell us about these cases. '
-                        'Also, privacy and security are implemented diligently '
-                        'but have not been audited by an independent third '
-                        'party yet.',
-                        softWrap: true,
-                      ),
-                      const Expanded(child: SizedBox()),
-                      // TextField(
-                      //   controller: _bootstrapServerController,
-                      //   decoration: const InputDecoration(
-                      //     labelText: 'Custom Veilid bootstrap URL',
-                      //     border: OutlineInputBorder(),
-                      //   ),
-                      // ),
-                    ],
+    body: Padding(
+      padding: const EdgeInsets.all(16),
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Expanded(child: SizedBox()),
+                  const SizedBox(height: 16),
+                  Text(
+                    context.loc.welcomeHeadline,
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  Text(
+                    context.loc.welcomeText,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: context.loc.name.capitalize(),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: FilledButton(
+                      onPressed: _onSubmit,
+                      child: Text(context.loc.welcomeCallToActionButton),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Expanded(child: SizedBox()),
+                  const Text(
+                    'Disclaimer: Reunicorn is still beta software, things '
+                    'might break, please tell us about these cases. '
+                    'Also, privacy and security are implemented diligently '
+                    'but have not been audited by an independent third '
+                    'party yet.',
+                    softWrap: true,
+                  ),
+                  const Expanded(child: SizedBox()),
+                  // TextField(
+                  //   controller: _bootstrapServerController,
+                  //   decoration: const InputDecoration(
+                  //     labelText: 'Custom Veilid bootstrap URL',
+                  //     border: OutlineInputBorder(),
+                  //   ),
+                  // ),
+                ],
               ),
             ),
           ),
         ),
-      );
+      ),
+    ),
+  );
 }

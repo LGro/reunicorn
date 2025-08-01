@@ -1,4 +1,4 @@
-// Copyright 2024 The Coagulate Authors. All rights reserved.
+// Copyright 2024 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 import 'dart:io';
 
@@ -7,12 +7,13 @@ import 'package:flutter/material.dart';
 typedef UpdateLngLatCallback = void Function(num, num);
 
 class AddressCoordinatesForm extends StatefulWidget {
-  const AddressCoordinatesForm(
-      {required this.i,
-      super.key,
-      this.longitude,
-      this.latitude,
-      this.callback});
+  const AddressCoordinatesForm({
+    required this.i,
+    super.key,
+    this.longitude,
+    this.latitude,
+    this.callback,
+  });
 
   final int i;
   final num? longitude;
@@ -47,46 +48,52 @@ class _AddressCoordinatesFormState extends State<AddressCoordinatesForm> {
 
   @override
   Widget build(BuildContext context) => Row(
-        children: <Widget>[
-          Expanded(
-            child: TextFormField(
-              key: Key('addressCoordinatesForm_${widget.i}Longitude'),
-              controller: _lngController,
-              // On iOS the number input has no done button and thus can't be dismissed
-              keyboardType: Platform.isIOS
-                  ? const TextInputType.numberWithOptions(decimal: true)
-                  : TextInputType.number,
-              decoration: const InputDecoration(
-                  labelText: 'Longitude',
-                  border: OutlineInputBorder(),
-                  isDense: true),
-            ),
+    children: <Widget>[
+      Expanded(
+        child: TextFormField(
+          key: Key('addressCoordinatesForm_${widget.i}Longitude'),
+          controller: _lngController,
+          // On iOS the number input has no done button and thus can't be dismissed
+          keyboardType: Platform.isIOS
+              ? const TextInputType.numberWithOptions(decimal: true)
+              : TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Longitude',
+            border: OutlineInputBorder(),
+            isDense: true,
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextFormField(
-              key: Key('addressCoordinatesForm_${widget.i}Latitude'),
-              controller: _latController,
-              // On iOS the number input has no done button and thus can't be dismissed
-              keyboardType: Platform.isIOS
-                  ? const TextInputType.numberWithOptions(decimal: true)
-                  : TextInputType.number,
-              decoration: const InputDecoration(
-                  labelText: 'Latitude',
-                  border: OutlineInputBorder(),
-                  isDense: true),
-            ),
+        ),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: TextFormField(
+          key: Key('addressCoordinatesForm_${widget.i}Latitude'),
+          controller: _latController,
+          // On iOS the number input has no done button and thus can't be dismissed
+          keyboardType: Platform.isIOS
+              ? const TextInputType.numberWithOptions(decimal: true)
+              : TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Latitude',
+            border: OutlineInputBorder(),
+            isDense: true,
           ),
-          TextButton(
-              onPressed: (num.tryParse(_lngController.text) != null &&
-                      num.tryParse(_latController.text) != null &&
-                      widget.callback != null)
-                  ? () => widget.callback!(num.parse(_lngController.text),
-                      num.parse(_latController.text))
-                  : null,
-              child: const Text('Save')),
-        ],
-      );
+        ),
+      ),
+      TextButton(
+        onPressed:
+            (num.tryParse(_lngController.text) != null &&
+                num.tryParse(_latController.text) != null &&
+                widget.callback != null)
+            ? () => widget.callback!(
+                num.parse(_lngController.text),
+                num.parse(_latController.text),
+              )
+            : null,
+        child: const Text('Save'),
+      ),
+    ],
+  );
 
   @override
   void dispose() {

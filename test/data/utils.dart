@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:io';
@@ -14,13 +14,16 @@ Future<String> readCurrentVersionFromPubspec() async {
 }
 
 Map<String, String> loadAllPreviousSchemaVersionJsons(
-        String jsonAssetDirectory) =>
-    Map.fromEntries(Directory(jsonAssetDirectory)
-        .listSync()
-        .whereType<File>()
-        .where((file) => file.path.endsWith('.json'))
-        .map((file) => MapEntry(file.path, file.readAsStringSync())));
+  String jsonAssetDirectory,
+) => Map.fromEntries(
+  Directory(jsonAssetDirectory)
+      .listSync()
+      .whereType<File>()
+      .where((file) => file.path.endsWith('.json'))
+      .map((file) => MapEntry(file.path, file.readAsStringSync())),
+);
 
 FixedEncodedString43 dummyFixedEncodedString43(int value) =>
     FixedEncodedString43.fromBytes(
-        Uint8List.fromList(List<int>.filled(32, value)));
+      Uint8List.fromList(List<int>.filled(32, value)),
+    );

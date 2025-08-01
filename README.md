@@ -1,6 +1,6 @@
-# Coagulate
+# Reunicorn
 
-Coagulate is a smartphone app to synchronize contact details and share current as well as future locations in a privacy preserving manner for everyone who wants to stay in touch with their peers.
+Reunicorn is a smartphone app to synchronize contact details and share current as well as future locations in a privacy preserving manner for everyone who wants to stay in touch with their peers.
 
 When you plan to visit a city, find out immediately who of your old friends you could meet and directly contact them with up-to-date contact details.
 
@@ -18,7 +18,7 @@ While this is still in development, you must have a clone of the [Veilid](https:
 
 Check the CI/CD workflows in `.github/` for a compatible development setup.
 
-For the address search and geocoding to work, you need to provide the environment variable `COAGULATE_MAPTILER_TOKEN` with an API token that can be obtained for free from maptiler.com.
+For the address search and geocoding to work, you need to provide the environment variable `REUNICORN_MAPTILER_TOKEN` with an API token that can be obtained for free from maptiler.com.
 The map itself can also be switched to the OSM foundation's server if no MapTiler token is available.
 
 ### Building
@@ -64,7 +64,7 @@ For iOS when changing e.g. the `IPHONEOS_DEPLOYMENT_TARGET`, cd into `ios/` and 
 
 ## Original User Stories
 
-These where the initial user stories written before the development of Coagulate began.
+These where the initial user stories written before the development of Reunicorn began.
 They serve as a reminder and reference to what experience we aim to achieve.
 
 ### Open app first time

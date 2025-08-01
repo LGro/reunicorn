@@ -1,12 +1,12 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:coagulate/data/models/coag_contact.dart';
-import 'package:coagulate/data/models/contact_location.dart';
-import 'package:coagulate/data/providers/persistent_storage/sqlite.dart';
+import 'package:reunicorn/data/models/coag_contact.dart';
+import 'package:reunicorn/data/models/contact_location.dart';
+import 'package:reunicorn/data/providers/persistent_storage/sqlite.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -16,19 +16,20 @@ void main() {
   test('migrate contact address locations from int to label indexing', () {
     const legacyJson = {
       'address_locations': {
-        '0': {'longitude': 1.0, 'latitude': 0.0, 'name': 'address-loc'}
+        '0': {'longitude': 1.0, 'latitude': 0.0, 'name': 'address-loc'},
       },
       'unrelated': 'unchanged',
     };
-    final migrated =
-        migrateContactAddressLocationFromIntToLabelIndexing(legacyJson);
+    final migrated = migrateContactAddressLocationFromIntToLabelIndexing(
+      legacyJson,
+    );
     expect(migrated['unrelated'], 'unchanged');
     expect(migrated['address_locations'].keys, contains('address-loc'));
   });
 
   test('migrate contact address locations in profile info', () {
     const legacyAddressJson = {
-      '0': {'longitude': 1.0, 'latitude': 0.0, 'name': 'address-loc'}
+      '0': {'longitude': 1.0, 'latitude': 0.0, 'name': 'address-loc'},
     };
     final json = const ProfileInfo('profileId').toJson();
     json['address_locations'] = legacyAddressJson;
@@ -41,35 +42,40 @@ void main() {
   });
 
   test(
-      'no need to migrate contact address locations from int to label indexing',
-      () {
-    final upToDateJson = {
-      'address_locations': {
-        'address-loc':
-            const ContactAddressLocation(longitude: 1.0, latitude: 0.0)
-                .toJson(),
-      },
-      'unrelated': 'unchanged',
-    };
-    final migrated =
-        migrateContactAddressLocationFromIntToLabelIndexing(upToDateJson);
-    expect(migrated['unrelated'], 'unchanged');
-    expect(migrated['address_locations'].keys, contains('address-loc'));
-  });
+    'no need to migrate contact address locations from int to label indexing',
+    () {
+      final upToDateJson = {
+        'address_locations': {
+          'address-loc': const ContactAddressLocation(
+            longitude: 1.0,
+            latitude: 0.0,
+          ).toJson(),
+        },
+        'unrelated': 'unchanged',
+      };
+      final migrated = migrateContactAddressLocationFromIntToLabelIndexing(
+        upToDateJson,
+      );
+      expect(migrated['unrelated'], 'unchanged');
+      expect(migrated['address_locations'].keys, contains('address-loc'));
+    },
+  );
 
   test('schema json includes version', () {
     final schema = CoagContactDHTSchemaV2(
-        details: const ContactDetails(),
-        shareBackDHTKey: null,
-        shareBackPubKey: null);
+      details: const ContactDetails(),
+      shareBackDHTKey: null,
+      shareBackPubKey: null,
+    );
     final json = schema.toJson();
     expect(json['schema_version'], 2);
   });
   test('schema simple to from json', () {
     final schema = CoagContactDHTSchemaV2(
-        details: const ContactDetails(),
-        shareBackDHTKey: null,
-        shareBackPubKey: null);
+      details: const ContactDetails(),
+      shareBackDHTKey: null,
+      shareBackPubKey: null,
+    );
     final deserialized = CoagContactDHTSchemaV2.fromJson(schema.toJson());
     expect(schema, deserialized);
   });
@@ -78,38 +84,48 @@ void main() {
     const addressLocationJson = {
       'longitude': 1.0,
       'latitude': 0.0,
-      'name': 'address-loc'
+      'name': 'address-loc',
     };
     final temporaryLocation = ContactTemporaryLocation(
-        longitude: 0,
-        latitude: 0,
-        name: 'temp-loc',
-        start: DateTime(1909),
-        end: DateTime(1910),
-        details: '');
+      longitude: 0,
+      latitude: 0,
+      name: 'temp-loc',
+      start: DateTime(1909),
+      end: DateTime(1910),
+      details: '',
+    );
     final schemaJsonV2 = {
       'details': {
         'phones': [
-          Phone('123', label: PhoneLabel.custom, customLabel: 'bananaphone')
-              .toJson()
+          Phone(
+            '123',
+            label: PhoneLabel.custom,
+            customLabel: 'bananaphone',
+          ).toJson(),
         ],
         'emails': [
-          Email('hi@test.local',
-                  label: EmailLabel.custom, customLabel: 'custom-email')
-              .toJson()
+          Email(
+            'hi@test.local',
+            label: EmailLabel.custom,
+            customLabel: 'custom-email',
+          ).toJson(),
         ],
         'addresses': [
-          Address('Home Sweet Home',
-                  label: AddressLabel.custom, customLabel: 'custom-address')
-              .toJson()
+          Address(
+            'Home Sweet Home',
+            label: AddressLabel.custom,
+            customLabel: 'custom-address',
+          ).toJson(),
         ],
         'websites': [
-          Website('awesomesite',
-                  label: WebsiteLabel.custom, customLabel: 'custom-website')
-              .toJson()
+          Website(
+            'awesomesite',
+            label: WebsiteLabel.custom,
+            customLabel: 'custom-website',
+          ).toJson(),
         ],
         'social_medias': [
-          SocialMedia('@coag', label: SocialMediaLabel.discord).toJson()
+          SocialMedia('@coag', label: SocialMediaLabel.discord).toJson(),
         ],
         'events': [],
       },
@@ -142,8 +158,9 @@ void main() {
     final contents = await file.readAsString();
     final contactJson = (json.decode(contents) as List<dynamic>).first;
     final migratedJson = await migrateContactAddIdentityAndIntroductionKeyPairs(
-        contactJson as Map<String, dynamic>,
-        generateKeyPair: () async => dummyTypedKeyPair());
+      contactJson as Map<String, dynamic>,
+      generateKeyPair: () async => dummyTypedKeyPair(),
+    );
     final contact = CoagContact.fromJson(migratedJson);
     expect(contact.name, 'Display Name');
   });

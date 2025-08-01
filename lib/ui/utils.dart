@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:typed_data';
@@ -36,12 +36,15 @@ String extractAllValuesToString(dynamic value) {
 bool searchMatchesContact(String search, CoagContact contact) =>
     contact.name.toLowerCase().contains(search.toLowerCase()) ||
     (contact.details != null &&
-        extractAllValuesToString(contact.details!.toJson())
-            .toLowerCase()
-            .contains(search.toLowerCase()));
+        extractAllValuesToString(
+          contact.details!.toJson(),
+        ).toLowerCase().contains(search.toLowerCase()));
 
-Widget roundPictureOrPlaceholder(List<int>? picture,
-    {double? radius, bool clipOval = true}) {
+Widget roundPictureOrPlaceholder(
+  List<int>? picture, {
+  double? radius,
+  bool clipOval = true,
+}) {
   final image = Image.memory(
     Uint8List.fromList(picture ?? []),
     gaplessPlayback: true,
@@ -65,9 +68,12 @@ String commasToNewlines(String s) =>
 /// update. Removals count as no change, because when an abuse victim stops
 /// sharing details with their abuser, we do not want to alert them.
 bool addedOrUpdatedValue(
-        Map<String, dynamic> oldMap, Map<String, dynamic> newMap) =>
+  Map<String, dynamic> oldMap,
+  Map<String, dynamic> newMap,
+) =>
     newMap.entries.firstWhereOrNull(
-        (e) => !oldMap.containsKey(e.key) || oldMap[e.key] != e.value) !=
+      (e) => !oldMap.containsKey(e.key) || oldMap[e.key] != e.value,
+    ) !=
     null;
 
 String contactUpdateSummary(CoagContact oldContact, CoagContact newContact) {
@@ -102,7 +108,9 @@ String contactUpdateSummary(CoagContact oldContact, CoagContact newContact) {
   }
 
   if (addedOrUpdatedValue(
-      oldContact.addressLocations, newContact.addressLocations)) {
+    oldContact.addressLocations,
+    newContact.addressLocations,
+  )) {
     results.add('addresses');
   }
 
@@ -115,10 +123,16 @@ String contactUpdateSummary(CoagContact oldContact, CoagContact newContact) {
   }
 
   // TODO: Make this consistent with the yesterday filtering we do elsewhere?
-  final filteredOld = Map.fromEntries(oldContact.temporaryLocations.entries
-      .where((e) => e.value.end.isAfter(DateTime.now())));
-  final filteredNew = Map.fromEntries(newContact.temporaryLocations.entries
-      .where((e) => e.value.end.isAfter(DateTime.now())));
+  final filteredOld = Map.fromEntries(
+    oldContact.temporaryLocations.entries.where(
+      (e) => e.value.end.isAfter(DateTime.now()),
+    ),
+  );
+  final filteredNew = Map.fromEntries(
+    newContact.temporaryLocations.entries.where(
+      (e) => e.value.end.isAfter(DateTime.now()),
+    ),
+  );
   if (addedOrUpdatedValue(filteredOld, filteredNew)) {
     results.add('locations');
   }
@@ -127,53 +141,66 @@ String contactUpdateSummary(CoagContact oldContact, CoagContact newContact) {
 }
 
 Iterable<String> generateBatchInviteLinks(Batch batch) =>
-    batch.subkeyWriters.toList().asMap().entries.map((w) => batchInviteUrl(
-            batch.label,
-            batch.dhtRecordKey,
-            batch.psk,
-            // Index of the writer in the list + 1 is the corresponding subkey
-            w.key + 1,
-            w.value)
-        .toString());
+    batch.subkeyWriters.toList().asMap().entries.map(
+      (w) => batchInviteUrl(
+        batch.label,
+        batch.dhtRecordKey,
+        batch.psk,
+        // Index of the writer in the list + 1 is the corresponding subkey
+        w.key + 1,
+        w.value,
+      ).toString(),
+    );
 
 // TODO: Pass dhtSettings to all the Url generators to make it easier to test that the correct keys are used?
-Uri directSharingUrl(String name, Typed<FixedEncodedString43> dhtRecordKey,
-        FixedEncodedString43 psk) =>
-    Uri(
-        scheme: 'https',
-        host: 'coagulate.social',
-        path: '/c',
-        fragment: [name, dhtRecordKey.toString(), psk.toString()].join('~'));
+Uri directSharingUrl(
+  String name,
+  Typed<FixedEncodedString43> dhtRecordKey,
+  FixedEncodedString43 psk,
+) => Uri(
+  scheme: 'https',
+  host: 'reunicorn.app',
+  path: '/c',
+  fragment: [name, dhtRecordKey.toString(), psk.toString()].join('~'),
+);
 
 Uri profileUrl(String name, PublicKey publicKey) => Uri(
-    scheme: 'https',
-    host: 'coagulate.social',
-    path: '/p',
-    fragment: [name, publicKey.toString()].join('~'));
+  scheme: 'https',
+  host: 'reunicorn.app',
+  path: '/p',
+  fragment: [name, publicKey.toString()].join('~'),
+);
 
-Uri batchInviteUrl(String label, Typed<FixedEncodedString43> dhtRecordKey,
-        FixedEncodedString43 psk, int subKeyIndex, KeyPair writer) =>
-    Uri(
-        scheme: 'https',
-        host: 'coagulate.social',
-        path: '/b',
-        fragment: [
-          label,
-          dhtRecordKey.toString(),
-          psk.toString(),
-          // Index of the writer in the list + 1 is the corresponding subkey
-          subKeyIndex.toString(),
-          writer.toString()
-        ].join('~'));
+Uri batchInviteUrl(
+  String label,
+  Typed<FixedEncodedString43> dhtRecordKey,
+  FixedEncodedString43 psk,
+  int subKeyIndex,
+  KeyPair writer,
+) => Uri(
+  scheme: 'https',
+  host: 'reunicorn.app',
+  path: '/b',
+  fragment: [
+    label,
+    dhtRecordKey.toString(),
+    psk.toString(),
+    // Index of the writer in the list + 1 is the corresponding subkey
+    subKeyIndex.toString(),
+    writer.toString(),
+  ].join('~'),
+);
 
-Uri profileBasedOfferUrl(String name, Typed<FixedEncodedString43> dhtRecordKey,
-        FixedEncodedString43 publicKey) =>
-    Uri(
-        scheme: 'https',
-        host: 'coagulate.social',
-        path: '/o',
-        fragment:
-            [name, dhtRecordKey.toString(), publicKey.toString()].join('~'));
+Uri profileBasedOfferUrl(
+  String name,
+  Typed<FixedEncodedString43> dhtRecordKey,
+  FixedEncodedString43 publicKey,
+) => Uri(
+  scheme: 'https',
+  host: 'reunicorn.app',
+  path: '/o',
+  fragment: [name, dhtRecordKey.toString(), publicKey.toString()].join('~'),
+);
 
 bool showSharingInitializing(CoagContact contact) =>
     contact.dhtSettings.recordKeyThemSharing == null ||
@@ -192,49 +219,59 @@ bool showDirectSharing(CoagContact contact) =>
 
 /// Returns introducer and introduction for pending introductions
 Iterable<(CoagContact, ContactIntroduction)> pendingIntroductions(
-        Iterable<CoagContact> contacts) =>
-    contacts
-        .map((c) => c.introductionsByThem
-            .where((i) => !contacts
+  Iterable<CoagContact> contacts,
+) => contacts
+    .map(
+      (c) => c.introductionsByThem
+          .where(
+            (i) => !contacts
                 .map((c) => c.dhtSettings.recordKeyThemSharing)
                 .whereType<Typed<FixedEncodedString43>>()
-                .contains(i.dhtRecordKeyReceiving))
-            .map((i) => (c, i)))
-        .expand((i) => i);
+                .contains(i.dhtRecordKeyReceiving),
+          )
+          .map((i) => (c, i)),
+    )
+    .expand((i) => i);
 
-Widget buildEditOrAddWidgetSkeleton(BuildContext context,
-        {required String title,
-        required List<Widget> children,
-        required Widget onSaveWidget}) =>
-    Column(
+Widget buildEditOrAddWidgetSkeleton(
+  BuildContext context, {
+  required String title,
+  required List<Widget> children,
+  required Widget onSaveWidget,
+}) => Column(
+  mainAxisSize: MainAxisSize.min,
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Padding(
+      padding: const EdgeInsets.only(top: 8, left: 8, right: 8, bottom: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton.filledTonal(
+            onPressed: Navigator.of(context).pop,
+            icon: const Icon(Icons.cancel_outlined),
+          ),
+          Expanded(
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          onSaveWidget,
+        ],
+      ),
+    ),
+    Padding(
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-              padding:
-                  const EdgeInsets.only(top: 8, left: 8, right: 8, bottom: 16),
-              child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton.filledTonal(
-                        onPressed: Navigator.of(context).pop,
-                        icon: const Icon(Icons.cancel_outlined)),
-                    Expanded(
-                        child: Text(
-                      title,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                      textAlign: TextAlign.center,
-                    )),
-                    onSaveWidget,
-                  ])),
-          Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-            child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: children),
-          ),
-        ]);
+        children: children,
+      ),
+    ),
+  ],
+);
 
 List<(String, String)> labelValueMapToTupleList(Map<String, String> map) =>
     map.map((key, value) => MapEntry(key, (key, value))).values.toList();

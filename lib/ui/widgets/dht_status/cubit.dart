@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -15,7 +15,7 @@ part 'state.dart';
 // TODO: Refactor status to enum
 class DhtStatusCubit extends Cubit<DhtStatusState> with WidgetsBindingObserver {
   DhtStatusCubit({required this.recordKey})
-      : super(const DhtStatusState('initial')) {
+    : super(const DhtStatusState('initial')) {
     WidgetsBinding.instance.addObserver(this);
     _startTimer();
     unawaited(updateStatus());
@@ -25,8 +25,10 @@ class DhtStatusCubit extends Cubit<DhtStatusState> with WidgetsBindingObserver {
   late final Timer? timerPersistentStorageRefresh;
 
   void _startTimer() {
-    timerPersistentStorageRefresh =
-        Timer.periodic(const Duration(seconds: 5), (_) async => updateStatus());
+    timerPersistentStorageRefresh = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) async => updateStatus(),
+    );
   }
 
   void _stopTimer() => timerPersistentStorageRefresh?.cancel();
@@ -47,10 +49,12 @@ class DhtStatusCubit extends Cubit<DhtStatusState> with WidgetsBindingObserver {
       final report = await DHTRecordPool.instance
           .openRecordRead(recordKey, debugName: 'coag::read::stats')
           .then((record) async {
-        final report = await record.routingContext.inspectDHTRecord(recordKey);
-        await record.close();
-        return report;
-      });
+            final report = await record.routingContext.inspectDHTRecord(
+              recordKey,
+            );
+            await record.close();
+            return report;
+          });
 
       if (!isClosed) {
         if (report.offlineSubkeys.isEmpty) {

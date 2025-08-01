@@ -1,18 +1,19 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 part of 'cubit.dart';
 
 @JsonSerializable()
 class Batch extends Equatable {
-  const Batch(
-      {required this.label,
-      required this.expiration,
-      required this.dhtRecordKey,
-      required this.writer,
-      required this.subkeyWriters,
-      required this.psk,
-      this.numPopulatedSubkeys});
+  const Batch({
+    required this.label,
+    required this.expiration,
+    required this.dhtRecordKey,
+    required this.writer,
+    required this.subkeyWriters,
+    required this.psk,
+    this.numPopulatedSubkeys,
+  });
 
   factory Batch.fromJson(Map<String, dynamic> json) => _$BatchFromJson(json);
 
@@ -29,24 +30,25 @@ class Batch extends Equatable {
   Map<String, dynamic> toJson() => _$BatchToJson(this);
 
   Batch copyWith({int? numPopulatedSubkeys}) => Batch(
-      label: this.label,
-      expiration: this.expiration,
-      dhtRecordKey: this.dhtRecordKey,
-      writer: this.writer,
-      subkeyWriters: [...this.subkeyWriters],
-      psk: this.psk,
-      numPopulatedSubkeys: numPopulatedSubkeys ?? this.numPopulatedSubkeys);
+    label: this.label,
+    expiration: this.expiration,
+    dhtRecordKey: this.dhtRecordKey,
+    writer: this.writer,
+    subkeyWriters: [...this.subkeyWriters],
+    psk: this.psk,
+    numPopulatedSubkeys: numPopulatedSubkeys ?? this.numPopulatedSubkeys,
+  );
 
   @override
   List<Object?> get props => [
-        label,
-        expiration,
-        dhtRecordKey,
-        writer,
-        subkeyWriters,
-        psk,
-        numPopulatedSubkeys
-      ];
+    label,
+    expiration,
+    dhtRecordKey,
+    writer,
+    subkeyWriters,
+    psk,
+    numPopulatedSubkeys,
+  ];
 }
 
 @JsonSerializable()
@@ -60,12 +62,8 @@ final class BatchInvitesState extends Equatable {
 
   Map<String, dynamic> toJson() => _$BatchInvitesStateToJson(this);
 
-  BatchInvitesState copyWith({
-    Map<String, Batch>? batches,
-  }) =>
-      BatchInvitesState(
-        batches: batches ?? this.batches,
-      );
+  BatchInvitesState copyWith({Map<String, Batch>? batches}) =>
+      BatchInvitesState(batches: batches ?? this.batches);
 
   @override
   List<Object?> get props => [batches];

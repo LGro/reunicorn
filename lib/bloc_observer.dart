@@ -2,8 +2,8 @@ import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
 
-class CoagulateBlocObserver extends BlocObserver {
-  const CoagulateBlocObserver();
+class AppBlocObserver extends BlocObserver {
+  const AppBlocObserver();
 
   @override
   void onEvent(Bloc<dynamic, dynamic> bloc, Object? event) {

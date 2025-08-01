@@ -11,7 +11,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Coagulate</string>
+	<string>Reunicorn</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -19,7 +19,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>coagulate</string>
+	<string>reunicorn</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -35,9 +35,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCalendarsUsageDescription</key>
-	<string>Coagulate requires access to the calendar to import events</string>
+	<string>Reunicorn requires access to the calendar to import events</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Coagulate requires access to the calendar to import events</string>
+	<string>Reunicorn requires access to the calendar to import events</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access is required for QR code scanning</string>
 	<key>NSPhotoLibraryUsageDescription</key>

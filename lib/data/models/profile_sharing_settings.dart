@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:equatable/equatable.dart';
@@ -59,27 +59,26 @@ class ProfileSharingSettings extends Equatable {
     Map<String, List<String>>? websites,
     Map<String, List<String>>? socialMedias,
     Map<String, List<String>>? events,
-  }) =>
-      ProfileSharingSettings(
-        names: names ?? {...this.names},
-        phones: phones ?? {...this.phones},
-        emails: emails ?? {...this.emails},
-        addresses: addresses ?? {...this.addresses},
-        organizations: organizations ?? {...this.organizations},
-        websites: websites ?? {...this.websites},
-        socialMedias: socialMedias ?? {...this.socialMedias},
-        events: events ?? {...this.events},
-      );
+  }) => ProfileSharingSettings(
+    names: names ?? {...this.names},
+    phones: phones ?? {...this.phones},
+    emails: emails ?? {...this.emails},
+    addresses: addresses ?? {...this.addresses},
+    organizations: organizations ?? {...this.organizations},
+    websites: websites ?? {...this.websites},
+    socialMedias: socialMedias ?? {...this.socialMedias},
+    events: events ?? {...this.events},
+  );
 
   @override
   List<Object?> get props => [
-        names,
-        phones,
-        emails,
-        addresses,
-        organizations,
-        websites,
-        socialMedias,
-        events,
-      ];
+    names,
+    phones,
+    emails,
+    addresses,
+    organizations,
+    websites,
+    socialMedias,
+    events,
+  ];
 }

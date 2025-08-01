@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:bloc/bloc.dart';
@@ -15,15 +15,20 @@ class RestoreCubit extends Cubit<RestoreState> {
 
   ContactsRepository contactsRepository;
 
-  Future<void> restore(Typed<FixedEncodedString43> recordKey,
-      FixedEncodedString43 secret) async {
+  Future<void> restore(
+    Typed<FixedEncodedString43> recordKey,
+    FixedEncodedString43 secret,
+  ) async {
     emit(const RestoreState(status: RestoreStatus.create));
 
     final result = await contactsRepository.restore(recordKey, secret);
 
     if (!isClosed) {
-      emit(RestoreState(
-          status: result ? RestoreStatus.success : RestoreStatus.failure));
+      emit(
+        RestoreState(
+          status: result ? RestoreStatus.success : RestoreStatus.failure,
+        ),
+      );
     }
   }
 }

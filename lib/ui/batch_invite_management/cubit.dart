@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -18,62 +18,78 @@ part 'state.dart';
 /// Create DHT record with first subkey for general info and then the
 /// specified number of subkeys with an individual writer key pair each.
 Future<Batch> createBatch(
-    int numSubKeys, String label, DateTime expiration) async {
+  int numSubKeys,
+  String label,
+  DateTime expiration,
+) async {
   final cryptoSystem = await Veilid.instance.bestCryptoSystem();
   final routingContext = await Veilid.instance.routingContext();
 
   // Generate writer key pairs for owner and subkeys
   final ownerWriter = await cryptoSystem.generateKeyPair();
   final subkeyWriters = await Future.wait(
-      List.generate(numSubKeys, (_) async => cryptoSystem.generateKeyPair()));
+    List.generate(numSubKeys, (_) async => cryptoSystem.generateKeyPair()),
+  );
 
   // Create record with individual subkey writers
   final record = await routingContext.createDHTRecord(
-      DHTSchema.smpl(
-          oCnt: 1,
-          members: subkeyWriters
-              .map((w) => DHTSchemaMember(mKey: w.key, mCnt: 1))
-              .toList()),
-      owner: ownerWriter);
+    DHTSchema.smpl(
+      oCnt: 1,
+      members: subkeyWriters
+          .map((w) => DHTSchemaMember(mKey: w.key, mCnt: 1))
+          .toList(),
+    ),
+    owner: ownerWriter,
+  );
 
   // DHT record content crypto
   final psk = await cryptoSystem.randomSharedSecret();
-  final pskCrypto =
-      await VeilidCryptoPrivate.fromSharedSecret(cryptoSystem.kind(), psk);
+  final pskCrypto = await VeilidCryptoPrivate.fromSharedSecret(
+    cryptoSystem.kind(),
+    psk,
+  );
 
   // Write general info to first subkey with owner writer key pair
   final info = BatchInviteInfoSchema(label, expiration);
   await routingContext.openDHTRecord(record.key, writer: ownerWriter);
-  await routingContext.setDHTValue(record.key, 0,
-      await pskCrypto.encrypt(utf8.encode(jsonEncode(info.toJson()))),
-      writer: ownerWriter);
+  await routingContext.setDHTValue(
+    record.key,
+    0,
+    await pskCrypto.encrypt(utf8.encode(jsonEncode(info.toJson()))),
+    writer: ownerWriter,
+  );
   await routingContext.closeDHTRecord(record.key);
 
   return Batch(
-      label: label,
-      expiration: expiration,
-      dhtRecordKey: record.key,
-      writer: ownerWriter,
-      subkeyWriters: subkeyWriters,
-      psk: psk);
+    label: label,
+    expiration: expiration,
+    dhtRecordKey: record.key,
+    writer: ownerWriter,
+    subkeyWriters: subkeyWriters,
+    psk: psk,
+  );
 }
 
 Future<Batch> updateBatchWithPopulatedSubkeyCount(Batch batch) async {
   var numPopulatedSubkeys = 0;
 
   final crypto = await VeilidCryptoPrivate.fromSharedSecret(
-      batch.dhtRecordKey.kind, batch.psk);
+    batch.dhtRecordKey.kind,
+    batch.psk,
+  );
 
   for (var subkey = 1; subkey <= batch.subkeyWriters.length; subkey++) {
     final record = await DHTRecordPool.instance.openRecordRead(
-        batch.dhtRecordKey,
-        debugName: 'coag::read',
-        crypto: crypto);
+      batch.dhtRecordKey,
+      debugName: 'coag::read',
+      crypto: crypto,
+    );
     try {
       final content = await record.get(
-          crypto: crypto,
-          refreshMode: DHTRecordRefreshMode.network,
-          subkey: subkey);
+        crypto: crypto,
+        refreshMode: DHTRecordRefreshMode.network,
+        subkey: subkey,
+      );
       if (content?.isNotEmpty ?? false) {
         numPopulatedSubkeys++;
       }
@@ -99,7 +115,10 @@ class BatchInvitesCubit extends Cubit<BatchInvitesState> {
 
   // TODO: How long does this take? Do we need a loading spinner?
   Future<void> generateInvites(
-      String label, int amount, DateTime expiration) async {
+    String label,
+    int amount,
+    DateTime expiration,
+  ) async {
     final newBatch = await createBatch(amount, label, expiration);
 
     // TODO: Persist batch
@@ -114,8 +133,9 @@ class BatchInvitesCubit extends Cubit<BatchInvitesState> {
   Future<void> updateBatchesWithPopulatedSubkeyCount() async {
     // TODO: Is this prone to overriding a batch that was created while an update was running?
     for (final batch in state.batches.entries) {
-      final updatedBatch =
-          await updateBatchWithPopulatedSubkeyCount(batch.value);
+      final updatedBatch = await updateBatchWithPopulatedSubkeyCount(
+        batch.value,
+      );
 
       if (isClosed) {
         return;
@@ -127,6 +147,9 @@ class BatchInvitesCubit extends Cubit<BatchInvitesState> {
     }
   }
 
-  Future<void> importBatch(Batch batch) async => emit(state.copyWith(
-      batches: {batch.dhtRecordKey.toString(): batch, ...state.batches}));
+  Future<void> importBatch(Batch batch) async => emit(
+    state.copyWith(
+      batches: {batch.dhtRecordKey.toString(): batch, ...state.batches},
+    ),
+  );
 }

@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 part of 'cubit.dart';
@@ -41,17 +41,22 @@ final class LinkToSystemContactState extends Equatable {
     List<Contact>? contacts,
     Set<Account>? accounts,
     Account? selectedAccount,
-  }) =>
-      LinkToSystemContactState(
-        status: status ?? this.status,
-        permissionGranted: permissionGranted ?? this.permissionGranted,
-        contact: contact ?? this.contact?.copyWith(),
-        contacts: contacts ?? [...this.contacts],
-        accounts: accounts ?? {...this.accounts},
-        selectedAccount: selectedAccount ?? selectedAccount,
-      );
+  }) => LinkToSystemContactState(
+    status: status ?? this.status,
+    permissionGranted: permissionGranted ?? this.permissionGranted,
+    contact: contact ?? this.contact?.copyWith(),
+    contacts: contacts ?? [...this.contacts],
+    accounts: accounts ?? {...this.accounts},
+    selectedAccount: selectedAccount ?? selectedAccount,
+  );
 
   @override
-  List<Object?> get props =>
-      [status, permissionGranted, accounts, selectedAccount, contact, contacts];
+  List<Object?> get props => [
+    status,
+    permissionGranted,
+    accounts,
+    selectedAccount,
+    contact,
+    contacts,
+  ];
 }

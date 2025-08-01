@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 part of 'cubit.dart';
@@ -38,12 +38,12 @@ final class MapState extends Equatable {
 
   @override
   List<Object?> get props => [
-        contacts,
-        circleMemberships,
-        circles,
-        profileInfo,
-        contacts,
-        status,
-        cachePath,
-      ];
+    contacts,
+    circleMemberships,
+    circles,
+    profileInfo,
+    contacts,
+    status,
+    cachePath,
+  ];
 }

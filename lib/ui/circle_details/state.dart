@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 part of 'cubit.dart';
@@ -13,12 +13,14 @@ extension CircleDetailsStatusX on CircleDetailsStatus {
 
 @JsonSerializable()
 final class CircleDetailsState extends Equatable {
-  const CircleDetailsState(this.status,
-      {this.circleMemberships = const {},
-      this.circleId,
-      this.profileInfo,
-      this.contacts = const [],
-      this.circles = const {}});
+  const CircleDetailsState(
+    this.status, {
+    this.circleMemberships = const {},
+    this.circleId,
+    this.profileInfo,
+    this.contacts = const [],
+    this.circles = const {},
+  });
 
   factory CircleDetailsState.fromJson(Map<String, dynamic> json) =>
       _$CircleDetailsStateFromJson(json);
@@ -30,32 +32,32 @@ final class CircleDetailsState extends Equatable {
   final Iterable<CoagContact> contacts;
   final ProfileInfo? profileInfo;
 
-  CircleDetailsState copyWith(
-          {CircleDetailsStatus? status,
-          Map<String, List<String>>? circleMemberships,
-          String? selectedCircle,
-          Map<String, String>? circles,
-          String? circleId,
-          ProfileInfo? profileInfo,
-          Iterable<CoagContact>? contacts}) =>
-      CircleDetailsState(
-        status ?? this.status,
-        circleMemberships: circleMemberships ?? this.circleMemberships,
-        circleId: circleId ?? this.circleId,
-        circles: circles ?? this.circles,
-        contacts: contacts ?? this.contacts,
-        profileInfo: profileInfo ?? this.profileInfo,
-      );
+  CircleDetailsState copyWith({
+    CircleDetailsStatus? status,
+    Map<String, List<String>>? circleMemberships,
+    String? selectedCircle,
+    Map<String, String>? circles,
+    String? circleId,
+    ProfileInfo? profileInfo,
+    Iterable<CoagContact>? contacts,
+  }) => CircleDetailsState(
+    status ?? this.status,
+    circleMemberships: circleMemberships ?? this.circleMemberships,
+    circleId: circleId ?? this.circleId,
+    circles: circles ?? this.circles,
+    contacts: contacts ?? this.contacts,
+    profileInfo: profileInfo ?? this.profileInfo,
+  );
 
   Map<String, dynamic> toJson() => _$CircleDetailsStateToJson(this);
 
   @override
   List<Object?> get props => [
-        status,
-        circleMemberships,
-        circles,
-        circleId,
-        contacts,
-        profileInfo,
-      ];
+    status,
+    circleMemberships,
+    circles,
+    circleId,
+    contacts,
+    profileInfo,
+  ];
 }

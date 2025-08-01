@@ -1,4 +1,4 @@
-import 'package:coagulate/ics_parser.dart';
+import 'package:reunicorn/ics_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -38,9 +38,13 @@ This is an awesome description of the wonders that await!''';
     final event = parseEventClipboardString(testString);
 
     expect(
-        event?.summary, 'Workshop: “Private Sharing” (1h) & Other Stuff (3h)');
-    expect(event?.description,
-        'This is an awesome description of the wonders that await!');
+      event?.summary,
+      'Workshop: “Private Sharing” (1h) & Other Stuff (3h)',
+    );
+    expect(
+      event?.description,
+      'This is an awesome description of the wonders that await!',
+    );
     expect(event?.location, 'Louvre, Paris');
     expect(event?.start, DateTime.utc(2025, 05, 29, 10));
     expect(event?.end, DateTime.utc(2025, 05, 29, 19));

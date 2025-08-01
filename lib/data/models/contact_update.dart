@@ -1,4 +1,4 @@
-// Copyright 2024 The Coagulate Authors. All rights reserved.
+// Copyright 2024 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:equatable/equatable.dart';
@@ -10,11 +10,12 @@ part 'contact_update.g.dart';
 
 @JsonSerializable()
 class ContactUpdate extends Equatable {
-  const ContactUpdate(
-      {required this.coagContactId,
-      required this.oldContact,
-      required this.newContact,
-      required this.timestamp});
+  const ContactUpdate({
+    required this.coagContactId,
+    required this.oldContact,
+    required this.newContact,
+    required this.timestamp,
+  });
 
   factory ContactUpdate.fromJson(Map<String, dynamic> json) =>
       _$ContactUpdateFromJson(json);
@@ -31,13 +32,12 @@ class ContactUpdate extends Equatable {
     CoagContact? oldContact,
     CoagContact? newContact,
     DateTime? timestamp,
-  }) =>
-      ContactUpdate(
-        coagContactId: coagContactId ?? this.coagContactId,
-        oldContact: oldContact ?? this.oldContact,
-        newContact: newContact ?? this.newContact,
-        timestamp: timestamp ?? this.timestamp,
-      );
+  }) => ContactUpdate(
+    coagContactId: coagContactId ?? this.coagContactId,
+    oldContact: oldContact ?? this.oldContact,
+    newContact: newContact ?? this.newContact,
+    timestamp: timestamp ?? this.timestamp,
+  );
 
   @override
   List<Object?> get props => [coagContactId, oldContact, newContact, timestamp];

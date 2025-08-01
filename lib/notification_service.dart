@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -27,17 +27,24 @@ class NotificationService {
     });
 
     await flutterLocalNotificationsPlugin.initialize(
-        const InitializationSettings(
-            android: AndroidInitializationSettings('app_icon'),
-            iOS: DarwinInitializationSettings(
-                requestAlertPermission: true,
-                requestBadgePermission: true,
-                requestSoundPermission: true)));
+      const InitializationSettings(
+        android: AndroidInitializationSettings('app_icon'),
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        ),
+      ),
+    );
     _isInitialized = true;
   }
 
-  Future<void> showNotification(int id, String title, String body,
-      {String? payload}) async {
+  Future<void> showNotification(
+    int id,
+    String title,
+    String body, {
+    String? payload,
+  }) async {
     const androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'coagulate_channel_id',
       'Coagulate Notifications',
@@ -49,10 +56,16 @@ class NotificationService {
     );
 
     const platformChannelSpecifics = NotificationDetails(
-        android: androidPlatformChannelSpecifics,
-        iOS: DarwinNotificationDetails());
+      android: androidPlatformChannelSpecifics,
+      iOS: DarwinNotificationDetails(),
+    );
 
-    await flutterLocalNotificationsPlugin
-        .show(id, title, body, platformChannelSpecifics, payload: payload);
+    await flutterLocalNotificationsPlugin.show(
+      id,
+      title,
+      body,
+      platformChannelSpecifics,
+      payload: payload,
+    );
   }
 }

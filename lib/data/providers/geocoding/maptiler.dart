@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:convert';
@@ -44,7 +44,8 @@ Future<List<SearchResult>> searchLocation({
     path: '/geocoding/$query.json',
     queryParameters: {
       'language': language,
-      'types': 'continental_marine,country,major_landform,region,subregion,'
+      'types':
+          'continental_marine,country,major_landform,region,subregion,'
           'county,joint_municipality,joint_submunicipality,municipality,'
           'municipal_district,locality,neighbourhood,place,postal_code,address,'
           'road,poi',
@@ -53,8 +54,10 @@ Future<List<SearchResult>> searchLocation({
       'key': apiKey,
     },
   );
-  final response =
-      await http.get(url, headers: {'User-Agent': userAgentHeader});
+  final response = await http.get(
+    url,
+    headers: {'User-Agent': userAgentHeader},
+  );
 
   if (response.statusCode == 200) {
     try {

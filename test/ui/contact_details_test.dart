@@ -1,27 +1,30 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'package:coagulate/data/repositories/contacts.dart';
-import 'package:coagulate/ui/contact_details/page.dart';
+import 'package:reunicorn/data/repositories/contacts.dart';
+import 'package:reunicorn/ui/contact_details/page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Future<Widget> createContactPage(
-        ContactsRepository contactsRepository, String coagContactId) async =>
-    RepositoryProvider.value(
-        value: contactsRepository,
-        child: MaterialApp(
-            home: Directionality(
-          textDirection: TextDirection.ltr,
-          child: ContactPage(coagContactId: coagContactId),
-        )));
+  ContactsRepository contactsRepository,
+  String coagContactId,
+) async => RepositoryProvider.value(
+  value: contactsRepository,
+  child: MaterialApp(
+    home: Directionality(
+      textDirection: TextDirection.ltr,
+      child: ContactPage(coagContactId: coagContactId),
+    ),
+  ),
+);
 
 void main() {
   test('Test number of contacts a location is shared with', () {
     final memberships = {
       'contact1': ['circle2'],
-      'contact2': ['circle1', 'circle2']
+      'contact2': ['circle1', 'circle2'],
     };
     expect(numberContactsShared([], []), 0);
     expect(numberContactsShared([[]], []), 0);

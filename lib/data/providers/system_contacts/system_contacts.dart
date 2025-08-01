@@ -1,4 +1,4 @@
-// Copyright 2024 The Coagulate Authors. All rights reserved.
+// Copyright 2024 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter_contacts/flutter_contacts.dart';
@@ -17,7 +17,10 @@ class SystemContacts extends SystemContactsBase {
     // TODO: Offer loading them with just id and display name to speed things up in some cases?
     // NOTE: withAccounts is required to update contact on Android
     return FlutterContacts.getContacts(
-        withThumbnail: true, withProperties: true, withAccounts: true);
+      withThumbnail: true,
+      withProperties: true,
+      withAccounts: true,
+    );
   }
 
   @override

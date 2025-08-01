@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -9,11 +9,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 enum MapProvider { osm, maptiler, custom }
 
 String maptilerToken() =>
-    const String.fromEnvironment('COAGULATE_MAPTILER_TOKEN');
+    const String.fromEnvironment('REUNICORN_MAPTILER_TOKEN');
 
 class SettingsRepository {
-  SettingsRepository(
-      {required bool darkMode, required double devicePixelRatio}) {
+  SettingsRepository({
+    required bool darkMode,
+    required double devicePixelRatio,
+  }) {
     _darkMode = darkMode;
     _devicePixelRatio = devicePixelRatio;
     unawaited(_init());

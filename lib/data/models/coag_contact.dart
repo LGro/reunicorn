@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:convert';
@@ -83,44 +83,44 @@ class DhtSettings extends Equatable {
     KeyPair? writerThemSharing,
     FixedEncodedString43? initialSecret,
     bool? theyAckHandshakeComplete,
-  }) =>
-      DhtSettings(
-        myKeyPair: myKeyPair ?? this.myKeyPair,
-        myNextKeyPair: myNextKeyPair ?? this.myNextKeyPair,
-        theirPublicKey: theirPublicKey ?? this.theirPublicKey,
-        theirNextPublicKey: theirNextPublicKey ?? this.theirNextPublicKey,
-        recordKeyMeSharing: recordKeyMeSharing ?? this.recordKeyMeSharing,
-        writerMeSharing: writerMeSharing ?? this.writerMeSharing,
-        recordKeyThemSharing: recordKeyThemSharing ?? this.recordKeyThemSharing,
-        writerThemSharing: writerThemSharing ?? this.writerThemSharing,
-        initialSecret: initialSecret ?? this.initialSecret,
-        theyAckHandshakeComplete:
-            theyAckHandshakeComplete ?? this.theyAckHandshakeComplete,
-      );
+  }) => DhtSettings(
+    myKeyPair: myKeyPair ?? this.myKeyPair,
+    myNextKeyPair: myNextKeyPair ?? this.myNextKeyPair,
+    theirPublicKey: theirPublicKey ?? this.theirPublicKey,
+    theirNextPublicKey: theirNextPublicKey ?? this.theirNextPublicKey,
+    recordKeyMeSharing: recordKeyMeSharing ?? this.recordKeyMeSharing,
+    writerMeSharing: writerMeSharing ?? this.writerMeSharing,
+    recordKeyThemSharing: recordKeyThemSharing ?? this.recordKeyThemSharing,
+    writerThemSharing: writerThemSharing ?? this.writerThemSharing,
+    initialSecret: initialSecret ?? this.initialSecret,
+    theyAckHandshakeComplete:
+        theyAckHandshakeComplete ?? this.theyAckHandshakeComplete,
+  );
 
   @override
   List<Object?> get props => [
-        myKeyPair,
-        myNextKeyPair,
-        theirPublicKey,
-        theirNextPublicKey,
-        recordKeyMeSharing,
-        writerMeSharing,
-        recordKeyThemSharing,
-        writerThemSharing,
-        initialSecret,
-        theyAckHandshakeComplete,
-      ];
+    myKeyPair,
+    myNextKeyPair,
+    theirPublicKey,
+    theirNextPublicKey,
+    recordKeyMeSharing,
+    writerMeSharing,
+    recordKeyThemSharing,
+    writerThemSharing,
+    initialSecret,
+    theyAckHandshakeComplete,
+  ];
 }
 
 @JsonSerializable()
 class ContactDHTSettings extends Equatable {
-  const ContactDHTSettings(
-      {required this.key,
-      this.writer,
-      this.psk,
-      this.pubKey,
-      this.lastUpdated});
+  const ContactDHTSettings({
+    required this.key,
+    this.writer,
+    this.psk,
+    this.pubKey,
+    this.lastUpdated,
+  });
 
   factory ContactDHTSettings.fromJson(Map<String, dynamic> json) =>
       _$ContactDHTSettingsFromJson(json);
@@ -139,19 +139,19 @@ class ContactDHTSettings extends Equatable {
 
   Map<String, dynamic> toJson() => _$ContactDHTSettingsToJson(this);
 
-  ContactDHTSettings copyWith(
-          {String? key,
-          String? writer,
-          String? psk,
-          String? pubKey,
-          DateTime? lastUpdated}) =>
-      ContactDHTSettings(
-        key: key ?? this.key,
-        writer: writer ?? this.writer,
-        psk: psk ?? this.psk,
-        pubKey: pubKey ?? this.pubKey,
-        lastUpdated: lastUpdated ?? this.lastUpdated,
-      );
+  ContactDHTSettings copyWith({
+    String? key,
+    String? writer,
+    String? psk,
+    String? pubKey,
+    DateTime? lastUpdated,
+  }) => ContactDHTSettings(
+    key: key ?? this.key,
+    writer: writer ?? this.writer,
+    psk: psk ?? this.psk,
+    pubKey: pubKey ?? this.pubKey,
+    lastUpdated: lastUpdated ?? this.lastUpdated,
+  );
 
   @override
   List<Object?> get props => [key, writer, psk, pubKey];
@@ -173,43 +173,62 @@ class ContactDetails extends Equatable {
 
   factory ContactDetails.fromJson(Map<String, dynamic> json) =>
       _$ContactDetailsFromJson(
-          migrateContactDetailsJsonFromFlutterContactsTypeToSimpleMaps(json));
+        migrateContactDetailsJsonFromFlutterContactsTypeToSimpleMaps(json),
+      );
 
   Contact toSystemContact(
-          String displayName, Map<String, ContactAddressLocation> addresses) =>
-      Contact(
-        displayName: displayName,
-        photo: (picture == null) ? null : Uint8List.fromList(picture!),
-        phones: phones.entries
-            .map((e) =>
-                Phone(e.value, label: PhoneLabel.custom, customLabel: e.key))
-            .toList(),
-        emails: emails.entries
-            .map((e) =>
-                Email(e.value, label: EmailLabel.custom, customLabel: e.key))
-            .toList(),
-        addresses: addresses.entries
-            .map((e) => Address(e.value.address ?? '',
-                label: AddressLabel.custom, customLabel: e.key))
-            .toList(),
-        websites: websites.entries
-            .map((e) => Website(e.value,
-                label: WebsiteLabel.custom, customLabel: e.key))
-            .toList(),
-        socialMedias: socialMedias.entries
-            .map((e) => SocialMedia(e.value,
-                label: SocialMediaLabel.custom, customLabel: e.key))
-            .toList(),
-        events: events.entries
-            .map((e) => Event(
-                day: e.value.day,
-                month: e.value.month,
-                year: e.value.year,
-                label: EventLabel.custom,
-                customLabel: e.key))
-            .toList(),
-        organizations: [...organizations.values],
-      );
+    String displayName,
+    Map<String, ContactAddressLocation> addresses,
+  ) => Contact(
+    displayName: displayName,
+    photo: (picture == null) ? null : Uint8List.fromList(picture!),
+    phones: phones.entries
+        .map(
+          (e) => Phone(e.value, label: PhoneLabel.custom, customLabel: e.key),
+        )
+        .toList(),
+    emails: emails.entries
+        .map(
+          (e) => Email(e.value, label: EmailLabel.custom, customLabel: e.key),
+        )
+        .toList(),
+    addresses: addresses.entries
+        .map(
+          (e) => Address(
+            e.value.address ?? '',
+            label: AddressLabel.custom,
+            customLabel: e.key,
+          ),
+        )
+        .toList(),
+    websites: websites.entries
+        .map(
+          (e) =>
+              Website(e.value, label: WebsiteLabel.custom, customLabel: e.key),
+        )
+        .toList(),
+    socialMedias: socialMedias.entries
+        .map(
+          (e) => SocialMedia(
+            e.value,
+            label: SocialMediaLabel.custom,
+            customLabel: e.key,
+          ),
+        )
+        .toList(),
+    events: events.entries
+        .map(
+          (e) => Event(
+            day: e.value.day,
+            month: e.value.month,
+            year: e.value.year,
+            label: EventLabel.custom,
+            customLabel: e.key,
+          ),
+        )
+        .toList(),
+    organizations: [...organizations.values],
+  );
 
   /// Binary integer representation of an image
   final List<int>? picture;
@@ -250,32 +269,30 @@ class ContactDetails extends Equatable {
     Map<String, String>? socialMedias,
     Map<String, DateTime>? events,
     Map<String, Organization>? organizations,
-  }) =>
-      ContactDetails(
-        picture:
-            picture ?? ((this.picture == null) ? null : [...this.picture!]),
-        publicKey: publicKey ?? this.publicKey,
-        names: {...names ?? this.names},
-        phones: {...phones ?? this.phones},
-        emails: {...emails ?? this.emails},
-        websites: {...websites ?? this.websites},
-        socialMedias: {...socialMedias ?? this.socialMedias},
-        events: {...events ?? this.events},
-        organizations: {...organizations ?? this.organizations},
-      );
+  }) => ContactDetails(
+    picture: picture ?? ((this.picture == null) ? null : [...this.picture!]),
+    publicKey: publicKey ?? this.publicKey,
+    names: {...names ?? this.names},
+    phones: {...phones ?? this.phones},
+    emails: {...emails ?? this.emails},
+    websites: {...websites ?? this.websites},
+    socialMedias: {...socialMedias ?? this.socialMedias},
+    events: {...events ?? this.events},
+    organizations: {...organizations ?? this.organizations},
+  );
 
   @override
   List<Object?> get props => [
-        picture,
-        publicKey,
-        names,
-        phones,
-        emails,
-        websites,
-        socialMedias,
-        events,
-        organizations,
-      ];
+    picture,
+    publicKey,
+    names,
+    phones,
+    emails,
+    websites,
+    socialMedias,
+    events,
+    organizations,
+  ];
 }
 
 @JsonSerializable()
@@ -292,7 +309,8 @@ class ProfileInfo extends Equatable {
 
   factory ProfileInfo.fromJson(Map<String, dynamic> json) =>
       _$ProfileInfoFromJson(
-          migrateContactAddressLocationFromIntToLabelIndexing(json));
+        migrateContactAddressLocationFromIntToLabelIndexing(json),
+      );
 
   final String id;
   final ContactDetails details;
@@ -316,27 +334,26 @@ class ProfileInfo extends Equatable {
     Map<String, ContactTemporaryLocation>? temporaryLocations,
     ProfileSharingSettings? sharingSettings,
     TypedKeyPair? mainKeyPair,
-  }) =>
-      ProfileInfo(
-        id,
-        details: (details ?? this.details).copyWith(),
-        pictures: {...pictures ?? this.pictures},
-        addressLocations: {...addressLocations ?? this.addressLocations},
-        temporaryLocations: {...temporaryLocations ?? this.temporaryLocations},
-        sharingSettings: (sharingSettings ?? this.sharingSettings).copyWith(),
-        mainKeyPair: mainKeyPair ?? this.mainKeyPair,
-      );
+  }) => ProfileInfo(
+    id,
+    details: (details ?? this.details).copyWith(),
+    pictures: {...pictures ?? this.pictures},
+    addressLocations: {...addressLocations ?? this.addressLocations},
+    temporaryLocations: {...temporaryLocations ?? this.temporaryLocations},
+    sharingSettings: (sharingSettings ?? this.sharingSettings).copyWith(),
+    mainKeyPair: mainKeyPair ?? this.mainKeyPair,
+  );
 
   @override
   List<Object?> get props => [
-        id,
-        details,
-        pictures,
-        addressLocations,
-        temporaryLocations,
-        sharingSettings,
-        mainKeyPair,
-      ];
+    id,
+    details,
+    pictures,
+    addressLocations,
+    temporaryLocations,
+    sharingSettings,
+    mainKeyPair,
+  ];
 }
 
 @JsonSerializable()
@@ -461,7 +478,8 @@ class CoagContact extends Equatable {
       json['system_contact']['photo'] = null;
     }
     return _$CoagContactFromJson(
-        migrateContactAddressLocationFromIntToLabelIndexing(json));
+      migrateContactAddressLocationFromIntToLabelIndexing(json),
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -500,63 +518,58 @@ class CoagContact extends Equatable {
     String? origin,
     DateTime? mostRecentUpdate,
     DateTime? mostRecentChange,
-  }) =>
-      CoagContact(
-        coagContactId: coagContactId ?? this.coagContactId,
-        details: (details ?? this.details)?.copyWith(),
-        systemContactId: systemContactId ?? this.systemContactId,
-        addressLocations: {...addressLocations ?? this.addressLocations},
-        temporaryLocations: {...temporaryLocations ?? this.temporaryLocations},
-        dhtSettings: (dhtSettings ?? this.dhtSettings).copyWith(),
-        sharedProfile: (sharedProfile ?? this.sharedProfile)?.copyWith(),
-        name: name ?? this.name,
-        theirIdentity: theirIdentity ?? this.theirIdentity,
-        myIdentity: myIdentity ?? this.myIdentity,
-        connectionAttestations: [
-          ...connectionAttestations ?? this.connectionAttestations
-        ],
-        comment: comment ?? this.comment,
-        theirIntroductionKey: theirIntroductionKey ?? this.theirIntroductionKey,
-        myIntroductionKeyPair:
-            myIntroductionKeyPair ?? this.myIntroductionKeyPair,
-        myPreviousIntroductionKeyPairs: [
-          ...myPreviousIntroductionKeyPairs ??
-              this.myPreviousIntroductionKeyPairs
-        ],
-        introductionsByThem: [
-          ...introductionsByThem ?? this.introductionsByThem
-        ],
-        introductionsForThem: [
-          ...introductionsForThem ?? this.introductionsForThem
-        ],
-        origin: origin ?? this.origin,
-        mostRecentUpdate: mostRecentUpdate ?? this.mostRecentUpdate,
-        mostRecentChange: mostRecentChange ?? this.mostRecentChange,
-      );
+  }) => CoagContact(
+    coagContactId: coagContactId ?? this.coagContactId,
+    details: (details ?? this.details)?.copyWith(),
+    systemContactId: systemContactId ?? this.systemContactId,
+    addressLocations: {...addressLocations ?? this.addressLocations},
+    temporaryLocations: {...temporaryLocations ?? this.temporaryLocations},
+    dhtSettings: (dhtSettings ?? this.dhtSettings).copyWith(),
+    sharedProfile: (sharedProfile ?? this.sharedProfile)?.copyWith(),
+    name: name ?? this.name,
+    theirIdentity: theirIdentity ?? this.theirIdentity,
+    myIdentity: myIdentity ?? this.myIdentity,
+    connectionAttestations: [
+      ...connectionAttestations ?? this.connectionAttestations,
+    ],
+    comment: comment ?? this.comment,
+    theirIntroductionKey: theirIntroductionKey ?? this.theirIntroductionKey,
+    myIntroductionKeyPair: myIntroductionKeyPair ?? this.myIntroductionKeyPair,
+    myPreviousIntroductionKeyPairs: [
+      ...myPreviousIntroductionKeyPairs ?? this.myPreviousIntroductionKeyPairs,
+    ],
+    introductionsByThem: [...introductionsByThem ?? this.introductionsByThem],
+    introductionsForThem: [
+      ...introductionsForThem ?? this.introductionsForThem,
+    ],
+    origin: origin ?? this.origin,
+    mostRecentUpdate: mostRecentUpdate ?? this.mostRecentUpdate,
+    mostRecentChange: mostRecentChange ?? this.mostRecentChange,
+  );
 
   @override
   List<Object?> get props => [
-        coagContactId,
-        details,
-        systemContactId,
-        dhtSettings,
-        sharedProfile,
-        theirIdentity,
-        myIdentity,
-        connectionAttestations,
-        name,
-        comment,
-        addressLocations,
-        temporaryLocations,
-        theirIntroductionKey,
-        myIntroductionKeyPair,
-        myPreviousIntroductionKeyPairs,
-        introductionsByThem,
-        introductionsForThem,
-        origin,
-        mostRecentUpdate,
-        mostRecentChange,
-      ];
+    coagContactId,
+    details,
+    systemContactId,
+    dhtSettings,
+    sharedProfile,
+    theirIdentity,
+    myIdentity,
+    connectionAttestations,
+    name,
+    comment,
+    addressLocations,
+    temporaryLocations,
+    theirIntroductionKey,
+    myIntroductionKeyPair,
+    myPreviousIntroductionKeyPairs,
+    introductionsByThem,
+    introductionsForThem,
+    origin,
+    mostRecentUpdate,
+    mostRecentChange,
+  ];
 }
 
 @JsonSerializable()
@@ -592,28 +605,27 @@ class CoagContactDHTSchemaV1 extends Equatable {
     String? shareBackDHTWriter,
     Map<int, ContactAddressLocation>? addressLocations,
     Map<String, ContactTemporaryLocation>? temporaryLocations,
-  }) =>
-      CoagContactDHTSchemaV1(
-        coagContactId: coagContactId,
-        details: details ?? this.details,
-        shareBackDHTKey: shareBackDHTKey ?? this.shareBackDHTKey,
-        shareBackPsk: shareBackPsk ?? this.shareBackPsk,
-        shareBackDHTWriter: shareBackDHTWriter ?? this.shareBackDHTWriter,
-        addressLocations: addressLocations ?? this.addressLocations,
-        temporaryLocations: temporaryLocations ?? this.temporaryLocations,
-      );
+  }) => CoagContactDHTSchemaV1(
+    coagContactId: coagContactId,
+    details: details ?? this.details,
+    shareBackDHTKey: shareBackDHTKey ?? this.shareBackDHTKey,
+    shareBackPsk: shareBackPsk ?? this.shareBackPsk,
+    shareBackDHTWriter: shareBackDHTWriter ?? this.shareBackDHTWriter,
+    addressLocations: addressLocations ?? this.addressLocations,
+    temporaryLocations: temporaryLocations ?? this.temporaryLocations,
+  );
 
   @override
   List<Object?> get props => [
-        schemaVersion,
-        coagContactId,
-        details,
-        shareBackDHTKey,
-        shareBackPsk,
-        shareBackDHTWriter,
-        addressLocations,
-        temporaryLocations,
-      ];
+    schemaVersion,
+    coagContactId,
+    details,
+    shareBackDHTKey,
+    shareBackPsk,
+    shareBackDHTWriter,
+    addressLocations,
+    temporaryLocations,
+  ];
 }
 
 @JsonSerializable()
@@ -638,12 +650,14 @@ class CoagContactDHTSchemaV2 extends Equatable {
     final schemaVersion = json['schema_version'] as int?;
     if (schemaVersion == 2) {
       return _$CoagContactDHTSchemaV2FromJson(
-          migrateContactAddressLocationFromIntToLabelIndexing(json));
+        migrateContactAddressLocationFromIntToLabelIndexing(json),
+      );
     } else {
       // Legacy compatibility when we were still missing the schema version
       try {
         return _$CoagContactDHTSchemaV2FromJson(
-            migrateContactAddressLocationFromIntToLabelIndexing(json));
+          migrateContactAddressLocationFromIntToLabelIndexing(json),
+        );
       } on FormatException {
         return schemaV1toV2(_$CoagContactDHTSchemaV1FromJson(json));
       }
@@ -706,51 +720,52 @@ class CoagContactDHTSchemaV2 extends Equatable {
     Typed<PublicKey>? introductionKey,
     List<ContactIntroduction>? introductions,
     bool? ackHandshakeComplete,
-  }) =>
-      CoagContactDHTSchemaV2(
-        details: (details ?? this.details).copyWith(),
-        shareBackDHTKey: shareBackDHTKey ?? this.shareBackDHTKey,
-        shareBackPubKey: shareBackPubKey ?? this.shareBackPubKey,
-        shareBackDHTWriter: shareBackDHTWriter ?? this.shareBackDHTWriter,
-        identityKey: identityKey ?? this.identityKey,
-        addressLocations: {...addressLocations ?? this.addressLocations},
-        temporaryLocations: {...temporaryLocations ?? this.temporaryLocations},
-        connectionAttestations: [
-          ...connectionAttestations ?? this.connectionAttestations
-        ],
-        introductionKey: introductionKey ?? this.introductionKey,
-        introductions: [...introductions ?? this.introductions],
-        ackHandshakeComplete: ackHandshakeComplete ?? this.ackHandshakeComplete,
-      );
+  }) => CoagContactDHTSchemaV2(
+    details: (details ?? this.details).copyWith(),
+    shareBackDHTKey: shareBackDHTKey ?? this.shareBackDHTKey,
+    shareBackPubKey: shareBackPubKey ?? this.shareBackPubKey,
+    shareBackDHTWriter: shareBackDHTWriter ?? this.shareBackDHTWriter,
+    identityKey: identityKey ?? this.identityKey,
+    addressLocations: {...addressLocations ?? this.addressLocations},
+    temporaryLocations: {...temporaryLocations ?? this.temporaryLocations},
+    connectionAttestations: [
+      ...connectionAttestations ?? this.connectionAttestations,
+    ],
+    introductionKey: introductionKey ?? this.introductionKey,
+    introductions: [...introductions ?? this.introductions],
+    ackHandshakeComplete: ackHandshakeComplete ?? this.ackHandshakeComplete,
+  );
 
   // Differences in mostRecentUpdate timestamp will still cause equality
   @override
   List<Object?> get props => [
-        schemaVersion,
-        details,
-        addressLocations,
-        temporaryLocations,
-        shareBackDHTKey,
-        shareBackDHTWriter,
-        shareBackPubKey,
-        identityKey,
-        connectionAttestations,
-        introductionKey,
-        introductions,
-        ackHandshakeComplete,
-      ];
+    schemaVersion,
+    details,
+    addressLocations,
+    temporaryLocations,
+    shareBackDHTKey,
+    shareBackDHTWriter,
+    shareBackPubKey,
+    identityKey,
+    connectionAttestations,
+    introductionKey,
+    introductions,
+    ackHandshakeComplete,
+  ];
 }
 
 CoagContactDHTSchemaV2 schemaV1toV2(CoagContactDHTSchemaV1 old) =>
     CoagContactDHTSchemaV2(
-        details: old.details,
-        shareBackDHTKey: old.shareBackDHTKey,
-        shareBackDHTWriter: old.shareBackDHTWriter,
-        // NOTE: This will cause downstream errors when trying to decrypt
-        shareBackPubKey: old.shareBackPsk,
-        addressLocations: old.addressLocations
-            .map((label, address) => MapEntry(label.toString(), address)),
-        temporaryLocations: old.temporaryLocations);
+      details: old.details,
+      shareBackDHTKey: old.shareBackDHTKey,
+      shareBackDHTWriter: old.shareBackDHTWriter,
+      // NOTE: This will cause downstream errors when trying to decrypt
+      shareBackPubKey: old.shareBackPsk,
+      addressLocations: old.addressLocations.map(
+        (label, address) => MapEntry(label.toString(), address),
+      ),
+      temporaryLocations: old.temporaryLocations,
+    );
 
 typedef CoagContactDHTSchema = CoagContactDHTSchemaV2;
 
@@ -782,63 +797,71 @@ bool noCoagulateLabelSuffix<T>(T detail) {
 }
 
 T updateContactDetailLabel<T>(
-    T detail, String Function(String label) updateFunction) {
+  T detail,
+  String Function(String label) updateFunction,
+) {
   if (detail is Phone) {
     return Phone(
-      detail.number,
-      label: PhoneLabel.custom,
-      customLabel: updateFunction(detail.customLabel),
-      normalizedNumber: detail.normalizedNumber,
-      isPrimary: detail.isPrimary,
-    ) as T;
+          detail.number,
+          label: PhoneLabel.custom,
+          customLabel: updateFunction(detail.customLabel),
+          normalizedNumber: detail.normalizedNumber,
+          isPrimary: detail.isPrimary,
+        )
+        as T;
   }
   if (detail is Email) {
     return Email(
-      detail.address,
-      label: EmailLabel.custom,
-      customLabel: updateFunction(detail.customLabel),
-      isPrimary: detail.isPrimary,
-    ) as T;
+          detail.address,
+          label: EmailLabel.custom,
+          customLabel: updateFunction(detail.customLabel),
+          isPrimary: detail.isPrimary,
+        )
+        as T;
   }
   if (detail is Address) {
     return Address(
-      detail.address,
-      label: detail.label = AddressLabel.custom,
-      customLabel: updateFunction(detail.customLabel),
-      street: detail.street,
-      pobox: detail.pobox,
-      neighborhood: detail.neighborhood,
-      city: detail.city,
-      state: detail.state,
-      postalCode: detail.postalCode,
-      country: detail.country,
-      isoCountry: detail.isoCountry,
-      subAdminArea: detail.subAdminArea,
-      subLocality: detail.subLocality,
-    ) as T;
+          detail.address,
+          label: detail.label = AddressLabel.custom,
+          customLabel: updateFunction(detail.customLabel),
+          street: detail.street,
+          pobox: detail.pobox,
+          neighborhood: detail.neighborhood,
+          city: detail.city,
+          state: detail.state,
+          postalCode: detail.postalCode,
+          country: detail.country,
+          isoCountry: detail.isoCountry,
+          subAdminArea: detail.subAdminArea,
+          subLocality: detail.subLocality,
+        )
+        as T;
   }
   if (detail is Website) {
     return Website(
-      detail.url,
-      label: WebsiteLabel.custom,
-      customLabel: updateFunction(detail.customLabel),
-    ) as T;
+          detail.url,
+          label: WebsiteLabel.custom,
+          customLabel: updateFunction(detail.customLabel),
+        )
+        as T;
   }
   if (detail is SocialMedia) {
     return SocialMedia(
-      detail.userName,
-      label: SocialMediaLabel.custom,
-      customLabel: updateFunction(detail.customLabel),
-    ) as T;
+          detail.userName,
+          label: SocialMediaLabel.custom,
+          customLabel: updateFunction(detail.customLabel),
+        )
+        as T;
   }
   if (detail is Event) {
     return Event(
-      year: detail.year,
-      month: detail.month,
-      day: detail.day,
-      label: EventLabel.custom,
-      customLabel: updateFunction(detail.customLabel),
-    ) as T;
+          year: detail.year,
+          month: detail.month,
+          day: detail.day,
+          label: EventLabel.custom,
+          customLabel: updateFunction(detail.customLabel),
+        )
+        as T;
   }
   if (detail is Note) {
     return Note(updateFunction(detail.note)) as T;
@@ -897,78 +920,77 @@ String addCoagSuffixNewline(String value) =>
     '${removeCoagSuffix(value)}\n\n$coagulateManagedLabelSuffix';
 
 // TODO: Figure out what to do about the (display) name
-Contact mergeSystemContacts(Contact system, Contact coagulate) => system
+Contact mergeSystemContacts(Contact system, Contact app) => system
   ..phones = [
     ...system.phones
         .where(noCoagulateLabelSuffix)
-        .where((v) => !coveredByCoagulate(v, coagulate.phones)),
-    ...coagulate.phones.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
+        .where((v) => !coveredByCoagulate(v, app.phones)),
+    ...app.phones.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
   ]
   ..emails = [
     ...system.emails
         .where(noCoagulateLabelSuffix)
-        .where((v) => !coveredByCoagulate(v, coagulate.emails)),
-    ...coagulate.emails.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
+        .where((v) => !coveredByCoagulate(v, app.emails)),
+    ...app.emails.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
   ]
   ..addresses = [
     ...system.addresses
         .where(noCoagulateLabelSuffix)
-        .where((v) => !coveredByCoagulate(v, coagulate.addresses)),
-    ...coagulate.addresses
-        .map((v) => updateContactDetailLabel(v, addCoagSuffix)),
+        .where((v) => !coveredByCoagulate(v, app.addresses)),
+    ...app.addresses.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
   ]
   ..websites = [
     ...system.websites
         .where(noCoagulateLabelSuffix)
-        .where((v) => !coveredByCoagulate(v, coagulate.websites)),
-    ...coagulate.websites
-        .map((v) => updateContactDetailLabel(v, addCoagSuffix)),
+        .where((v) => !coveredByCoagulate(v, app.websites)),
+    ...app.websites.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
   ]
   ..socialMedias = [
     ...system.socialMedias
         .where(noCoagulateLabelSuffix)
-        .where((v) => !coveredByCoagulate(v, coagulate.socialMedias)),
-    ...coagulate.socialMedias
-        .map((v) => updateContactDetailLabel(v, addCoagSuffix)),
+        .where((v) => !coveredByCoagulate(v, app.socialMedias)),
+    ...app.socialMedias.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
   ]
   ..events = [
     ...system.events
         .where(noCoagulateLabelSuffix)
-        .where((v) => !coveredByCoagulate(v, coagulate.events)),
-    ...coagulate.events.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
+        .where((v) => !coveredByCoagulate(v, app.events)),
+    ...app.events.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
   ]
   ..notes = [
     ...system.notes
         .where(noCoagulateLabelSuffix)
-        .where((v) => !coveredByCoagulate(v, coagulate.notes)),
-    ...coagulate.notes
-        .map((v) => updateContactDetailLabel(v, addCoagSuffixNewline)),
+        .where((v) => !coveredByCoagulate(v, app.notes)),
+    ...app.notes.map((v) => updateContactDetailLabel(v, addCoagSuffixNewline)),
   ];
 
 Contact removeCoagManagedSuffixes(Contact contact) => contact
   ..phones = [
-    ...contact.phones.map((v) => updateContactDetailLabel(v, removeCoagSuffix))
+    ...contact.phones.map((v) => updateContactDetailLabel(v, removeCoagSuffix)),
   ]
   ..emails = [
-    ...contact.emails.map((v) => updateContactDetailLabel(v, removeCoagSuffix))
+    ...contact.emails.map((v) => updateContactDetailLabel(v, removeCoagSuffix)),
   ]
   ..addresses = [
-    ...contact.addresses
-        .map((v) => updateContactDetailLabel(v, removeCoagSuffix))
+    ...contact.addresses.map(
+      (v) => updateContactDetailLabel(v, removeCoagSuffix),
+    ),
   ]
   ..websites = [
-    ...contact.websites
-        .map((v) => updateContactDetailLabel(v, removeCoagSuffix))
+    ...contact.websites.map(
+      (v) => updateContactDetailLabel(v, removeCoagSuffix),
+    ),
   ]
   ..socialMedias = [
-    ...contact.socialMedias
-        .map((v) => updateContactDetailLabel(v, removeCoagSuffix))
+    ...contact.socialMedias.map(
+      (v) => updateContactDetailLabel(v, removeCoagSuffix),
+    ),
   ]
   ..events = [
-    ...contact.events.map((v) => updateContactDetailLabel(v, removeCoagSuffix))
+    ...contact.events.map((v) => updateContactDetailLabel(v, removeCoagSuffix)),
   ]
   ..notes = [
-    ...contact.notes.map((v) => updateContactDetailLabel(v, removeCoagSuffix))
+    ...contact.notes.map((v) => updateContactDetailLabel(v, removeCoagSuffix)),
   ];
 
 (String, String) simplifyFlutterContactsDetailType<T>(T detail) {
@@ -1008,40 +1030,52 @@ Contact removeCoagManagedSuffixes(Contact contact) => contact
     );
   }
   throw Exception(
-      'Unexpected type $T for flutter contacts detail simplification');
+    'Unexpected type $T for flutter contacts detail simplification',
+  );
 }
 
 Map<String, dynamic>
-    migrateContactDetailsJsonFromFlutterContactsTypeToSimpleMaps(
-        Map<String, dynamic> json) {
+migrateContactDetailsJsonFromFlutterContactsTypeToSimpleMaps(
+  Map<String, dynamic> json,
+) {
   final migrated = <String, dynamic>{};
   for (final key in json.keys) {
     if (json[key] is List<dynamic>) {
       if (key == 'phones') {
-        migrated[key] = Map.fromEntries((json[key] as List<dynamic>)
-            .map((e) => Phone.fromJson(e as Map<String, dynamic>))
-            .map(simplifyFlutterContactsDetailType)
-            .map((v) => MapEntry(v.$1, v.$2)));
+        migrated[key] = Map.fromEntries(
+          (json[key] as List<dynamic>)
+              .map((e) => Phone.fromJson(e as Map<String, dynamic>))
+              .map(simplifyFlutterContactsDetailType)
+              .map((v) => MapEntry(v.$1, v.$2)),
+        );
       } else if (key == 'emails') {
-        migrated[key] = Map.fromEntries((json[key] as List<dynamic>)
-            .map((e) => Email.fromJson(e as Map<String, dynamic>))
-            .map(simplifyFlutterContactsDetailType)
-            .map((v) => MapEntry(v.$1, v.$2)));
+        migrated[key] = Map.fromEntries(
+          (json[key] as List<dynamic>)
+              .map((e) => Email.fromJson(e as Map<String, dynamic>))
+              .map(simplifyFlutterContactsDetailType)
+              .map((v) => MapEntry(v.$1, v.$2)),
+        );
       } else if (key == 'addresses') {
-        migrated[key] = Map.fromEntries((json[key] as List<dynamic>)
-            .map((e) => Address.fromJson(e as Map<String, dynamic>))
-            .map(simplifyFlutterContactsDetailType)
-            .map((v) => MapEntry(v.$1, v.$2)));
+        migrated[key] = Map.fromEntries(
+          (json[key] as List<dynamic>)
+              .map((e) => Address.fromJson(e as Map<String, dynamic>))
+              .map(simplifyFlutterContactsDetailType)
+              .map((v) => MapEntry(v.$1, v.$2)),
+        );
       } else if (key == 'websites') {
-        migrated[key] = Map.fromEntries((json[key] as List<dynamic>)
-            .map((e) => Website.fromJson(e as Map<String, dynamic>))
-            .map(simplifyFlutterContactsDetailType)
-            .map((v) => MapEntry(v.$1, v.$2)));
+        migrated[key] = Map.fromEntries(
+          (json[key] as List<dynamic>)
+              .map((e) => Website.fromJson(e as Map<String, dynamic>))
+              .map(simplifyFlutterContactsDetailType)
+              .map((v) => MapEntry(v.$1, v.$2)),
+        );
       } else if (key == 'social_medias') {
-        migrated[key] = Map.fromEntries((json[key] as List<dynamic>)
-            .map((e) => SocialMedia.fromJson(e as Map<String, dynamic>))
-            .map(simplifyFlutterContactsDetailType)
-            .map((v) => MapEntry(v.$1, v.$2)));
+        migrated[key] = Map.fromEntries(
+          (json[key] as List<dynamic>)
+              .map((e) => SocialMedia.fromJson(e as Map<String, dynamic>))
+              .map(simplifyFlutterContactsDetailType)
+              .map((v) => MapEntry(v.$1, v.$2)),
+        );
       } else if (key == 'events') {
         migrated[key] = <String, dynamic>{};
       } else {
@@ -1057,12 +1091,16 @@ Map<String, dynamic>
 /// Help with the switch from Map<int, ContactAddressLocation> to
 /// Map<String, ContactAddressLocation>
 Map<String, dynamic> migrateContactAddressLocationFromIntToLabelIndexing(
-    Map<String, dynamic> json) {
+  Map<String, dynamic> json,
+) {
   final _json = {...json};
   if (_json.containsKey('address_locations')) {
     final addressLocations = _json['address_locations'] as Map<String, dynamic>;
-    _json['address_locations'] = Map<String, dynamic>.from(addressLocations
-        .map((key, address) => MapEntry(address['name'] ?? key, address)));
+    _json['address_locations'] = Map<String, dynamic>.from(
+      addressLocations.map(
+        (key, address) => MapEntry(address['name'] ?? key, address),
+      ),
+    );
   }
   return _json;
 }

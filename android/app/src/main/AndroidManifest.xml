@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
     <application
-        android:label="Coagulate"
+        android:label="Reunicorn"
         tools:replace="android:label"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
@@ -36,10 +36,10 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="http" android:host="coagulate.social" android:path="/c" />
-                <data android:scheme="http" android:host="coagulate.social" android:path="/p" />
-                <data android:scheme="http" android:host="coagulate.social" android:path="/o" />
-                <data android:scheme="http" android:host="coagulate.social" android:path="/b" />
+                <data android:scheme="http" android:host="reunicorn.app" android:path="/c" />
+                <data android:scheme="http" android:host="reunicorn.app" android:path="/p" />
+                <data android:scheme="http" android:host="reunicorn.app" android:path="/o" />
+                <data android:scheme="http" android:host="reunicorn.app" android:path="/b" />
                 <data android:scheme="https" />
             </intent-filter>
         </activity>

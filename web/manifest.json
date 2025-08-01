@@ -1,11 +1,11 @@
 {
-    "name": "coagulate",
-    "short_name": "coagulate",
+    "name": "reunicorn",
+    "short_name": "reunicorn",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#33183f",
     "theme_color": "#863fa6",
-    "description": "Coagulate",
+    "description": "Reunicorn",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": []

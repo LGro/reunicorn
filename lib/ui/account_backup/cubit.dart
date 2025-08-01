@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:bloc/bloc.dart';
@@ -24,10 +24,13 @@ class BackupCubit extends Cubit<BackupState> {
       if (result == null) {
         emit(const BackupState(status: BackupStatus.failure));
       } else {
-        emit(BackupState(
+        emit(
+          BackupState(
             status: BackupStatus.success,
             dhtRecordKey: result.$1,
-            secret: result.$2));
+            secret: result.$2,
+          ),
+        );
       }
     }
   }

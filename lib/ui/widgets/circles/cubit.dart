@@ -1,4 +1,4 @@
-// Copyright 2024 The Coagulate Authors. All rights reserved.
+// Copyright 2024 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -15,17 +15,20 @@ part 'state.dart';
 
 class CirclesCubit extends Cubit<CirclesState> {
   CirclesCubit(this.contactsRepository, this.coagContactId)
-      : super(CirclesState(
-            contactsRepository.circlesWithMembership(coagContactId))) {
+    : super(
+        CirclesState(contactsRepository.circlesWithMembership(coagContactId)),
+      ) {
     _circlesSubscription = contactsRepository.getCirclesStream().listen((c) {
       if (!isClosed) {
-        emit(CirclesState(
-            contactsRepository.circlesWithMembership(coagContactId)));
+        emit(
+          CirclesState(contactsRepository.circlesWithMembership(coagContactId)),
+        );
       }
     });
     if (!isClosed) {
-      emit(CirclesState(
-          contactsRepository.circlesWithMembership(coagContactId)));
+      emit(
+        CirclesState(contactsRepository.circlesWithMembership(coagContactId)),
+      );
     }
   }
 
@@ -44,11 +47,14 @@ class CirclesCubit extends Cubit<CirclesState> {
     }
 
     await contactsRepository.updateCirclesForContact(
-        coagContactId, circles.where((c) => c.$3).map((c) => c.$1).asList());
+      coagContactId,
+      circles.where((c) => c.$3).map((c) => c.$1).asList(),
+    );
 
     if (!isClosed) {
-      emit(CirclesState(
-          contactsRepository.circlesWithMembership(coagContactId)));
+      emit(
+        CirclesState(contactsRepository.circlesWithMembership(coagContactId)),
+      );
     }
   }
 

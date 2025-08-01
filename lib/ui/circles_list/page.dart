@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:math';
@@ -26,8 +26,11 @@ int crossAxisCountFromNumPictures(int numPictures) {
 }
 
 class _GridCircleItem extends StatelessWidget {
-  const _GridCircleItem(this.circleName, this.numCircleMembers,
-      {this.pictures = const []});
+  const _GridCircleItem(
+    this.circleName,
+    this.numCircleMembers, {
+    this.pictures = const [],
+  });
 
   final String circleName;
   final int numCircleMembers;
@@ -38,8 +41,11 @@ class _GridCircleItem extends StatelessWidget {
     // Force nulls for unavailable pictures to filter them out instead of
     // rendering placeholders
     final images = pictures
-        .map((p) =>
-            (p.isEmpty) ? null : roundPictureOrPlaceholder(p, clipOval: false))
+        .map(
+          (p) => (p.isEmpty)
+              ? null
+              : roundPictureOrPlaceholder(p, clipOval: false),
+        )
         .whereType<Image>()
         .toList();
     final image = Semantics(
@@ -58,26 +64,33 @@ class _GridCircleItem extends StatelessWidget {
     );
 
     return GridTile(
-        footer: Material(
-          color: Colors.transparent,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(4)),
+      footer: Material(
+        color: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(4)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: GridTileBar(
+          backgroundColor: Colors.black45,
+          title: Expanded(
+            child: Padding(
+              padding: const EdgeInsetsGeometry.only(top: 16),
+              child: Text(circleName, overflow: TextOverflow.ellipsis),
+            ),
           ),
-          clipBehavior: Clip.antiAlias,
-          child: GridTileBar(
-            backgroundColor: Colors.black45,
-            title: Expanded(
-                child: Padding(
-                    padding: const EdgeInsetsGeometry.only(top: 16),
-                    child: Text(circleName, overflow: TextOverflow.ellipsis))),
-            subtitle: Expanded(
-                child: Padding(
-                    padding: const EdgeInsetsGeometry.only(bottom: 8),
-                    child: Text('$numCircleMembers members',
-                        overflow: TextOverflow.ellipsis))),
+          subtitle: Expanded(
+            child: Padding(
+              padding: const EdgeInsetsGeometry.only(bottom: 8),
+              child: Text(
+                '$numCircleMembers members',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ),
         ),
-        child: image);
+      ),
+      child: image,
+    );
   }
 }
 
@@ -117,117 +130,140 @@ class _CirclesListPageState extends State<CirclesListPage> {
     });
   }
 
-  Widget _circlesGrid(BuildContext context, Map<String, String> circles,
-          Map<String, List<String>> circleMemberships) =>
-      GridView.count(
-        restorationId: 'circles_grid_view',
-        crossAxisCount: (MediaQuery.of(context).size.width >
-                MediaQuery.of(context).size.height)
-            ? 5
-            : 2,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        padding: const EdgeInsets.all(8),
-        childAspectRatio: 1,
-        children: (circles.entries.toList()
-              ..sortBy((c) => c.value.toLowerCase()))
-            .map<Widget>((circle) => GestureDetector(
-                onTap: () async => Navigator.of(context)
-                    .push(CircleDetailsPage.route(circle.key)),
-                child: _GridCircleItem(
-                  circle.value,
-                  circleMemberships.values
-                      .where((cIds) => cIds.contains(circle.key))
-                      .length,
-                  pictures: context
+  Widget _circlesGrid(
+    BuildContext context,
+    Map<String, String> circles,
+    Map<String, List<String>> circleMemberships,
+  ) => GridView.count(
+    restorationId: 'circles_grid_view',
+    crossAxisCount:
+        (MediaQuery.of(context).size.width > MediaQuery.of(context).size.height)
+        ? 5
+        : 2,
+    mainAxisSpacing: 8,
+    crossAxisSpacing: 8,
+    padding: const EdgeInsets.all(8),
+    childAspectRatio: 1,
+    children: (circles.entries.toList()..sortBy((c) => c.value.toLowerCase()))
+        .map<Widget>(
+          (circle) => GestureDetector(
+            onTap: () async =>
+                Navigator.of(context).push(CircleDetailsPage.route(circle.key)),
+            child: _GridCircleItem(
+              circle.value,
+              circleMemberships.values
+                  .where((cIds) => cIds.contains(circle.key))
+                  .length,
+              pictures:
+                  context
                       .read<CirclesListCubit>()
                       .contactsRepository
                       .getContacts()
                       .values
-                      .where((contact) =>
-                          circleMemberships[contact.coagContactId]
-                              ?.contains(circle.key) ??
-                          false)
+                      .where(
+                        (contact) =>
+                            circleMemberships[contact.coagContactId]?.contains(
+                              circle.key,
+                            ) ??
+                            false,
+                      )
                       .map((contact) => contact.details?.picture)
                       .whereType<List<int>>()
                       .map(Uint8List.fromList)
                       .toList()
                     // Shuffle when opening the page but not at each re-draw
                     ..shuffle(Random(_sessionSeed)),
-                )))
-            .toList(),
-      );
+            ),
+          ),
+        )
+        .toList(),
+  );
 
   Widget _newCircleForm(
-          BuildContext context, List<String> existingCircleNames) =>
-      Form(
-          key: _formKey,
-          child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(width: 10),
-                Expanded(
-                    child: TextFormField(
-                  controller: _newCircleController,
-                  autocorrect: false,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: OutlineInputBorder(),
-                    hintText: 'New circle name',
-                  ),
-                  // TODO: Instead just open the corresponding circle details?
-                  validator: (value) {
-                    if (existingCircleNames
-                        .map((n) => n.toLowerCase())
-                        .contains(value?.toLowerCase())) {
-                      return 'This circle name already exists.';
+    BuildContext context,
+    List<String> existingCircleNames,
+  ) => Form(
+    key: _formKey,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(width: 10),
+        Expanded(
+          child: TextFormField(
+            controller: _newCircleController,
+            autocorrect: false,
+            decoration: const InputDecoration(
+              isDense: true,
+              border: OutlineInputBorder(),
+              hintText: 'New circle name',
+            ),
+            // TODO: Instead just open the corresponding circle details?
+            validator: (value) {
+              if (existingCircleNames
+                  .map((n) => n.toLowerCase())
+                  .contains(value?.toLowerCase())) {
+                return 'This circle name already exists.';
+              }
+              return null;
+            },
+            onChanged: (_) => _formKey.currentState!.validate(),
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton.filled(
+          onPressed: (_newCircleName.isEmpty)
+              ? null
+              : () async {
+                  if (_formKey.currentState!.validate()) {
+                    final circleId = await context
+                        .read<CirclesListCubit>()
+                        .addCircle(_newCircleName);
+                    _resetState();
+                    if (context.mounted) {
+                      await Navigator.of(
+                        context,
+                      ).push(CircleDetailsPage.route(circleId));
                     }
-                    return null;
-                  },
-                  onChanged: (_) => _formKey.currentState!.validate(),
-                )),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: (_newCircleName.isEmpty)
-                      ? null
-                      : () async {
-                          if (_formKey.currentState!.validate()) {
-                            final circleId = await context
-                                .read<CirclesListCubit>()
-                                .addCircle(_newCircleName);
-                            _resetState();
-                            if (context.mounted) {
-                              await Navigator.of(context)
-                                  .push(CircleDetailsPage.route(circleId));
-                            }
-                          }
-                        },
-                  icon: const Icon(Icons.add),
-                ),
-                const SizedBox(width: 5),
-              ]));
+                  }
+                },
+          icon: const Icon(Icons.add),
+        ),
+        const SizedBox(width: 5),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: Text(context.loc.circles.capitalize())),
-      body: MultiBlocProvider(
-          providers: [
-            BlocProvider(
-                create: (context) =>
-                    CirclesListCubit(context.read<ContactsRepository>())),
-          ],
-          child: BlocConsumer<CirclesListCubit, CirclesListState>(
-              listener: (context, state) async {},
-              builder: (context, state) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Column(children: [
-                    Expanded(
-                      child: _circlesGrid(
-                          context, state.circles, state.circleMemberships),
-                    ),
-                    const SizedBox(height: 10),
-                    _newCircleForm(context, state.circles.values.toList()),
-                    const SizedBox(height: 10),
-                  ])))));
+    appBar: AppBar(title: Text(context.loc.circles.capitalize())),
+    body: MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) =>
+              CirclesListCubit(context.read<ContactsRepository>()),
+        ),
+      ],
+      child: BlocConsumer<CirclesListCubit, CirclesListState>(
+        listener: (context, state) async {},
+        builder: (context, state) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Column(
+            children: [
+              Expanded(
+                child: _circlesGrid(
+                  context,
+                  state.circles,
+                  state.circleMemberships,
+                ),
+              ),
+              const SizedBox(height: 10),
+              _newCircleForm(context, state.circles.values.toList()),
+              const SizedBox(height: 10),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }

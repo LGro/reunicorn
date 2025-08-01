@@ -1,4 +1,4 @@
-// Copyright 2024 The Coagulate Authors. All rights reserved.
+// Copyright 2024 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -16,24 +16,32 @@ part 'state.dart';
 
 class ContactListCubit extends Cubit<ContactListState> {
   ContactListCubit(this.contactsRepository)
-      : super(const ContactListState(ContactListStatus.initial)) {
+    : super(const ContactListState(ContactListStatus.initial)) {
     // TODO: Also listen to circle updates?
-    _contactsSubscription =
-        contactsRepository.getContactStream().listen((idUpdatedContact) {
+    _contactsSubscription = contactsRepository.getContactStream().listen((
+      idUpdatedContact,
+    ) {
       if (!isClosed) {
-        emit(state.copyWith(
+        emit(
+          state.copyWith(
             circleMemberships: contactsRepository.getCircleMemberships(),
             circles: contactsRepository.getCircles(),
             contacts: contactsRepository.getContacts().values.toList()
-              ..sortBy((c) => c.name.toLowerCase())));
+              ..sortBy((c) => c.name.toLowerCase()),
+          ),
+        );
       }
     });
 
-    emit(ContactListState(ContactListStatus.success,
+    emit(
+      ContactListState(
+        ContactListStatus.success,
         contacts: contactsRepository.getContacts().values.toList()
           ..sortBy((c) => c.name.toLowerCase()),
         circles: contactsRepository.getCircles(),
-        circleMemberships: contactsRepository.getCircleMemberships()));
+        circleMemberships: contactsRepository.getCircleMemberships(),
+      ),
+    );
   }
 
   final ContactsRepository contactsRepository;
@@ -43,7 +51,7 @@ class ContactListCubit extends Cubit<ContactListState> {
     final results = await Future.wait([
       contactsRepository.updateAndWatchReceivingDHT(),
       contactsRepository.updateSharingDHT(),
-      contactsRepository.updateAllBatchInvites().then((_) => true)
+      contactsRepository.updateAllBatchInvites().then((_) => true),
     ]);
     return results.every((r) => r);
   }

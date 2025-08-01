@@ -393,7 +393,7 @@
 				DEVELOPMENT_TEAM = G42ZSYUPFC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Coagulate;
+				INFOPLIST_KEY_CFBundleDisplayName = Reunicorn;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -529,7 +529,7 @@
 				DEVELOPMENT_TEAM = G42ZSYUPFC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Coagulate;
+				INFOPLIST_KEY_CFBundleDisplayName = Reunicorn;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -557,7 +557,7 @@
 				DEVELOPMENT_TEAM = G42ZSYUPFC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Coagulate;
+				INFOPLIST_KEY_CFBundleDisplayName = Reunicorn;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:equatable/equatable.dart';
@@ -11,7 +11,11 @@ part 'backup.g.dart';
 @JsonSerializable()
 class AccountBackup extends Equatable {
   const AccountBackup(
-      this.profileInfo, this.contacts, this.circles, this.circleMemberships);
+    this.profileInfo,
+    this.contacts,
+    this.circles,
+    this.circleMemberships,
+  );
 
   factory AccountBackup.fromJson(Map<String, dynamic> json) =>
       _$AccountBackupFromJson(json);
@@ -27,6 +31,10 @@ class AccountBackup extends Equatable {
   Map<String, dynamic> toJson() => _$AccountBackupToJson(this);
 
   @override
-  List<Object?> get props =>
-      [profileInfo, contacts, circles, circleMemberships];
+  List<Object?> get props => [
+    profileInfo,
+    contacts,
+    circles,
+    circleMemberships,
+  ];
 }

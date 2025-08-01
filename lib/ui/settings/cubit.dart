@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:math';
@@ -31,14 +31,15 @@ Uint8List generateRandomImage(int width, int height) {
   for (var y = 0; y < height; y++) {
     for (var x = 0; x < width; x++) {
       image.setPixel(
-          x,
-          y,
-          img.ColorInt8.rgba(
-            random.nextInt(256), // Red
-            random.nextInt(256), // Green
-            random.nextInt(256), // Blue
-            255, // Alpha
-          ));
+        x,
+        y,
+        img.ColorInt8.rgba(
+          random.nextInt(256), // Red
+          random.nextInt(256), // Green
+          random.nextInt(256), // Blue
+          255, // Alpha
+        ),
+      );
     }
   }
 
@@ -47,12 +48,15 @@ Uint8List generateRandomImage(int width, int height) {
 
 class SettingsCubit extends Cubit<SettingsState> {
   SettingsCubit(this.contactsRepository, this.settingsRepository)
-      : super(SettingsState(
-            message: '',
-            status: SettingsStatus.initial,
-            darkMode: settingsRepository.darkMode,
-            autoAddressResolution: true,
-            mapProvider: settingsRepository.mapProvider));
+    : super(
+        SettingsState(
+          message: '',
+          status: SettingsStatus.initial,
+          darkMode: settingsRepository.darkMode,
+          autoAddressResolution: true,
+          mapProvider: settingsRepository.mapProvider,
+        ),
+      );
 
   ContactsRepository contactsRepository;
   SettingsRepository settingsRepository;
@@ -71,39 +75,49 @@ class SettingsCubit extends Cubit<SettingsState> {
     final faker = Faker();
     final coagContactId = Uuid().v4();
     final c1 = CoagContact(
-        coagContactId: coagContactId,
-        name: faker.person.name(),
-        myIdentity: await generateTypedKeyPairBest(),
-        myIntroductionKeyPair: await generateTypedKeyPairBest(),
-        details: ContactDetails(
-            // TODO: do too large noisy images break things?
-            picture: generateRandomImage(20, 20),
-            phones: {'mobile': faker.phoneNumber.de()}),
-        addressLocations: Map.fromEntries([1, 2, 3].map((index) => MapEntry(
+      coagContactId: coagContactId,
+      name: faker.person.name(),
+      myIdentity: await generateTypedKeyPairBest(),
+      myIntroductionKeyPair: await generateTypedKeyPairBest(),
+      details: ContactDetails(
+        // TODO: do too large noisy images break things?
+        picture: generateRandomImage(20, 20),
+        phones: {'mobile': faker.phoneNumber.de()},
+      ),
+      addressLocations: Map.fromEntries(
+        [1, 2, 3].map(
+          (index) => MapEntry(
             'address $index',
             ContactAddressLocation(
-                longitude: faker.geo.longitude(),
-                latitude: faker.geo.latitude(),
-                address: faker.address.streetAddress(),
-                coagContactId: coagContactId)))),
-        temporaryLocations:
-            Map.fromEntries([Uuid().v4(), Uuid().v4(), Uuid().v4()].map((id) {
+              longitude: faker.geo.longitude(),
+              latitude: faker.geo.latitude(),
+              address: faker.address.streetAddress(),
+              coagContactId: coagContactId,
+            ),
+          ),
+        ),
+      ),
+      temporaryLocations: Map.fromEntries(
+        [Uuid().v4(), Uuid().v4(), Uuid().v4()].map((id) {
           final start = faker.date.dateTime();
           return MapEntry(
-              id,
-              ContactTemporaryLocation(
-                  longitude: faker.geo.longitude(),
-                  latitude: faker.geo.latitude(),
-                  name: faker.address.streetAddress(),
-                  start: start,
-                  end: start
-                      .add(Duration(days: faker.randomGenerator.integer(30))),
-                  details: faker.lorem.sentence()));
-        })),
-        dhtSettings: const DhtSettings());
+            id,
+            ContactTemporaryLocation(
+              longitude: faker.geo.longitude(),
+              latitude: faker.geo.latitude(),
+              name: faker.address.streetAddress(),
+              start: start,
+              end: start.add(Duration(days: faker.randomGenerator.integer(30))),
+              details: faker.lorem.sentence(),
+            ),
+          );
+        }),
+      ),
+      dhtSettings: const DhtSettings(),
+    );
     await contactsRepository.saveContact(c1);
-    await contactsRepository.updateCirclesForContact(
-        c1.coagContactId, [defaultInitialCircleId],
-        triggerDhtUpdate: false);
+    await contactsRepository.updateCirclesForContact(c1.coagContactId, [
+      defaultInitialCircleId,
+    ], triggerDhtUpdate: false);
   }
 }

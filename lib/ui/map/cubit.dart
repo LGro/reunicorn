@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -17,16 +17,17 @@ part 'state.dart';
 
 class MapCubit extends Cubit<MapState> {
   MapCubit(this.contactsRepository, this.settingsRepository)
-      : super(const MapState(status: MapStatus.initial)) {
-    _profileInfoSubscription = contactsRepository
-        .getProfileInfoStream()
-        .listen((_) async => refresh());
-    _circlesSubscription =
-        contactsRepository.getCirclesStream().listen((_) async => refresh());
+    : super(const MapState(status: MapStatus.initial)) {
+    _profileInfoSubscription = contactsRepository.getProfileInfoStream().listen(
+      (_) async => refresh(),
+    );
+    _circlesSubscription = contactsRepository.getCirclesStream().listen(
+      (_) async => refresh(),
+    );
     // TODO: Does it help the performance significantly to only update the affected contact's data?
-    _contactsSubscription = contactsRepository
-        .getContactStream()
-        .listen((coagContactId) async => refresh());
+    _contactsSubscription = contactsRepository.getContactStream().listen(
+      (coagContactId) async => refresh(),
+    );
 
     unawaited(refresh());
   }
@@ -43,15 +44,18 @@ class MapCubit extends Cubit<MapState> {
     final circles = contactsRepository.getCircles();
     final contacts = contactsRepository.getContacts().values;
 
-    emit(MapState(
-      status: MapStatus.success,
-      profileInfo: profileInfo,
-      contacts: contacts.toList(),
-      circleMemberships: circleMemberships,
-      circles: circles,
-      cachePath: state.cachePath ??
-          await getTemporaryDirectory().then((td) => td.path),
-    ));
+    emit(
+      MapState(
+        status: MapStatus.success,
+        profileInfo: profileInfo,
+        contacts: contacts.toList(),
+        circleMemberships: circleMemberships,
+        circles: circles,
+        cachePath:
+            state.cachePath ??
+            await getTemporaryDirectory().then((td) => td.path),
+      ),
+    );
   }
 
   Future<void> removeLocation(String locationId) async {
@@ -59,9 +63,12 @@ class MapCubit extends Cubit<MapState> {
     if (profileInfo == null) {
       return;
     }
-    await contactsRepository.setProfileInfo(profileInfo.copyWith(
+    await contactsRepository.setProfileInfo(
+      profileInfo.copyWith(
         temporaryLocations: {...profileInfo.temporaryLocations}
-          ..remove(locationId)));
+          ..remove(locationId),
+      ),
+    );
   }
 
   @override

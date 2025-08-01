@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:equatable/equatable.dart';
@@ -45,17 +45,18 @@ class BatchSubkeySchema extends Equatable {
 // TODO: Drop myName?
 @JsonSerializable()
 class BatchInvite extends Equatable {
-  const BatchInvite(
-      {required this.label,
-      required this.expiration,
-      required this.recordKey,
-      required this.psk,
-      required this.subkeyCount,
-      required this.mySubkey,
-      required this.subkeyWriter,
-      required this.myName,
-      required this.myKeyPair,
-      this.myConnectionRecords = const {}});
+  const BatchInvite({
+    required this.label,
+    required this.expiration,
+    required this.recordKey,
+    required this.psk,
+    required this.subkeyCount,
+    required this.mySubkey,
+    required this.subkeyWriter,
+    required this.myName,
+    required this.myKeyPair,
+    this.myConnectionRecords = const {},
+  });
 
   factory BatchInvite.fromJson(Map<String, dynamic> json) =>
       _$BatchInviteFromJson(json);
@@ -78,31 +79,32 @@ class BatchInvite extends Equatable {
 
   Map<String, dynamic> toJson() => _$BatchInviteToJson(this);
 
-  BatchInvite copyWith(
-          {Map<String, Typed<FixedEncodedString43>>? myConnectionRecords}) =>
-      BatchInvite(
-          label: this.label,
-          expiration: this.expiration,
-          recordKey: this.recordKey,
-          psk: this.psk,
-          subkeyCount: this.subkeyCount,
-          mySubkey: this.mySubkey,
-          subkeyWriter: this.subkeyWriter,
-          myName: this.myName,
-          myKeyPair: this.myKeyPair,
-          myConnectionRecords: myConnectionRecords ?? this.myConnectionRecords);
+  BatchInvite copyWith({
+    Map<String, Typed<FixedEncodedString43>>? myConnectionRecords,
+  }) => BatchInvite(
+    label: this.label,
+    expiration: this.expiration,
+    recordKey: this.recordKey,
+    psk: this.psk,
+    subkeyCount: this.subkeyCount,
+    mySubkey: this.mySubkey,
+    subkeyWriter: this.subkeyWriter,
+    myName: this.myName,
+    myKeyPair: this.myKeyPair,
+    myConnectionRecords: myConnectionRecords ?? this.myConnectionRecords,
+  );
 
   @override
   List<Object?> get props => [
-        label,
-        expiration,
-        recordKey,
-        psk,
-        subkeyCount,
-        mySubkey,
-        subkeyWriter,
-        myKeyPair,
-        myName,
-        myConnectionRecords,
-      ];
+    label,
+    expiration,
+    recordKey,
+    psk,
+    subkeyCount,
+    mySubkey,
+    subkeyWriter,
+    myKeyPair,
+    myName,
+    myConnectionRecords,
+  ];
 }

@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -17,9 +17,10 @@ part 'cubit.g.dart';
 
 class IntroductionsCubit extends Cubit<IntroductionsState> {
   IntroductionsCubit(this.contactsRepository)
-      : super(IntroductionsState(contacts: contactsRepository.getContacts())) {
-    _contactsSubscription =
-        contactsRepository.getContactStream().listen((idUpdatedContact) {
+    : super(IntroductionsState(contacts: contactsRepository.getContacts())) {
+    _contactsSubscription = contactsRepository.getContactStream().listen((
+      idUpdatedContact,
+    ) {
       if (!isClosed) {
         emit(IntroductionsState(contacts: contactsRepository.getContacts()));
       }
@@ -30,8 +31,9 @@ class IntroductionsCubit extends Cubit<IntroductionsState> {
   late final StreamSubscription<String> _contactsSubscription;
 
   Future<String?> accept(
-          CoagContact introducer, ContactIntroduction introduction) async =>
-      contactsRepository.acceptIntroduction(introducer, introduction);
+    CoagContact introducer,
+    ContactIntroduction introduction,
+  ) async => contactsRepository.acceptIntroduction(introducer, introduction);
 
   @override
   Future<void> close() {

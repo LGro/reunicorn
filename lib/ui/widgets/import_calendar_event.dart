@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -96,10 +96,12 @@ class _CalendarEventsPageState extends State<CalendarEventsPage>
 
       final filteredEvents = (eventsResult.data ?? [])
           .whereType<Event>()
-          .where((event) =>
-              event.end != null &&
-              event.end!.isAfter(now) &&
-              event.recurrenceRule == null)
+          .where(
+            (event) =>
+                event.end != null &&
+                event.end!.isAfter(now) &&
+                event.recurrenceRule == null,
+          )
           .toList();
 
       if (filteredEvents.isNotEmpty) {
@@ -114,32 +116,42 @@ class _CalendarEventsPageState extends State<CalendarEventsPage>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: const Text('Import from calendar')),
-      body: switch (_status) {
-        _Status.loading => const Center(child: CircularProgressIndicator()),
-        _Status.permissionDenied =>
-          const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Center(
-                child: Text('No access to calendars.',
-                    textScaler: TextScaler.linear(1.2), softWrap: true)),
-            SizedBox(height: 16),
-            FilledButton.tonal(
-                onPressed: openAppSettings, child: Text('Grant permission'))
-          ]),
-        _Status.success => SearchableList(
-            items: _events,
-            matchesItem: (s, e) =>
-                (_eventTitle(e).toLowerCase().contains(s.toLowerCase())) ||
-                (e.location?.toLowerCase().contains(s.toLowerCase()) ?? false),
-            buildItemWidget: (e) => ListTile(
-                  onTap: () {
-                    widget.onSelectEvent(e);
-                    context.pop();
-                  },
-                  title: Text(_eventTitle(e)),
-                  subtitle: (e.location == null) ? null : Text(e.location!),
-                ))
-      });
+    appBar: AppBar(title: const Text('Import from calendar')),
+    body: switch (_status) {
+      _Status.loading => const Center(child: CircularProgressIndicator()),
+      _Status.permissionDenied => const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Center(
+            child: Text(
+              'No access to calendars.',
+              textScaler: TextScaler.linear(1.2),
+              softWrap: true,
+            ),
+          ),
+          SizedBox(height: 16),
+          FilledButton.tonal(
+            onPressed: openAppSettings,
+            child: Text('Grant permission'),
+          ),
+        ],
+      ),
+      _Status.success => SearchableList(
+        items: _events,
+        matchesItem: (s, e) =>
+            (_eventTitle(e).toLowerCase().contains(s.toLowerCase())) ||
+            (e.location?.toLowerCase().contains(s.toLowerCase()) ?? false),
+        buildItemWidget: (e) => ListTile(
+          onTap: () {
+            widget.onSelectEvent(e);
+            context.pop();
+          },
+          title: Text(_eventTitle(e)),
+          subtitle: (e.location == null) ? null : Text(e.location!),
+        ),
+      ),
+    },
+  );
 }
 
 String _eventTitle(Event e) {

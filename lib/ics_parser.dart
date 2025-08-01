@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -86,7 +86,8 @@ IcsEvent? parseIcsEvent(String icsData) {
 (DateTime?, DateTime?) parseEnglishCopiedEvent(String input) {
   // Extract date and times
   final dateRegex = RegExp(
-      r'^(\d{1,2}\. \w+ \d{4}) at (\d{2}:\d{2}) to (\d{2}:\d{2}), (\w+)$');
+    r'^(\d{1,2}\. \w+ \d{4}) at (\d{2}:\d{2}) to (\d{2}:\d{2}), (\w+)$',
+  );
   final match = dateRegex.firstMatch(input);
 
   if (match != null) {

@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 part of 'cubit.dart';
@@ -35,11 +35,7 @@ extension ReceiveRequestStatusX on ReceiveRequestStatus {
 
 @JsonSerializable()
 final class ReceiveRequestState extends Equatable {
-  const ReceiveRequestState(
-    this.status, {
-    this.profile,
-    this.fragment,
-  });
+  const ReceiveRequestState(this.status, {this.profile, this.fragment});
 
   factory ReceiveRequestState.fromJson(Map<String, dynamic> json) =>
       _$ReceiveRequestStateFromJson(json);
@@ -54,12 +50,11 @@ final class ReceiveRequestState extends Equatable {
     ReceiveRequestStatus? status,
     CoagContact? profile,
     String? fragment,
-  }) =>
-      ReceiveRequestState(
-        status ?? this.status,
-        profile: profile ?? this.profile,
-        fragment: fragment ?? this.fragment,
-      );
+  }) => ReceiveRequestState(
+    status ?? this.status,
+    profile: profile ?? this.profile,
+    fragment: fragment ?? this.fragment,
+  );
 
   @override
   List<Object?> get props => [status, profile, fragment];

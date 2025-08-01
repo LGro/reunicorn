@@ -1,11 +1,11 @@
-// Copyright 2024 - 2025 The Coagulate Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'package:coagulate/data/models/contact_location.dart';
-import 'package:coagulate/data/repositories/contacts.dart';
-import 'package:coagulate/ui/receive_request/cubit.dart';
-import 'package:coagulate/ui/utils.dart';
-import 'package:coagulate/veilid_init.dart';
+import 'package:reunicorn/data/models/contact_location.dart';
+import 'package:reunicorn/data/repositories/contacts.dart';
+import 'package:reunicorn/ui/receive_request/cubit.dart';
+import 'package:reunicorn/ui/utils.dart';
+import 'package:reunicorn/veilid_init.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -22,13 +22,21 @@ void main() {
   setUp(() async {
     await CoagulateGlobalInit.initialize();
     _distStorage = DummyDistributedStorage(transparent: true);
-    _cRepoA = ContactsRepository(DummyPersistentStorage({}), _distStorage,
-        DummySystemContacts([]), 'UserA',
-        initialize: false);
+    _cRepoA = ContactsRepository(
+      DummyPersistentStorage({}),
+      _distStorage,
+      DummySystemContacts([]),
+      'UserA',
+      initialize: false,
+    );
     await _cRepoA.initialize(listenToVeilidNetworkChanges: false);
-    _cRepoB = ContactsRepository(DummyPersistentStorage({}), _distStorage,
-        DummySystemContacts([]), 'UserB',
-        initialize: false);
+    _cRepoB = ContactsRepository(
+      DummyPersistentStorage({}),
+      _distStorage,
+      DummySystemContacts([]),
+      'UserB',
+      initialize: false,
+    );
     await _cRepoB.initialize(listenToVeilidNetworkChanges: false);
   });
 
@@ -36,12 +44,13 @@ void main() {
     // Alice prepares invite for Bob and shares via default circle
     debugPrint('ALICE ACTING');
     var contactBobInvitedByA = await _cRepoA.createContactForInvite(
-        'Bob Invite',
-        pubKey: null,
-        awaitDhtSharingAttempt: true);
-    await _cRepoA.updateCirclesForContact(
-        contactBobInvitedByA.coagContactId, [defaultInitialCircleId],
-        triggerDhtUpdate: false);
+      'Bob Invite',
+      pubKey: null,
+      awaitDhtSharingAttempt: true,
+    );
+    await _cRepoA.updateCirclesForContact(contactBobInvitedByA.coagContactId, [
+      defaultInitialCircleId,
+    ], triggerDhtUpdate: false);
     await _cRepoA.tryShareWithContactDHT(contactBobInvitedByA.coagContactId);
     expect(
       contactBobInvitedByA.dhtSettings.recordKeyMeSharing,
@@ -73,22 +82,27 @@ void main() {
     expect(showSharingOffer(contactBobInvitedByA), false);
     expect(showDirectSharing(contactBobInvitedByA), true);
     final directSharingLinkFromAliceForBob = directSharingUrl(
-        'Alice Sharing',
-        contactBobInvitedByA.dhtSettings.recordKeyMeSharing!,
-        contactBobInvitedByA.dhtSettings.initialSecret!);
+      'Alice Sharing',
+      contactBobInvitedByA.dhtSettings.recordKeyMeSharing!,
+      contactBobInvitedByA.dhtSettings.initialSecret!,
+    );
 
     // Bob accepts invite from Alice and shares via default circle
     debugPrint('---');
     debugPrint('BOB ACTING');
     await ReceiveRequestCubit(_cRepoB).handleDirectSharing(
-        directSharingLinkFromAliceForBob.fragment,
-        awaitDhtOperations: true);
+      directSharingLinkFromAliceForBob.fragment,
+      awaitDhtOperations: true,
+    );
     var contactAliceFromBobsRepo = _cRepoB.getContacts().values.first;
     await _cRepoB.updateCirclesForContact(
-        contactAliceFromBobsRepo.coagContactId, [defaultInitialCircleId],
-        triggerDhtUpdate: false);
-    await _cRepoB
-        .tryShareWithContactDHT(contactAliceFromBobsRepo.coagContactId);
+      contactAliceFromBobsRepo.coagContactId,
+      [defaultInitialCircleId],
+      triggerDhtUpdate: false,
+    );
+    await _cRepoB.tryShareWithContactDHT(
+      contactAliceFromBobsRepo.coagContactId,
+    );
     expect(
       contactAliceFromBobsRepo.name,
       'Alice Sharing',
@@ -117,8 +131,9 @@ void main() {
     debugPrint('---');
     debugPrint('ALICE ACTING');
     await _cRepoA.updateContactFromDHT(contactBobInvitedByA);
-    contactBobInvitedByA =
-        _cRepoA.getContact(contactBobInvitedByA.coagContactId)!;
+    contactBobInvitedByA = _cRepoA.getContact(
+      contactBobInvitedByA.coagContactId,
+    )!;
     expect(
       contactBobInvitedByA.details?.names.values.firstOrNull,
       'UserB',
@@ -146,9 +161,11 @@ void main() {
       true,
       reason: 'Handshake accepted as complete by Alice',
     );
-    expect(contactAliceFromBobsRepo.dhtSettings.initialSecret, isNull,
-        reason:
-            'Initial secret removed after pub keys exchanged and handshake');
+    expect(
+      contactAliceFromBobsRepo.dhtSettings.initialSecret,
+      isNull,
+      reason: 'Initial secret removed after pub keys exchanged and handshake',
+    );
 
     //// TRANSITION FROM SYMMETRIC TO ASYMMETRIC CRYPTO COMPLETED ////
     ////           TESTING ASYMMETRIC KEY ROTATION NOW            ////
@@ -158,22 +175,28 @@ void main() {
     debugPrint('BOB ACTING');
     final profileB = _cRepoB.getProfileInfo()!;
     await _cRepoB.setProfileInfo(
-        profileB.copyWith(
-            addressLocations: {
-              'a0': const ContactAddressLocation(latitude: 0, longitude: 0)
-            },
-            sharingSettings: profileB.sharingSettings.copyWith(addresses: {
-              'a0': [defaultInitialCircleId]
-            })),
-        triggerDhtUpdate: false);
-    await _cRepoB
-        .tryShareWithContactDHT(contactAliceFromBobsRepo.coagContactId);
+      profileB.copyWith(
+        addressLocations: {
+          'a0': const ContactAddressLocation(latitude: 0, longitude: 0),
+        },
+        sharingSettings: profileB.sharingSettings.copyWith(
+          addresses: {
+            'a0': [defaultInitialCircleId],
+          },
+        ),
+      ),
+      triggerDhtUpdate: false,
+    );
+    await _cRepoB.tryShareWithContactDHT(
+      contactAliceFromBobsRepo.coagContactId,
+    );
 
     // Alice receives new location
     debugPrint('---');
     debugPrint('ALICE ACTING');
     await _cRepoA.updateContactFromDHT(
-        _cRepoA.getContact(contactBobInvitedByA.coagContactId)!);
+      _cRepoA.getContact(contactBobInvitedByA.coagContactId)!,
+    );
     final contactBobFromAlicesRepo = _cRepoA.getContacts().values.first;
     expect(
       contactBobFromAlicesRepo.dhtSettings.theirPublicKey,
