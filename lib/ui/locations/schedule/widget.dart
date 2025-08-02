@@ -9,8 +9,6 @@ import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_cache/flutter_map_cache.dart';
-import 'package:http_cache_file_store/http_cache_file_store.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:loggy/loggy.dart';
@@ -72,8 +70,7 @@ class MapWidgetState extends State<MapWidget> {
             maxZoom: 15,
             minZoom: 1,
             interactionOptions: const InteractionOptions(
-              flags:
-                  InteractiveFlag.pinchZoom |
+              flags: InteractiveFlag.pinchZoom |
                   InteractiveFlag.drag |
                   InteractiveFlag.doubleTapZoom |
                   InteractiveFlag.doubleTapDragZoom |
@@ -150,12 +147,10 @@ class ScheduleWidget extends StatefulWidget {
 
 class _ScheduleWidgetState extends State<ScheduleWidget> {
   final _key = GlobalKey<FormState>();
-  late final TextEditingController _titleController;
-  late final TextEditingController _detailsController;
+  final _titleController = TextEditingController();
+  final _detailsController = TextEditingController();
 
   bool _inProgress = false;
-  String _title = '';
-  String _details = '';
   DateTime? _start;
   DateTime? _end;
   SearchResult? _location;
@@ -165,11 +160,6 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
   @override
   void initState() {
     super.initState();
-
-    _titleController = TextEditingController(text: widget.location?.name)
-      ..addListener(_onTitleChanged);
-    _detailsController = TextEditingController(text: widget.location?.details)
-      ..addListener(_onDetailsChanged);
 
     if (widget.location == null) {
       _circles = context
@@ -191,8 +181,8 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
           .values
           .toList();
     } else {
-      _title = widget.location!.name;
-      _details = widget.location!.details;
+      _titleController.text = widget.location!.name;
+      _detailsController.text = widget.location!.details;
       _location = SearchResult(
         longitude: widget.location!.longitude,
         latitude: widget.location!.latitude,
@@ -246,31 +236,17 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
     if (!mounted) {
       return;
     }
+    if (e.title != null) {
+      _titleController.text = e.title!;
+    }
+    if (e.description != null) {
+      _detailsController.text = e.description!;
+    }
     setState(() {
-      _title = e.title ?? _title;
       _start = e.start;
       _end = e.end;
-      _details = e.description ?? _details;
       _location = location;
       _toggleMapLocationKey = !_toggleMapLocationKey;
-    });
-  }
-
-  void _onTitleChanged() {
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _title = _titleController.text;
-    });
-  }
-
-  void _onDetailsChanged() {
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _details = _detailsController.text;
     });
   }
 
@@ -362,27 +338,29 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
       }
 
       await context.read<ContactsRepository>().setProfileInfo(
-        profileInfo.copyWith(
-          temporaryLocations: Map.fromEntries([
-            ...profileInfo.temporaryLocations.entries
-                .map((l) => MapEntry(l.key, l.value.copyWith(checkedIn: false)))
-                .where((l) => l.key != widget.locationId),
-            MapEntry(
-              widget.locationId ?? Uuid().v4(),
-              ContactTemporaryLocation(
-                longitude: _location!.longitude,
-                latitude: _location!.latitude,
-                start: _start!,
-                end: _end!,
-                name: _title,
-                details: _details,
-                address: _location!.placeName,
-                circles: _circles.where((c) => c.$3).map((c) => c.$1).toList(),
-              ),
+            profileInfo.copyWith(
+              temporaryLocations: Map.fromEntries([
+                ...profileInfo.temporaryLocations.entries
+                    .map((l) =>
+                        MapEntry(l.key, l.value.copyWith(checkedIn: false)))
+                    .where((l) => l.key != widget.locationId),
+                MapEntry(
+                  widget.locationId ?? Uuid().v4(),
+                  ContactTemporaryLocation(
+                    longitude: _location!.longitude,
+                    latitude: _location!.latitude,
+                    start: _start!,
+                    end: _end!,
+                    name: _titleController.text,
+                    details: _detailsController.text,
+                    address: _location!.placeName,
+                    circles:
+                        _circles.where((c) => c.$3).map((c) => c.$1).toList(),
+                  ),
+                ),
+              ]),
             ),
-          ]),
-        ),
-      );
+          );
     } on Exception catch (e) {
       logDebug('$e');
       if (mounted) {
@@ -396,7 +374,9 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          SnackBar(content: Text('Location "$_title" successfully scheduled.')),
+          SnackBar(
+              content: Text(
+                  'Location "${_titleController.text}" successfully scheduled.')),
         );
       Navigator.of(context).popUntil((route) => route.isFirst);
     }
@@ -411,143 +391,144 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Schedule a visit'),
-      actions: [
-        // # TODO: Remove check once #58 is solved
-        if (Platform.isAndroid)
-          IconButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<CalendarEventsPage>(
-                builder: (c) =>
-                    CalendarEventsPage(onSelectEvent: _importCalendarEvent),
+        appBar: AppBar(
+          title: const Text('Schedule a visit'),
+          actions: [
+            // # TODO: Remove check once #58 is solved
+            if (Platform.isAndroid)
+              IconButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<CalendarEventsPage>(
+                    builder: (c) =>
+                        CalendarEventsPage(onSelectEvent: _importCalendarEvent),
+                  ),
+                ),
+                icon: const Icon(Icons.calendar_month),
               ),
-            ),
-            icon: const Icon(Icons.calendar_month),
-          ),
-      ],
-    ),
-    body: Form(
-      key: _key,
-      child: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 4),
-                SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16, right: 16),
-                        child: TextFormField(
-                          key: const Key('scheduleForm_titleInput'),
-                          controller: _titleController,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            helperMaxLines: 2,
-                            labelText: 'Title',
-                            errorMaxLines: 2,
-                          ),
-                          textInputAction: TextInputAction.done,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16, right: 16),
-                        child: TextFormField(
-                          key: const Key('scheduleForm_detailsInput'),
-                          controller: _detailsController,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            helperMaxLines: 2,
-                            labelText: 'Details',
-                            errorMaxLines: 2,
-                          ),
-                          textInputAction: TextInputAction.done,
-                          maxLines: 4,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Padding(
-                        padding: EdgeInsets.only(left: 16, right: 16),
-                        child: Row(
-                          children: [
-                            Text(
-                              'and share with circles',
-                              textScaler: TextScaler.linear(1.2),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        children: _circles
-                            .asMap()
-                            .map(
-                              (i, c) => MapEntry(
-                                i,
-                                GestureDetector(
-                                  onTap: () => _updateCircleSelection(i, !c.$3),
-                                  behavior: HitTestBehavior.opaque,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Checkbox(
-                                        value: c.$3,
-                                        onChanged: (value) => (value == null)
-                                            ? null
-                                            : _updateCircleSelection(i, value),
-                                      ),
-                                      Text('${c.$2} (${c.$4})'),
-                                      const SizedBox(width: 4),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            )
-                            .values
-                            .toList(),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
+          ],
+        ),
+        body: Form(
+          key: _key,
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 4),
+                    SingleChildScrollView(
+                      child: Column(
                         children: [
-                          TextButton(
-                            child: Text(
-                              (_start == null)
-                                  ? 'Pick Start Date'
-                                  : DateFormat.yMd().format(_start!),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 16, right: 16),
+                            child: TextFormField(
+                              key: const Key('scheduleForm_titleInput'),
+                              controller: _titleController,
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                helperMaxLines: 2,
+                                labelText: 'Title',
+                                errorMaxLines: 2,
+                              ),
+                              textInputAction: TextInputAction.done,
                             ),
-                            onPressed: () async {
-                              final range = await showDateRangePicker(
-                                context: context,
-                                firstDate: DateTime.now(),
-                                lastDate: DateTime.now().add(
-                                  const Duration(days: 356 * 2),
-                                ),
-                                initialDateRange: DateTimeRange(
-                                  start: _start ?? DateTime.now(),
-                                  end:
-                                      _end ??
-                                      _start ??
-                                      DateTime.now().add(
-                                        const Duration(days: 1),
-                                      ),
-                                ),
-                              );
-                              if (range != null) {
-                                _onDateRangeChanged(range);
-                              }
-                            },
                           ),
-                          if (_start != null)
-                            TextButton(
-                              child: Text(DateFormat.Hm().format(_start!)),
-                              onPressed: () async =>
-                                  showTimePicker(
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 16, right: 16),
+                            child: TextFormField(
+                              key: const Key('scheduleForm_detailsInput'),
+                              controller: _detailsController,
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                helperMaxLines: 2,
+                                labelText: 'Details',
+                                errorMaxLines: 2,
+                              ),
+                              textInputAction: TextInputAction.done,
+                              maxLines: 4,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Padding(
+                            padding: EdgeInsets.only(left: 16, right: 16),
+                            child: Row(
+                              children: [
+                                Text(
+                                  'and share with circles',
+                                  textScaler: TextScaler.linear(1.2),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: _circles
+                                .asMap()
+                                .map(
+                                  (i, c) => MapEntry(
+                                    i,
+                                    GestureDetector(
+                                      onTap: () =>
+                                          _updateCircleSelection(i, !c.$3),
+                                      behavior: HitTestBehavior.opaque,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Checkbox(
+                                            value: c.$3,
+                                            onChanged: (value) =>
+                                                (value == null)
+                                                    ? null
+                                                    : _updateCircleSelection(
+                                                        i, value),
+                                          ),
+                                          Text('${c.$2} (${c.$4})'),
+                                          const SizedBox(width: 4),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .values
+                                .toList(),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              TextButton(
+                                child: Text(
+                                  (_start == null)
+                                      ? 'Pick Start Date'
+                                      : DateFormat.yMd().format(_start!),
+                                ),
+                                onPressed: () async {
+                                  final range = await showDateRangePicker(
+                                    context: context,
+                                    firstDate: DateTime.now(),
+                                    lastDate: DateTime.now().add(
+                                      const Duration(days: 356 * 2),
+                                    ),
+                                    initialDateRange: DateTimeRange(
+                                      start: _start ?? DateTime.now(),
+                                      end: _end ??
+                                          _start ??
+                                          DateTime.now().add(
+                                            const Duration(days: 1),
+                                          ),
+                                    ),
+                                  );
+                                  if (range != null) {
+                                    _onDateRangeChanged(range);
+                                  }
+                                },
+                              ),
+                              if (_start != null)
+                                TextButton(
+                                  child: Text(DateFormat.Hm().format(_start!)),
+                                  onPressed: () async => showTimePicker(
                                     context: context,
                                     initialTime: TimeOfDay(
                                       hour: _start!.hour,
@@ -564,19 +545,18 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
                                         ? null
                                         : _onStartTimeChanged(t),
                                   ),
-                            ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          TextButton(
-                            child: Text(
-                              (_end == null)
-                                  ? 'Pick End Date'
-                                  : DateFormat.yMd().format(_end!),
-                            ),
-                            onPressed: () async =>
-                                showDateRangePicker(
+                                ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              TextButton(
+                                child: Text(
+                                  (_end == null)
+                                      ? 'Pick End Date'
+                                      : DateFormat.yMd().format(_end!),
+                                ),
+                                onPressed: () async => showDateRangePicker(
                                   context: context,
                                   firstDate: DateTime.now(),
                                   lastDate: DateTime.now().add(
@@ -584,8 +564,7 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
                                   ),
                                   initialDateRange: DateTimeRange(
                                     start: _start ?? DateTime.now(),
-                                    end:
-                                        _end ??
+                                    end: _end ??
                                         _start ??
                                         DateTime.now().add(
                                           const Duration(days: 1),
@@ -596,12 +575,11 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
                                       ? null
                                       : _onDateRangeChanged,
                                 ),
-                          ),
-                          if (_end != null)
-                            TextButton(
-                              child: Text(DateFormat.Hm().format(_end!)),
-                              onPressed: () async =>
-                                  showTimePicker(
+                              ),
+                              if (_end != null)
+                                TextButton(
+                                  child: Text(DateFormat.Hm().format(_end!)),
+                                  onPressed: () async => showTimePicker(
                                     context: context,
                                     initialTime: TimeOfDay(
                                       hour: _end!.hour,
@@ -618,53 +596,53 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
                                         ? null
                                         : _onEndTimeChanged(t),
                                   ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 380,
+                            child: MapWidget(
+                              // Force re-drawing the widget if the
+                              // location changes; is there a better way?
+                              key: Key(
+                                _toggleMapLocationKey
+                                    ? 'map-location-key-toggled'
+                                    : 'map-location-key',
+                              ),
+                              initialLocation: _location,
+                              onSelected: _onLocationChanged,
                             ),
+                          ),
+                          const SizedBox(height: 16),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        height: 380,
-                        child: MapWidget(
-                          // Force re-drawing the widget if the
-                          // location changes; is there a better way?
-                          key: Key(
-                            _toggleMapLocationKey
-                                ? 'map-location-key-toggled'
-                                : 'map-location-key',
-                          ),
-                          initialLocation: _location,
-                          onSelected: _onLocationChanged,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsetsGeometry.only(bottom: 8),
-              child: _inProgress
-                  ? const CircularProgressIndicator()
-                  : FilledButton(
-                      key: const Key('scheduleForm_submit'),
-                      onPressed:
-                          (_circles.firstWhereOrNull((c) => c.$3) != null &&
-                              _start != null &&
-                              _location != null &&
-                              _title.isNotEmpty)
-                          ? _onSubmit
-                          : null,
-                      child: const Text('Share'),
                     ),
-            ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsetsGeometry.only(bottom: 8),
+                  child: _inProgress
+                      ? const CircularProgressIndicator()
+                      : FilledButton(
+                          key: const Key('scheduleForm_submit'),
+                          onPressed:
+                              (_circles.firstWhereOrNull((c) => c.$3) != null &&
+                                      _start != null &&
+                                      _location != null &&
+                                      _titleController.text.isNotEmpty)
+                                  ? _onSubmit
+                                  : null,
+                          child: const Text('Share'),
+                        ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
