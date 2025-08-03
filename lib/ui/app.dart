@@ -90,13 +90,13 @@ class AppRouter {
             currentIndex: (state.topRoute?.name == null)
                 ? 0
                 : (navBarItems.indexWhere(
+                          (i) => i.$2.contains(state.topRoute?.name),
+                        ) ==
+                        -1)
+                    ? 0
+                    : navBarItems.indexWhere(
                         (i) => i.$2.contains(state.topRoute?.name),
-                      ) ==
-                      -1)
-                ? 0
-                : navBarItems.indexWhere(
-                    (i) => i.$2.contains(state.topRoute?.name),
-                  ),
+                      ),
             showUnselectedLabels: true,
             onTap: (i) => context.go(navBarItems[i].$1),
           ),
@@ -202,15 +202,14 @@ class AppRouter {
   GoRouter get router => _router;
 }
 
-class CoagulateApp extends StatefulWidget {
-  const CoagulateApp({super.key});
+class App extends StatefulWidget {
+  const App({super.key});
 
   @override
-  _CoagulateAppState createState() => _CoagulateAppState();
+  _AppState createState() => _AppState();
 }
 
-class _CoagulateAppState extends State<CoagulateApp>
-    with WidgetsBindingObserver {
+class _AppState extends State<App> with WidgetsBindingObserver {
   String? _providedNameOnFirstLaunch;
 
   final _seedColor = Colors.indigo;
@@ -225,66 +224,63 @@ class _CoagulateAppState extends State<CoagulateApp>
     // Configure background fetch
     unawaited(
       BackgroundFetch.configure(
-            BackgroundFetchConfig(
-              minimumFetchInterval: 15,
-              stopOnTerminate: false,
-              enableHeadless: true,
-              requiredNetworkType: NetworkType.ANY,
-              requiresBatteryNotLow: true,
-            ),
-            (String taskId) async {
-              // This is the callback function that will be called periodically
-              logDebug("[BackgroundFetch] Event received: $taskId");
+        BackgroundFetchConfig(
+          minimumFetchInterval: 15,
+          stopOnTerminate: false,
+          enableHeadless: true,
+          requiredNetworkType: NetworkType.ANY,
+          requiresBatteryNotLow: true,
+        ),
+        (String taskId) async {
+          // This is the callback function that will be called periodically
+          logDebug("[BackgroundFetch] Event received: $taskId");
 
-              final log = <String>[];
-              final startTime = DateTime.now();
-              log.add('Start update to and from DHT at $startTime');
+          final log = <String>[];
+          final startTime = DateTime.now();
+          log.add('Start update to and from DHT at $startTime');
 
-              // TODO: Passing an empty string for initial name seems hacky
-              final repo = ContactsRepository(
-                SqliteStorage(),
-                VeilidDhtStorage(),
-                SystemContacts(),
-                '',
-                initialize: false,
-                notificationCallback: NotificationService().showNotification,
-              );
+          // TODO: Passing an empty string for initial name seems hacky
+          final repo = ContactsRepository(
+            SqliteStorage(),
+            VeilidDhtStorage(),
+            SystemContacts(),
+            '',
+            initialize: false,
+            notificationCallback: NotificationService().showNotification,
+          );
 
-              // Await initialization with potential initial DHT updates unless it
-              // exceeds 25s to respect the background task limit of 30s on iOS
-              try {
-                await repo
-                    .initialize(scheduleRegularUpdates: false)
-                    .timeout(const Duration(seconds: 25));
-              } on TimeoutException {
-                await BackgroundFetch.finish(taskId);
-                return;
-              }
+          // Await initialization with potential initial DHT updates unless it
+          // exceeds 25s to respect the background task limit of 30s on iOS
+          try {
+            await repo
+                .initialize(scheduleRegularUpdates: false)
+                .timeout(const Duration(seconds: 25));
+          } on TimeoutException {
+            await BackgroundFetch.finish(taskId);
+            return;
+          }
 
-              log.add('Initialization finished at at ${DateTime.now()}');
+          log.add('Initialization finished at at ${DateTime.now()}');
 
-              await Future<void>.delayed(
-                const Duration(seconds: 25) -
-                    DateTime.now().difference(startTime),
-              );
+          await Future<void>.delayed(
+            const Duration(seconds: 25) - DateTime.now().difference(startTime),
+          );
 
-              log.add(
-                'Returning successfully after waiting until ${DateTime.now()}',
-              );
+          log.add(
+            'Returning successfully after waiting until ${DateTime.now()}',
+          );
 
-              logDebug('[BackgroundFetch] $log');
+          logDebug('[BackgroundFetch] $log');
 
-              // Signal completion of your task
-              await BackgroundFetch.finish(taskId);
-              return;
-            },
-          )
-          .then((int status) {
-            logDebug('[BackgroundFetch] configure success: $status');
-          })
-          .catchError((e) {
-            logDebug('[BackgroundFetch] configure ERROR: $e');
-          }),
+          // Signal completion of your task
+          await BackgroundFetch.finish(taskId);
+          return;
+        },
+      ).then((int status) {
+        logDebug('[BackgroundFetch] configure success: $status');
+      }).catchError((e) {
+        logDebug('[BackgroundFetch] configure ERROR: $e');
+      }),
     );
 
     // BackgroundFetch.scheduleTask(TaskConfig(
@@ -325,24 +321,20 @@ class _CoagulateAppState extends State<CoagulateApp>
     if (state == AppLifecycleState.paused) {
       // App goes to background
       unawaited(
-        BackgroundFetch.start()
-            .then((int status) {
-              logDebug('[BackgroundFetch] start success: $status');
-            })
-            .catchError((e) {
-              logDebug('[BackgroundFetch] start ERROR: $e');
-            }),
+        BackgroundFetch.start().then((int status) {
+          logDebug('[BackgroundFetch] start success: $status');
+        }).catchError((e) {
+          logDebug('[BackgroundFetch] start ERROR: $e');
+        }),
       );
     } else if (state == AppLifecycleState.resumed) {
       // App comes to foreground
       unawaited(
-        BackgroundFetch.stop()
-            .then((int status) {
-              logDebug('[BackgroundFetch] stop success: $status');
-            })
-            .catchError((e) {
-              logDebug('[BackgroundFetch] stop ERROR: $e');
-            }),
+        BackgroundFetch.stop().then((int status) {
+          logDebug('[BackgroundFetch] stop success: $status');
+        }).catchError((e) {
+          logDebug('[BackgroundFetch] stop ERROR: $e');
+        }),
       );
     }
   }
@@ -362,86 +354,86 @@ class _CoagulateAppState extends State<CoagulateApp>
 
   @override
   Widget build(BuildContext context) => FutureProvider<CoagulateGlobalInit?>(
-    initialData: null,
-    create: (context) async =>
-        // TODO: Pass initially specified boostrap url
-        CoagulateGlobalInit.initialize('bootstrap-v1.veilid.net'),
-    // CoagulateGlobalInit.initialize can throw Already attached VeilidAPIException which is fine
-    catchError: (context, error) => null,
-    builder: (context, child) {
-      final globalInit = context.watch<CoagulateGlobalInit?>();
-      // Splash screen until we're done with init
-      if (globalInit == null) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (_providedNameOnFirstLaunch == null ||
-          _providedNameOnFirstLaunch!.isEmpty) {
-        return MaterialApp(
-          title: 'Coagulate',
-          debugShowCheckedModeBanner: true,
-          themeMode: ThemeMode.system,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: _seedColor),
-            useMaterial3: true,
-          ),
-          darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: _seedColor,
-              brightness: Brightness.dark,
-            ),
-            useMaterial3: true,
-          ),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: WelcomeScreen(_setFirstLaunchComplete),
-        );
-      }
+        initialData: null,
+        create: (context) async =>
+            // TODO: Pass initially specified boostrap url
+            CoagulateGlobalInit.initialize('bootstrap-v1.veilid.net'),
+        // CoagulateGlobalInit.initialize can throw Already attached VeilidAPIException which is fine
+        catchError: (context, error) => null,
+        builder: (context, child) {
+          final globalInit = context.watch<CoagulateGlobalInit?>();
+          // Splash screen until we're done with init
+          if (globalInit == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (_providedNameOnFirstLaunch == null ||
+              _providedNameOnFirstLaunch!.isEmpty) {
+            return MaterialApp(
+              title: 'Reunicorn',
+              debugShowCheckedModeBanner: true,
+              themeMode: ThemeMode.system,
+              theme: ThemeData(
+                colorScheme: ColorScheme.fromSeed(seedColor: _seedColor),
+                useMaterial3: true,
+              ),
+              darkTheme: ThemeData(
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: _seedColor,
+                  brightness: Brightness.dark,
+                ),
+                useMaterial3: true,
+              ),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: WelcomeScreen(_setFirstLaunchComplete),
+            );
+          }
 
-      // Once init is done, we proceed with the app
-      return BackgroundTicker(
-        child: MultiRepositoryProvider(
-          providers: [
-            RepositoryProvider(
-              create: (_) => SettingsRepository(
-                darkMode:
-                    MediaQuery.of(context).platformBrightness ==
-                    Brightness.dark,
-                devicePixelRatio: View.of(context).devicePixelRatio,
+          // Once init is done, we proceed with the app
+          return BackgroundTicker(
+            child: MultiRepositoryProvider(
+              providers: [
+                RepositoryProvider(
+                  create: (_) => SettingsRepository(
+                    darkMode: MediaQuery.of(context).platformBrightness ==
+                        Brightness.dark,
+                    devicePixelRatio: View.of(context).devicePixelRatio,
+                  ),
+                ),
+                RepositoryProvider(
+                  create: (context) => ContactsRepository(
+                    SqliteStorage(),
+                    VeilidDhtStorage(),
+                    SystemContacts(),
+                    _providedNameOnFirstLaunch!,
+                  ),
+                ),
+              ],
+              child: MaterialApp.router(
+                title: 'Reunicorn',
+                debugShowCheckedModeBanner: true,
+                themeMode: ThemeMode.system,
+                theme: ThemeData(
+                  colorScheme: ColorScheme.fromSeed(seedColor: _seedColor),
+                  useMaterial3: true,
+                ),
+                darkTheme: ThemeData(
+                  colorScheme: ColorScheme.fromSeed(
+                    seedColor: _seedColor,
+                    brightness: Brightness.dark,
+                  ),
+                  useMaterial3: true,
+                ),
+                routerDelegate: AppRouter().router.routerDelegate,
+                routeInformationProvider:
+                    AppRouter().router.routeInformationProvider,
+                routeInformationParser:
+                    AppRouter().router.routeInformationParser,
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
               ),
             ),
-            RepositoryProvider(
-              create: (context) => ContactsRepository(
-                SqliteStorage(),
-                VeilidDhtStorage(),
-                SystemContacts(),
-                _providedNameOnFirstLaunch!,
-              ),
-            ),
-          ],
-          child: MaterialApp.router(
-            title: 'Coagulate',
-            debugShowCheckedModeBanner: true,
-            themeMode: ThemeMode.system,
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: _seedColor),
-              useMaterial3: true,
-            ),
-            darkTheme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: _seedColor,
-                brightness: Brightness.dark,
-              ),
-              useMaterial3: true,
-            ),
-            routerDelegate: AppRouter().router.routerDelegate,
-            routeInformationProvider:
-                AppRouter().router.routeInformationProvider,
-            routeInformationParser: AppRouter().router.routeInformationParser,
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-          ),
-        ),
+          );
+        },
       );
-    },
-  );
 }

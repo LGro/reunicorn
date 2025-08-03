@@ -21,7 +21,6 @@ final class MapState extends Equatable {
     this.circleMemberships = const {},
     this.circles = const {},
     this.profileInfo,
-    this.cachePath,
   });
 
   factory MapState.fromJson(Map<String, dynamic> json) =>
@@ -32,18 +31,16 @@ final class MapState extends Equatable {
   final Map<String, String> circles;
   final ProfileInfo? profileInfo;
   final MapStatus status;
-  final String? cachePath;
 
   Map<String, dynamic> toJson() => _$MapStateToJson(this);
 
   @override
   List<Object?> get props => [
-    contacts,
-    circleMemberships,
-    circles,
-    profileInfo,
-    contacts,
-    status,
-    cachePath,
-  ];
+        contacts,
+        circleMemberships,
+        circles,
+        profileInfo,
+        contacts,
+        status,
+      ];
 }

@@ -239,7 +239,7 @@ abstract class AppLocalizations {
   /// App title for welcome screen.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to Coagulate'**
+  /// **'Welcome to Reunicorn'**
   String get welcomeAppTitle;
 
   /// No description provided for @welcomeHeadline.
@@ -257,7 +257,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeCallToActionButton.
   ///
   /// In en, this message translates to:
-  /// **'Let\'s coagulate'**
+  /// **'Let\'s connect'**
   String get welcomeCallToActionButton;
 
   /// No description provided for @welcomeErrorNameMissing.

@@ -25,8 +25,7 @@ void main() async {
 
     await NotificationService().init();
 
-    // Let's coagulate :)
-    runApp(CoagulateApp());
+    runApp(const App());
   }
 
   if (kDebugMode) {

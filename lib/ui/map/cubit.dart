@@ -6,7 +6,6 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../../data/models/coag_contact.dart';
 import '../../data/repositories/contacts.dart';
@@ -17,17 +16,17 @@ part 'state.dart';
 
 class MapCubit extends Cubit<MapState> {
   MapCubit(this.contactsRepository, this.settingsRepository)
-    : super(const MapState(status: MapStatus.initial)) {
+      : super(const MapState(status: MapStatus.initial)) {
     _profileInfoSubscription = contactsRepository.getProfileInfoStream().listen(
-      (_) async => refresh(),
-    );
+          (_) async => refresh(),
+        );
     _circlesSubscription = contactsRepository.getCirclesStream().listen(
-      (_) async => refresh(),
-    );
+          (_) async => refresh(),
+        );
     // TODO: Does it help the performance significantly to only update the affected contact's data?
     _contactsSubscription = contactsRepository.getContactStream().listen(
-      (coagContactId) async => refresh(),
-    );
+          (coagContactId) async => refresh(),
+        );
 
     unawaited(refresh());
   }
@@ -51,9 +50,6 @@ class MapCubit extends Cubit<MapState> {
         contacts: contacts.toList(),
         circleMemberships: circleMemberships,
         circles: circles,
-        cachePath:
-            state.cachePath ??
-            await getTemporaryDirectory().then((td) => td.path),
       ),
     );
   }

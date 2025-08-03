@@ -78,7 +78,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get circles => 'Kreise';
 
   @override
-  String get welcomeAppTitle => 'Willkommen bei Coagulate';
+  String get welcomeAppTitle => 'Willkommen bei Reunicorn';
 
   @override
   String get welcomeHeadline => 'Willkommen!\nWie heißt du?';

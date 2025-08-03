@@ -40,11 +40,9 @@ Map<String, String> filterNames(
   if (activeCircles.isEmpty) {
     return {};
   }
-  final updatedValues = {...names}
-    ..removeWhere(
-      (i, n) =>
-          !(settings[i]?.asSet().intersectsWith(activeCircles.asSet()) ??
-              false),
+  final updatedValues = {...names}..removeWhere(
+      (i, n) => !(settings[i]?.asSet().intersectsWith(activeCircles.asSet()) ??
+          false),
     );
   return updatedValues;
 }
@@ -58,69 +56,71 @@ Map<String, T> filterContactDetailsList<T>(
     return {};
   }
   return {...values}..removeWhere(
-    (label, value) =>
-        !(settings[label]?.asSet().intersectsWith(activeCircles.asSet()) ??
-            false),
-  );
+      (label, value) =>
+          !(settings[label]?.asSet().intersectsWith(activeCircles.asSet()) ??
+              false),
+    );
 }
 
 List<int>? selectPicture(
   Map<String, List<int>> avatars,
   Map<String, int> activeCirclesWithMemberCount,
-) => avatars.entries
-    .where((e) => activeCirclesWithMemberCount.containsKey(e.key))
-    .sorted(
-      (a, b) =>
-          (activeCirclesWithMemberCount[a.key] ?? 0) -
-          (activeCirclesWithMemberCount[b.key] ?? 0),
-    )
-    .firstOrNull
-    ?.value;
+) =>
+    avatars.entries
+        .where((e) => activeCirclesWithMemberCount.containsKey(e.key))
+        .sorted(
+          (a, b) =>
+              (activeCirclesWithMemberCount[a.key] ?? 0) -
+              (activeCirclesWithMemberCount[b.key] ?? 0),
+        )
+        .firstOrNull
+        ?.value;
 
 ContactDetails filterDetails(
   Map<String, List<int>> pictures,
   ContactDetails details,
   ProfileSharingSettings settings,
   Map<String, int> activeCirclesWithMemberCount,
-) => ContactDetails(
-  picture: selectPicture(pictures, activeCirclesWithMemberCount),
-  publicKey: details.publicKey,
-  names: filterNames(
-    details.names,
-    settings.names,
-    activeCirclesWithMemberCount.keys,
-  ),
-  phones: filterContactDetailsList(
-    details.phones,
-    settings.phones,
-    activeCirclesWithMemberCount.keys,
-  ),
-  emails: filterContactDetailsList(
-    details.emails,
-    settings.emails,
-    activeCirclesWithMemberCount.keys,
-  ),
-  websites: filterContactDetailsList(
-    details.websites,
-    settings.websites,
-    activeCirclesWithMemberCount.keys,
-  ),
-  socialMedias: filterContactDetailsList(
-    details.socialMedias,
-    settings.socialMedias,
-    activeCirclesWithMemberCount.keys,
-  ),
-  events: filterContactDetailsList(
-    details.events,
-    settings.events,
-    activeCirclesWithMemberCount.keys,
-  ),
-  organizations: filterContactDetailsList(
-    details.organizations,
-    settings.organizations,
-    activeCirclesWithMemberCount.keys,
-  ),
-);
+) =>
+    ContactDetails(
+      picture: selectPicture(pictures, activeCirclesWithMemberCount),
+      publicKey: details.publicKey,
+      names: filterNames(
+        details.names,
+        settings.names,
+        activeCirclesWithMemberCount.keys,
+      ),
+      phones: filterContactDetailsList(
+        details.phones,
+        settings.phones,
+        activeCirclesWithMemberCount.keys,
+      ),
+      emails: filterContactDetailsList(
+        details.emails,
+        settings.emails,
+        activeCirclesWithMemberCount.keys,
+      ),
+      websites: filterContactDetailsList(
+        details.websites,
+        settings.websites,
+        activeCirclesWithMemberCount.keys,
+      ),
+      socialMedias: filterContactDetailsList(
+        details.socialMedias,
+        settings.socialMedias,
+        activeCirclesWithMemberCount.keys,
+      ),
+      events: filterContactDetailsList(
+        details.events,
+        settings.events,
+        activeCirclesWithMemberCount.keys,
+      ),
+      organizations: filterContactDetailsList(
+        details.organizations,
+        settings.organizations,
+        activeCirclesWithMemberCount.keys,
+      ),
+    );
 
 /// Remove address locations that are not shared with the circles specified for
 /// the corresponding address label
@@ -128,31 +128,33 @@ Map<String, ContactAddressLocation> filterAddressLocations(
   Map<String, ContactAddressLocation> locations,
   ProfileSharingSettings settings,
   Iterable<String> activeCircles,
-) => Map.fromEntries(
-  locations.entries.where(
-    (l) =>
-        settings.addresses[l.key]?.toSet().intersectsWith(
-          activeCircles.toSet(),
-        ) ??
-        false,
-  ),
-);
+) =>
+    Map.fromEntries(
+      locations.entries.where(
+        (l) =>
+            settings.addresses[l.key]?.toSet().intersectsWith(
+                  activeCircles.toSet(),
+                ) ??
+            false,
+      ),
+    );
 
 /// Remove locations that ended longer than a day ago,
 /// or aren't shared with the given circles if provided
 Map<String, ContactTemporaryLocation> filterTemporaryLocations(
   Map<String, ContactTemporaryLocation> locations, [
   Iterable<String>? activeCircles,
-]) => Map.fromEntries(
-  locations.entries.where(
-    (l) =>
-        l.value.end.isAfter(DateTime.now()) &&
-        // TODO: Unify that selected circles are part of profileShareSettings
-        //       instead of the location instance?
-        (activeCircles == null ||
-            l.value.circles.toSet().intersectsWith(activeCircles.toSet())),
-  ),
-);
+]) =>
+    Map.fromEntries(
+      locations.entries.where(
+        (l) =>
+            l.value.end.isAfter(DateTime.now()) &&
+            // TODO: Unify that selected circles are part of profileShareSettings
+            //       instead of the location instance?
+            (activeCircles == null ||
+                l.value.circles.toSet().intersectsWith(activeCircles.toSet())),
+      ),
+    );
 
 // TODO: Empty all the known contacts and misc stuff when no circles active?
 CoagContactDHTSchema filterAccordingToSharingProfile({
@@ -164,38 +166,38 @@ CoagContactDHTSchema filterAccordingToSharingProfile({
   required Typed<PublicKey>? introductionKey,
   List<String> connectionAttestations = const [],
   List<String> knownPersonalContactIds = const [],
-}) => CoagContactDHTSchema(
-  details: filterDetails(
-    profile.pictures,
-    profile.details,
-    profile.sharingSettings,
-    activeCirclesWithMemberCount,
-  ),
-  // Only share locations up to 1 day ago
-  temporaryLocations: filterTemporaryLocations(
-    profile.temporaryLocations,
-    activeCirclesWithMemberCount.keys,
-  ),
-  addressLocations: filterAddressLocations(
-    profile.addressLocations,
-    profile.sharingSettings,
-    activeCirclesWithMemberCount.keys,
-  ),
-  shareBackDHTKey: dhtSettings.recordKeyThemSharing.toString(),
-  shareBackDHTWriter: dhtSettings.writerThemSharing.toString(),
-  shareBackPubKey: (dhtSettings.myNextKeyPair != null)
-      ? dhtSettings.myNextKeyPair!.key.toString()
-      : ((dhtSettings.myKeyPair != null)
-            ? dhtSettings.myKeyPair!.key.toString()
-            : null),
-  identityKey: identityKey,
-  connectionAttestations: connectionAttestations,
-  ackHandshakeComplete:
-      dhtSettings.theirPublicKey != null ||
-      dhtSettings.theirNextPublicKey != null,
-  introductionKey: introductionKey,
-  introductions: introductions,
-);
+}) =>
+    CoagContactDHTSchema(
+      details: filterDetails(
+        profile.pictures,
+        profile.details,
+        profile.sharingSettings,
+        activeCirclesWithMemberCount,
+      ),
+      // Only share locations up to 1 day ago
+      temporaryLocations: filterTemporaryLocations(
+        profile.temporaryLocations,
+        activeCirclesWithMemberCount.keys,
+      ),
+      addressLocations: filterAddressLocations(
+        profile.addressLocations,
+        profile.sharingSettings,
+        activeCirclesWithMemberCount.keys,
+      ),
+      shareBackDHTKey: dhtSettings.recordKeyThemSharing.toString(),
+      shareBackDHTWriter: dhtSettings.writerThemSharing.toString(),
+      shareBackPubKey: (dhtSettings.myNextKeyPair != null)
+          ? dhtSettings.myNextKeyPair!.key.toString()
+          : ((dhtSettings.myKeyPair != null)
+              ? dhtSettings.myKeyPair!.key.toString()
+              : null),
+      identityKey: identityKey,
+      connectionAttestations: connectionAttestations,
+      ackHandshakeComplete: dhtSettings.theirPublicKey != null ||
+          dhtSettings.theirNextPublicKey != null,
+      introductionKey: introductionKey,
+      introductions: introductions,
+    );
 
 String batchOrigin(BatchInvite batch, int subkey) =>
     'BATCH|${batch.recordKey}|$subkey';
@@ -227,8 +229,7 @@ class ContactsRepository {
     String title,
     String body, {
     String? payload,
-  })?
-  notificationCallback;
+  })? notificationCallback;
 
   Map<String, CoagContact> _contacts = {};
   final _contactsStreamController = BehaviorSubject<String>();
@@ -318,8 +319,8 @@ class ContactsRepository {
 
     if (listenToVeilidNetworkChanges) {
       ProcessorRepository.instance.streamProcessorConnectionState().listen(
-        _veilidConnectionStateChangeCallback,
-      );
+            _veilidConnectionStateChangeCallback,
+          );
     }
 
     if (scheduleRegularUpdates) {
@@ -465,8 +466,8 @@ class ContactsRepository {
             );
             final notificationTitle =
                 (update.oldContact.details?.names.isNotEmpty ?? false)
-                ? update.oldContact.details!.names.values.join(' / ')
-                : update.newContact.details!.names.values.join(' / ');
+                    ? update.oldContact.details!.names.values.join(' / ')
+                    : update.newContact.details!.names.values.join(' / ');
             if (notificationCallback != null && updateSummary.isNotEmpty) {
               await notificationCallback!(
                 0,
@@ -552,10 +553,7 @@ class ContactsRepository {
 
   Future<bool> updateAndWatchReceivingDHT({bool shuffle = false}) async {
     if (!ProcessorRepository
-        .instance
-        .processorConnectionState
-        .attachment
-        .publicInternetReady) {
+        .instance.processorConnectionState.attachment.publicInternetReady) {
       veilidNetworkAvailable = false;
       logDebug('Veilid attachment not public internet ready');
       return false;
@@ -597,8 +595,7 @@ class ContactsRepository {
         final (shareKey, shareWriter) = await distributedStorage.createRecord();
 
         // TODO: Get specific cryptosystem version? also, move veilid specific stuff elsewhere
-        final initialSecret =
-            (contact.dhtSettings.theirPublicKey == null &&
+        final initialSecret = (contact.dhtSettings.theirPublicKey == null &&
                 contact.dhtSettings.theirNextPublicKey == null)
             ? await generateSharedSecret()
             : null;
@@ -616,8 +613,8 @@ class ContactsRepository {
       }
 
       if (initializeReceivingSettings) {
-        final (receiveKey, receiveWriter) = await distributedStorage
-            .createRecord();
+        final (receiveKey, receiveWriter) =
+            await distributedStorage.createRecord();
         // TODO: Is a refresh of the contact before updating necessary?
         contact = getContact(contact.coagContactId)!;
         contact = contact.copyWith(
@@ -651,10 +648,7 @@ class ContactsRepository {
   /// Update the DHT "me-to-them" records for all contacts
   Future<bool> updateSharingDHT() async {
     if (!ProcessorRepository
-        .instance
-        .processorConnectionState
-        .attachment
-        .publicInternetReady) {
+        .instance.processorConnectionState.attachment.publicInternetReady) {
       veilidNetworkAvailable = false;
       return false;
     }
@@ -690,7 +684,8 @@ class ContactsRepository {
         mainKeyPair: profile.mainKeyPair,
       ),
       // Reduce contacts to absolute minimum that is required to recreate them
-      getContacts().values
+      getContacts()
+          .values
           .toList()
           .map(
             (c) => CoagContact.explicit(
@@ -744,16 +739,16 @@ class ContactsRepository {
       while (waitForRecordSync) {
         final report = await DHTRecordPool.instance
             .openRecordRead(
-              backupDhtKey,
-              debugName: 'coag::backup::read::stats',
-            )
+          backupDhtKey,
+          debugName: 'coag::backup::read::stats',
+        )
             .then((record) async {
-              final report = await record.routingContext.inspectDHTRecord(
-                backupDhtKey,
-              );
-              await record.close();
-              return report;
-            });
+          final report = await record.routingContext.inspectDHTRecord(
+            backupDhtKey,
+          );
+          await record.close();
+          return report;
+        });
 
         if (report.offlineSubkeys.isEmpty) {
           break;
@@ -767,7 +762,7 @@ class ContactsRepository {
     }
   }
 
-  /// Restore a previously backed up Coagulate setup
+  /// Restore a previously backed up Reunicorn setup
   Future<bool> restore(
     Typed<FixedEncodedString43> recordKey,
     FixedEncodedString43 secret, {
@@ -816,7 +811,8 @@ class ContactsRepository {
   //////////////////
   // SYSTEM CONTACTS
 
-  Set<String> getAllLinkedSystemContactIds() => getContacts().values
+  Set<String> getAllLinkedSystemContactIds() => getContacts()
+      .values
       .map((c) => c.systemContactId)
       .whereType<String>()
       .toSet();
@@ -895,10 +891,10 @@ class ContactsRepository {
   CoagContact? getContact(String coagContactId) =>
       _contacts[coagContactId]?.copyWith();
 
-  CoagContact? getContactForSystemContactId(String systemContactId) => _contacts
-      .values
-      .firstWhereOrNull((c) => c.systemContactId == systemContactId)
-      ?.copyWith();
+  CoagContact? getContactForSystemContactId(String systemContactId) =>
+      _contacts.values
+          .firstWhereOrNull((c) => c.systemContactId == systemContactId)
+          ?.copyWith();
 
   Future<bool> removeContact(String coagContactId) async {
     await unlinkSystemContact(coagContactId);
@@ -916,9 +912,8 @@ class ContactsRepository {
     ];
 
     // TODO: change updates stream to just trigger refresh instead of carry the updates; or give each update an id and only stream these ids for when an update was added / removed
-    _contactUpdates = _contactUpdates
-        .where((u) => u.coagContactId != coagContactId)
-        .toList();
+    _contactUpdates =
+        _contactUpdates.where((u) => u.coagContactId != coagContactId).toList();
 
     await Future.wait(updateFutures);
     return true;
@@ -972,8 +967,7 @@ class ContactsRepository {
           // already a next key pair queued, queue one for rotation
           // TODO: Check that the comparison detects changes on location list
           //       membership, not list instance
-          myNextKeyPair:
-              (contact.sharedProfile != updatedSharedProfile &&
+          myNextKeyPair: (contact.sharedProfile != updatedSharedProfile &&
                   contact.dhtSettings.myNextKeyPair == null)
               ? await generateTypedKeyPair()
               : null,
@@ -1105,19 +1099,20 @@ class ContactsRepository {
   // TODO: Make this a pure utilities function instead for better testability?
   List<(String, String, bool, int)> circlesWithMembership(
     String coagContactId,
-  ) => _circles
-      .map(
-        (id, label) => MapEntry(id, (
-          id,
-          label,
-          (_circleMemberships[coagContactId] ?? []).contains(id),
-          _circleMemberships.values
-              .where((circles) => circles.contains(id))
-              .length,
-        )),
-      )
-      .values
-      .toList();
+  ) =>
+      _circles
+          .map(
+            (id, label) => MapEntry(id, (
+              id,
+              label,
+              (_circleMemberships[coagContactId] ?? []).contains(id),
+              _circleMemberships.values
+                  .where((circles) => circles.contains(id))
+                  .length,
+            )),
+          )
+          .values
+          .toList();
 
   Future<void> removeCircle(String circleId) async {
     _circles.remove(circleId);
@@ -1150,6 +1145,7 @@ class ContactsRepository {
     // Update shared profile data for all contacts individually
     // NOTE: Having this before and not as part of updateSharingDHT can cause
     //       the UI to already show update info, even though it is not yet sent
+    // FIXME: We saw on an old install: _TypeError (type 'Null' is not a subtype of type 'String' in type cast)
     await Future.wait([
       for (final contact in _contacts.values)
         updateContactSharedProfile(contact.coagContactId),
@@ -1179,8 +1175,8 @@ class ContactsRepository {
   // BATCH INVITES
 
   Map<Typed<FixedEncodedString43>, BatchInvite> getBatchInvites() => {
-    ..._batchInvites,
-  };
+        ..._batchInvites,
+      };
 
   Future<BatchInvite?> handleBatchInvite(
     String myNameId,
@@ -1290,7 +1286,7 @@ class ContactsRepository {
   }
 
   Future<MapEntry<String, Typed<FixedEncodedString43>>?>
-  updateFromBatchInviteSubkey(
+      updateFromBatchInviteSubkey(
     BatchInvite batch,
     VeilidCrypto crypto,
     int subkey,
@@ -1334,7 +1330,8 @@ class ContactsRepository {
     }
 
     // Get existing contact if available
-    var contact = getContacts().values
+    var contact = getContacts()
+        .values
         .where((c) => c.origin == batchOrigin(batch, subkey))
         .firstOrNull;
 

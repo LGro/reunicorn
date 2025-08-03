@@ -12,16 +12,16 @@ class CoagulateBatchManagementApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'Coagulate Batch Invite Management',
-    home: FutureProvider<CoagulateGlobalInit?>(
-      initialData: null,
-      create: (context) async => CoagulateGlobalInit.initialize(),
-      // CoagulateGlobalInit.initialize can throw Already attached VeilidAPIException which is fine
-      catchError: (context, error) => null,
-      builder: (context, child) =>
-          (context.watch<CoagulateGlobalInit?>() == null)
-          ? const Center(child: CircularProgressIndicator())
-          : const BatchInvitesPage(),
-    ),
-  );
+        title: 'Reunicorn Batch Invite Management',
+        home: FutureProvider<CoagulateGlobalInit?>(
+          initialData: null,
+          create: (context) async => CoagulateGlobalInit.initialize(),
+          // CoagulateGlobalInit.initialize can throw Already attached VeilidAPIException which is fine
+          catchError: (context, error) => null,
+          builder: (context, child) =>
+              (context.watch<CoagulateGlobalInit?>() == null)
+                  ? const Center(child: CircularProgressIndicator())
+                  : const BatchInvitesPage(),
+        ),
+      );
 }

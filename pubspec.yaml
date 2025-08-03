@@ -1,7 +1,7 @@
 name: reunicorn
 description: Where & how to get in contact, shared securely and privately.
 publish_to: 'none'
-version: "0.2.1+39"
+version: "0.2.2+45"
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -22,8 +22,6 @@ dependencies:
   flutter_contacts: ^1.1.8
   flutter_localizations:
     sdk: flutter
-  flutter_map: ^7.0.2 # update to v8 depends on flutter_map_marker_cluster 1.4+ release
-  flutter_map_marker_cluster: ^1.4.0 # https://github.com/lpongetti/flutter_map_marker_cluster/issues/232
   flutter_platform_widgets: ^7.0.1
   flutter_svg: ^2.0.10
   formz: ^0.7.0
@@ -59,7 +57,6 @@ dependencies:
   flutter_local_notifications: ^19.2.1
   phone_numbers_parser: ^9.0.3
   badges: ^3.1.2
-  flutter_map_cache: ^2.0.0+1
   http_cache_file_store: ^2.0.1
   # TODO: Switch back to release once this is resolved: https://github.com/KasemJaffer/receive_sharing_intent/issues/344
   receive_sharing_intent:
@@ -70,6 +67,7 @@ dependencies:
   device_calendar:
     git: https://github.com/bardram/device_calendar
   file_picker: ^10.2.0
+  maplibre_gl: ^0.22.0
 
 dev_dependencies:
   bloc_test: ^10.0.0
@@ -113,3 +111,4 @@ flutter:
   generate: true
   assets:
     - assets/images/icon.svg
+    - assets/images/icon.png

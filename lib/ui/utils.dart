@@ -1,16 +1,17 @@
 // Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
+import 'dart:async';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:image/image.dart' as img;
 import 'package:veilid/veilid.dart';
 
 import '../data/models/coag_contact.dart';
 import '../data/models/contact_introduction.dart';
-import '../data/models/contact_location.dart';
 import '../l10n/app_localizations.dart';
 import 'batch_invite_management/cubit.dart';
 
@@ -142,34 +143,35 @@ String contactUpdateSummary(CoagContact oldContact, CoagContact newContact) {
 
 Iterable<String> generateBatchInviteLinks(Batch batch) =>
     batch.subkeyWriters.toList().asMap().entries.map(
-      (w) => batchInviteUrl(
-        batch.label,
-        batch.dhtRecordKey,
-        batch.psk,
-        // Index of the writer in the list + 1 is the corresponding subkey
-        w.key + 1,
-        w.value,
-      ).toString(),
-    );
+          (w) => batchInviteUrl(
+            batch.label,
+            batch.dhtRecordKey,
+            batch.psk,
+            // Index of the writer in the list + 1 is the corresponding subkey
+            w.key + 1,
+            w.value,
+          ).toString(),
+        );
 
 // TODO: Pass dhtSettings to all the Url generators to make it easier to test that the correct keys are used?
 Uri directSharingUrl(
   String name,
   Typed<FixedEncodedString43> dhtRecordKey,
   FixedEncodedString43 psk,
-) => Uri(
-  scheme: 'https',
-  host: 'reunicorn.app',
-  path: '/c',
-  fragment: [name, dhtRecordKey.toString(), psk.toString()].join('~'),
-);
+) =>
+    Uri(
+      scheme: 'https',
+      host: 'reunicorn.app',
+      path: '/c',
+      fragment: [name, dhtRecordKey.toString(), psk.toString()].join('~'),
+    );
 
 Uri profileUrl(String name, PublicKey publicKey) => Uri(
-  scheme: 'https',
-  host: 'reunicorn.app',
-  path: '/p',
-  fragment: [name, publicKey.toString()].join('~'),
-);
+      scheme: 'https',
+      host: 'reunicorn.app',
+      path: '/p',
+      fragment: [name, publicKey.toString()].join('~'),
+    );
 
 Uri batchInviteUrl(
   String label,
@@ -177,30 +179,32 @@ Uri batchInviteUrl(
   FixedEncodedString43 psk,
   int subKeyIndex,
   KeyPair writer,
-) => Uri(
-  scheme: 'https',
-  host: 'reunicorn.app',
-  path: '/b',
-  fragment: [
-    label,
-    dhtRecordKey.toString(),
-    psk.toString(),
-    // Index of the writer in the list + 1 is the corresponding subkey
-    subKeyIndex.toString(),
-    writer.toString(),
-  ].join('~'),
-);
+) =>
+    Uri(
+      scheme: 'https',
+      host: 'reunicorn.app',
+      path: '/b',
+      fragment: [
+        label,
+        dhtRecordKey.toString(),
+        psk.toString(),
+        // Index of the writer in the list + 1 is the corresponding subkey
+        subKeyIndex.toString(),
+        writer.toString(),
+      ].join('~'),
+    );
 
 Uri profileBasedOfferUrl(
   String name,
   Typed<FixedEncodedString43> dhtRecordKey,
   FixedEncodedString43 publicKey,
-) => Uri(
-  scheme: 'https',
-  host: 'reunicorn.app',
-  path: '/o',
-  fragment: [name, dhtRecordKey.toString(), publicKey.toString()].join('~'),
-);
+) =>
+    Uri(
+      scheme: 'https',
+      host: 'reunicorn.app',
+      path: '/o',
+      fragment: [name, dhtRecordKey.toString(), publicKey.toString()].join('~'),
+    );
 
 bool showSharingInitializing(CoagContact contact) =>
     contact.dhtSettings.recordKeyThemSharing == null ||
@@ -220,58 +224,178 @@ bool showDirectSharing(CoagContact contact) =>
 /// Returns introducer and introduction for pending introductions
 Iterable<(CoagContact, ContactIntroduction)> pendingIntroductions(
   Iterable<CoagContact> contacts,
-) => contacts
-    .map(
-      (c) => c.introductionsByThem
-          .where(
-            (i) => !contacts
-                .map((c) => c.dhtSettings.recordKeyThemSharing)
-                .whereType<Typed<FixedEncodedString43>>()
-                .contains(i.dhtRecordKeyReceiving),
-          )
-          .map((i) => (c, i)),
-    )
-    .expand((i) => i);
+) =>
+    contacts
+        .map(
+          (c) => c.introductionsByThem
+              .where(
+                (i) => !contacts
+                    .map((c) => c.dhtSettings.recordKeyThemSharing)
+                    .whereType<Typed<FixedEncodedString43>>()
+                    .contains(i.dhtRecordKeyReceiving),
+              )
+              .map((i) => (c, i)),
+        )
+        .expand((i) => i);
 
 Widget buildEditOrAddWidgetSkeleton(
   BuildContext context, {
   required String title,
   required List<Widget> children,
   required Widget onSaveWidget,
-}) => Column(
-  mainAxisSize: MainAxisSize.min,
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    Padding(
-      padding: const EdgeInsets.only(top: 8, left: 8, right: 8, bottom: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton.filledTonal(
-            onPressed: Navigator.of(context).pop,
-            icon: const Icon(Icons.cancel_outlined),
+}) =>
+    Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 8, left: 8, right: 8, bottom: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton.filledTonal(
+                onPressed: Navigator.of(context).pop,
+                icon: const Icon(Icons.cancel_outlined),
+              ),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              onSaveWidget,
+            ],
           ),
-          Expanded(
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: children,
           ),
-          onSaveWidget,
-        ],
-      ),
-    ),
-    Padding(
-      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
-      ),
-    ),
-  ],
-);
+        ),
+      ],
+    );
 
 List<(String, String)> labelValueMapToTupleList(Map<String, String> map) =>
     map.map((key, value) => MapEntry(key, (key, value))).values.toList();
+
+Future<Uint8List> iconToUint8List(IconData iconData,
+    {double size = 48, Color color = Colors.black}) async {
+  final pictureRecorder = ui.PictureRecorder();
+  final canvas = Canvas(pictureRecorder);
+
+  final textPainter = TextPainter(textDirection: ui.TextDirection.ltr)
+    ..text = TextSpan(
+      text: String.fromCharCode(iconData.codePoint),
+      style: TextStyle(
+        fontSize: size,
+        fontFamily: iconData.fontFamily,
+        package: iconData.fontPackage,
+        color: color,
+      ),
+    )
+    ..layout()
+    ..paint(canvas, Offset.zero);
+
+  final picture = pictureRecorder.endRecording();
+  final image = await picture.toImage(
+    textPainter.width.ceil(),
+    textPainter.height.ceil(),
+  );
+
+  final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+  if (byteData == null) {
+    // Fallback: create a simple red circle as default marker
+    final fallbackRecorder = ui.PictureRecorder();
+    final fallbackCanvas = Canvas(fallbackRecorder);
+    final paint = Paint()..color = Colors.red;
+    fallbackCanvas.drawCircle(Offset(size / 2, size / 2), size / 2, paint);
+    final fallbackPicture = fallbackRecorder.endRecording();
+    final fallbackImage =
+        await fallbackPicture.toImage(size.toInt(), size.toInt());
+    final fallbackByteData =
+        await fallbackImage.toByteData(format: ui.ImageByteFormat.png);
+    return fallbackByteData?.buffer.asUint8List() ?? Uint8List(0);
+  }
+  return byteData.buffer.asUint8List();
+}
+
+Future<Uint8List> createCircularImageWithBorder(
+    Uint8List imageBytes, double size,
+    {Color borderColor = Colors.white, double borderWidth = 2.0}) async {
+  final codec = await ui.instantiateImageCodec(imageBytes);
+  final frameInfo = await codec.getNextFrame();
+  final originalImage = frameInfo.image;
+
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder);
+
+  final radius = size / 2;
+  final imageRect = Rect.fromLTWH(borderWidth, borderWidth,
+      size - (borderWidth * 2), size - (borderWidth * 2));
+
+  // Draw border circle
+  final Paint borderPaint = Paint()
+    ..color = borderColor
+    ..style = PaintingStyle.fill
+    ..isAntiAlias = true;
+
+  canvas.drawCircle(Offset(radius, radius), radius, borderPaint);
+
+  // Clip to inner circle for image
+  canvas.clipRRect(RRect.fromRectAndRadius(
+      imageRect, Radius.circular((size - borderWidth * 2) / 2)));
+
+  // Calculate center crop dimensions for rectangular images
+  final originalWidth = originalImage.width.toDouble();
+  final originalHeight = originalImage.height.toDouble();
+
+  // Find the smaller dimension to create a square crop from center
+  final cropSize =
+      originalWidth < originalHeight ? originalWidth : originalHeight;
+
+  // Calculate offset to crop from center
+  final cropLeft = (originalWidth - cropSize) / 2;
+  final cropTop = (originalHeight - cropSize) / 2;
+
+  // Source rectangle - square crop from center of original image
+  final sourceRect = Rect.fromLTWH(cropLeft, cropTop, cropSize, cropSize);
+
+  // Draw the center-cropped, scaled image
+  final imagePaint = Paint()..isAntiAlias = true;
+  canvas.drawImageRect(
+    originalImage,
+    sourceRect,
+    imageRect,
+    imagePaint,
+  );
+
+  final picture = recorder.endRecording();
+  final circularImage = await picture.toImage(size.toInt(), size.toInt());
+
+  final byteData =
+      await circularImage.toByteData(format: ui.ImageByteFormat.png);
+  if (byteData == null) {
+    // Fallback: create a simple red circle as default marker
+    final fallbackRecorder = ui.PictureRecorder();
+    final fallbackCanvas = Canvas(fallbackRecorder);
+    final paint = Paint()..color = Colors.red;
+    fallbackCanvas.drawCircle(Offset(size / 2, size / 2), size / 2, paint);
+    final fallbackPicture = fallbackRecorder.endRecording();
+    final fallbackImage =
+        await fallbackPicture.toImage(size.toInt(), size.toInt());
+    final fallbackByteData =
+        await fallbackImage.toByteData(format: ui.ImageByteFormat.png);
+    return fallbackByteData?.buffer.asUint8List() ?? Uint8List(0);
+  }
+  return byteData.buffer.asUint8List();
+}
+
+String colorToHex(Color color, {bool leadingHashSign = true}) =>
+    '${leadingHashSign ? '#' : ''}'
+    '${(color.r * 255).round().toRadixString(16).padLeft(2, '0')}'
+    '${(color.g * 255).round().toRadixString(16).padLeft(2, '0')}'
+    '${(color.b * 255).round().toRadixString(16).padLeft(2, '0')}';

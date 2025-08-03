@@ -3,23 +3,22 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:loggy/loggy.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../data/models/contact_location.dart';
 import '../../../data/providers/geocoding/maptiler.dart';
 import '../../../data/repositories/contacts.dart';
 import '../../../data/repositories/settings.dart';
+import '../../utils.dart';
 import '../../widgets/import_calendar_event.dart';
 import '../../widgets/location_search/widget.dart';
 
@@ -34,105 +33,92 @@ class MapWidget extends StatefulWidget {
 }
 
 class MapWidgetState extends State<MapWidget> {
-  final _mapController = MapController();
-  SearchResult? _selectedLocation;
-  String? _cachePath;
+  MapLibreMapController? _mapController;
 
   @override
-  void initState() {
-    super.initState();
-    _selectedLocation = widget.initialLocation;
-    unawaited(_initializeCachePath());
-  }
-
-  Future<void> _initializeCachePath() async {
-    final cachePath = await getTemporaryDirectory().then((td) => td.path);
-    setState(() {
-      _cachePath = cachePath;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => (_cachePath == null)
-      ? const Center(child: CircularProgressIndicator())
-      : FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
+  Widget build(BuildContext context) => Stack(
+        children: [
+          // TODO: Refactor redundancy with map page
+          MapLibreMap(
+            styleString: [
+              'https://api.maptiler.com/maps/dataviz-',
+              if (context.read<SettingsRepository>().darkMode)
+                'dark'
+              else
+                'light',
+              '/style.json?key=${maptilerToken()}'
+            ].join(),
             // TODO: Pick reasonable center without requiring all markers first;
             // e.g. based on profile contact locations or current GPS
-            initialCenter: (_selectedLocation == null)
-                ? const LatLng(48.8575, 2.3514)
-                : LatLng(
-                    _selectedLocation!.latitude,
-                    _selectedLocation!.longitude,
-                  ),
-            initialZoom: 3,
-            maxZoom: 15,
-            minZoom: 1,
-            interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.pinchZoom |
-                  InteractiveFlag.drag |
-                  InteractiveFlag.doubleTapZoom |
-                  InteractiveFlag.doubleTapDragZoom |
-                  InteractiveFlag.pinchMove,
-            ),
-            // onPositionChanged: (camera, hasGesture) => camera.center,
-          ),
-          children: <Widget>[
-            TileLayer(
-              userAgentPackageName: 'social.coagulate.app',
-              urlTemplate: context.read<SettingsRepository>().mapUrl,
-            ),
-            // Copyright notice
-            RichAttributionWidget(
-              showFlutterMapAttribution: false,
-              attributions: [
-                TextSourceAttribution(
-                  'MapTiler',
-                  onTap: () async =>
-                      launchUrl(Uri.parse('https://maptiler.com/')),
-                ),
-                TextSourceAttribution(
-                  'OpenStreetMap contributors',
-                  onTap: () async =>
-                      launchUrl(Uri.parse('https://openstreetmap.org/')),
-                ),
-              ],
-            ),
-            // Selected location
-            MarkerLayer(
-              markers: [
-                if (_selectedLocation != null)
-                  Marker(
-                    point: LatLng(
-                      _selectedLocation!.latitude,
-                      _selectedLocation!.longitude,
+            initialCameraPosition: (widget.initialLocation == null)
+                ? const CameraPosition(target: LatLng(20, 0), zoom: 1.5)
+                : CameraPosition(
+                    target: LatLng(
+                      widget.initialLocation!.latitude,
+                      widget.initialLocation!.longitude,
                     ),
-                    child: const Icon(Icons.location_on),
-                  ),
-              ],
-            ),
-            // Search bar
-            Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
-                child: LocationSearchWidget(
-                  initialValue: _selectedLocation?.placeName,
-                  onSelected: (l) {
-                    setState(() {
-                      _selectedLocation = l;
-                    });
-                    _mapController.move(LatLng(l.latitude, l.longitude), 13);
-                    if (widget.onSelected != null) {
-                      widget.onSelected!(l);
-                    }
-                  },
+                    zoom: 13),
+            onMapCreated: (controller) => _mapController = controller,
+            onStyleLoadedCallback: () async {
+              await _mapController?.addSource(
+                'maptiler-vectors',
+                VectorSourceProperties(
+                  url:
+                      'https://api.maptiler.com/tiles/v3.json?key=${maptilerToken()}',
+                  // TODO: Does xyz vs tms make any difference?
+                  scheme: 'tms',
                 ),
+              );
+
+              await _mapController?.addImage(
+                  'custom-marker',
+                  await iconToUint8List(Icons.location_on,
+                      size: 64, color: Colors.deepPurpleAccent));
+
+              if (widget.initialLocation != null) {
+                await _mapController
+                    ?.removeSymbols(_mapController?.symbols ?? {});
+                await _mapController?.addSymbol(SymbolOptions(
+                  geometry: LatLng(
+                    widget.initialLocation!.latitude,
+                    widget.initialLocation!.longitude,
+                  ),
+                  iconImage: 'custom-marker',
+                  iconSize: 2,
+                ));
+              }
+            },
+            attributionButtonMargins: const Point<num>(12, 12),
+            rotateGesturesEnabled: false,
+            tiltGesturesEnabled: false,
+            dragEnabled: false,
+          ),
+          // Search bar
+          Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
+              child: LocationSearchWidget(
+                initialValue: widget.initialLocation?.placeName,
+                onSelected: (l) async {
+                  widget.onSelected?.call(l);
+
+                  await _mapController?.moveCamera(CameraUpdate.newLatLngZoom(
+                      LatLng(l.latitude, l.longitude), 13));
+
+                  await _mapController
+                      ?.removeSymbols(_mapController?.symbols ?? {});
+                  await _mapController?.addSymbol(SymbolOptions(
+                    geometry: LatLng(l.latitude, l.longitude),
+                    iconImage: 'custom-marker',
+                    iconSize: 2,
+                  ));
+                },
               ),
             ),
-          ],
-        );
+          ),
+        ],
+      );
 }
 
 class ScheduleWidget extends StatefulWidget {

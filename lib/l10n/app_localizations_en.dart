@@ -78,7 +78,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get circles => 'circles';
 
   @override
-  String get welcomeAppTitle => 'Welcome to Coagulate';
+  String get welcomeAppTitle => 'Welcome to Reunicorn';
 
   @override
   String get welcomeHeadline => 'Welcome!\nWhat\'s your name?';
@@ -88,7 +88,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'This is the first bit of personal information that you can selectively share with others in a moment.';
 
   @override
-  String get welcomeCallToActionButton => 'Let\'s coagulate';
+  String get welcomeCallToActionButton => 'Let\'s connect';
 
   @override
   String get welcomeErrorNameMissing => 'Please enter your name.';

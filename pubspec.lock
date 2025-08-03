@@ -17,14 +17,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.4.5"
-  animated_stack_widget:
-    dependency: transitive
-    description:
-      name: animated_stack_widget
-      sha256: ce4788dd158768c9d4388354b6fb72600b78e041a37afc4c279c63ecafcb9408
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.4"
   ansicolor:
     dependency: "direct main"
     description:
@@ -289,14 +281,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.8"
-  dart_earcut:
-    dependency: transitive
-    description:
-      name: dart_earcut
-      sha256: e485001bfc05dcbc437d7bfb666316182e3522d4c3f9668048e004d0eb2ce43b
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.2.0"
   dart_pubspec_licenses:
     dependency: transitive
     description:
@@ -338,30 +322,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.4.1"
-  dio:
-    dependency: transitive
-    description:
-      name: dio
-      sha256: "253a18bbd4851fecba42f7343a1df3a9a4c1d31a2c1b37e221086b4fa8c8dbc9"
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.8.0+1"
-  dio_cache_interceptor:
-    dependency: transitive
-    description:
-      name: dio_cache_interceptor
-      sha256: c1cbf8be886b3e077165dda50a1b3bb299b8a72694af94d065b4d2ac0fee67d7
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.3"
-  dio_web_adapter:
-    dependency: transitive
-    description:
-      name: dio_web_adapter
-      sha256: "7586e476d70caecaf1686d21eee7247ea43ef5c345eab9e0cc3583ff13378d78"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.1"
   equatable:
     dependency: "direct main"
     description:
@@ -521,38 +481,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_map:
-    dependency: "direct main"
-    description:
-      name: flutter_map
-      sha256: "2ecb34619a4be19df6f40c2f8dce1591675b4eff7a6857bd8f533706977385da"
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.0.2"
-  flutter_map_cache:
-    dependency: "direct main"
-    description:
-      name: flutter_map_cache
-      sha256: fc9697760dc95b6adf75110a23a800ace5d95a735a58ec43f05183bc675c7246
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0+1"
-  flutter_map_marker_cluster:
-    dependency: "direct main"
-    description:
-      name: flutter_map_marker_cluster
-      sha256: "2c1fb4d7a2105c4bbeb89be215320507f4b71b2036df4341fab9d2aa677d3ae9"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.4.0"
-  flutter_map_marker_popup:
-    dependency: transitive
-    description:
-      name: flutter_map_marker_popup
-      sha256: a7540538114b5d1627ab67b498273d66bc36090385412ae49ef215af4a2861c5
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.0.0"
   flutter_oss_licenses:
     dependency: "direct dev"
     description:
@@ -933,22 +861,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
-  lists:
-    dependency: transitive
-    description:
-      name: lists
-      sha256: "4ca5c19ae4350de036a7e996cdd1ee39c93ac0a2b840f4915459b7d0a7d4ab27"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.1"
-  logger:
-    dependency: transitive
-    description:
-      name: logger
-      sha256: be4b23575aac7ebf01f225a241eb7f6b5641eeaf43c6a8613510fc2f8cf187d1
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.5.0"
   logging:
     dependency: transitive
     description:
@@ -965,6 +877,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.3"
+  maplibre_gl:
+    dependency: "direct main"
+    description:
+      name: maplibre_gl
+      sha256: "5c7b1008396b2a321bada7d986ed60f9423406fbc7bd16f7ce91b385dfa054cd"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.22.0"
+  maplibre_gl_platform_interface:
+    dependency: transitive
+    description:
+      name: maplibre_gl_platform_interface
+      sha256: "08ee0a2d0853ea945a0ab619d52c0c714f43144145cd67478fc6880b52f37509"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.22.0"
+  maplibre_gl_web:
+    dependency: transitive
+    description:
+      name: maplibre_gl_web
+      sha256: "2b13d4b1955a9a54e38a718f2324e56e4983c080fc6de316f6f4b5458baacb58"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.22.0"
   matcher:
     dependency: transitive
     description:
@@ -989,14 +925,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.16.0"
-  mgrs_dart:
-    dependency: transitive
-    description:
-      name: mgrs_dart
-      sha256: fb89ae62f05fa0bb90f70c31fc870bcbcfd516c843fb554452ab3396f78586f7
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0"
   mime:
     dependency: transitive
     description:
@@ -1189,14 +1117,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.8"
-  polylabel:
-    dependency: transitive
-    description:
-      name: polylabel
-      sha256: "41b9099afb2aa6c1730bdd8a0fab1400d287694ec7615dd8516935fa3144214b"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.1"
   pool:
     dependency: transitive
     description:
@@ -1221,14 +1141,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.3"
-  proj4dart:
-    dependency: transitive
-    description:
-      name: proj4dart
-      sha256: c8a659ac9b6864aa47c171e78d41bbe6f5e1d7bd790a5814249e6b68bc44324e
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0"
   protobuf:
     dependency: transitive
     description:
@@ -1635,14 +1547,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
-  unicode:
-    dependency: transitive
-    description:
-      name: unicode
-      sha256: "0f69e46593d65245774d4f17125c6084d2c20b4e473a983f6e21b7d7762218f1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.1"
   universal_io:
     dependency: transitive
     description:
@@ -1833,14 +1737,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.13.0"
-  wkt_parser:
-    dependency: transitive
-    description:
-      name: wkt_parser
-      sha256: "8a555fc60de3116c00aad67891bcab20f81a958e4219cc106e3c037aa3937f13"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0"
   xdg_directories:
     dependency: transitive
     description:
