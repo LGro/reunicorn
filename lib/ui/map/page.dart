@@ -626,6 +626,25 @@ class _MapPageState extends State<MapPage> {
             .expand((l) => l),
       ];
 
+  Future<void> _addMarkerImages(List<MarkerData> markers) async {
+    final defaultImageData =
+        await DefaultAssetBundle.of(context).load('assets/images/icon.png');
+    final defaultImage = await createCircularImageWithBorder(
+        defaultImageData.buffer.asUint8List(), 128,
+        borderWidth: 3);
+    for (final e in markers.asMap().entries) {
+      var image = defaultImage;
+      try {
+        image = await createCircularImageWithBorder(
+            Uint8List.fromList(e.value.picture ?? []), 128,
+            borderWidth: 3);
+      } catch (e) {
+        // Invalid Image Data - that's what we sometimes see here, likely for empty lists
+      }
+      await _controller?.addImage('icon-${e.key}', image);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => BlocProvider(
         create: (context) => MapCubit(
@@ -645,6 +664,7 @@ class _MapPageState extends State<MapPage> {
                         .asMap()
                         .map((i, marker) => MapEntry('marker-$i', marker));
                   });
+                  await _addMarkerImages(markers);
                 }
               }
             },
@@ -685,14 +705,6 @@ class _MapPageState extends State<MapPage> {
                         final clusterCircleTextColor =
                             colorToHex(Theme.of(context).colorScheme.onPrimary);
 
-                        final defaultImageData =
-                            await DefaultAssetBundle.of(context)
-                                .load('assets/images/icon.png');
-                        final defaultImage =
-                            await createCircularImageWithBorder(
-                                defaultImageData.buffer.asUint8List(), 128,
-                                borderWidth: 3);
-
                         await _controller?.addSource(
                           'maptiler-vectors',
                           VectorSourceProperties(
@@ -703,17 +715,7 @@ class _MapPageState extends State<MapPage> {
                           ),
                         );
 
-                        for (final e in markers.asMap().entries) {
-                          var image = defaultImage;
-                          try {
-                            image = await createCircularImageWithBorder(
-                                Uint8List.fromList(e.value.picture ?? []), 128,
-                                borderWidth: 3);
-                          } catch (e) {
-                            // Invalid Image Data - that's what we sometimes see here, likely for empty lists
-                          }
-                          await _controller?.addImage('icon-${e.key}', image);
-                        }
+                        await _addMarkerImages(markers);
 
                         setState(() {
                           _markers = markers.asMap().map(
