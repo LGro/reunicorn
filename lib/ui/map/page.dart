@@ -16,7 +16,6 @@ import 'package:share_plus/share_plus.dart';
 import '../../data/models/contact_location.dart';
 import '../../data/repositories/contacts.dart';
 import '../../data/repositories/settings.dart';
-import '../../debug_log.dart';
 import '../contact_details/page.dart';
 import '../locations/check_in/widget.dart';
 import '../locations/cubit.dart';
@@ -286,8 +285,8 @@ Future<void> showModalTemporaryLocationDetails(
                             .read<MapCubit>()
                             .removeLocation(locationId)
                             .then(
-                              (_) => (context.mounted)
-                                  ? Navigator.pop(context)
+                              (_) => (modalContext.mounted)
+                                  ? Navigator.of(modalContext).pop()
                                   : null,
                             ),
                         style: ButtonStyle(
