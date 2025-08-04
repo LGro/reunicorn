@@ -72,6 +72,7 @@ class MapWidgetState extends State<MapWidget> {
               }
             },
             attributionButtonMargins: const Point<num>(12, 12),
+            zoomGesturesEnabled: true,
             rotateGesturesEnabled: false,
             tiltGesturesEnabled: false,
             dragEnabled: false,
@@ -116,6 +117,7 @@ class ScheduleWidget extends StatefulWidget {
 
 class _ScheduleWidgetState extends State<ScheduleWidget> {
   final _key = GlobalKey<FormState>();
+  final _titleFieldKey = GlobalKey<FormFieldState<String>>();
   final _titleController = TextEditingController();
   final _detailsController = TextEditingController();
 
@@ -125,6 +127,14 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
   SearchResult? _location;
   List<(String, String, bool, int)> _circles = const [];
   bool _toggleMapLocationKey = false;
+  bool _readyToSubmit = false;
+
+  void updateReadyToSubmit() => setState(() {
+        _readyToSubmit = _circles.firstWhereOrNull((c) => c.$3) != null &&
+            _start != null &&
+            _location != null &&
+            _titleController.text.isNotEmpty;
+      });
 
   @override
   void initState() {
@@ -179,6 +189,8 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
           )
           .toList();
     }
+
+    updateReadyToSubmit();
   }
 
   Future<void> _importCalendarEvent(Event e) async {
@@ -217,6 +229,7 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
       _location = location;
       _toggleMapLocationKey = !_toggleMapLocationKey;
     });
+    updateReadyToSubmit();
   }
 
   void _onStartTimeChanged(TimeOfDay value) {
@@ -232,6 +245,7 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
         value.minute,
       );
     });
+    updateReadyToSubmit();
   }
 
   void _onEndTimeChanged(TimeOfDay value) {
@@ -247,6 +261,7 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
         value.minute,
       );
     });
+    updateReadyToSubmit();
   }
 
   void _onLocationChanged(SearchResult value) {
@@ -256,6 +271,7 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
     setState(() {
       _location = value;
     });
+    updateReadyToSubmit();
   }
 
   void _onDateRangeChanged(DateTimeRange value) {
@@ -278,6 +294,7 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
         _end?.minute ?? 0,
       );
     });
+    updateReadyToSubmit();
   }
 
   void _updateCircleSelection(int i, bool selected) {
@@ -289,6 +306,7 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
     setState(() {
       _circles = circles;
     });
+    updateReadyToSubmit();
   }
 
   Future<void> _onSubmit() async {
@@ -392,16 +410,25 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
                           Padding(
                             padding: const EdgeInsets.only(left: 16, right: 16),
                             child: TextFormField(
-                              key: const Key('scheduleForm_titleInput'),
-                              controller: _titleController,
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                helperMaxLines: 2,
-                                labelText: 'Title',
-                                errorMaxLines: 2,
-                              ),
-                              textInputAction: TextInputAction.done,
-                            ),
+                                key: _titleFieldKey,
+                                controller: _titleController,
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  helperMaxLines: 2,
+                                  labelText: 'Title',
+                                  errorMaxLines: 2,
+                                ),
+                                textInputAction: TextInputAction.done,
+                                validator: (value) {
+                                  if (value?.isEmpty ?? true) {
+                                    return 'Please enter a value.';
+                                  }
+                                  return null;
+                                },
+                                onChanged: (_) {
+                                  _titleFieldKey.currentState?.validate();
+                                  updateReadyToSubmit();
+                                }),
                           ),
                           const SizedBox(height: 8),
                           Padding(
@@ -599,13 +626,7 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
                       ? const CircularProgressIndicator()
                       : FilledButton(
                           key: const Key('scheduleForm_submit'),
-                          onPressed:
-                              (_circles.firstWhereOrNull((c) => c.$3) != null &&
-                                      _start != null &&
-                                      _location != null &&
-                                      _titleController.text.isNotEmpty)
-                                  ? _onSubmit
-                                  : null,
+                          onPressed: _readyToSubmit ? _onSubmit : null,
                           child: const Text('Share'),
                         ),
                 ),
