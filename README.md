@@ -12,6 +12,8 @@ When you plan to visit a city, find out immediately who of your old friends you 
 This [Flutter](flutter.dev) based implementation is derived from [VeilidChat](https://gitlab.com/veilid/veilidchat/).
 Accordingly, the Copyright to all code files belongs to the Veilid developers unless explicitly stated otherwise.
 
+The map style files `assets/map-style-*.json` originate from https://maps.protomaps.com, so the Copyright belongs to them.
+
 ## Development Setup
 
 While this is still in development, you must have a clone of the [Veilid](https://gitlab.com/veilid/veilid/) source checked out at `../veilid` relative to the working directory of this repository.

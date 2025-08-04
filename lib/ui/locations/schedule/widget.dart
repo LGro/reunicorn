@@ -40,14 +40,7 @@ class MapWidgetState extends State<MapWidget> {
         children: [
           // TODO: Refactor redundancy with map page
           MapLibreMap(
-            styleString: [
-              'https://api.maptiler.com/maps/dataviz-',
-              if (context.read<SettingsRepository>().darkMode)
-                'dark'
-              else
-                'light',
-              '/style.json?key=${maptilerToken()}'
-            ].join(),
+            styleString: context.read<SettingsRepository>().mapStyleString,
             // TODO: Pick reasonable center without requiring all markers first;
             // e.g. based on profile contact locations or current GPS
             initialCameraPosition: (widget.initialLocation == null)
@@ -60,16 +53,6 @@ class MapWidgetState extends State<MapWidget> {
                     zoom: 13),
             onMapCreated: (controller) => _mapController = controller,
             onStyleLoadedCallback: () async {
-              await _mapController?.addSource(
-                'maptiler-vectors',
-                VectorSourceProperties(
-                  url:
-                      'https://api.maptiler.com/tiles/v3.json?key=${maptilerToken()}',
-                  // TODO: Does xyz vs tms make any difference?
-                  scheme: 'tms',
-                ),
-              );
-
               await _mapController?.addImage(
                   'custom-marker',
                   await iconToUint8List(Icons.location_on,

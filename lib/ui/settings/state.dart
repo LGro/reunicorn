@@ -1,4 +1,4 @@
-// Copyright 2024 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 part of 'cubit.dart';
@@ -16,7 +16,6 @@ extension SettingsStatusX on SettingsStatus {
 final class SettingsState extends Equatable {
   const SettingsState({
     required this.darkMode,
-    required this.mapProvider,
     required this.autoAddressResolution,
     required this.status,
     required this.message,
@@ -28,31 +27,29 @@ final class SettingsState extends Equatable {
   final SettingsStatus status;
   final String message;
   final bool darkMode;
-  final MapProvider mapProvider;
   final bool autoAddressResolution;
 
   Map<String, dynamic> toJson() => _$SettingsStateToJson(this);
 
   SettingsState copyWith({
     bool? darkMode,
-    MapProvider? mapProvider,
     bool? autoAddressResolution,
     SettingsStatus? status,
     String? message,
-  }) => SettingsState(
-    darkMode: darkMode ?? this.darkMode,
-    mapProvider: mapProvider ?? this.mapProvider,
-    autoAddressResolution: autoAddressResolution ?? this.autoAddressResolution,
-    status: status ?? this.status,
-    message: message ?? this.message,
-  );
+  }) =>
+      SettingsState(
+        darkMode: darkMode ?? this.darkMode,
+        autoAddressResolution:
+            autoAddressResolution ?? this.autoAddressResolution,
+        status: status ?? this.status,
+        message: message ?? this.message,
+      );
 
   @override
   List<Object?> get props => [
-    status,
-    message,
-    darkMode,
-    mapProvider,
-    autoAddressResolution,
-  ];
+        status,
+        message,
+        darkMode,
+        autoAddressResolution,
+      ];
 }

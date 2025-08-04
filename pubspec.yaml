@@ -112,3 +112,5 @@ flutter:
   assets:
     - assets/images/icon.svg
     - assets/images/icon.png
+    - assets/map-style-dataviz-black.json
+    - assets/map-style-dataviz-white.json

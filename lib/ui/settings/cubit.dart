@@ -10,7 +10,6 @@ import 'package:faker/faker.dart';
 import 'package:image/image.dart' as img;
 import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
-import 'package:veilid_support/veilid_support.dart';
 
 import '../../data/models/coag_contact.dart';
 import '../../data/models/contact_location.dart';
@@ -48,15 +47,14 @@ Uint8List generateRandomImage(int width, int height) {
 
 class SettingsCubit extends Cubit<SettingsState> {
   SettingsCubit(this.contactsRepository, this.settingsRepository)
-    : super(
-        SettingsState(
-          message: '',
-          status: SettingsStatus.initial,
-          darkMode: settingsRepository.darkMode,
-          autoAddressResolution: true,
-          mapProvider: settingsRepository.mapProvider,
-        ),
-      );
+      : super(
+          SettingsState(
+            message: '',
+            status: SettingsStatus.initial,
+            darkMode: settingsRepository.darkMode,
+            autoAddressResolution: true,
+          ),
+        );
 
   ContactsRepository contactsRepository;
   SettingsRepository settingsRepository;
@@ -64,11 +62,6 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setDarkMode(bool v) async {
     emit(state.copyWith(darkMode: v));
     await settingsRepository.setDarkMode(v);
-  }
-
-  Future<void> setMapProvider(MapProvider v) async {
-    emit(state.copyWith(mapProvider: v));
-    await settingsRepository.setMapProvider(v);
   }
 
   Future<void> addDummyContact() async {
@@ -116,8 +109,11 @@ class SettingsCubit extends Cubit<SettingsState> {
       dhtSettings: const DhtSettings(),
     );
     await contactsRepository.saveContact(c1);
-    await contactsRepository.updateCirclesForContact(c1.coagContactId, [
-      defaultInitialCircleId,
-    ], triggerDhtUpdate: false);
+    await contactsRepository.updateCirclesForContact(
+        c1.coagContactId,
+        [
+          defaultInitialCircleId,
+        ],
+        triggerDhtUpdate: false);
   }
 }

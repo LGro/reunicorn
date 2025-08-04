@@ -36,37 +36,16 @@ class SettingsPage extends StatelessWidget {
                     child: VeilidStatusWidget(statusWidgets: {}),
                   ),
                 ),
-                // ListTile(
-                //   title: const Text('Map provider'),
-                //   trailing: DropdownMenu<MapProvider>(
-                //     initialSelection: state.mapProvider,
-                //     onSelected: (v) => (v == null)
-                //         ? null
-                //         : blocContext.read<SettingsCubit>().setMapProvider(v),
-                //     dropdownMenuEntries: MapProvider.values
-                //         // TODO: Remove when support for custom urls lands
-                //         .sublist(0, 2)
-                //         .map(
-                //           (v) => DropdownMenuEntry(
-                //             value: v,
-                //             label: v.toString().split('.').last,
-                //           ),
-                //         )
-                //         .toList(),
-                //   ),
-                // ),
-                // TODO: Make sure that when re-enabling this the marker labels have the correct color when selecting the opposite of the system theme
-                // if (state.mapProvider == MapProvider.maptiler)
+                // TODO: Re-enable, add support in app.dart, and ask for app restart afterwards here
                 //   ListTile(
-                //       title: const Text('Map dark mode'),
+                //       title: const Text('Dark mode'),
                 //       trailing: Switch(
                 //           value: state.darkMode,
                 //           onChanged: blocContext
                 //               .read<SettingsCubit>()
                 //               .setDarkMode)),
                 // TODO: Add option
-                // if (state.mapProvider == MapProvider.custom)
-                //   const ListTile(title: Text('Set custom map server url')),
+                // const ListTile(title: Text('Set custom map server url')),
                 // TODO: Move async things to cubit
                 // if (Platform.isIOS) _backgroundPermissionStatus(),
                 if (kDebugMode)

@@ -397,7 +397,6 @@ class _AppState extends State<App> with WidgetsBindingObserver {
                   create: (_) => SettingsRepository(
                     darkMode: MediaQuery.of(context).platformBrightness ==
                         Brightness.dark,
-                    devicePixelRatio: View.of(context).devicePixelRatio,
                   ),
                 ),
                 RepositoryProvider(

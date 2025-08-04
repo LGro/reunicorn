@@ -23,6 +23,9 @@ import '../locations/schedule/widget.dart';
 import '../utils.dart';
 import 'cubit.dart';
 
+// For offline map support, see:
+// https://github.com/maplibre/flutter-maplibre-gl/blob/3e09a3eecf194df94ff5b31c77d415cc73be6310/maplibre_gl_example/lib/offline_regions.dart
+
 LatLng? initialLocation(
   Iterable<ContactAddressLocation> profileAddressLocations,
   Iterable<ContactTemporaryLocation> profileTemporaryLocations,
@@ -499,7 +502,7 @@ class _MapPageState extends State<MapPage> {
   Future<void> _onFeatureTapped(dynamic id, Point<double> point,
       LatLng coordinates, String layerId) async {
     // On individual location tap, call stored callback
-    if (layerId == 'unclustered-point') {
+    if (layerId == 'unclustered-points') {
       _markers[id]?.onTap.call();
     }
 
@@ -672,14 +675,8 @@ class _MapPageState extends State<MapPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : Stack(children: [
                     MapLibreMap(
-                      styleString: [
-                        'https://api.maptiler.com/maps/dataviz-',
-                        if (context.read<SettingsRepository>().darkMode)
-                          'dark'
-                        else
-                          'light',
-                        '/style.json?key=${maptilerToken()}'
-                      ].join(),
+                      styleString:
+                          context.read<SettingsRepository>().mapStyleString,
                       initialCameraPosition: CameraPosition(
                           target: initialLocation(
                                 state.profileInfo?.addressLocations.values ??
@@ -696,6 +693,8 @@ class _MapPageState extends State<MapPage> {
                               const LatLng(20, 0),
                           zoom: 2.5),
                       trackCameraPosition: true,
+                      minMaxZoomPreference:
+                          const MinMaxZoomPreference(null, 22),
                       onMapCreated: _onMapCreated,
                       onStyleLoadedCallback: () async {
                         final markers = _getMarkers(context, state);
@@ -704,16 +703,6 @@ class _MapPageState extends State<MapPage> {
                             colorToHex(Theme.of(context).colorScheme.primary);
                         final clusterCircleTextColor =
                             colorToHex(Theme.of(context).colorScheme.onPrimary);
-
-                        await _controller?.addSource(
-                          'maptiler-vectors',
-                          VectorSourceProperties(
-                            url:
-                                'https://api.maptiler.com/tiles/v3.json?key=${maptilerToken()}',
-                            // TODO: Does xyz vs tms make any difference?
-                            scheme: 'tms',
-                          ),
-                        );
 
                         await _addMarkerImages(markers);
 
@@ -735,47 +724,56 @@ class _MapPageState extends State<MapPage> {
                         );
 
                         // Layer: individual unclustered points (add first)
-                        await _controller?.addLayer(
-                          'points',
-                          'unclustered-point',
-                          const SymbolLayerProperties(
-                            iconImage: ['get', 'icon'],
-                            iconSize: 1,
-                            iconAllowOverlap: true,
-                            iconIgnorePlacement: true,
-                          ),
-                          filter: [
-                            '!',
-                            ['has', 'point_count']
-                          ],
-                        );
+                        if (!(await _controller?.getLayerIds() ?? [])
+                            .contains('unclustered-points')) {
+                          await _controller?.addLayer(
+                            'points',
+                            'unclustered-points',
+                            const SymbolLayerProperties(
+                              iconImage: ['get', 'icon'],
+                              iconSize: 1,
+                              iconAllowOverlap: true,
+                              iconIgnorePlacement: true,
+                            ),
+                            filter: [
+                              '!',
+                              ['has', 'point_count']
+                            ],
+                          );
+                        }
 
                         // Layer: cluster circles (simpler styling first)
-                        await _controller?.addLayer(
-                          'points',
-                          'clusters',
-                          CircleLayerProperties(
-                            circleColor: clusterCircleColor,
-                            circleRadius: 25,
-                            circleStrokeWidth: 0,
-                            circleStrokeColor: '#ffffff',
-                          ),
-                          filter: ['has', 'point_count'],
-                        );
+                        if (!(await _controller?.getLayerIds() ?? [])
+                            .contains('clusters')) {
+                          await _controller?.addLayer(
+                            'points',
+                            'clusters',
+                            CircleLayerProperties(
+                              circleColor: clusterCircleColor,
+                              circleRadius: 25,
+                              circleStrokeWidth: 0,
+                              circleStrokeColor: '#ffffff',
+                            ),
+                            filter: ['has', 'point_count'],
+                          );
+                        }
 
                         // Layer: cluster count text
-                        await _controller?.addLayer(
-                          'points',
-                          'cluster-count',
-                          SymbolLayerProperties(
-                            textField: ['get', 'point_count_abbreviated'],
-                            textSize: 16,
-                            textColor: clusterCircleTextColor,
-                            textHaloColor: '#000000',
-                            textHaloWidth: 0,
-                          ),
-                          filter: ['has', 'point_count'],
-                        );
+                        if (!(await _controller?.getLayerIds() ?? [])
+                            .contains('cluster-count')) {
+                          await _controller?.addLayer(
+                            'points',
+                            'cluster-count',
+                            SymbolLayerProperties(
+                              textField: ['get', 'point_count_abbreviated'],
+                              textSize: 16,
+                              textColor: clusterCircleTextColor,
+                              textHaloColor: '#000000',
+                              textHaloWidth: 0,
+                            ),
+                            filter: ['has', 'point_count'],
+                          );
+                        }
                       },
                       attributionButtonMargins: const Point<num>(12, 12),
                       rotateGesturesEnabled: false,
