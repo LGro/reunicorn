@@ -5,111 +5,26 @@ import 'dart:math';
 
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/models/coag_contact.dart';
-import '../../data/models/contact_location.dart';
 import '../../data/repositories/contacts.dart';
 import '../../ui/profile/cubit.dart';
 import '../introductions/page.dart';
-import '../profile/page.dart';
 import '../utils.dart';
-import '../widgets/circles/cubit.dart';
-import '../widgets/circles/widget.dart';
 import '../widgets/dht_status/widget.dart';
 import '../widgets/veilid_status/widget.dart';
 import 'cubit.dart';
 import 'link_to_system_contact/page.dart';
+import 'widgets/circles.dart';
+import 'widgets/connecting.dart';
+import 'widgets/contact_details_and_locations.dart';
+import 'widgets/emoji_sas_verification.dart';
+import 'widgets/shared_profile.dart';
+import 'widgets/temporary_locations.dart';
 
 String _shorten(String str) => str.substring(0, min(10, str.length));
-
-Widget _qrCodeButton(
-  BuildContext context, {
-  required String buttonText,
-  required String alertTitle,
-  required String qrCodeData,
-}) =>
-    TextButton(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const Icon(Icons.qr_code),
-          const SizedBox(width: 8),
-          Text(buttonText),
-          const SizedBox(width: 4),
-        ],
-      ),
-      onPressed: () async => showDialog<void>(
-        context: context,
-        builder: (_) => AlertDialog(
-          titlePadding: const EdgeInsets.only(left: 16, right: 16, top: 16),
-          title: Center(child: Text(alertTitle)),
-          // shape: const RoundedRectangleBorder(),
-          content: SizedBox(
-            height: 200,
-            width: 200,
-            child: Center(
-              child: QrImageView(
-                data: qrCodeData,
-                backgroundColor: Colors.white,
-                size: 200,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-int numberContactsShared(
-  Iterable<Iterable<String>> circleMembersips,
-  Iterable<String> circles,
-) =>
-    circleMembersips
-        .where((c) => c.asSet().intersectsWith(circles.asSet()))
-        .length;
-
-Widget locationTile(
-  BuildContext context,
-  ContactTemporaryLocation location, {
-  Map<String, List<String>>? circleMembersips,
-  Future<void> Function()? onTap,
-}) =>
-    ListTile(
-      title: Text(location.name),
-      contentPadding: EdgeInsets.zero,
-      onTap: onTap,
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'From: ${DateFormat.yMd(Localizations.localeOf(context).languageCode).format(location.start)}',
-          ),
-          if (location.end != location.start)
-            Text(
-              'Till: ${DateFormat.yMd(Localizations.localeOf(context).languageCode).format(location.end)}',
-            ),
-          // Text('Lon: ${location.longitude.toStringAsFixed(4)}, '
-          //     'Lat: ${location.latitude.toStringAsFixed(4)}'),
-          if (circleMembersips != null)
-            Text(
-              'Shared with ${numberContactsShared(circleMembersips.values, location.circles)} '
-              'contact${(numberContactsShared(circleMembersips.values, location.circles) == 1) ? '' : 's'}',
-            ),
-          if (location.details.isNotEmpty) Text(location.details),
-        ],
-      ),
-      trailing:
-          // TODO: Better icon to indicate checked in
-          (location.checkedIn && DateTime.now().isBefore(location.end))
-              ? const Icon(Icons.pin_drop_outlined)
-              : null,
-    );
 
 class ContactPage extends StatefulWidget {
   const ContactPage({required this.coagContactId, super.key});
@@ -326,7 +241,7 @@ class _ContactPageState extends State<ContactPage> {
               ),
 
             // Contact details
-            ..._contactDetailsAndLocations(context, contact),
+            ...contactDetailsAndLocations(context, contact),
 
             // Sharing circle settings and shared profile
             Padding(
@@ -343,6 +258,11 @@ class _ContactPageState extends State<ContactPage> {
             Padding(
               padding: const EdgeInsets.only(left: 4, top: 4, right: 4),
               child: _sharingSettings(context, contact, circles),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.only(left: 4, top: 4, right: 4),
+              child: EmojiSasVerification(contact),
             ),
 
             // Introductions
@@ -582,124 +502,6 @@ class _ContactPageState extends State<ContactPage> {
       );
 }
 
-Future<void> _launchUrl(String url) async {
-  final uri = Uri.parse(url);
-  try {
-    final success = await launchUrl(uri);
-  } on PlatformException {
-    // TODO: Give feedback?
-  }
-}
-
-List<Widget> _contactDetailsAndLocations(
-  BuildContext context,
-  CoagContact contact,
-) =>
-    [
-      Padding(
-        padding: const EdgeInsets.only(left: 12, top: 8, right: 12, bottom: 8),
-        child: Text(
-          'Contact details',
-          textScaler: const TextScaler.linear(1.4),
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-      ),
-
-      if (contact.details == null)
-        Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16),
-          child: Text(
-            'Once you are connected, the information '
-            '${contact.name} shares with you shows up here.',
-          ),
-        )
-      else if (contact.details!.names.isEmpty &&
-          contact.details!.phones.isEmpty &&
-          contact.details!.emails.isEmpty &&
-          contact.addressLocations.isEmpty &&
-          contact.details!.socialMedias.isEmpty &&
-          contact.details!.events.isEmpty &&
-          contact.details!.websites.isEmpty)
-        Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16),
-          child: Text(
-            'It looks like ${contact.name} has not shared any contact '
-            'details with you yet.',
-          ),
-        ),
-
-      // Contact details
-      if (contact.details?.names.isNotEmpty ?? false)
-        ...detailsList(context, contact.details!.names, hideLabel: true),
-      if (contact.details?.phones.isNotEmpty ?? false)
-        ...detailsList(
-          context,
-          contact.details!.phones,
-          hideEditButton: true,
-          editCallback: (label) async =>
-              _launchUrl('tel:${contact.details!.phones[label]}'),
-        ),
-      if (contact.details?.emails.isNotEmpty ?? false)
-        ...detailsList(
-          context,
-          contact.details!.emails,
-          hideEditButton: true,
-          editCallback: (label) async =>
-              _launchUrl('mailto:${contact.details!.emails[label]}'),
-        ),
-      if (contact.addressLocations.isNotEmpty)
-        ...detailsList(
-          context,
-          contact.addressLocations.map(
-            (label, a) => MapEntry(label, commasToNewlines(a.address ?? '')),
-          ),
-        ),
-      if (contact.details?.socialMedias.isNotEmpty ?? false)
-        ...detailsList(context, contact.details!.socialMedias),
-      if (contact.details?.websites.isNotEmpty ?? false)
-        ...detailsList(
-          context,
-          contact.details!.websites,
-          hideEditButton: true,
-          editCallback: (label) async => _launchUrl(
-            (contact.details!.websites[label] ?? '').startsWith('http')
-                ? contact.details!.websites[label] ?? ''
-                : 'https://${contact.details!.websites[label]}',
-          ),
-        ),
-      if (contact.details?.events.isNotEmpty ?? false)
-        ...detailsList(
-          context,
-          contact.details!.events.map(
-            (label, date) => MapEntry(
-              label,
-              DateFormat.yMd(
-                Localizations.localeOf(context).languageCode,
-              ).format(date),
-            ),
-          ),
-          hideEditButton: true,
-        ),
-
-      // Locations
-      if (contact.temporaryLocations.isNotEmpty)
-        _temporaryLocationsCard(
-          context,
-          Text(
-            'Locations',
-            textScaler: const TextScaler.linear(1.4),
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          contact.temporaryLocations,
-        ),
-    ];
-
 Widget _paddedDivider() => const Padding(
       padding: EdgeInsets.only(left: 16, right: 16),
       child: Divider(),
@@ -714,18 +516,18 @@ Widget _sharingSettings(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _circlesCard(context, contact.coagContactId, circles.values.toList()),
+          CirclesCard(contact.coagContactId, circles.values.toList()),
           if ((contact.dhtSettings.recordKeyMeSharing == null ||
                   contact.details == null) &&
               context
                   .read<ContactDetailsCubit>()
                   .wasNotIntroduced(contact)) ...[
             _paddedDivider(),
-            _connectingCard(context, contact, circles),
+            ConnectingCard(context, contact, circles),
           ],
           if (circles.isNotEmpty && contact.sharedProfile != null) ...[
             _paddedDivider(),
-            ..._displaySharedProfile(
+            ...sharedProfile(
               context,
               contact.sharedProfile!.details,
               contact.sharedProfile!.addressLocations,
@@ -734,7 +536,7 @@ Widget _sharingSettings(
           if (contact.sharedProfile?.temporaryLocations.isNotEmpty ??
               false) ...[
             _paddedDivider(),
-            _temporaryLocationsCard(
+            temporaryLocationsCard(
               context,
               const Row(
                 children: [
@@ -754,352 +556,6 @@ Widget _sharingSettings(
               ),
             ),
           ],
-        ],
-      ),
-    );
-
-Widget _temporaryLocationsCard(
-  BuildContext context,
-  Widget title,
-  Map<String, ContactTemporaryLocation> locations,
-) =>
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 12, right: 12, top: 8),
-          child: title,
-        ),
-        Padding(
-          padding: const EdgeInsets.only(left: 4, right: 4, top: 4),
-          child: Card(
-            child: Column(
-              children: locations.values
-                  .where((l) => l.end.isAfter(DateTime.now()))
-                  .map(
-                    (l) => Padding(
-                      padding: const EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        bottom: 4,
-                      ),
-                      child: locationTile(context, l),
-                    ),
-                  )
-                  .asList(),
-            ),
-          ),
-        ),
-      ],
-    );
-
-Widget _connectingCard(
-  BuildContext context,
-  CoagContact contact,
-  Map<String, String> circles,
-) =>
-    Padding(
-      padding: const EdgeInsets.only(left: 12, right: 12, top: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.private_connectivity),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  'To connect with ${contact.name}:',
-                  textScaler: const TextScaler.linear(1.2),
-                  softWrap: true,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          if (showSharingInitializing(contact) &&
-              circles.keys
-                  .where((cId) => cId.startsWith('VLD'))
-                  .isNotEmpty) ...[
-            Text(
-              '${contact.name} was added automatically via a batch that '
-              'you were both invited from. You will be automatically '
-              'connected in a moment. You can already go to the circle '
-              'settings to decide what to share with ${contact.name} and '
-              'others joining via that batch.',
-            ),
-          ] else if (showSharingInitializing(contact)) ...[
-            const Text(
-              'Please wait a moment until sharing options are initialized.',
-            ),
-            const SizedBox(height: 4),
-            const Center(child: CircularProgressIndicator()),
-          ] else if (showSharingOffer(contact)) ...[
-            const Text(
-              'You added them from their profile link. To finish '
-              'connecting, send them this link via your favorite messenger:',
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    profileBasedOfferUrl(
-                      contact.sharedProfile?.details.names.values.firstOrNull ??
-                          '???',
-                      contact.dhtSettings.recordKeyMeSharing!,
-                      contact.dhtSettings.myKeyPair!.key,
-                    ).toString(),
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () async => SharePlus.instance.share(
-                    ShareParams(
-                      uri: profileBasedOfferUrl(
-                        contact.sharedProfile?.details.names.values
-                                .firstOrNull ??
-                            '???',
-                        contact.dhtSettings.recordKeyMeSharing!,
-                        contact.dhtSettings.myKeyPair!.key,
-                      ),
-                    ),
-                  ),
-                  icon: const Icon(Icons.copy),
-                ),
-              ],
-            ),
-          ] else if (showDirectSharing(contact)) ...[
-            const SizedBox(height: 4),
-            // TODO: Only show share back button when receiving key and psk but not writer are set i.e. is receiving updates and has share back settings
-            _qrCodeButton(
-              context,
-              buttonText: 'Show them this QR code',
-              alertTitle: 'Show to ${contact.name}',
-              qrCodeData: directSharingUrl(
-                contact.sharedProfile?.details.names.values.firstOrNull ??
-                    '???',
-                contact.dhtSettings.recordKeyMeSharing!,
-                contact.dhtSettings.initialSecret!,
-              ).toString(),
-            ),
-            // TextButton(
-            //   child: const Row(
-            //       mainAxisSize: MainAxisSize.min,
-            //       children: <Widget>[
-            //         Icon(Icons.share),
-            //         SizedBox(width: 8),
-            //         Text('Paste their profile link'),
-            //         SizedBox(width: 4),
-            //       ]),
-            //       // TODO: Paste from clipboard and generate invite text to share
-            //   onPressed: () {},
-            // ),
-            TextButton(
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Icon(Icons.share),
-                  SizedBox(width: 8),
-                  Text('Share link via trusted channel'),
-                  SizedBox(width: 4),
-                ],
-              ),
-              // TODO: Add warning dialogue that the link contains a secret and should only be transmitted via an end to end encrypted messenger
-              onPressed: () async => SharePlus.instance.share(
-                ShareParams(
-                  text: "Hi ${contact.name}, I'd like to share with you: "
-                      '${directSharingUrl(contact.sharedProfile?.details.names.values.firstOrNull ?? '???', contact.dhtSettings.recordKeyMeSharing!, contact.dhtSettings.initialSecret!)}\n'
-                      "Keep this link a secret, it's just for you.",
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            // TODO: Link "create an invite" to the corresponding page, and maybe also "contact page" to contacts list?
-            Text(
-              'This QR code and link are specifically for ${contact.name}. '
-              'If you want to connect with someone else, go to their '
-              'respective contact details or create a new invite.',
-            ),
-          ] else
-            const Text(
-              'Something unexpected happened, please reach out to the '
-              'Reunicorn team with information about how you got here.',
-            ),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-
-Iterable<Widget> _displaySharedProfile(
-  BuildContext context,
-  ContactDetails details,
-  Map<String, ContactAddressLocation> addressLocations,
-) =>
-    [
-      const Padding(
-        padding: EdgeInsets.only(top: 8, left: 12, right: 12, bottom: 8),
-        child: Row(
-          children: [
-            Icon(Icons.contact_page),
-            SizedBox(width: 4),
-            Text('Shared profile', textScaler: TextScaler.linear(1.2)),
-          ],
-        ),
-      ),
-      if (details.picture != null)
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12, top: 4, right: 12),
-            child: roundPictureOrPlaceholder(details.picture, radius: 48),
-          ),
-        ),
-      if (details.names.isNotEmpty)
-        ...detailsList(context, details.names, hideLabel: true),
-      if (details.phones.isNotEmpty) ...detailsList(context, details.phones),
-      if (details.emails.isNotEmpty) ...detailsList(context, details.emails),
-      if (addressLocations.isNotEmpty)
-        ...detailsList(
-          context,
-          addressLocations.map(
-            (label, address) =>
-                MapEntry(label, commasToNewlines(address.address ?? '')),
-          ),
-        ),
-      if (details.socialMedias.isNotEmpty)
-        ...detailsList(context, details.socialMedias),
-      if (details.websites.isNotEmpty)
-        ...detailsList(context, details.websites),
-      if (details.organizations.isNotEmpty)
-        ...detailsList(
-          context,
-          hideLabel: true,
-          details.organizations.map(
-            (id, org) => MapEntry(
-              id,
-              [
-                org.company,
-                org.title,
-                org.department,
-              ].where((v) => v.isNotEmpty).join('\n'),
-            ),
-          ),
-        ),
-      if (details.events.isNotEmpty)
-        ...detailsList(
-          context,
-          details.events.map(
-            (label, date) => MapEntry(
-              label,
-              DateFormat.yMd(
-                Localizations.localeOf(context).languageCode,
-              ).format(date),
-            ),
-          ),
-        ),
-      const Padding(
-        padding: EdgeInsets.only(left: 12, right: 12, bottom: 8, top: 4),
-        child: Text(
-          'You are sharing the above information with them based on the '
-          'circles you added them to.',
-        ),
-      ),
-      // TODO: Check if opted out
-      const Padding(
-        padding: EdgeInsets.only(left: 12, right: 12, bottom: 8, top: 4),
-        child: Text(
-          'They also see how many contacts you are connected with, but can '
-          'only find out who an individual contact is if they are '
-          'connected with them as well and only see the information that '
-          'contact shared with them.',
-        ),
-      ),
-    ];
-
-Widget _circlesCard(
-  BuildContext context,
-  String coagContactId,
-  List<String> circleNames,
-) =>
-    Padding(
-      padding: const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.bubble_chart_outlined),
-              SizedBox(width: 4),
-              Text('Circle memberships', textScaler: TextScaler.linear(1.2)),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    left: 8,
-                    right: 8,
-                    top: 12,
-                    bottom: 12,
-                  ),
-                  child: (circleNames.isEmpty)
-                      ? const Text(
-                          'Add them to circles to start sharing.',
-                          textScaler: TextScaler.linear(1.2),
-                        )
-                      : Text(
-                          circleNames.join(', '),
-                          textScaler: const TextScaler.linear(1.2),
-                        ),
-                ),
-              ),
-              IconButton(
-                key: const Key('editCircleMembership'),
-                icon: const Icon(Icons.edit),
-                onPressed: () async => showModalBottomSheet<void>(
-                  context: context,
-                  isScrollControlled: true,
-                  builder: (modalContext) => DraggableScrollableSheet(
-                    expand: false,
-                    maxChildSize: 0.90,
-                    builder: (_, scrollController) => SingleChildScrollView(
-                      controller: scrollController,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          bottom: MediaQuery.of(modalContext).viewInsets.bottom,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            BlocProvider(
-                              create: (context) => CirclesCubit(
-                                context.read<ContactsRepository>(),
-                                coagContactId,
-                              ),
-                              child: BlocConsumer<CirclesCubit, CirclesState>(
-                                listener: (context, state) async {},
-                                builder: (context, state) => CirclesForm(
-                                  circles: state.circles,
-                                  callback: context.read<CirclesCubit>().update,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const Text(
-            'The selected circles determine which of your contact details '
-            'and locations they can see.',
-          ),
         ],
       ),
     );
