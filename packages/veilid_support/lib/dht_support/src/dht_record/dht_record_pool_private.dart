@@ -1,7 +1,7 @@
 part of 'dht_record_pool.dart';
 
 // DHT crypto domain
-const String _cryptoDomainDHT = 'dht';
+const _cryptoDomainDHT = 'dht';
 
 // Singlefuture keys
 const _sfPollWatch = '_pollWatch';
@@ -32,6 +32,8 @@ class _SharedDHTRecordData {
   DHTRecordDescriptor recordDescriptor;
   KeyPair? defaultWriter;
   VeilidRoutingContext defaultRoutingContext;
+  // lint conflict
+  // ignore: omit_obvious_property_types
   bool needsWatchStateUpdate = false;
   _WatchState? unionWatchState;
 }

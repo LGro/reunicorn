@@ -174,7 +174,7 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray> {
   /// Returns true if the deletion was processed immediately
   /// Returns false if the deletion was marked for later
   @override
-  Future<bool> delete() async => _head.delete();
+  Future<bool> delete() => _head.delete();
 
   ////////////////////////////////////////////////////////////////////////////
   // Public API
@@ -201,12 +201,12 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray> {
 
   /// Runs a closure allowing read-only access to the shortarray
   Future<T> operate<T>(
-      Future<T> Function(DHTShortArrayReadOperations) closure) async {
+      Future<T> Function(DHTShortArrayReadOperations) closure) {
     if (!isOpen) {
       throw StateError('short array is not open"');
     }
 
-    return _head.operate((head) async {
+    return _head.operate((head) {
       final reader = _DHTShortArrayRead._(head);
       return closure(reader);
     });
@@ -218,12 +218,12 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray> {
   /// Throws DHTOperateException if the write could not be performed
   /// at this time
   Future<T> operateWrite<T>(
-      Future<T> Function(DHTShortArrayWriteOperations) closure) async {
+      Future<T> Function(DHTShortArrayWriteOperations) closure) {
     if (!isOpen) {
       throw StateError('short array is not open"');
     }
 
-    return _head.operateWrite((head) async {
+    return _head.operateWrite((head) {
       final writer = _DHTShortArrayWrite._(head);
       return closure(writer);
     });
@@ -237,12 +237,12 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray> {
   /// eventual consistency pass.
   Future<T> operateWriteEventual<T>(
       Future<T> Function(DHTShortArrayWriteOperations) closure,
-      {Duration? timeout}) async {
+      {Duration? timeout}) {
     if (!isOpen) {
       throw StateError('short array is not open"');
     }
 
-    return _head.operateWriteEventual((head) async {
+    return _head.operateWriteEventual((head) {
       final writer = _DHTShortArrayWrite._(head);
       return closure(writer);
     }, timeout: timeout);
@@ -291,7 +291,7 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray> {
   int _openCount;
 
   // Watch mutex to ensure we keep the representation valid
-  final Mutex _listenMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
+  final _listenMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
   // Stream of external changes
   StreamController<void>? _watchController;
 }

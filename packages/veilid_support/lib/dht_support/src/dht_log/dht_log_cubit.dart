@@ -106,13 +106,13 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
     await _refreshNoWait(forceRefresh: forceRefresh);
   }
 
-  Future<void> _refreshNoWait({bool forceRefresh = false}) async =>
-      busy((emit) async => _refreshInner(emit, forceRefresh: forceRefresh));
+  Future<void> _refreshNoWait({bool forceRefresh = false}) =>
+      busy((emit) => _refreshInner(emit, forceRefresh: forceRefresh));
 
   Future<void> _refreshInner(void Function(AsyncValue<DHTLogStateData<T>>) emit,
       {bool forceRefresh = false}) async {
     late final int length;
-    final windowElements = await _log.operate((reader) async {
+    final windowElements = await _log.operate((reader) {
       length = reader.length;
       return _loadElementsFromReader(reader, _windowTail, _windowSize);
     });
@@ -237,7 +237,7 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
   late final DHTLog _log;
   final T Function(List<int> data) _decodeElement;
   StreamSubscription<void>? _subscription;
-  bool _wantsCloseRecord = false;
+  var _wantsCloseRecord = false;
   final _sspUpdate = SingleStatelessProcessor();
 
   // Accumulated deltas since last update

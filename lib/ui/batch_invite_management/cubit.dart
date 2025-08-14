@@ -56,7 +56,7 @@ Future<Batch> createBatch(
     record.key,
     0,
     await pskCrypto.encrypt(utf8.encode(jsonEncode(info.toJson()))),
-    writer: ownerWriter,
+    options: SetDHTValueOptions(writer: ownerWriter),
   );
   await routingContext.closeDHTRecord(record.key);
 
@@ -148,8 +148,8 @@ class BatchInvitesCubit extends Cubit<BatchInvitesState> {
   }
 
   Future<void> importBatch(Batch batch) async => emit(
-    state.copyWith(
-      batches: {batch.dhtRecordKey.toString(): batch, ...state.batches},
-    ),
-  );
+        state.copyWith(
+          batches: {batch.dhtRecordKey.toString(): batch, ...state.batches},
+        ),
+      );
 }

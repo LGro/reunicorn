@@ -531,7 +531,7 @@ class _DHTShortArrayHead {
   ////////////////////////////////////////////////////////////////////////////
 
   // Head/element mutex to ensure we keep the representation valid
-  final Mutex _headMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
+  final _headMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
   // Subscription to head record internal changes
   StreamSubscription<DHTRecordWatchChange>? _subscription;
   // Notify closure for external head changes

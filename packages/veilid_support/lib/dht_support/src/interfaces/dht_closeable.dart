@@ -56,7 +56,7 @@ extension DHTDeletableExt<D> on DHTDeleteable<D> {
 
   /// Scopes a closure that conditionally deletes the DHTCloseable on exit
   Future<T> maybeDeleteScope<T>(
-      bool delete, Future<T> Function(D) scopeFunction) async {
+      bool delete, Future<T> Function(D) scopeFunction) {
     if (delete) {
       return deleteScope(scopeFunction);
     }

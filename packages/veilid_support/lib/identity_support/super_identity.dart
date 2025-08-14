@@ -98,18 +98,20 @@ sealed class SuperIdentity with _$SuperIdentity {
   }
 
   /// Opens an existing super identity, validates it, and returns it
-  static Future<SuperIdentity> open({required TypedKey superRecordKey}) async {
+  static Future<SuperIdentity?> open({required TypedKey superRecordKey}) async {
     final pool = DHTRecordPool.instance;
 
     // SuperIdentity DHT record is public/unencrypted
     return (await pool.openRecordRead(superRecordKey,
             debugName: 'SuperIdentity::openSuperIdentity::SuperIdentityRecord'))
         .deleteScope((superRec) async {
-      final superIdentity = (await superRec.getJson(SuperIdentity.fromJson,
-          refreshMode: DHTRecordRefreshMode.network))!;
+      final superIdentity = await superRec.getJson(SuperIdentity.fromJson,
+          refreshMode: DHTRecordRefreshMode.network);
+      if (superIdentity == null) {
+        return null;
+      }
 
       await superIdentity.validate(superRecordKey: superRecordKey);
-
       return superIdentity;
     });
   }

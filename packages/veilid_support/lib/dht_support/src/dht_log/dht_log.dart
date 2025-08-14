@@ -211,12 +211,12 @@ class DHTLog implements DHTDeleteable<DHTLog> {
   OwnedDHTRecordPointer get recordPointer => _spine.recordPointer;
 
   /// Runs a closure allowing read-only access to the log
-  Future<T> operate<T>(Future<T> Function(DHTLogReadOperations) closure) async {
+  Future<T> operate<T>(Future<T> Function(DHTLogReadOperations) closure) {
     if (!isOpen) {
       throw StateError('log is not open');
     }
 
-    return _spine.operate((spine) async {
+    return _spine.operate((spine) {
       final reader = _DHTLogRead._(spine);
       return closure(reader);
     });
@@ -228,12 +228,12 @@ class DHTLog implements DHTDeleteable<DHTLog> {
   /// Throws DHTOperateException if the write could not be performed
   /// at this time
   Future<T> operateAppend<T>(
-      Future<T> Function(DHTLogWriteOperations) closure) async {
+      Future<T> Function(DHTLogWriteOperations) closure) {
     if (!isOpen) {
       throw StateError('log is not open');
     }
 
-    return _spine.operateAppend((spine) async {
+    return _spine.operateAppend((spine) {
       final writer = _DHTLogWrite._(spine);
       return closure(writer);
     });
@@ -243,16 +243,16 @@ class DHTLog implements DHTDeleteable<DHTLog> {
   /// Will execute the closure multiple times if a consistent write to the DHT
   /// is not achieved. Timeout if specified will be thrown as a
   /// TimeoutException. The closure should return a value if its changes also
-  /// succeeded, and throw DHTExceptionTryAgain to trigger another
+  /// succeeded, and throw DHTExceptionOutdated to trigger another
   /// eventual consistency pass.
   Future<T> operateAppendEventual<T>(
       Future<T> Function(DHTLogWriteOperations) closure,
-      {Duration? timeout}) async {
+      {Duration? timeout}) {
     if (!isOpen) {
       throw StateError('log is not open');
     }
 
-    return _spine.operateAppendEventual((spine) async {
+    return _spine.operateAppendEventual((spine) {
       final writer = _DHTLogWrite._(spine);
       return closure(writer);
     }, timeout: timeout);
@@ -308,7 +308,7 @@ class DHTLog implements DHTDeleteable<DHTLog> {
   int _openCount;
 
   // Watch mutex to ensure we keep the representation valid
-  final Mutex _listenMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
+  final _listenMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
   // Stream of external changes
   StreamController<DHTLogUpdate>? _watchController;
 }

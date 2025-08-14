@@ -92,7 +92,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
   /// Returns true if the deletion was processed immediately
   /// Returns false if the deletion was marked for later
   @override
-  Future<bool> delete() async => DHTRecordPool.instance.deleteRecord(key);
+  Future<bool> delete() => DHTRecordPool.instance.deleteRecord(key);
 
   ////////////////////////////////////////////////////////////////////////////
   // Public API
@@ -122,7 +122,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
           {int subkey = -1,
           VeilidCrypto? crypto,
           DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.cached,
-          Output<int>? outSeqNum}) async =>
+          Output<int>? outSeqNum}) =>
       _wrapStats('get', () async {
         subkey = subkeyOrDefault(subkey);
 
@@ -226,8 +226,8 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
   Future<Uint8List?> tryWriteBytes(Uint8List newValue,
           {int subkey = -1,
           VeilidCrypto? crypto,
-          KeyPair? writer,
-          Output<int>? outSeqNum}) async =>
+          SetDHTValueOptions? options,
+          Output<int>? outSeqNum}) =>
       _wrapStats('tryWriteBytes', () async {
         subkey = subkeyOrDefault(subkey);
         final lastSeq = await _localSubkeySeq(subkey);
@@ -236,10 +236,12 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
         // Set the new data if possible
         var newValueData = await _routingContext.setDHTValue(
             key, subkey, encryptedNewValue,
-            writer: writer ?? _writer);
+            options: SetDHTValueOptions(
+                writer: options?.writer ?? _writer,
+                allowOffline: options?.allowOffline));
         if (newValueData == null) {
-          // A newer value wasn't found on the set, but
-          // we may get a newer value when getting the value for the sequence number
+          // A newer value wasn't found on the set, but we may get a newer value
+          // when getting the value for the sequence number
           newValueData = await _routingContext.getDHTValue(key, subkey);
           if (newValueData == null) {
             assert(newValueData != null, "can't get value that was just set");
@@ -280,7 +282,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
           {int subkey = -1,
           VeilidCrypto? crypto,
           KeyPair? writer,
-          Output<int>? outSeqNum}) async =>
+          Output<int>? outSeqNum}) =>
       _wrapStats('eventualWriteBytes', () async {
         subkey = subkeyOrDefault(subkey);
         final lastSeq = await _localSubkeySeq(subkey);
@@ -292,7 +294,8 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
             // Set the new data
             newValueData = await _routingContext.setDHTValue(
                 key, subkey, encryptedNewValue,
-                writer: writer ?? _writer);
+                options: SetDHTValueOptions(
+                    writer: writer ?? _writer, allowOffline: false));
 
             // Repeat if newer data on the network was found
           } while (newValueData != null);
@@ -331,7 +334,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
           {int subkey = -1,
           VeilidCrypto? crypto,
           KeyPair? writer,
-          Output<int>? outSeqNum}) async =>
+          Output<int>? outSeqNum}) =>
       _wrapStats('eventualUpdateBytes', () async {
         subkey = subkeyOrDefault(subkey);
 
@@ -351,7 +354,8 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
           oldValue = await tryWriteBytes(updatedValue,
               subkey: subkey,
               crypto: crypto,
-              writer: writer,
+              options: SetDHTValueOptions(
+                  writer: writer ?? _writer, allowOffline: false),
               outSeqNum: outSeqNum);
 
           // Repeat update if newer data on the network was found
@@ -362,12 +366,12 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
   Future<T?> tryWriteJson<T>(T Function(dynamic) fromJson, T newValue,
           {int subkey = -1,
           VeilidCrypto? crypto,
-          KeyPair? writer,
+          SetDHTValueOptions? options,
           Output<int>? outSeqNum}) =>
       tryWriteBytes(jsonEncodeBytes(newValue),
               subkey: subkey,
               crypto: crypto,
-              writer: writer,
+              options: options,
               outSeqNum: outSeqNum)
           .then((out) {
         if (out == null) {
@@ -381,12 +385,12 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
           T Function(List<int>) fromBuffer, T newValue,
           {int subkey = -1,
           VeilidCrypto? crypto,
-          KeyPair? writer,
+          SetDHTValueOptions? options,
           Output<int>? outSeqNum}) =>
       tryWriteBytes(newValue.writeToBuffer(),
               subkey: subkey,
               crypto: crypto,
-              writer: writer,
+              options: options,
               outSeqNum: outSeqNum)
           .then((out) {
         if (out == null) {

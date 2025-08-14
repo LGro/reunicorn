@@ -1,24 +1,26 @@
 // Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'package:reunicorn/data/repositories/contacts.dart';
-import 'package:reunicorn/ui/contact_details/page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reunicorn/data/repositories/contacts.dart';
+import 'package:reunicorn/ui/contact_details/page.dart';
+import 'package:reunicorn/ui/contact_details/widgets/temporary_locations.dart';
 
 Future<Widget> createContactPage(
   ContactsRepository contactsRepository,
   String coagContactId,
-) async => RepositoryProvider.value(
-  value: contactsRepository,
-  child: MaterialApp(
-    home: Directionality(
-      textDirection: TextDirection.ltr,
-      child: ContactPage(coagContactId: coagContactId),
-    ),
-  ),
-);
+) async =>
+    RepositoryProvider.value(
+      value: contactsRepository,
+      child: MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.ltr,
+          child: ContactPage(coagContactId: coagContactId),
+        ),
+      ),
+    );
 
 void main() {
   test('Test number of contacts a location is shared with', () {

@@ -44,6 +44,8 @@ class _SubkeyData {
   _SubkeyData({required this.subkey, required this.data});
   int subkey;
   Uint8List data;
+  // lint conflict
+  // ignore: omit_obvious_property_types
   bool changed = false;
 }
 
@@ -123,12 +125,12 @@ class _DHTLogSpine {
   }
 
   // Will deep delete all segment records as they are children
-  Future<bool> delete() async => _spineMutex.protect(_spineRecord.delete);
+  Future<bool> delete() => _spineMutex.protect(_spineRecord.delete);
 
-  Future<T> operate<T>(Future<T> Function(_DHTLogSpine) closure) async =>
-      _spineMutex.protect(() async => closure(this));
+  Future<T> operate<T>(Future<T> Function(_DHTLogSpine) closure) =>
+      _spineMutex.protect(() => closure(this));
 
-  Future<T> operateAppend<T>(Future<T> Function(_DHTLogSpine) closure) async =>
+  Future<T> operateAppend<T>(Future<T> Function(_DHTLogSpine) closure) =>
       _spineMutex.protect(() async {
         final oldHead = _head;
         final oldTail = _tail;
@@ -150,7 +152,7 @@ class _DHTLogSpine {
       });
 
   Future<T> operateAppendEventual<T>(Future<T> Function(_DHTLogSpine) closure,
-      {Duration? timeout}) async {
+      {Duration? timeout}) {
     final timeoutTs = timeout == null
         ? null
         : Veilid.instance.now().offset(TimestampDuration.fromDuration(timeout));
@@ -248,12 +250,13 @@ class _DHTLogSpine {
       final headDelta = _ringDistance(newHead, oldHead);
       final tailDelta = _ringDistance(newTail, oldTail);
       if (headDelta > _positionLimit ~/ 2 || tailDelta > _positionLimit ~/ 2) {
-        throw DHTExceptionInvalidData('_DHTLogSpine::_updateHead '
-            '_head=$_head _tail=$_tail '
-            'oldHead=$oldHead oldTail=$oldTail '
-            'newHead=$newHead newTail=$newTail '
-            'headDelta=$headDelta tailDelta=$tailDelta '
-            '_positionLimit=$_positionLimit');
+        throw DHTExceptionInvalidData(
+            cause: '_DHTLogSpine::_updateHead '
+                '_head=$_head _tail=$_tail '
+                'oldHead=$oldHead oldTail=$oldTail '
+                'newHead=$newHead newTail=$newTail '
+                'headDelta=$headDelta tailDelta=$tailDelta '
+                '_positionLimit=$_positionLimit');
       }
     }
 
@@ -264,7 +267,7 @@ class _DHTLogSpine {
   /////////////////////////////////////////////////////////////////////////////
   // Spine element management
 
-  static final Uint8List _emptySegmentKey =
+  static final _emptySegmentKey =
       Uint8List.fromList(List.filled(TypedKey.decodedLength<TypedKey>(), 0));
   static Uint8List _makeEmptySubkey() => Uint8List.fromList(List.filled(
       DHTLog.segmentsPerSubkey * TypedKey.decodedLength<TypedKey>(), 0));
@@ -420,7 +423,7 @@ class _DHTLogSpine {
 
   Future<_DHTLogPosition?> lookupPositionBySegmentNumber(
           int segmentNumber, int segmentPos,
-          {bool onlyOpened = false}) async =>
+          {bool onlyOpened = false}) =>
       _spineCacheMutex.protect(() async {
         // See if we have this segment opened already
         final openedSegment = _openedSegments[segmentNumber];
@@ -468,7 +471,7 @@ class _DHTLogSpine {
             segmentNumber: segmentNumber);
       });
 
-  Future<_DHTLogPosition?> lookupPosition(int pos) async {
+  Future<_DHTLogPosition?> lookupPosition(int pos) {
     assert(_spineMutex.isLocked, 'should be locked');
 
     // Check if our position is in bounds
@@ -487,7 +490,7 @@ class _DHTLogSpine {
     return lookupPositionBySegmentNumber(segmentNumber, segmentPos);
   }
 
-  Future<bool> _segmentClosed(int segmentNumber) async {
+  Future<bool> _segmentClosed(int segmentNumber) {
     assert(_spineMutex.isLocked, 'should be locked');
     return _spineCacheMutex.protect(() async {
       final sa = _openedSegments[segmentNumber]!;
@@ -709,7 +712,7 @@ class _DHTLogSpine {
       DHTShortArray.maxElements;
 
   // Spine head mutex to ensure we keep the representation valid
-  final Mutex _spineMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
+  final _spineMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
   // Subscription to head record internal changes
   StreamSubscription<DHTRecordWatchChange>? _subscription;
   // Notify closure for external spine head changes
@@ -729,9 +732,8 @@ class _DHTLogSpine {
 
   // LRU cache of DHT spine elements accessed recently
   // Pair of position and associated shortarray segment
-  final Mutex _spineCacheMutex =
-      Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
+  final _spineCacheMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
   final List<int> _openCache;
   final Map<int, DHTShortArray> _openedSegments;
-  static const int _openCacheSize = 3;
+  static const _openCacheSize = 3;
 }

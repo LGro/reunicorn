@@ -23,11 +23,6 @@ abstract class DHTRandomWrite {
   /// of the container.
   Future<bool> tryWriteItem(int pos, Uint8List newValue,
       {Output<Uint8List>? output});
-
-  /// Swap items at position 'aPos' and 'bPos' in the DHTArray.
-  /// Throws an IndexError if either of the positions swapped exceeds the length
-  /// of the container
-  Future<void> swap(int aPos, int bPos);
 }
 
 extension DHTRandomWriteExt on DHTRandomWrite {

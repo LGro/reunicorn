@@ -6,6 +6,7 @@ part of 'dht_short_array.dart';
 abstract class DHTShortArrayWriteOperations
     implements
         DHTRandomRead,
+        DHTRandomSwap,
         DHTRandomWrite,
         DHTInsertRemove,
         DHTAdd,

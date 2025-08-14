@@ -12,5 +12,5 @@ abstract mixin class RefreshableCubit {
   bool get wantsRefresh => _wantsRefresh;
 
   ////////////////////////////////////////////////////////////////////////////
-  bool _wantsRefresh = false;
+  var _wantsRefresh = false;
 }

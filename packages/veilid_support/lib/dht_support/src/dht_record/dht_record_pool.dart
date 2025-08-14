@@ -20,13 +20,13 @@ part 'dht_record.dart';
 part 'dht_record_pool_private.dart';
 
 /// Maximum number of concurrent DHT operations to perform on the network
-const int kMaxDHTConcurrency = 8;
+const kMaxDHTConcurrency = 8;
 
 /// Total number of times to try in a 'VeilidAPIExceptionKeyNotFound' loop
-const int kDHTKeyNotFoundTries = 3;
+const kDHTKeyNotFoundTries = 3;
 
 /// Total number of times to try in a 'VeilidAPIExceptionTryAgain' loop
-const int kDHTTryAgainTries = 3;
+const kDHTTryAgainTries = 3;
 
 typedef DHTRecordPoolLogger = void Function(String message);
 
@@ -105,7 +105,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     int defaultSubkey = 0,
     VeilidCrypto? crypto,
     KeyPair? writer,
-  }) async =>
+  }) =>
       _mutex.protect(() async {
         final dhtctx = routingContext ?? _routingContext;
 
@@ -139,7 +139,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
           VeilidRoutingContext? routingContext,
           TypedKey? parent,
           int defaultSubkey = 0,
-          VeilidCrypto? crypto}) async =>
+          VeilidCrypto? crypto}) =>
       _recordTagLock.protect(recordKey, closure: () async {
         final dhtctx = routingContext ?? _routingContext;
 
@@ -164,7 +164,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     TypedKey? parent,
     int defaultSubkey = 0,
     VeilidCrypto? crypto,
-  }) async =>
+  }) =>
       _recordTagLock.protect(recordKey, closure: () async {
         final dhtctx = routingContext ?? _routingContext;
 
@@ -223,8 +223,8 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   /// otherwise mark that record for deletion eventually
   /// Returns true if the deletion was processed immediately
   /// Returns false if the deletion was marked for later
-  Future<bool> deleteRecord(TypedKey recordKey) async =>
-      _mutex.protect(() async => _deleteRecordInner(recordKey));
+  Future<bool> deleteRecord(TypedKey recordKey) =>
+      _mutex.protect(() => _deleteRecordInner(recordKey));
 
   // If everything underneath is closed including itself, return the
   // list of children (and itself) to finally actually delete
@@ -314,7 +314,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
 
   /// Generate default VeilidCrypto for a writer
   static Future<VeilidCrypto> privateCryptoFromTypedSecret(
-          TypedKey typedSecret) async =>
+          TypedKey typedSecret) =>
       VeilidCryptoPrivate.fromTypedKey(typedSecret, _cryptoDomainDHT);
 
   ////////////////////////////////////////////////////////////////////////////
@@ -362,7 +362,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
           required VeilidCrypto crypto,
           required KeyPair? writer,
           required TypedKey? parent,
-          required int defaultSubkey}) async =>
+          required int defaultSubkey}) =>
       _stats.measure(recordKey, debugName, '_recordOpenCommon', () async {
         log('openDHTRecord: debugName=$debugName key=$recordKey');
 
@@ -428,8 +428,8 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
 
         // Already opened
 
-        // See if we need to reopen the record with a default writer and possibly
-        // a different routing context
+        // See if we need to reopen the record with a default writer and
+        // possibly a different routing context
         if (writer != null && openedRecordInfo.shared.defaultWriter == null) {
           await dhtctx.openDHTRecord(recordKey, writer: writer);
           // New writer if we didn't specify one before
@@ -889,7 +889,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   }
 
   /// Ticker to check watch state change requests
-  Future<void> tick() async => _mutex.protect(() async {
+  Future<void> tick() => _mutex.protect(() async {
         // See if any opened records need watch state changes
         for (final kv in _opened.entries) {
           final openedRecordKey = kv.key;

@@ -80,7 +80,12 @@ class DHTCallStats {
       '    all latency: ${latency?.debugString()}\n';
 
   /////////////////////////////
+
+  // lint conflict
+  // ignore: omit_obvious_property_types
   int calls = 0;
+  // lint conflict
+  // ignore: omit_obvious_property_types
   int timeouts = 0;
   LatencyStats? latency;
   LatencyStats? successLatency;

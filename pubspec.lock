@@ -1665,7 +1665,7 @@ packages:
       path: "../veilid/veilid-flutter"
       relative: true
     source: path
-    version: "0.4.7"
+    version: "0.4.8"
   veilid_support:
     dependency: "direct main"
     description:
