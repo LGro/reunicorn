@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:veilid/veilid.dart';
 

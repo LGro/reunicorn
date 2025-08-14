@@ -16,23 +16,25 @@ part 'cubit.g.dart';
 
 class UpdatesCubit extends Cubit<UpdatesState> {
   UpdatesCubit(this.contactsRepository)
-    : super(const UpdatesState(UpdatesStatus.initial)) {
+      : super(const UpdatesState(UpdatesStatus.initial)) {
     _updatesSubscription = contactsRepository.getUpdatesStream().listen(
-      (_) => emit(
-        UpdatesState(
-          UpdatesStatus.success,
-          updates: contactsRepository.getContactUpdates().reversed.where(
-            (u) => contactUpdateSummary(u.oldContact, u.newContact).isNotEmpty,
+          (_) => emit(
+            UpdatesState(
+              UpdatesStatus.success,
+              updates: contactsRepository.getContactUpdates().reversed.where(
+                    (u) => contactUpdateSummary(u.oldContact, u.newContact)
+                        .isNotEmpty,
+                  ),
+            ),
           ),
-        ),
-      ),
-    );
+        );
     emit(
       UpdatesState(
         UpdatesStatus.success,
         updates: contactsRepository.getContactUpdates().reversed.where(
-          (u) => contactUpdateSummary(u.oldContact, u.newContact).isNotEmpty,
-        ),
+              (u) =>
+                  contactUpdateSummary(u.oldContact, u.newContact).isNotEmpty,
+            ),
       ),
     );
   }

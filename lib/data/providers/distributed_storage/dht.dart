@@ -10,7 +10,6 @@ import 'package:veilid_support/veilid_support.dart';
 
 import '../../models/backup.dart';
 import '../../models/coag_contact.dart';
-import '../../utils.dart';
 import 'base.dart';
 
 String? tryUtf8Decode(Uint8List? content) {
@@ -75,15 +74,16 @@ Iterable<Uint8List> chopPayloadChunks(
   Uint8List payload, {
   int chunkMaxBytes = 32000,
   int numChunks = 31,
-}) => List.generate(
-  numChunks,
-  (i) => (payload.length > i * chunkMaxBytes)
-      ? payload.sublist(
-          i * chunkMaxBytes,
-          min(payload.length, (i + 1) * chunkMaxBytes),
-        )
-      : Uint8List(0),
-);
+}) =>
+    List.generate(
+      numChunks,
+      (i) => (payload.length > i * chunkMaxBytes)
+          ? payload.sublist(
+              i * chunkMaxBytes,
+              min(payload.length, (i + 1) * chunkMaxBytes),
+            )
+          : Uint8List(0),
+    );
 
 DhtSettings rotateKeysInDhtSettings(
   DhtSettings settings,
@@ -93,8 +93,7 @@ DhtSettings rotateKeysInDhtSettings(
 ) {
   // If we have received handshake complete signal for the first time, or our
   // next key pair's public key was used
-  final rotateKeyPair =
-      ackHandshakeJustCompleted ||
+  final rotateKeyPair = ackHandshakeJustCompleted ||
       (usedKeyPair != null && settings.myNextKeyPair == usedKeyPair);
 
   // If their next public key was used
@@ -115,9 +114,8 @@ DhtSettings rotateKeysInDhtSettings(
     // Their next public key will be populated from the update they share(d)
     theirNextPublicKey: rotatePublicKey ? null : settings.theirNextPublicKey,
     // If anything asymmetric crypto related was rotated, discard symmetric key
-    initialSecret: (rotateKeyPair || rotatePublicKey)
-        ? null
-        : settings.initialSecret,
+    initialSecret:
+        (rotateKeyPair || rotatePublicKey) ? null : settings.initialSecret,
     // Leave all other attributes as is
     recordKeyMeSharing: settings.recordKeyMeSharing,
     writerMeSharing: settings.writerMeSharing,
@@ -136,8 +134,8 @@ DhtSettings updateDhtSettingsFromContactUpdate(
   try {
     shareBackPublicKey =
         (update.shareBackPubKey != null && update.shareBackPubKey != 'null')
-        ? PublicKey.fromString(update.shareBackPubKey!)
-        : null;
+            ? PublicKey.fromString(update.shareBackPubKey!)
+            : null;
   } catch (e) {
     debugPrint('Error decoding share back pub key: $e');
   }
@@ -147,8 +145,8 @@ DhtSettings updateDhtSettingsFromContactUpdate(
   try {
     shareBackDhtKey =
         (update.shareBackDHTKey != null && update.shareBackDHTKey != 'null')
-        ? Typed<FixedEncodedString43>.fromString(update.shareBackDHTKey!)
-        : null;
+            ? Typed<FixedEncodedString43>.fromString(update.shareBackDHTKey!)
+            : null;
   } catch (e) {
     debugPrint('Error decoding share back dht key: $e');
   }
@@ -156,8 +154,7 @@ DhtSettings updateDhtSettingsFromContactUpdate(
   // Try deserializing shareBackDHTKey
   late KeyPair? shareBackDhtWriter;
   try {
-    shareBackDhtWriter =
-        (update.shareBackDHTWriter != null &&
+    shareBackDhtWriter = (update.shareBackDHTWriter != null &&
             update.shareBackDHTWriter != 'null')
         ? KeyPair.fromString(update.shareBackDHTWriter!)
         : null;
@@ -169,8 +166,7 @@ DhtSettings updateDhtSettingsFromContactUpdate(
   return settings.copyWith(
     // If the update contains a public key and it is not already the one in
     // use, add it as the next candidate public key
-    theirNextPublicKey:
-        (shareBackPublicKey != null &&
+    theirNextPublicKey: (shareBackPublicKey != null &&
             shareBackPublicKey != settings.theirPublicKey)
         ? shareBackPublicKey
         : null,
@@ -226,9 +222,7 @@ class VeilidDhtStorage extends DistributedStorage {
         (
           publicKey,
           keyPair,
-          await Veilid.instance
-              .getCryptoSystem(keyPair.kind)
-              .then(
+          await Veilid.instance.getCryptoSystem(keyPair.kind).then(
                 (cs) async =>
                     cs.generateSharedSecret(publicKey, keyPair.secret, domain),
               ),
@@ -237,9 +231,7 @@ class VeilidDhtStorage extends DistributedStorage {
         (
           publicKey,
           nextKeyPair,
-          await Veilid.instance
-              .getCryptoSystem(nextKeyPair.kind)
-              .then(
+          await Veilid.instance.getCryptoSystem(nextKeyPair.kind).then(
                 (cs) async => cs.generateSharedSecret(
                   publicKey,
                   nextKeyPair.secret,
@@ -254,9 +246,7 @@ class VeilidDhtStorage extends DistributedStorage {
                 (kp) async => (
                   publicKey,
                   kp,
-                  await Veilid.instance
-                      .getCryptoSystem(kp.kind)
-                      .then(
+                  await Veilid.instance.getCryptoSystem(kp.kind).then(
                         (cs) async => cs.generateSharedSecret(
                           publicKey,
                           kp.secret,
@@ -271,9 +261,7 @@ class VeilidDhtStorage extends DistributedStorage {
         (
           nextPublicKey,
           keyPair,
-          await Veilid.instance
-              .getCryptoSystem(keyPair.kind)
-              .then(
+          await Veilid.instance.getCryptoSystem(keyPair.kind).then(
                 (cs) async => cs.generateSharedSecret(
                   nextPublicKey,
                   keyPair.secret,
@@ -285,9 +273,7 @@ class VeilidDhtStorage extends DistributedStorage {
         (
           nextPublicKey,
           nextKeyPair,
-          await Veilid.instance
-              .getCryptoSystem(nextKeyPair.kind)
-              .then(
+          await Veilid.instance.getCryptoSystem(nextKeyPair.kind).then(
                 (cs) async => cs.generateSharedSecret(
                   nextPublicKey,
                   nextKeyPair.secret,
@@ -302,9 +288,7 @@ class VeilidDhtStorage extends DistributedStorage {
                 (kp) async => (
                   nextPublicKey,
                   kp,
-                  await Veilid.instance
-                      .getCryptoSystem(kp.kind)
-                      .then(
+                  await Veilid.instance.getCryptoSystem(kp.kind).then(
                         (cs) async => cs.generateSharedSecret(
                           nextPublicKey,
                           kp.secret,
@@ -336,32 +320,32 @@ class VeilidDhtStorage extends DistributedStorage {
 
           final content = await DHTRecordPool.instance
               .openRecordRead(
-                recordKey,
-                debugName: 'coag::read',
-                crypto: crypto,
-              )
+            recordKey,
+            debugName: 'coag::read',
+            crypto: crypto,
+          )
               .then((record) async {
-                try {
-                  final (
-                    jsonString,
-                    picture,
-                  ) = await _getJsonProfileAndPictureFromRecord(
-                    record,
-                    crypto,
-                    refreshMode,
-                  );
-                  return (jsonString, picture);
-                } on FormatException catch (e) {
-                  // This can happen due to "not enough data to decrypt" when a
-                  // record was written empty without encryption during init
-                  // TODO: Only accept "not enough data to decrypt" here, make sure "Unexpected exentsion byte" is passed down as an error
-                  debugPrint(
-                    'error reading ${recordKey.toString().substring(5, 10)} $e',
-                  );
-                } finally {
-                  await record.close();
-                }
-              });
+            try {
+              final (
+                jsonString,
+                picture,
+              ) = await _getJsonProfileAndPictureFromRecord(
+                record,
+                crypto,
+                refreshMode,
+              );
+              return (jsonString, picture);
+            } on FormatException catch (e) {
+              // This can happen due to "not enough data to decrypt" when a
+              // record was written empty without encryption during init
+              // TODO: Only accept "not enough data to decrypt" here, make sure "Unexpected exentsion byte" is passed down as an error
+              debugPrint(
+                'error reading ${recordKey.toString().substring(5, 10)} $e',
+              );
+            } finally {
+              await record.close();
+            }
+          });
 
           // TODO: Let's in the future check for schema_version here,
           // when fewer v2 schemas without version included are in circulation
@@ -429,15 +413,14 @@ class VeilidDhtStorage extends DistributedStorage {
         'for writing ${_recordKey.toString().substring(5, 10)}',
       );
       // Derive DH secret with next public key
-      secret = await Veilid.instance
-          .getCryptoSystem(settings.myKeyPair!.kind)
-          .then(
-            (cs) async => cs.generateSharedSecret(
-              theirPublicKey,
-              settings.myKeyPair!.secret,
-              utf8.encode('dht'),
-            ),
-          );
+      secret =
+          await Veilid.instance.getCryptoSystem(settings.myKeyPair!.kind).then(
+                (cs) async => cs.generateSharedSecret(
+                  theirPublicKey,
+                  settings.myKeyPair!.secret,
+                  utf8.encode('dht'),
+                ),
+              );
     } else {
       // TODO: Raise Exception / signal to user that something is broken
       debugPrint('no crypto for ${_recordKey.toString().substring(5, 10)}');
@@ -465,12 +448,12 @@ class VeilidDhtStorage extends DistributedStorage {
     // Write picture chunks to remaining subkeys
     await Future.wait(
       chopPayloadChunks(picture).toList().asMap().entries.map(
-        (e) => record.eventualWriteBytes(
-          crypto: crypto,
-          e.value,
-          subkey: e.key + 1,
-        ),
-      ),
+            (e) => record.eventualWriteBytes(
+              crypto: crypto,
+              e.value,
+              subkey: e.key + 1,
+            ),
+          ),
     );
     await record.close();
 
@@ -578,9 +561,9 @@ class VeilidDhtStorage extends DistributedStorage {
         utf8.encode(jsonEncode(backup.toJson())),
         numChunks: 32,
       ).toList().asMap().entries.map(
-        (e) =>
-            record.eventualWriteBytes(crypto: crypto, e.value, subkey: e.key),
-      ),
+            (e) => record.eventualWriteBytes(
+                crypto: crypto, e.value, subkey: e.key),
+          ),
     );
     await record.close();
   }
@@ -603,29 +586,29 @@ class VeilidDhtStorage extends DistributedStorage {
         );
         final content = await DHTRecordPool.instance
             .openRecordRead(
-              recordKey,
-              debugName: 'coag::backup::read',
-              crypto: pskCrypto,
-            )
+          recordKey,
+          debugName: 'coag::backup::read',
+          crypto: pskCrypto,
+        )
             .then((record) async {
-              try {
-                final payload = await getChunkedPayload(
-                  record,
-                  pskCrypto,
-                  refreshMode,
-                  numChunks: 32,
-                );
-                debugPrint('read psk ${recordKey.toString().substring(5, 10)}');
-                return tryUtf8Decode(payload);
-              } on FormatException catch (e) {
-                // This can happen due to "not enough data to decrypt" when a record
-                // was written empty without encryption during initialization
-                // TODO: Only accept "not enough data to decrypt" here, make sure "Unexpected exentsion byte" is passed down as an error
-                debugPrint('psk ${recordKey.toString().substring(5, 10)} $e');
-              } finally {
-                await record.close();
-              }
-            });
+          try {
+            final payload = await getChunkedPayload(
+              record,
+              pskCrypto,
+              refreshMode,
+              numChunks: 32,
+            );
+            debugPrint('read psk ${recordKey.toString().substring(5, 10)}');
+            return tryUtf8Decode(payload);
+          } on FormatException catch (e) {
+            // This can happen due to "not enough data to decrypt" when a record
+            // was written empty without encryption during initialization
+            // TODO: Only accept "not enough data to decrypt" here, make sure "Unexpected exentsion byte" is passed down as an error
+            debugPrint('psk ${recordKey.toString().substring(5, 10)} $e');
+          } finally {
+            await record.close();
+          }
+        });
 
         return content;
       } on VeilidAPIExceptionTryAgain {

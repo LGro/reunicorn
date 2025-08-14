@@ -113,8 +113,7 @@ List<Widget> contactDetailsAndLocations(
 
       // Locations
       if (contact.temporaryLocations.isNotEmpty)
-        temporaryLocationsCard(
-          context,
+        TemporaryLocationsCard(
           Text(
             'Locations',
             textScaler: const TextScaler.linear(1.4),

@@ -22,28 +22,30 @@ Widget contactsListView(
   BuildContext context,
   List<CoagContact> contacts,
   Map<String, List<String>> circleMemberships,
-) => SearchableList<CoagContact>(
-  items: contacts,
-  buildItemWidget: (contact) => ListTile(
-    leading: roundPictureOrPlaceholder(contact.details?.picture, radius: 18),
-    title: Text(contact.name),
-    trailing: contactSharingReceivingStatus(
-      contact,
-      circleMemberships[contact.coagContactId]?.isNotEmpty ?? false,
-    ),
-    onTap: () async => context.goNamed(
-      'contactDetails',
-      pathParameters: {'coagContactId': contact.coagContactId},
-    ),
-  ),
-  // TODO: Also allow searching shared locations?
-  matchesItem: (search, contact) =>
-      contact.name.toLowerCase().contains(search.toLowerCase()) ||
-      (contact.details != null &&
-          extractAllValuesToString(
-            contact.details!.toJson(),
-          ).toLowerCase().contains(search.toLowerCase())),
-);
+) =>
+    SearchableList<CoagContact>(
+      items: contacts,
+      buildItemWidget: (contact) => ListTile(
+        leading:
+            roundPictureOrPlaceholder(contact.details?.picture, radius: 18),
+        title: Text(contact.name),
+        trailing: contactSharingReceivingStatus(
+          contact,
+          circleMemberships[contact.coagContactId]?.isNotEmpty ?? false,
+        ),
+        onTap: () async => context.goNamed(
+          'contactDetails',
+          pathParameters: {'coagContactId': contact.coagContactId},
+        ),
+      ),
+      // TODO: Also allow searching shared locations?
+      matchesItem: (search, contact) =>
+          contact.name.toLowerCase().contains(search.toLowerCase()) ||
+          (contact.details != null &&
+              extractAllValuesToString(
+                contact.details!.toJson(),
+              ).toLowerCase().contains(search.toLowerCase())),
+    );
 
 class ContactListPage extends StatefulWidget {
   const ContactListPage({super.key});
@@ -54,128 +56,128 @@ class ContactListPage extends StatefulWidget {
 
 class _ContactListPageState extends State<ContactListPage> {
   Widget _noContactsBody() => Padding(
-    padding: const EdgeInsets.only(left: 8, right: 8),
-    child: Column(
-      children: [
-        const Expanded(
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'You do not have any contacts yet. Create an invite for someone, '
-                  'or accept an invite from someone else.',
-                  textScaler: TextScaler.linear(1.2),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        padding: const EdgeInsets.only(left: 8, right: 8),
+        child: Column(
           children: [
-            FilledButton(
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+            const Expanded(
+              child: Row(
                 children: [
-                  // This could be qr_code_2_add if available, is that better?
-                  Icon(Icons.person_add),
-                  SizedBox(width: 8),
-                  Text('Create invite'),
+                  Expanded(
+                    child: Text(
+                      'You do not have any contacts yet. Create an invite for someone, '
+                      'or accept an invite from someone else.',
+                      textScaler: TextScaler.linear(1.2),
+                    ),
+                  ),
                 ],
               ),
-              onPressed: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<CreateNewContactPage>(
-                    builder: (_) => CreateNewContactPage(),
-                  ),
-                );
-              },
             ),
-            FilledButton(
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.qr_code_scanner),
-                  SizedBox(width: 8),
-                  Text('Accept invite'),
-                ],
-              ),
-              onPressed: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<ReceiveRequestPage>(
-                    builder: (_) => ReceiveRequestPage(),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                FilledButton(
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // This could be qr_code_2_add if available, is that better?
+                      Icon(Icons.person_add),
+                      SizedBox(width: 8),
+                      Text('Create invite'),
+                    ],
                   ),
-                );
-              },
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute<CreateNewContactPage>(
+                        builder: (_) => CreateNewContactPage(),
+                      ),
+                    );
+                  },
+                ),
+                FilledButton(
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.qr_code_scanner),
+                      SizedBox(width: 8),
+                      Text('Accept invite'),
+                    ],
+                  ),
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute<ReceiveRequestPage>(
+                        builder: (_) => ReceiveRequestPage(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ],
         ),
-      ],
-    ),
-  );
+      );
 
   Widget _contactsBody(BuildContext context, ContactListState state) => Column(
-    children: [
-      Expanded(
-        child: contactsListView(
-          context,
-          state.contacts.toList(),
-          state.circleMemberships,
-        ),
-      ),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          FilledButton(
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // This could be qr_code_2_add if available, is that better?
-                Icon(Icons.person_add),
-                SizedBox(width: 8),
-                Text('Create invite'),
-              ],
+          Expanded(
+            child: contactsListView(
+              context,
+              state.contacts.toList(),
+              state.circleMemberships,
             ),
-            onPressed: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute<CreateNewContactPage>(
-                  builder: (_) => CreateNewContactPage(),
-                ),
-              );
-            },
           ),
-          FilledButton(
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.qr_code_scanner),
-                SizedBox(width: 8),
-                Text('Accept invite'),
-              ],
-            ),
-            onPressed: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute<ReceiveRequestPage>(
-                  builder: (_) => ReceiveRequestPage(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              FilledButton(
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // This could be qr_code_2_add if available, is that better?
+                    Icon(Icons.person_add),
+                    SizedBox(width: 8),
+                    Text('Create invite'),
+                  ],
                 ),
-              );
-            },
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<CreateNewContactPage>(
+                      builder: (_) => CreateNewContactPage(),
+                    ),
+                  );
+                },
+              ),
+              FilledButton(
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.qr_code_scanner),
+                    SizedBox(width: 8),
+                    Text('Accept invite'),
+                  ],
+                ),
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<ReceiveRequestPage>(
+                      builder: (_) => ReceiveRequestPage(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              DhtSharingStatusWidget(
+                recordKeys: state.contacts
+                    .map((c) => c.dhtSettings.recordKeyMeSharing)
+                    .whereType<Typed<FixedEncodedString43>>(),
+              ),
+            ],
           ),
         ],
-      ),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          DhtSharingStatusWidget(
-            recordKeys: state.contacts
-                .map((c) => c.dhtSettings.recordKeyMeSharing)
-                .whereType<Typed<FixedEncodedString43>>(),
-          ),
-        ],
-      ),
-    ],
-  );
+      );
 
   var _dummyToTriggerRebuild = 0;
 
@@ -192,84 +194,85 @@ class _ContactListPageState extends State<ContactListPage> {
 
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
-    providers: [
-      BlocProvider(
-        create: (context) =>
-            ContactListCubit(context.read<ContactsRepository>()),
-      ),
-    ],
-    child: BlocConsumer<ContactListCubit, ContactListState>(
-      listener: (context, state) async {},
-      builder: (context, state) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Contacts'),
-          actions: [
-            // badges.Badge(
-            //   showBadge: pendingIntroductions(state.contacts).isNotEmpty,
-            //   badgeContent: Text(
-            //       pendingIntroductions(state.contacts).length.toString()),
-            //   child: const Icon(Icons.inbox),
-            //   onTap: () async => Navigator.of(context).push(
-            //       MaterialPageRoute<IntroductionsPage>(
-            //           builder: (context) => const IntroductionsPage())),
-            // ),
-            IconButton(
-              onPressed: () async => Navigator.of(context).push(
-                MaterialPageRoute<IntroductionsPage>(
-                  builder: (context) => const IntroductionsPage(),
+        providers: [
+          BlocProvider(
+            create: (context) =>
+                ContactListCubit(context.read<ContactsRepository>()),
+          ),
+        ],
+        child: BlocConsumer<ContactListCubit, ContactListState>(
+          listener: (context, state) async {},
+          builder: (context, state) => Scaffold(
+            appBar: AppBar(
+              title: const Text('Contacts'),
+              actions: [
+                // badges.Badge(
+                //   showBadge: pendingIntroductions(state.contacts).isNotEmpty,
+                //   badgeContent: Text(
+                //       pendingIntroductions(state.contacts).length.toString()),
+                //   child: const Icon(Icons.inbox),
+                //   onTap: () async => Navigator.of(context).push(
+                //       MaterialPageRoute<IntroductionsPage>(
+                //           builder: (context) => const IntroductionsPage())),
+                // ),
+                IconButton(
+                  onPressed: () async => Navigator.of(context).push(
+                    MaterialPageRoute<IntroductionsPage>(
+                      builder: (context) => const IntroductionsPage(),
+                    ),
+                  ),
+                  // Or use Icons.group_add instead?
+                  icon: const Icon(Icons.emoji_people),
                 ),
-              ),
-              // Or use Icons.group_add instead?
-              icon: const Icon(Icons.diversity_3),
+                // TODO: Show badge for unread updates
+                IconButton(
+                  onPressed: () async => Navigator.of(context).push(
+                    MaterialPageRoute<ContactPage>(
+                      builder: (context) => const UpdatesPage(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.notifications),
+                ),
+              ],
             ),
-            // TODO: Show badge for unread updates
-            IconButton(
-              onPressed: () async => Navigator.of(context).push(
-                MaterialPageRoute<ContactPage>(
-                  builder: (context) => const UpdatesPage(),
-                ),
-              ),
-              icon: const Icon(Icons.notifications),
+            body: Container(
+              padding: const EdgeInsets.all(10),
+              child: (state.contacts.isEmpty &&
+                      state.circles.keys
+                          .where((cId) => cId.startsWith('VLD'))
+                          .isEmpty)
+                  ? _noContactsBody()
+                  : RefreshIndicator(
+                      onRefresh: () async =>
+                          context.read<ContactListCubit>().refresh().then(
+                                (success) => context.mounted
+                                    ? (success
+                                        ? ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Successfully refreshed!',
+                                              ),
+                                            ),
+                                          )
+                                        : ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Refreshing failed, try again later!',
+                                              ),
+                                            ),
+                                          ))
+                                    : null,
+                              ),
+                      child: (state.contacts.isEmpty)
+                          ? _noContactsBody()
+                          : _contactsBody(context, state),
+                    ),
             ),
-          ],
+          ),
         ),
-        body: Container(
-          padding: const EdgeInsets.all(10),
-          child:
-              (state.contacts.isEmpty &&
-                  state.circles.keys
-                      .where((cId) => cId.startsWith('VLD'))
-                      .isEmpty)
-              ? _noContactsBody()
-              : RefreshIndicator(
-                  onRefresh: () async =>
-                      context.read<ContactListCubit>().refresh().then(
-                        (success) => context.mounted
-                            ? (success
-                                  ? ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Successfully refreshed!',
-                                        ),
-                                      ),
-                                    )
-                                  : ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Refreshing failed, try again later!',
-                                        ),
-                                      ),
-                                    ))
-                            : null,
-                      ),
-                  child: (state.contacts.isEmpty)
-                      ? _noContactsBody()
-                      : _contactsBody(context, state),
-                ),
-        ),
-      ),
-    ),
-  );
+      );
 }
 
 Widget? contactSharingReceivingStatus(

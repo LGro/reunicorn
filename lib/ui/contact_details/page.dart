@@ -536,8 +536,7 @@ Widget _sharingSettings(
           if (contact.sharedProfile?.temporaryLocations.isNotEmpty ??
               false) ...[
             _paddedDivider(),
-            temporaryLocationsCard(
-              context,
+            TemporaryLocationsCard(
               const Row(
                 children: [
                   Icon(Icons.share_location),

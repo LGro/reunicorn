@@ -7,7 +7,6 @@ import 'dart:ui' as ui;
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:image/image.dart' as img;
 import 'package:veilid/veilid.dart';
 
 import '../data/models/coag_contact.dart';

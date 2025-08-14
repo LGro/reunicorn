@@ -19,6 +19,7 @@ import '../../ui/utils.dart';
 import '../../veilid_processor/veilid_processor.dart';
 import '../models/backup.dart';
 import '../models/batch_invites.dart';
+import '../models/close_by_match.dart';
 import '../models/coag_contact.dart';
 import '../models/contact_introduction.dart';
 import '../models/contact_location.dart';
@@ -277,6 +278,8 @@ class ContactsRepository {
 
   final Future<FixedEncodedString43> Function() generateSharedSecret;
 
+  List<CloseByMatch>? _closeByMatches;
+
   Future<void> initialize({
     bool scheduleRegularUpdates = true,
     bool listenToVeilidNetworkChanges = true,
@@ -311,6 +314,8 @@ class ContactsRepository {
       );
     }
 
+    await updateCloseByMatches();
+
     // Update the contacts from DHT and subscribe to future updates
     await updateAndWatchReceivingDHT();
 
@@ -330,6 +335,42 @@ class ContactsRepository {
       //         .timeout(const Duration(seconds: 4)));
     }
   }
+
+  Future<void> markContactVerified(String coagContactId) async {
+    final contact = getContact(coagContactId);
+    if (contact == null) {
+      return;
+    }
+    await saveContact(contact.copyWith(verified: true));
+  }
+
+  Future<void> updateCloseByMatches() async {
+    if (_profileInfo == null) {
+      return;
+    }
+    const timeThreshold = Duration.zero;
+    const distanceThresholdKm = 10.0;
+    _closeByMatches = _contacts.values
+        .map((c) => closeByMatchesForContact(
+            _profileInfo!,
+            c,
+            getCirclesForContact(c.coagContactId).keys.toSet(),
+            timeThreshold,
+            distanceThresholdKm))
+        .expand((x) => x)
+        .toList()
+      ..sort((a, b) {
+        if (a.start.isBefore(b.start)) {
+          return -1;
+        }
+        if (b.start.isBefore(a.start)) {
+          return 1;
+        }
+        return 0;
+      });
+  }
+
+  List<CloseByMatch>? get closeByMatches => _closeByMatches;
 
   /////////////////////
   // PERSISTENT STORAGE
@@ -697,6 +738,7 @@ class ContactsRepository {
               dhtSettings: c.dhtSettings,
               origin: c.origin,
               comment: c.comment,
+              verified: c.verified,
               details: null,
               theirIdentity: null,
               connectionAttestations: const [],
@@ -1168,8 +1210,11 @@ class ContactsRepository {
     await persistentStorage.addUpdate(update);
   }
 
-  // TODO: Also clean up unnecessary updates from persistent storage
-  List<ContactUpdate> getContactUpdates() => [..._contactUpdates];
+  // TODO: Also clean up unnecessary updates from persistent storage, e.g. ones
+  // for deleted contacts or ones that are too old
+  List<ContactUpdate> getContactUpdates() => _contactUpdates
+      .where((u) => _contacts.containsKey(u.newContact.coagContactId))
+      .toList();
 
   ////////////////
   // BATCH INVITES

@@ -92,7 +92,8 @@ class SettingsCubit extends Cubit<SettingsState> {
       ),
       temporaryLocations: Map.fromEntries(
         [Uuid().v4(), Uuid().v4(), Uuid().v4()].map((id) {
-          final start = faker.date.dateTime();
+          final start = faker.date.dateTime(
+              minYear: DateTime.now().year, maxYear: DateTime.now().year + 1);
           return MapEntry(
             id,
             ContactTemporaryLocation(

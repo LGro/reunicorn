@@ -26,6 +26,7 @@ import '../veilid_init.dart';
 import 'circles_list/page.dart';
 import 'contact_details/page.dart';
 import 'contact_list/page.dart';
+import 'dashboard/page.dart';
 import 'import_ics/page.dart';
 import 'locations/schedule/widget.dart';
 import 'map/page.dart';
@@ -33,12 +34,18 @@ import 'profile/page.dart';
 import 'receive_request/cubit.dart';
 import 'receive_request/page.dart';
 import 'settings/page.dart';
+import 'updates/page.dart';
 import 'welcome.dart';
 
 // TODO: It seems odd to require the knowledge about which other route names should map to the relevant navigation items here
 const navBarItems = [
   (
     '/',
+    ['dashboard'],
+    BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
+  ),
+  (
+    '/profile',
     ['profile'],
     BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
   ),
@@ -63,14 +70,9 @@ const navBarItems = [
     BottomNavigationBarItem(icon: Icon(Icons.contacts), label: 'Contacts'),
   ),
   (
-    '/map',
+    '/map/-/-',
     ['map'],
     BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
-  ),
-  (
-    '/settings',
-    ['settings'],
-    BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
   ),
 ];
 
@@ -104,6 +106,11 @@ class AppRouter {
         routes: [
           GoRoute(
             path: '/',
+            name: 'dashboard',
+            builder: (_, __) => DashboardPage(),
+          ),
+          GoRoute(
+            path: '/profile',
             name: 'profile',
             builder: (_, __) => const ProfilePage(),
           ),
@@ -127,9 +134,13 @@ class AppRouter {
             ],
           ),
           GoRoute(
-            path: '/map',
+            path: '/map/:latitude/:longitude',
             name: 'map',
-            builder: (_, __) => const MapPage(),
+            builder: (_, state) => MapPage(
+                latitude:
+                    double.tryParse(state.pathParameters['latitude'] ?? ''),
+                longitude:
+                    double.tryParse(state.pathParameters['longitude'] ?? '')),
             routes: [
               GoRoute(
                 path: 'importIcs',
@@ -148,6 +159,11 @@ class AppRouter {
                 ),
               ),
             ],
+          ),
+          GoRoute(
+            path: '/updates',
+            name: 'updates',
+            builder: (_, __) => const UpdatesPage(),
           ),
           GoRoute(
             path: '/settings',

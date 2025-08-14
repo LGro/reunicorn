@@ -231,6 +231,7 @@ CoagContact _$CoagContactFromJson(Map<String, dynamic> json) => CoagContact(
       mostRecentChange: json['most_recent_change'] == null
           ? null
           : DateTime.parse(json['most_recent_change'] as String),
+      verified: json['verified'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$CoagContactToJson(CoagContact instance) =>
@@ -262,6 +263,7 @@ Map<String, dynamic> _$CoagContactToJson(CoagContact instance) =>
       'origin': instance.origin,
       'most_recent_update': instance.mostRecentUpdate?.toIso8601String(),
       'most_recent_change': instance.mostRecentChange?.toIso8601String(),
+      'verified': instance.verified,
     };
 
 CoagContactDHTSchemaV1 _$CoagContactDHTSchemaV1FromJson(

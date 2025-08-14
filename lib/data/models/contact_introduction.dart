@@ -56,12 +56,12 @@ class ContactIntroduction extends Equatable {
 
   @override
   List<Object?> get props => [
-    otherName,
-    otherPublicKey,
-    publicKey,
-    message,
-    dhtRecordKeyReceiving,
-    dhtRecordKeySharing,
-    dhtWriterSharing,
-  ];
+        otherName,
+        otherPublicKey,
+        publicKey,
+        message,
+        dhtRecordKeyReceiving,
+        dhtRecordKeySharing,
+        dhtWriterSharing,
+      ];
 }

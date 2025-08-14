@@ -130,8 +130,7 @@ void main() {
     expect(
       merged.phones.length,
       2,
-      reason:
-          'old mansion should be removed and mansion added '
+      reason: 'old mansion should be removed and mansion added '
           'alongside existing system phone',
     );
     expect(merged.phones[0].number, '1234-sys');
@@ -210,6 +209,7 @@ void main() {
       origin: null,
       mostRecentUpdate: null,
       mostRecentChange: null,
+      verified: false,
     );
 
     final jsonString = json.encode(contact.toJson());

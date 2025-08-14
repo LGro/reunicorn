@@ -9,6 +9,7 @@ import 'package:collection/collection.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:share_plus/share_plus.dart';
@@ -410,22 +411,6 @@ Map<String, Object> toGeoJson(List<LatLng> locations) => {
           .toList()
     };
 
-bool areLocationsClose(LatLng a, LatLng b, {double thresholdInMeters = 20}) {
-  const earthRadius = 6371000; // in meters
-
-  final lat1Rad = a.latitude * pi / 180;
-  final lat2Rad = b.latitude * pi / 180;
-  final deltaLat = (b.latitude - a.latitude) * pi / 180;
-  final deltaLng = (b.longitude - a.longitude) * pi / 180;
-
-  final hav = sin(deltaLat / 2) * sin(deltaLat / 2) +
-      cos(lat1Rad) * cos(lat2Rad) * sin(deltaLng / 2) * sin(deltaLng / 2);
-
-  final distance = earthRadius * 2 * atan2(sqrt(hav), sqrt(1 - hav));
-
-  return distance <= thresholdInMeters;
-}
-
 double calculateClusterThresholdMeters({
   required double zoom,
   required double latitude,
@@ -455,7 +440,10 @@ class MarkerData {
 }
 
 class MapPage extends StatefulWidget {
-  const MapPage({super.key});
+  const MapPage({this.latitude, this.longitude, super.key});
+
+  final double? latitude;
+  final double? longitude;
 
   @override
   _MapPageState createState() => _MapPageState();
@@ -514,14 +502,20 @@ class _MapPageState extends State<MapPage> {
         final thresholdMeters = calculateClusterThresholdMeters(
             zoom: currentZoom, latitude: coordinates.latitude);
         final nearbyMarkers = _markers.entries
-            .where((entry) => areLocationsClose(
-                entry.value.coordinates, coordinates,
-                thresholdInMeters: thresholdMeters))
+            .where((entry) =>
+                // NOTE: This could also be latlong2.distance
+                Geolocator.distanceBetween(
+                    entry.value.coordinates.latitude,
+                    entry.value.coordinates.longitude,
+                    coordinates.latitude,
+                    coordinates.longitude) <
+                thresholdMeters)
             .toList();
         // If we have more than one close by marker but they are all located at the same spot, show a list of them
         if (nearbyMarkers.length > 1 &&
             nearbyMarkers.map((e) => e.value.coordinates).toSet().length == 1) {
-          _showClusterMarkerList(nearbyMarkers.map((e) => e.key).toList());
+          await _showClusterMarkerList(
+              nearbyMarkers.map((e) => e.key).toList());
         } else {
           // otherwise, zoom in
           await _controller?.animateCamera(
@@ -678,20 +672,28 @@ class _MapPageState extends State<MapPage> {
                       styleString:
                           context.read<SettingsRepository>().mapStyleString,
                       initialCameraPosition: CameraPosition(
-                          target: initialLocation(
-                                state.profileInfo?.addressLocations.values ??
-                                    [],
-                                state.profileInfo?.temporaryLocations.values ??
-                                    [],
-                                state.contacts
-                                    .map((c) => c.addressLocations.values)
-                                    .expand((l) => l),
-                                state.contacts
-                                    .map((c) => c.temporaryLocations.values)
-                                    .expand((l) => l),
-                              ) ??
-                              const LatLng(20, 0),
-                          zoom: 2.5),
+                          target: (widget.latitude != null &&
+                                  widget.longitude != null)
+                              ? LatLng(widget.latitude!, widget.longitude!)
+                              : initialLocation(
+                                    state.profileInfo?.addressLocations
+                                            .values ??
+                                        [],
+                                    state.profileInfo?.temporaryLocations
+                                            .values ??
+                                        [],
+                                    state.contacts
+                                        .map((c) => c.addressLocations.values)
+                                        .expand((l) => l),
+                                    state.contacts
+                                        .map((c) => c.temporaryLocations.values)
+                                        .expand((l) => l),
+                                  ) ??
+                                  const LatLng(20, 0),
+                          zoom: (widget.latitude != null &&
+                                  widget.longitude != null)
+                              ? 12
+                              : 2.5),
                       trackCameraPosition: true,
                       minMaxZoomPreference:
                           const MinMaxZoomPreference(null, 22),

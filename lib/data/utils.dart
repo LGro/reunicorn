@@ -7,10 +7,10 @@ import 'models/coag_contact.dart';
 
 Future<TypedKeyPair> generateTypedKeyPairBest() async =>
     DHTRecordPool.instance.veilid.bestCryptoSystem().then(
-      (cs) => cs.generateKeyPair().then(
-        (kp) => TypedKeyPair.fromKeyPair(cs.kind(), kp),
-      ),
-    );
+          (cs) => cs.generateKeyPair().then(
+                (kp) => TypedKeyPair.fromKeyPair(cs.kind(), kp),
+              ),
+        );
 
 Future<FixedEncodedString43> generateRandomSharedSecretBest() async =>
     Veilid.instance.bestCryptoSystem().then((cs) => cs.randomSharedSecret());

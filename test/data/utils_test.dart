@@ -1,8 +1,8 @@
 // Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'package:reunicorn/data/utils.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reunicorn/data/utils.dart';
 
 import '../utils.dart';
 

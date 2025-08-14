@@ -7,7 +7,7 @@ import 'package:reunicorn/data/models/coag_contact.dart';
 import 'package:veilid/veilid.dart';
 
 final dummyKeyPair = TypedKeyPair(
-  kind: 0,
+  kind: cryptoKindVLD0,
   key: FixedEncodedString43.fromBytes(Uint8List(32)),
   secret: FixedEncodedString43.fromBytes(Uint8List(32)),
 );

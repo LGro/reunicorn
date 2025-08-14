@@ -7,33 +7,31 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-import '../../data/models/coag_contact.dart';
-import '../../data/models/contact_introduction.dart';
-import '../../data/repositories/contacts.dart';
+import '../../../data/models/coag_contact.dart';
+import '../../../data/repositories/contacts.dart';
 
 part 'state.dart';
 part 'cubit.g.dart';
 
 class IntroductionsCubit extends Cubit<IntroductionsState> {
   IntroductionsCubit(this.contactsRepository)
-      : super(IntroductionsState(contacts: contactsRepository.getContacts())) {
-    _contactsSubscription = contactsRepository.getContactStream().listen((
-      idUpdatedContact,
-    ) {
-      if (!isClosed) {
-        emit(IntroductionsState(contacts: contactsRepository.getContacts()));
-      }
-    });
+      : super(const IntroductionsState(IntroductionsStatus.initial)) {
+    _contactsSubscription =
+        contactsRepository.getContactStream().listen((_) => emit(
+              IntroductionsState(
+                IntroductionsStatus.success,
+                contacts: contactsRepository.getContacts().values.toList(),
+              ),
+            ));
+
+    emit(IntroductionsState(
+      IntroductionsStatus.success,
+      contacts: contactsRepository.getContacts().values.toList(),
+    ));
   }
 
   final ContactsRepository contactsRepository;
   late final StreamSubscription<String> _contactsSubscription;
-
-  Future<String?> accept(
-    CoagContact introducer,
-    ContactIntroduction introduction,
-  ) async =>
-      contactsRepository.acceptIntroduction(introducer, introduction);
 
   @override
   Future<void> close() {
