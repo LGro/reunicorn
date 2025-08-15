@@ -1,13 +1,13 @@
 // Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
 import 'package:reunicorn/data/repositories/contacts.dart';
 import 'package:reunicorn/ui/receive_request/cubit.dart';
 import 'package:reunicorn/ui/utils.dart';
 import 'package:reunicorn/veilid_init.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
 
 import '../test/mocked_providers.dart';
 
@@ -124,9 +124,12 @@ void main() {
         isNotNull,
         reason: 'Expected accepting of introduction to succeed',
       );
-      await _cRepoA.updateCirclesForContact(contactIdB!, [
-        defaultInitialCircleId,
-      ], triggerDhtUpdate: false);
+      await _cRepoA.updateCirclesForContact(
+          contactIdB!,
+          [
+            defaultInitialCircleId,
+          ],
+          triggerDhtUpdate: false);
       final sharingSuccessA = await _cRepoA.tryShareWithContactDHT(contactIdB);
       expect(sharingSuccessA, true, reason: 'Expected sharing to succeed');
 
@@ -152,9 +155,12 @@ void main() {
         isNotNull,
         reason: 'Expected accepting of introduction to succeed',
       );
-      await _cRepoB.updateCirclesForContact(contactIdA!, [
-        defaultInitialCircleId,
-      ], triggerDhtUpdate: false);
+      await _cRepoB.updateCirclesForContact(
+          contactIdA!,
+          [
+            defaultInitialCircleId,
+          ],
+          triggerDhtUpdate: false);
       final sharingSuccessB = await _cRepoB.tryShareWithContactDHT(contactIdA);
       expect(sharingSuccessB, true, reason: 'Expected sharing with A to work');
       expect(

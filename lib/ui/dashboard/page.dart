@@ -244,14 +244,14 @@ class _CloseByRow extends StatelessWidget {
         '"${match.myLocationLabel}" between $start and $end',
         if (!match.theyKnow) '\nThey do not know about this, share with them.'
       ].join()),
-      onTap: () {
+      onTap: () async {
         final contact =
             context.read<ContactsRepository>().getContact(match.coagContactId);
         if (contact == null) {
           // TODO: display error?
           return;
         }
-        context.goNamed('contactDetails',
+        await context.pushNamed('contactDetails',
             pathParameters: {'coagContactId': contact.coagContactId});
       },
     );
@@ -272,7 +272,7 @@ class _ContactUpdateRow extends StatelessWidget {
         contactUpdateSummary(update.oldContact, update.newContact),
         onTap: (update.coagContactId == null)
             ? null
-            : () {
+            : () async {
                 final contact = context
                     .read<ContactsRepository>()
                     .getContact(update.coagContactId!);
@@ -280,7 +280,7 @@ class _ContactUpdateRow extends StatelessWidget {
                   // TODO: display error?
                   return;
                 }
-                context.goNamed('contactDetails',
+                await context.pushNamed('contactDetails',
                     pathParameters: {'coagContactId': contact.coagContactId});
               },
         picture: update.newContact.details?.picture,

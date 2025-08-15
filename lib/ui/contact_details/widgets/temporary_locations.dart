@@ -81,7 +81,7 @@ class TemporaryLocationsCard extends StatelessWidget {
                           bottom: 4,
                         ),
                         child: locationTile(context, l,
-                            onTap: () async => context.goNamed('map',
+                            onTap: () async => context.goNamed('mapAtLocation',
                                     pathParameters: {
                                       'latitude': l.latitude.toString(),
                                       'longitude': l.longitude.toString()

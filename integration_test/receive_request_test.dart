@@ -4,15 +4,15 @@
 import 'dart:typed_data';
 
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:mobile_scanner/mobile_scanner.dart' as mobile_scanner;
 import 'package:reunicorn/data/models/coag_contact.dart';
 import 'package:reunicorn/data/repositories/contacts.dart';
 import 'package:reunicorn/data/utils.dart';
 import 'package:reunicorn/ui/receive_request/cubit.dart';
 import 'package:reunicorn/ui/utils.dart';
 import 'package:reunicorn/veilid_init.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
-import 'package:mobile_scanner/mobile_scanner.dart' as mobile_scanner;
 import 'package:veilid_support/veilid_support.dart';
 
 import '../test/mocked_providers.dart';
@@ -33,15 +33,16 @@ FixedEncodedString43 _dummyPsk(int i) =>
 Future<ContactsRepository> _contactsRepositoryFromContacts({
   required List<CoagContact> contacts,
   required Map<Typed<FixedEncodedString43>, CoagContactDHTSchema> initialDht,
-}) async => ContactsRepository(
-  DummyPersistentStorage(
-    Map.fromEntries(contacts.map((c) => MapEntry(c.coagContactId, c))),
-  ),
-  DummyDistributedStorage(initialDht: initialDht),
-  DummySystemContacts([]),
-  appUserName,
-  initialize: false,
-);
+}) async =>
+    ContactsRepository(
+      DummyPersistentStorage(
+        Map.fromEntries(contacts.map((c) => MapEntry(c.coagContactId, c))),
+      ),
+      DummyDistributedStorage(initialDht: initialDht),
+      DummySystemContacts([]),
+      appUserName,
+      initialize: false,
+    );
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();

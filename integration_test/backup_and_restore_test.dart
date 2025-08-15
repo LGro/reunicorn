@@ -1,13 +1,13 @@
 // Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
 import 'package:reunicorn/data/models/coag_contact.dart';
 import 'package:reunicorn/data/repositories/contacts.dart';
 import 'package:reunicorn/ui/receive_request/cubit.dart';
 import 'package:reunicorn/ui/utils.dart';
 import 'package:reunicorn/veilid_init.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
 
 import '../test/mocked_providers.dart';
 
@@ -55,9 +55,12 @@ void main() {
       awaitDhtOperations: true,
     );
     var contactBobFromProfile = _cRepoA.getContacts().values.first;
-    await _cRepoA.updateCirclesForContact(contactBobFromProfile.coagContactId, [
-      defaultInitialCircleId,
-    ], triggerDhtUpdate: false);
+    await _cRepoA.updateCirclesForContact(
+        contactBobFromProfile.coagContactId,
+        [
+          defaultInitialCircleId,
+        ],
+        triggerDhtUpdate: false);
     await _cRepoA.tryShareWithContactDHT(contactBobFromProfile.coagContactId);
     final profileBasedOfferLinkFromAliceForBob = profileBasedOfferUrl(
       'Alice Sharing',
@@ -84,19 +87,20 @@ void main() {
     );
     await _cRepoB.setProfileInfo(
       _cRepoB.getProfileInfo()!.copyWith(
-        details: (_cRepoB.getProfileInfo()?.details ?? const ContactDetails())
-            .copyWith(phones: {'bananaphone': '123'}),
-      ),
+            details:
+                (_cRepoB.getProfileInfo()?.details ?? const ContactDetails())
+                    .copyWith(phones: {'bananaphone': '123'}),
+          ),
       triggerDhtUpdate: false,
     );
     await _cRepoB.setProfileInfo(
       _cRepoB.getProfileInfo()!.copyWith(
-        sharingSettings: _cRepoB.getProfileInfo()!.sharingSettings.copyWith(
-          phones: {
-            'bananaphone': [defaultInitialCircleId],
-          },
-        ),
-      ),
+            sharingSettings: _cRepoB.getProfileInfo()!.sharingSettings.copyWith(
+              phones: {
+                'bananaphone': [defaultInitialCircleId],
+              },
+            ),
+          ),
     );
     await _cRepoB.tryShareWithContactDHT(
       contactAliceFromBobsRepo.coagContactId,

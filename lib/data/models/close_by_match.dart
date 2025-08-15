@@ -31,6 +31,7 @@ import 'contact_location.dart';
 class CloseByMatch extends Equatable {
   const CloseByMatch(
       {required this.myLocationLabel,
+      required this.theirLocationId,
       required this.theirLocationLabel,
       required this.coagContactId,
       required this.coagContactName,
@@ -40,6 +41,7 @@ class CloseByMatch extends Equatable {
       required this.theyKnow});
 
   final String myLocationLabel;
+  final String theirLocationId;
   final String theirLocationLabel;
   final String coagContactId;
   final String coagContactName;
@@ -51,6 +53,7 @@ class CloseByMatch extends Equatable {
   @override
   List<Object?> get props => [
         myLocationLabel,
+        theirLocationId,
         theirLocationLabel,
         coagContactId,
         coagContactName,
@@ -72,17 +75,18 @@ Iterable<CloseByMatch> closeByAddressWithTemporary({
 }) {
   final matches = <CloseByMatch>[];
   for (final my in myAddressLocations.entries) {
-    for (final their in theirTemporaryLocations.values) {
+    for (final their in theirTemporaryLocations.entries) {
       if (Geolocator.distanceBetween(my.value.latitude, my.value.longitude,
-              their.latitude, their.longitude) <
+              their.value.latitude, their.value.longitude) <
           distanceThresholdKm * 1000) {
         matches.add(CloseByMatch(
             myLocationLabel: my.key,
-            theirLocationLabel: their.name,
+            theirLocationId: their.key,
+            theirLocationLabel: their.value.name,
             coagContactId: coagContactId,
             coagContactName: theirName,
-            start: their.start,
-            end: their.end,
+            start: their.value.start,
+            end: their.value.end,
             offset: Duration.zero,
             theyKnow: mySharedLocationIds.contains(my.key)));
       }
@@ -102,19 +106,20 @@ Iterable<CloseByMatch> closeByTemporaryWithTemporary({
 }) {
   final matches = <CloseByMatch>[];
   for (final my in myTemporaryLocations.entries) {
-    for (final their in theirTemporaryLocations.values) {
+    for (final their in theirTemporaryLocations.entries) {
       final (start, end, offset) = getOverlapOrOffset(
           start1: my.value.start,
           end1: my.value.end,
-          start2: their.start,
-          end2: their.end);
+          start2: their.value.start,
+          end2: their.value.end);
       if (Geolocator.distanceBetween(my.value.latitude, my.value.longitude,
-                  their.latitude, their.longitude) <
+                  their.value.latitude, their.value.longitude) <
               distanceThresholdKm * 1000 &&
           offset.abs() <= timeThreshold) {
         matches.add(CloseByMatch(
             myLocationLabel: my.value.name,
-            theirLocationLabel: their.name,
+            theirLocationId: their.key,
+            theirLocationLabel: their.value.name,
             coagContactId: coagContactId,
             coagContactName: theirName,
             start: start,
@@ -144,6 +149,7 @@ Iterable<CloseByMatch> closeByTemporaryWithAddress({
           distanceThresholdKm * 1000) {
         matches.add(CloseByMatch(
             myLocationLabel: my.value.name,
+            theirLocationId: their.key,
             theirLocationLabel: their.key,
             coagContactId: coagContactId,
             coagContactName: theirName,

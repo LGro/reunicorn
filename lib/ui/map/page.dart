@@ -10,6 +10,7 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:share_plus/share_plus.dart';
@@ -783,6 +784,15 @@ class _MapPageState extends State<MapPage> {
                       dragEnabled: false,
                     ),
                     checkInAndScheduleButtons(),
+                    Align(
+                        alignment: AlignmentDirectional.topEnd,
+                        child: Padding(
+                            padding: const EdgeInsets.only(top: 24, right: 12),
+                            child: IconButton.filledTonal(
+                              onPressed: () =>
+                                  context.pushNamed('locationListPage'),
+                              icon: const Icon(Icons.list),
+                            )))
                   ])),
       );
 }

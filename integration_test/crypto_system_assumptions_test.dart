@@ -1,7 +1,10 @@
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// SPDX-License-Identifier: MPL-2.0
+
 import 'dart:convert';
 
-import 'package:reunicorn/veilid_init.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reunicorn/veilid_init.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 void main() {
@@ -12,14 +15,14 @@ void main() {
   test(
     'DH derived symmetric key is consistent across derivations and parties',
     () async {
-      final cryptoSystem = await DHTRecordPool.instance.veilid
-          .bestCryptoSystem();
+      final cryptoSystem =
+          await DHTRecordPool.instance.veilid.bestCryptoSystem();
       final kpA = await cryptoSystem.generateKeyPair().then(
-        (kp) => TypedKeyPair.fromKeyPair(cryptoSystem.kind(), kp),
-      );
+            (kp) => TypedKeyPair.fromKeyPair(cryptoSystem.kind(), kp),
+          );
       final kpB = await cryptoSystem.generateKeyPair().then(
-        (kp) => TypedKeyPair.fromKeyPair(cryptoSystem.kind(), kp),
-      );
+            (kp) => TypedKeyPair.fromKeyPair(cryptoSystem.kind(), kp),
+          );
 
       final secA1 = await cryptoSystem.generateSharedSecret(
         kpB.key,
@@ -44,11 +47,11 @@ void main() {
   test('DH key exchange', () async {
     final cryptoSystem = await DHTRecordPool.instance.veilid.bestCryptoSystem();
     final kpA = await cryptoSystem.generateKeyPair().then(
-      (kp) => TypedKeyPair.fromKeyPair(cryptoSystem.kind(), kp),
-    );
+          (kp) => TypedKeyPair.fromKeyPair(cryptoSystem.kind(), kp),
+        );
     final kpB = await cryptoSystem.generateKeyPair().then(
-      (kp) => TypedKeyPair.fromKeyPair(cryptoSystem.kind(), kp),
-    );
+          (kp) => TypedKeyPair.fromKeyPair(cryptoSystem.kind(), kp),
+        );
 
     final secA = await cryptoSystem.generateSharedSecret(
       kpB.key,

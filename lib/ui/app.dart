@@ -29,6 +29,7 @@ import 'contact_list/page.dart';
 import 'dashboard/page.dart';
 import 'import_ics/page.dart';
 import 'locations/schedule/widget.dart';
+import 'map/list_page.dart';
 import 'map/page.dart';
 import 'profile/page.dart';
 import 'receive_request/cubit.dart';
@@ -70,7 +71,7 @@ const navBarItems = [
     BottomNavigationBarItem(icon: Icon(Icons.contacts), label: 'Contacts'),
   ),
   (
-    '/map/-/-',
+    '/map',
     ['map'],
     BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
   ),
@@ -134,14 +135,18 @@ class AppRouter {
             ],
           ),
           GoRoute(
-            path: '/map/:latitude/:longitude',
+            path: '/map',
             name: 'map',
-            builder: (_, state) => MapPage(
-                latitude:
-                    double.tryParse(state.pathParameters['latitude'] ?? ''),
-                longitude:
-                    double.tryParse(state.pathParameters['longitude'] ?? '')),
+            builder: (_, state) => const MapPage(),
             routes: [
+              GoRoute(
+                  path: 'atLocation/:latitude/:longitude',
+                  name: 'mapAtLocation',
+                  builder: (_, state) => MapPage(
+                      latitude: double.tryParse(
+                          state.pathParameters['latitude'] ?? ''),
+                      longitude: double.tryParse(
+                          state.pathParameters['longitude'] ?? ''))),
               GoRoute(
                 path: 'importIcs',
                 name: 'importIcs',
@@ -157,6 +162,11 @@ class AppRouter {
                       ? null
                       : state.extra! as ContactTemporaryLocation,
                 ),
+              ),
+              GoRoute(
+                path: 'locationListPage',
+                name: 'locationListPage',
+                builder: (_, __) => const LocationListPage(),
               ),
             ],
           ),
