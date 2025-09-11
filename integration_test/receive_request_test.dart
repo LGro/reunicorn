@@ -53,7 +53,7 @@ void main() {
     var initialDht = <Typed<FixedEncodedString43>, CoagContactDHTSchema>{};
 
     setUp(() async {
-      await CoagulateGlobalInit.initialize();
+      await AppGlobalInit.initialize();
       initialContacts = [
         CoagContact(
           coagContactId: '2',

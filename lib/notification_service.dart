@@ -46,9 +46,9 @@ class NotificationService {
     String? payload,
   }) async {
     const androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      'coagulate_channel_id',
-      'Coagulate Notifications',
-      channelDescription: 'News from Coagulate contacts.',
+      'reunicorn_channel_id',
+      'Reunicorn Notifications',
+      channelDescription: 'News from Reunicorn contacts.',
       importance: Importance.max,
       priority: Priority.high,
       showWhen: false,

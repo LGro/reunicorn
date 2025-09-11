@@ -49,7 +49,7 @@ class ProcessorRepository {
     } on Exception {
       // Do nothing on failure here
     }
-    final veilidConfig = await getVeilidConfig(kIsWeb, 'Coagulate').then((c) =>
+    final veilidConfig = await getVeilidConfig(kIsWeb, 'Reunicorn').then((c) =>
         kIsWeb
             ? c
             : c.copyWith(

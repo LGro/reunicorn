@@ -140,7 +140,7 @@ class RootLoggy implements LoggyType {
   Loggy<RootLoggy> get loggy => Loggy<RootLoggy>('');
 }
 
-Loggy get log => Loggy<RootLoggy>('coagulate');
+Loggy get log => Loggy<RootLoggy>('reunicorn');
 
 void initLoggy() {
   Loggy.initLoggy(

@@ -7,21 +7,20 @@ import 'package:provider/provider.dart';
 import '../ui/batch_invite_management/page.dart';
 import '../veilid_init.dart';
 
-class CoagulateBatchManagementApp extends StatelessWidget {
-  const CoagulateBatchManagementApp({super.key});
+class BatchManagementApp extends StatelessWidget {
+  const BatchManagementApp({super.key});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
         title: 'Reunicorn Batch Invite Management',
-        home: FutureProvider<CoagulateGlobalInit?>(
+        home: FutureProvider<AppGlobalInit?>(
           initialData: null,
-          create: (context) async => CoagulateGlobalInit.initialize(),
-          // CoagulateGlobalInit.initialize can throw Already attached VeilidAPIException which is fine
+          create: (context) async => AppGlobalInit.initialize(),
+          // AppGlobalInit.initialize can throw Already attached VeilidAPIException which is fine
           catchError: (context, error) => null,
-          builder: (context, child) =>
-              (context.watch<CoagulateGlobalInit?>() == null)
-                  ? const Center(child: CircularProgressIndicator())
-                  : const BatchInvitesPage(),
+          builder: (context, child) => (context.watch<AppGlobalInit?>() == null)
+              ? const Center(child: CircularProgressIndicator())
+              : const BatchInvitesPage(),
         ),
       );
 }

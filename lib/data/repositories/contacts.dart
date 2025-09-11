@@ -253,7 +253,7 @@ class ContactsRepository {
   Stream<void> getCirclesStream() =>
       _circlesStreamController.asBroadcastStream();
 
-  /// Mapping of coagulate contact IDs to circle IDs
+  /// Mapping of app contact IDs to circle IDs
   Map<String, List<String>> _circleMemberships = {};
 
   /// History of received contact updates
@@ -396,7 +396,7 @@ class ContactsRepository {
     }
 
     try {
-      // Load coagulate contacts from persistent storage
+      // Load app contacts from persistent storage
       _contacts = await persistentStorage.getAllContacts();
       DebugLogger().log('Contacts: ${_contacts.length}');
       // Immediately save all contacts again, because they might have been
@@ -706,7 +706,7 @@ class ContactsRepository {
     return true;
   }
 
-  /// Backup everything that is needed to restore Coagulate
+  /// Backup everything that is needed to restore an app "account"
   Future<(Typed<FixedEncodedString43>, FixedEncodedString43)?> backup({
     bool waitForRecordSync = false,
   }) async {

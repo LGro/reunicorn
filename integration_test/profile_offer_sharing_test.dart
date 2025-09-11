@@ -19,7 +19,7 @@ void main() {
   late DummyDistributedStorage _distStorage;
 
   setUp(() async {
-    await CoagulateGlobalInit.initialize();
+    await AppGlobalInit.initialize();
     _distStorage = DummyDistributedStorage(transparent: true);
     _cRepoA = ContactsRepository(
       DummyPersistentStorage({}),

@@ -44,7 +44,7 @@ Future<Uint8List> getChunkedPayload(
   return payload;
 }
 
-/// From an opened record, get coagulate specific content and picture data from
+/// From an opened record, get app specific content and picture data from
 /// corresponding subkeys
 Future<(String?, Uint8List?)> _getJsonProfileAndPictureFromRecord(
   DHTRecord record,

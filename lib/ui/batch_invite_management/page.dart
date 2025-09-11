@@ -292,7 +292,7 @@ Widget existingBatchWidget(BuildContext context, Batch batch) => Column(
                       mimeType: 'text/plain',
                     ),
                   ],
-                  fileNameOverrides: ['coagulate_batch_${batch.label}.txt'],
+                  fileNameOverrides: ['reunicorn_batch_${batch.label}.txt'],
                 ),
               ),
               child: const Row(
@@ -316,7 +316,7 @@ Widget existingBatchWidget(BuildContext context, Batch batch) => Column(
                   mimeType: 'text/plain',
                 ),
               ],
-              fileNameOverrides: ['coagulate_batch_admin_${batch.label}.json'],
+              fileNameOverrides: ['reunicorn_batch_admin_${batch.label}.json'],
             ),
           ),
           child: const Row(

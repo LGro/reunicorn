@@ -12,7 +12,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() async {
-    await CoagulateGlobalInit.initialize();
+    await AppGlobalInit.initialize();
   });
 
   // TODO: This could be a simple unit test, does not need to run on device

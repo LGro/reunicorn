@@ -21,35 +21,36 @@ FixedEncodedString43 _dummyPsk(int i) =>
 
 ContactsRepository _contactsRepositoryFromContacts(
   List<CoagContact> contacts,
-) => ContactsRepository(
-  DummyPersistentStorage(
-    Map.fromEntries(contacts.map((c) => MapEntry(c.coagContactId, c))),
-  ),
-  DummyDistributedStorage(
-    initialDht: {
-      dummyDhtRecordKey(0): CoagContactDHTSchema(
-        details: const ContactDetails(names: {'0': 'DHT 0'}),
-        shareBackDHTKey: dummyDhtRecordKey(9).toString(),
-        shareBackPubKey: dummyTypedKeyPair(9, 9).key.toString(),
+) =>
+    ContactsRepository(
+      DummyPersistentStorage(
+        Map.fromEntries(contacts.map((c) => MapEntry(c.coagContactId, c))),
       ),
-      dummyDhtRecordKey(1): CoagContactDHTSchema(
-        details: const ContactDetails(names: {'1': 'DHT 1'}),
-        shareBackDHTKey: dummyDhtRecordKey(8).toString(),
-        shareBackPubKey: dummyTypedKeyPair(8, 8).key.toString(),
+      DummyDistributedStorage(
+        initialDht: {
+          dummyDhtRecordKey(0): CoagContactDHTSchema(
+            details: const ContactDetails(names: {'0': 'DHT 0'}),
+            shareBackDHTKey: dummyDhtRecordKey(9).toString(),
+            shareBackPubKey: dummyTypedKeyPair(9, 9).key.toString(),
+          ),
+          dummyDhtRecordKey(1): CoagContactDHTSchema(
+            details: const ContactDetails(names: {'1': 'DHT 1'}),
+            shareBackDHTKey: dummyDhtRecordKey(8).toString(),
+            shareBackPubKey: dummyTypedKeyPair(8, 8).key.toString(),
+          ),
+          dummyDhtRecordKey(2): CoagContactDHTSchema(
+            details: const ContactDetails(names: {'2': 'DHT 2'}),
+            shareBackDHTKey: dummyDhtRecordKey(8).toString(),
+            shareBackPubKey: dummyTypedKeyPair(8, 8).key.toString(),
+          ),
+        },
       ),
-      dummyDhtRecordKey(2): CoagContactDHTSchema(
-        details: const ContactDetails(names: {'2': 'DHT 2'}),
-        shareBackDHTKey: dummyDhtRecordKey(8).toString(),
-        shareBackPubKey: dummyTypedKeyPair(8, 8).key.toString(),
-      ),
-    },
-  ),
-  DummySystemContacts([]),
-  appUserName,
-  initialize: false,
-  generateTypedKeyPair: () async => dummyTypedKeyPair(),
-  generateSharedSecret: () async => dummyPsk(42),
-);
+      DummySystemContacts([]),
+      appUserName,
+      initialize: false,
+      generateTypedKeyPair: () async => dummyTypedKeyPair(),
+      generateSharedSecret: () async => dummyPsk(42),
+    );
 
 void main() {
   group('Test Cubit State Transitions', () {
@@ -96,7 +97,7 @@ void main() {
     );
 
     blocTest<ReceiveRequestCubit, ReceiveRequestState>(
-      'emits qrcode state when non-coagulate code is scanned',
+      'emits qrcode state when non-reunicorn code is scanned',
       build: () => ReceiveRequestCubit(contactsRepository!),
       act: (c) async => c.qrCodeCaptured(
         const mobile_scanner.BarcodeCapture(
@@ -110,7 +111,7 @@ void main() {
     );
 
     blocTest<ReceiveRequestCubit, ReceiveRequestState>(
-      'emits qrcode state when coagulate link is scanned but fragment missing',
+      'emits qrcode state when reunicorn link is scanned but fragment missing',
       build: () => ReceiveRequestCubit(contactsRepository!),
       act: (c) async => c.qrCodeCaptured(
         const mobile_scanner.BarcodeCapture(

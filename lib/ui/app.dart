@@ -379,15 +379,15 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   }
 
   @override
-  Widget build(BuildContext context) => FutureProvider<CoagulateGlobalInit?>(
+  Widget build(BuildContext context) => FutureProvider<AppGlobalInit?>(
         initialData: null,
         create: (context) async =>
             // TODO: Pass initially specified boostrap url
-            CoagulateGlobalInit.initialize('bootstrap-v1.veilid.net'),
-        // CoagulateGlobalInit.initialize can throw Already attached VeilidAPIException which is fine
+            AppGlobalInit.initialize('bootstrap-v1.veilid.net'),
+        // AppGlobalInit.initialize can throw Already attached VeilidAPIException which is fine
         catchError: (context, error) => null,
         builder: (context, child) {
-          final globalInit = context.watch<CoagulateGlobalInit?>();
+          final globalInit = context.watch<AppGlobalInit?>();
           // Splash screen until we're done with init
           if (globalInit == null) {
             return const Center(child: CircularProgressIndicator());

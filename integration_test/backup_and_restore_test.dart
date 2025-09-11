@@ -20,7 +20,7 @@ void main() {
 
   setUp(() async {
     // Initialize repositories
-    await CoagulateGlobalInit.initialize();
+    await AppGlobalInit.initialize();
     _distStorage = DummyDistributedStorage(transparent: true);
 
     _cRepoA = ContactsRepository(

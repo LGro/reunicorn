@@ -113,7 +113,7 @@ void main() {
           Phone(
             '0000-coag',
             label: PhoneLabel.custom,
-            customLabel: 'old mansion $coagulateManagedLabelSuffix',
+            customLabel: 'old mansion $appManagedLabelSuffix',
           ),
         ],
       ),
@@ -137,12 +137,12 @@ void main() {
     expect(merged.phones[1].number, '54321-coag');
     expect(
       merged.phones[1].customLabel,
-      'mansion $coagulateManagedLabelSuffix',
+      'mansion $appManagedLabelSuffix',
     );
   });
 
-  test('coveredByCoagulate Email with mismatched label still covers', () {
-    final isCovered = coveredByCoagulate(Email('covered@coag.org'), [
+  test('coveredByReunicorn Email with mismatched label still covers', () {
+    final isCovered = coveredByReunicorn(Email('covered@coag.org'), [
       Email('other@corp.co'),
       Email('covered@coag.org', label: EmailLabel.school),
     ]);
@@ -165,19 +165,19 @@ void main() {
     expect(withoutSuffixes.phones.first.customLabel, 'mobile');
   });
 
-  test('add and remove coagulate managed suffix', () {
-    const withSuffix = 'mobile $coagulateManagedLabelSuffix';
+  test('add and remove Reunicorn managed suffix', () {
+    const withSuffix = 'mobile $appManagedLabelSuffix';
     expect(removeCoagSuffix(addCoagSuffix(withSuffix)), 'mobile');
 
     const withoutSuffix = 'mobile';
     expect(removeCoagSuffix(addCoagSuffix(withoutSuffix)), withoutSuffix);
 
-    const withNewlinesAndSuffix = 'foo\n\n $coagulateManagedLabelSuffix';
+    const withNewlinesAndSuffix = 'foo\n\n $appManagedLabelSuffix';
     expect(removeCoagSuffix(addCoagSuffix(withNewlinesAndSuffix)), 'foo');
 
     expect(
       addCoagSuffixNewline('my note\n\n\n'),
-      'my note\n\n$coagulateManagedLabelSuffix',
+      'my note\n\n$appManagedLabelSuffix',
     );
   });
 

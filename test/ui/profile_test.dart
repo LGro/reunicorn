@@ -95,7 +95,7 @@ void main() {
   //     final pageWidget = await createProfilePage(contactsRepository);
   //     await tester.pumpWidget(pageWidget);
 
-  //     expect(find.textContaining('Welcome to Coagulate'), findsOneWidget);
+  //     expect(find.textContaining('Welcome to Reunicorn'), findsOneWidget);
   //   });
 
   //   // testWidgets('Choose system contact as profile', (tester) async {

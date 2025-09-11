@@ -6,14 +6,14 @@ import 'package:veilid_support/veilid_support.dart';
 import 'tools/tools.dart';
 import 'veilid_processor/veilid_processor.dart';
 
-class CoagulateGlobalInit {
-  CoagulateGlobalInit._();
+class AppGlobalInit {
+  AppGlobalInit._();
 
   // Initialize Veilid
   Future<void> _initializeVeilid(String bootstrapUrl) async {
     // Init Veilid
     Veilid.instance.initializeVeilidCore(
-        await getDefaultVeilidPlatformConfig(kIsWeb, 'Coagulate'));
+        await getDefaultVeilidPlatformConfig(kIsWeb, 'Reunicorn'));
 
     // Veilid logging
     initVeilidLog(kDebugMode);
@@ -26,13 +26,13 @@ class CoagulateGlobalInit {
         logger: (message) => log.debug('DHTRecordPool: $message'));
   }
 
-  static Future<CoagulateGlobalInit> initialize(
+  static Future<AppGlobalInit> initialize(
       [String bootstrapUrl = 'bootstrap.veilid.net']) async {
-    final coagulateGlobalInit = CoagulateGlobalInit._();
+    final appGlobalInit = AppGlobalInit._();
 
     log.info('Initializing Veilid');
-    await coagulateGlobalInit._initializeVeilid(bootstrapUrl);
+    await appGlobalInit._initializeVeilid(bootstrapUrl);
 
-    return coagulateGlobalInit;
+    return appGlobalInit;
   }
 }

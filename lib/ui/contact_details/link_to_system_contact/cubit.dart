@@ -17,11 +17,11 @@ part 'state.dart';
 
 class LinkToSystemContactCubit extends Cubit<LinkToSystemContactState> {
   LinkToSystemContactCubit(this.contactsRepository, String coagContactId)
-    : super(
-        LinkToSystemContactState(
-          contact: contactsRepository.getContact(coagContactId),
-        ),
-      ) {
+      : super(
+          LinkToSystemContactState(
+            contact: contactsRepository.getContact(coagContactId),
+          ),
+        ) {
     _contactsSubscription = contactsRepository.getContactStream().listen((
       updatedContactId,
     ) {
@@ -63,8 +63,7 @@ class LinkToSystemContactCubit extends Cubit<LinkToSystemContactState> {
       });
 
   /// Load contacts from system address book
-  Future<void> loadSystemContacts() async =>
-      FlutterContacts.getContacts(
+  Future<void> loadSystemContacts() async => FlutterContacts.getContacts(
         withProperties: true,
         withThumbnail: true,
         withAccounts: true,
@@ -80,51 +79,51 @@ class LinkToSystemContactCubit extends Cubit<LinkToSystemContactState> {
             state.copyWith(
               contacts: contacts,
               accounts: uniqueAccounts,
-              selectedAccount: (uniqueAccounts.length > 1)
-                  ? uniqueAccounts.first
-                  : null,
+              selectedAccount:
+                  (uniqueAccounts.length > 1) ? uniqueAccounts.first : null,
             ),
           );
         }
       });
 
-  /// Add new system contact from coagulate contact
+  /// Add new system contact from app contact
   Future<void> createNewSystemContact(
     String displayName, {
     Account? account,
-  }) async => (state.contact == null)
-      ? null
-      : FlutterContacts.insertContact(
+  }) async =>
+      (state.contact == null)
+          ? null
+          : FlutterContacts.insertContact(
               Contact(
                 displayName: displayName,
                 name: Name(first: displayName),
                 accounts: (account == null) ? null : [account],
               ),
             )
-            .then(
-              (systemContact) => contactsRepository.saveContact(
-                state.contact!.copyWith(systemContactId: systemContact.id),
-              ),
-            )
-            .then(
-              (_) => contactsRepository.updateSystemContact(
-                state.contact!.coagContactId,
-              ),
-            );
+              .then(
+                (systemContact) => contactsRepository.saveContact(
+                  state.contact!.copyWith(systemContactId: systemContact.id),
+                ),
+              )
+              .then(
+                (_) => contactsRepository.updateSystemContact(
+                  state.contact!.coagContactId,
+                ),
+              );
 
-  /// Link coagulate contact to existing system contact
+  /// Link app contact to existing system contact
   Future<void> linkExistingSystemContact(String systemContactId) async =>
       (state.contact == null)
-      ? null
-      : contactsRepository
-            .saveContact(
-              state.contact!.copyWith(systemContactId: systemContactId),
-            )
-            .then(
-              (_) => contactsRepository.updateSystemContact(
-                state.contact!.coagContactId,
-              ),
-            );
+          ? null
+          : contactsRepository
+              .saveContact(
+                state.contact!.copyWith(systemContactId: systemContactId),
+              )
+              .then(
+                (_) => contactsRepository.updateSystemContact(
+                  state.contact!.coagContactId,
+                ),
+              );
 
   /// Select an account to potentially add a new system contact to
   void setSelectedAccount(Account? account) =>

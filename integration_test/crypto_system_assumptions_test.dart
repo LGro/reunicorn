@@ -9,7 +9,7 @@ import 'package:veilid_support/veilid_support.dart';
 
 void main() {
   setUp(() async {
-    await CoagulateGlobalInit.initialize();
+    await AppGlobalInit.initialize();
   });
 
   test(

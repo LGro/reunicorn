@@ -791,29 +791,29 @@ CoagContactDHTSchemaV2 schemaV1toV2(CoagContactDHTSchemaV1 old) =>
 
 typedef CoagContactDHTSchema = CoagContactDHTSchemaV2;
 
-const coagulateManagedLabelSuffix = '[coagulate]';
+const appManagedLabelSuffix = '[reunicorn]';
 
-bool noCoagulateLabelSuffix<T>(T detail) {
+bool noAppLabelSuffix<T>(T detail) {
   if (detail is Phone) {
-    return !detail.customLabel.endsWith(coagulateManagedLabelSuffix);
+    return !detail.customLabel.endsWith(appManagedLabelSuffix);
   }
   if (detail is Email) {
-    return !detail.customLabel.endsWith(coagulateManagedLabelSuffix);
+    return !detail.customLabel.endsWith(appManagedLabelSuffix);
   }
   if (detail is Address) {
-    return !detail.customLabel.endsWith(coagulateManagedLabelSuffix);
+    return !detail.customLabel.endsWith(appManagedLabelSuffix);
   }
   if (detail is Website) {
-    return !detail.customLabel.endsWith(coagulateManagedLabelSuffix);
+    return !detail.customLabel.endsWith(appManagedLabelSuffix);
   }
   if (detail is SocialMedia) {
-    return !detail.customLabel.endsWith(coagulateManagedLabelSuffix);
+    return !detail.customLabel.endsWith(appManagedLabelSuffix);
   }
   if (detail is Event) {
-    return !detail.customLabel.endsWith(coagulateManagedLabelSuffix);
+    return !detail.customLabel.endsWith(appManagedLabelSuffix);
   }
   if (detail is Note) {
-    return !detail.note.endsWith(coagulateManagedLabelSuffix);
+    return !detail.note.endsWith(appManagedLabelSuffix);
   }
   return true;
 }
@@ -893,7 +893,7 @@ String removeCountryCodePrefix(String number) {
   return number.replaceFirst(parsed.countryCode, '');
 }
 
-bool coveredByCoagulate<T>(T detail, List<T> coagDetails) {
+bool coveredByReunicorn<T>(T detail, List<T> coagDetails) {
   if (detail is Phone) {
     // TODO: Be smart about country codes
     return coagDetails.map((d) => (d as Phone).number).contains(detail.number);
@@ -927,56 +927,56 @@ bool coveredByCoagulate<T>(T detail, List<T> coagDetails) {
 }
 
 String addCoagSuffix(String value) =>
-    '${removeCoagSuffix(value)} $coagulateManagedLabelSuffix';
+    '${removeCoagSuffix(value)} $appManagedLabelSuffix';
 
 String removeCoagSuffix(String value) =>
-    value.trimRight().replaceAll(coagulateManagedLabelSuffix, '').trimRight();
+    value.trimRight().replaceAll(appManagedLabelSuffix, '').trimRight();
 
 String addCoagSuffixNewline(String value) =>
-    '${removeCoagSuffix(value)}\n\n$coagulateManagedLabelSuffix';
+    '${removeCoagSuffix(value)}\n\n$appManagedLabelSuffix';
 
 // TODO: Figure out what to do about the (display) name
 Contact mergeSystemContacts(Contact system, Contact app) => system
   ..phones = [
     ...system.phones
-        .where(noCoagulateLabelSuffix)
-        .where((v) => !coveredByCoagulate(v, app.phones)),
+        .where(noAppLabelSuffix)
+        .where((v) => !coveredByReunicorn(v, app.phones)),
     ...app.phones.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
   ]
   ..emails = [
     ...system.emails
-        .where(noCoagulateLabelSuffix)
-        .where((v) => !coveredByCoagulate(v, app.emails)),
+        .where(noAppLabelSuffix)
+        .where((v) => !coveredByReunicorn(v, app.emails)),
     ...app.emails.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
   ]
   ..addresses = [
     ...system.addresses
-        .where(noCoagulateLabelSuffix)
-        .where((v) => !coveredByCoagulate(v, app.addresses)),
+        .where(noAppLabelSuffix)
+        .where((v) => !coveredByReunicorn(v, app.addresses)),
     ...app.addresses.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
   ]
   ..websites = [
     ...system.websites
-        .where(noCoagulateLabelSuffix)
-        .where((v) => !coveredByCoagulate(v, app.websites)),
+        .where(noAppLabelSuffix)
+        .where((v) => !coveredByReunicorn(v, app.websites)),
     ...app.websites.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
   ]
   ..socialMedias = [
     ...system.socialMedias
-        .where(noCoagulateLabelSuffix)
-        .where((v) => !coveredByCoagulate(v, app.socialMedias)),
+        .where(noAppLabelSuffix)
+        .where((v) => !coveredByReunicorn(v, app.socialMedias)),
     ...app.socialMedias.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
   ]
   ..events = [
     ...system.events
-        .where(noCoagulateLabelSuffix)
-        .where((v) => !coveredByCoagulate(v, app.events)),
+        .where(noAppLabelSuffix)
+        .where((v) => !coveredByReunicorn(v, app.events)),
     ...app.events.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
   ]
   ..notes = [
     ...system.notes
-        .where(noCoagulateLabelSuffix)
-        .where((v) => !coveredByCoagulate(v, app.notes)),
+        .where(noAppLabelSuffix)
+        .where((v) => !coveredByReunicorn(v, app.notes)),
     ...app.notes.map((v) => updateContactDetailLabel(v, addCoagSuffixNewline)),
   ];
 

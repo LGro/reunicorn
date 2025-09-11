@@ -24,7 +24,7 @@ void main() async {
     // Observer for logging Bloc related things
     Bloc.observer = const AppBlocObserver();
 
-    runApp(const CoagulateBatchManagementApp());
+    runApp(const BatchManagementApp());
   }
 
   if (kDebugMode) {

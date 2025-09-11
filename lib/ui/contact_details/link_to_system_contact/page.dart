@@ -67,8 +67,8 @@ class _LinkToSystemContactPageState extends State<LinkToSystemContactPage> {
               padding: EdgeInsets.symmetric(horizontal: 8),
               child: Text(
                 'You can synchronize contacts from Reunicorn to your '
-                "phone's address book. The contact details from coagulate "
-                'then get a suffix like "phone [coagulate]" and will be '
+                "phone's address book. The contact details from Reunicorn "
+                'then get a suffix like "phone [reunicorn]" and will be '
                 'automatically kept up to date. You can still add or change '
                 'all other details of that contact in your address book as '
                 'usual.',
