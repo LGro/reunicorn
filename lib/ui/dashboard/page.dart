@@ -163,7 +163,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                     c.coagContactId == match.coagContactId)
                                 ?.details
                                 ?.picture)),
-                    ShowMoreButton(() {}),
+                    // FIXME: Implement close by list or redirect to map page list view?
+                    //ShowMoreButton(() {}),
                   ] else
                     const Padding(
                         padding: EdgeInsetsGeometry.only(
