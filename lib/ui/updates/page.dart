@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../data/models/coag_contact.dart';
 import '../../data/repositories/contacts.dart';
 import '../utils.dart';
 import 'cubit.dart';
@@ -24,6 +25,22 @@ String formatTimeDifference(Duration d) {
   return '${d.inDays}d';
 }
 
+String getContactNameForUpdate(CoagContact oldContact, CoagContact newContact) {
+  if (newContact.name.isNotEmpty && newContact.name != '???') {
+    return newContact.name;
+  }
+  if (oldContact.name.isNotEmpty && oldContact.name != '???') {
+    return oldContact.name;
+  }
+  final sharedName = (oldContact.details?.names.isNotEmpty ?? false)
+      ? oldContact.details!.names.values.join(' / ')
+      : newContact.details!.names.values.join(' / ');
+  if (sharedName.isNotEmpty) {
+    return sharedName;
+  }
+  return '???';
+}
+
 Widget updateTile(
   String name,
   String timing,
@@ -33,12 +50,11 @@ Widget updateTile(
 }) =>
     ListTile(
       onTap: onTap,
-      leading: (picture == null)
+      leading: (picture == null || picture.isEmpty)
           ? const CircleAvatar(radius: 18, child: Icon(Icons.person))
           : CircleAvatar(
               backgroundImage: MemoryImage(Uint8List.fromList(picture)),
-              radius: 18,
-            ),
+              radius: 18),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -96,7 +112,7 @@ class UpdatesPage extends StatelessWidget {
                       : null,
                 ),
             child: BlocConsumer<UpdatesCubit, UpdatesState>(
-              listener: (context, state) async {},
+              listener: (context, state) {},
               builder: (context, state) => ListView(
                 children: (state.updates.isEmpty)
                     ? [
@@ -111,10 +127,7 @@ class UpdatesPage extends StatelessWidget {
                     : state.updates
                         .map(
                           (u) => updateTile(
-                            (u.oldContact.details?.names.isNotEmpty ?? false)
-                                ? u.oldContact.details!.names.values.join(' / ')
-                                : u.newContact.details!.names.values
-                                    .join(' / '),
+                            getContactNameForUpdate(u.oldContact, u.newContact),
                             formatTimeDifference(
                                 DateTime.now().difference(u.timestamp)),
                             contactUpdateSummary(u.oldContact, u.newContact),

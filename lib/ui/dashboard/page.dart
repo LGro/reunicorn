@@ -14,6 +14,8 @@ import '../../data/models/coag_contact.dart';
 import '../../data/models/contact_introduction.dart';
 import '../../data/models/contact_update.dart';
 import '../../data/repositories/contacts.dart';
+import '../introductions/cubit.dart';
+import '../introductions/page.dart';
 import '../updates/page.dart';
 import '../utils.dart';
 import 'cubit.dart';
@@ -64,10 +66,6 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-const noResults = Padding(
-    padding: EdgeInsetsGeometry.only(left: 16, right: 16, bottom: 8),
-    child: Text('Nothing to be seen here...'));
-
 class _DashboardPageState extends State<DashboardPage> {
   final List<String> list1 = List.generate(20, (i) => 'List 1 Item ${i + 1}');
   final List<String> list2 = List.generate(
@@ -95,7 +93,7 @@ class _DashboardPageState extends State<DashboardPage> {
       body: BlocProvider(
         create: (context) => DashboardCubit(context.read<ContactsRepository>()),
         child: BlocConsumer<DashboardCubit, DashboardState>(
-          listener: (context, state) async {},
+          listener: (context, state) {},
           builder: (context, state) =>
               LayoutBuilder(builder: (context, constraints) {
             // Data preparation
@@ -121,51 +119,76 @@ class _DashboardPageState extends State<DashboardPage> {
 
             // Build the content column with minimal vertical size so the button
             // hugs the last item.
-            final content = Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Introductions
-                const SectionHeadline('Introductions'),
-                if (introductions.isNotEmpty) ...[
-                  DynamicFitList<(CoagContact, ContactIntroduction)>(
-                      items: introductions,
-                      maxRowsHeight: listRowsMaxH,
-                      itemBuilder: (context, data) =>
-                          _IntroductionRow(data.$1, data.$2)),
-                  ShowMoreButton(() {}),
-                ] else
-                  noResults,
+            final content = Padding(
+              padding: const EdgeInsetsGeometry.symmetric(horizontal: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Introductions
+                  const SectionHeadline('Introductions'),
+                  if (introductions.isNotEmpty) ...[
+                    BlocProvider(
+                        create: (context) => IntroductionsCubit(
+                            context.read<ContactsRepository>()),
+                        child: BlocConsumer<IntroductionsCubit,
+                                IntroductionsState>(
+                            listener: (context, state) {},
+                            builder: (context, state) => DynamicFitList<
+                                    (CoagContact, ContactIntroduction)>(
+                                items: introductions,
+                                maxRowsHeight: listRowsMaxH,
+                                itemBuilder: (context, data) =>
+                                    IntroductionListTile(
+                                        introducer: data.$1,
+                                        introduction: data.$2)))),
+                    ShowMoreButton(() => context.pushNamed('introductions')),
+                  ] else
+                    const Padding(
+                        padding: EdgeInsetsGeometry.only(
+                            left: 16, right: 16, bottom: 8),
+                        child: Text('Nobody has introduced you to any of their '
+                            'contacts yet.')),
 
-                // Close By
-                const SectionHeadline('Close By'),
-                if (closeByMatches.isNotEmpty) ...[
-                  DynamicFitList<CloseByMatch>(
-                      items: closeByMatches,
-                      maxRowsHeight: listRowsMaxH,
-                      itemBuilder: (context, match) => _CloseByRow(match,
-                          // TODO: Can we speed this up by storing a map of contacts?
-                          picture: state.contacts
-                              .firstWhereOrNull(
-                                  (c) => c.coagContactId == match.coagContactId)
-                              ?.details
-                              ?.picture)),
-                  ShowMoreButton(() {}),
-                ] else
-                  noResults,
+                  // Close By
+                  const SectionHeadline('Close By'),
+                  if (closeByMatches.isNotEmpty) ...[
+                    DynamicFitList<CloseByMatch>(
+                        items: closeByMatches,
+                        maxRowsHeight: listRowsMaxH,
+                        itemBuilder: (context, match) => _CloseByRow(match,
+                            // TODO: Can we speed this up by storing a map of contacts?
+                            picture: state.contacts
+                                .firstWhereOrNull((c) =>
+                                    c.coagContactId == match.coagContactId)
+                                ?.details
+                                ?.picture)),
+                    ShowMoreButton(() {}),
+                  ] else
+                    const Padding(
+                        padding: EdgeInsetsGeometry.only(
+                            left: 16, right: 16, bottom: 8),
+                        child: Text(
+                            'When contacts share a location close to any of '
+                            'yours, it shows up here.')),
 
-                // Updates
-                const SectionHeadline('Updates'),
-                if (contactUpdates.isNotEmpty) ...[
-                  DynamicFitList<ContactUpdate>(
-                      items: contactUpdates,
-                      maxRowsHeight: listRowsMaxH,
-                      itemBuilder: (context, update) =>
-                          _ContactUpdateRow(update)),
-                  ShowMoreButton(() => context.pushNamed('updates')),
-                ] else
-                  noResults,
-              ],
+                  // Updates
+                  const SectionHeadline('Updates'),
+                  if (contactUpdates.isNotEmpty) ...[
+                    DynamicFitList<ContactUpdate>(
+                        items: contactUpdates,
+                        maxRowsHeight: listRowsMaxH,
+                        itemBuilder: (context, update) =>
+                            _ContactUpdateRow(update)),
+                    ShowMoreButton(() => context.pushNamed('updates')),
+                  ] else
+                    const Padding(
+                        padding: EdgeInsetsGeometry.only(
+                            left: 16, right: 16, bottom: 8),
+                        child: Text(
+                            'No recent updates from any of your contacts.')),
+                ],
+              ),
             );
 
             return Stack(
@@ -201,24 +224,6 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-class _IntroductionRow extends StatelessWidget {
-  const _IntroductionRow(this.introducer, this.introduction);
-
-  final CoagContact introducer;
-  final ContactIntroduction introduction;
-
-  @override
-  Widget build(BuildContext context) => ListTile(
-        title: Text(
-          '${introduction.otherName} via ${introducer.name}',
-          softWrap: true,
-        ),
-        subtitle: (introduction.message == null)
-            ? null
-            : Text(introduction.message!, softWrap: true),
-      );
-}
-
 class _CloseByRow extends StatelessWidget {
   const _CloseByRow(this.match, {this.picture});
 
@@ -233,7 +238,7 @@ class _CloseByRow extends StatelessWidget {
         formatDateTime(match.end, Localizations.localeOf(context).languageCode);
 
     return ListTile(
-      leading: (picture == null)
+      leading: (picture == null || picture!.isEmpty)
           ? const CircleAvatar(radius: 18, child: Icon(Icons.person))
           : CircleAvatar(
               backgroundImage: MemoryImage(Uint8List.fromList(picture!)),
@@ -265,9 +270,7 @@ class _ContactUpdateRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => updateTile(
-        (update.oldContact.details?.names.isNotEmpty ?? false)
-            ? update.oldContact.details!.names.values.join(' / ')
-            : update.newContact.details!.names.values.join(' / '),
+        getContactNameForUpdate(update.oldContact, update.newContact),
         formatTimeDifference(DateTime.now().difference(update.timestamp)),
         contactUpdateSummary(update.oldContact, update.newContact),
         onTap: (update.coagContactId == null)

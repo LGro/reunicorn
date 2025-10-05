@@ -12,6 +12,72 @@ import '../introduce_contacts/page.dart';
 import '../utils.dart';
 import 'cubit.dart';
 
+class IntroductionListTile extends StatelessWidget {
+  const IntroductionListTile(
+      {required this.introducer, required this.introduction, super.key});
+
+  final CoagContact introducer;
+  final ContactIntroduction introduction;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+        title: Text(
+          '${introduction.otherName} via ${introducer.name}',
+          softWrap: true,
+        ),
+        subtitle: (introduction.message == null)
+            ? null
+            : Text(introduction.message!, softWrap: true),
+        onTap: () => showDialog<void>(
+          context: context,
+          builder: (alertContext) => AlertDialog(
+            titlePadding: const EdgeInsets.only(left: 16, right: 16, top: 16),
+            title: Text(
+              'Accept introduction to '
+              '${introduction.otherName}',
+            ),
+            actions: [
+              const SizedBox(height: 4),
+              Center(
+                child: FilledButton.tonal(
+                  onPressed: alertContext.pop,
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: FilledButton(
+                  onPressed: () async {
+                    final coagContactId = await context
+                        .read<IntroductionsCubit>()
+                        .accept(introducer, introduction);
+                    if (context.mounted && coagContactId != null) {
+                      context.goNamed(
+                        'contactDetails',
+                        pathParameters: {'coagContactId': coagContactId},
+                      );
+                      // FIXME: This doesn't seem to work correctly
+                      alertContext.pop();
+                    } else if (context.mounted && coagContactId == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Accepting introduction failed. '
+                            'Ask the introducer to send one again.',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Accept & configure sharing'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
 class IntroductionsPage extends StatelessWidget {
   const IntroductionsPage({super.key});
 
@@ -39,69 +105,6 @@ class IntroductionsPage extends StatelessWidget {
         ),
       ];
 
-  List<Widget> _introductionsBody(
-    BuildContext context,
-    Iterable<(CoagContact, ContactIntroduction)> introductions,
-  ) =>
-      introductions.map((entry) {
-        final (introducer, introduction) = entry;
-        return ListTile(
-          title: Text(
-            '${introduction.otherName} via ${introducer.name}',
-            softWrap: true,
-          ),
-          subtitle: (introduction.message == null)
-              ? null
-              : Text(introduction.message!, softWrap: true),
-          onTap: () async => showDialog<void>(
-            context: context,
-            builder: (alertContext) => AlertDialog(
-              titlePadding: const EdgeInsets.only(left: 16, right: 16, top: 16),
-              title: Text(
-                'Accept introduction to '
-                '${introduction.otherName}',
-              ),
-              actions: [
-                const SizedBox(height: 4),
-                Center(
-                  child: FilledButton.tonal(
-                    onPressed: alertContext.pop,
-                    child: const Text('Cancel'),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Center(
-                  child: FilledButton(
-                    onPressed: () async {
-                      final coagContactId = await context
-                          .read<IntroductionsCubit>()
-                          .accept(introducer, introduction);
-                      if (context.mounted && coagContactId != null) {
-                        context.goNamed(
-                          'contactDetails',
-                          pathParameters: {'coagContactId': coagContactId},
-                        );
-                        alertContext.pop();
-                      } else if (context.mounted && coagContactId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Accepting introduction failed. '
-                              'Ask the introducer to send one again.',
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    child: const Text('Accept & configure sharing'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList();
-
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: const Text('Introductions')),
@@ -109,13 +112,16 @@ class IntroductionsPage extends StatelessWidget {
           create: (context) =>
               IntroductionsCubit(context.read<ContactsRepository>()),
           child: BlocConsumer<IntroductionsCubit, IntroductionsState>(
-            listener: (context, state) async {},
+            listener: (context, state) {},
             builder: (context, state) {
               final introductions = pendingIntroductions(state.contacts.values);
               return ListView(
-                children: pendingIntroductions(state.contacts.values).isEmpty
+                children: introductions.isEmpty
                     ? _noIntroductionsBody(context)
-                    : _introductionsBody(context, introductions),
+                    : introductions
+                        .map((entry) => IntroductionListTile(
+                            introducer: entry.$1, introduction: entry.$2))
+                        .toList(),
               );
             },
           ),

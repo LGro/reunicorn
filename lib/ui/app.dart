@@ -28,6 +28,7 @@ import 'contact_details/page.dart';
 import 'contact_list/page.dart';
 import 'dashboard/page.dart';
 import 'import_ics/page.dart';
+import 'introductions/page.dart';
 import 'locations/schedule/widget.dart';
 import 'map/list_page.dart';
 import 'map/page.dart';
@@ -174,6 +175,11 @@ class AppRouter {
             path: '/updates',
             name: 'updates',
             builder: (_, __) => const UpdatesPage(),
+          ),
+          GoRoute(
+            path: '/introductions',
+            name: 'introductions',
+            builder: (_, __) => const IntroductionsPage(),
           ),
           GoRoute(
             path: '/settings',

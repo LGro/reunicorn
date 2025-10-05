@@ -223,7 +223,7 @@ class VeilidDhtStorage extends DistributedStorage {
           publicKey,
           keyPair,
           await Veilid.instance.getCryptoSystem(keyPair.kind).then(
-                (cs) async =>
+                (cs) =>
                     cs.generateSharedSecret(publicKey, keyPair.secret, domain),
               ),
         ),
@@ -232,11 +232,8 @@ class VeilidDhtStorage extends DistributedStorage {
           publicKey,
           nextKeyPair,
           await Veilid.instance.getCryptoSystem(nextKeyPair.kind).then(
-                (cs) async => cs.generateSharedSecret(
-                  publicKey,
-                  nextKeyPair.secret,
-                  domain,
-                ),
+                (cs) => cs.generateSharedSecret(
+                    publicKey, nextKeyPair.secret, domain),
               ),
         ),
       if (publicKey != null)
@@ -247,11 +244,8 @@ class VeilidDhtStorage extends DistributedStorage {
                   publicKey,
                   kp,
                   await Veilid.instance.getCryptoSystem(kp.kind).then(
-                        (cs) async => cs.generateSharedSecret(
-                          publicKey,
-                          kp.secret,
-                          domain,
-                        ),
+                        (cs) => cs.generateSharedSecret(
+                            publicKey, kp.secret, domain),
                       ),
                 ),
               )
@@ -262,11 +256,8 @@ class VeilidDhtStorage extends DistributedStorage {
           nextPublicKey,
           keyPair,
           await Veilid.instance.getCryptoSystem(keyPair.kind).then(
-                (cs) async => cs.generateSharedSecret(
-                  nextPublicKey,
-                  keyPair.secret,
-                  domain,
-                ),
+                (cs) => cs.generateSharedSecret(
+                    nextPublicKey, keyPair.secret, domain),
               ),
         ),
       if (nextPublicKey != null && nextKeyPair != null)
@@ -274,11 +265,8 @@ class VeilidDhtStorage extends DistributedStorage {
           nextPublicKey,
           nextKeyPair,
           await Veilid.instance.getCryptoSystem(nextKeyPair.kind).then(
-                (cs) async => cs.generateSharedSecret(
-                  nextPublicKey,
-                  nextKeyPair.secret,
-                  domain,
-                ),
+                (cs) => cs.generateSharedSecret(
+                    nextPublicKey, nextKeyPair.secret, domain),
               ),
         ),
       if (nextPublicKey != null)
@@ -289,11 +277,8 @@ class VeilidDhtStorage extends DistributedStorage {
                   nextPublicKey,
                   kp,
                   await Veilid.instance.getCryptoSystem(kp.kind).then(
-                        (cs) async => cs.generateSharedSecret(
-                          nextPublicKey,
-                          kp.secret,
-                          domain,
-                        ),
+                        (cs) => cs.generateSharedSecret(
+                            nextPublicKey, kp.secret, domain),
                       ),
                 ),
               )
@@ -305,7 +290,8 @@ class VeilidDhtStorage extends DistributedStorage {
     while (true) {
       try {
         debugPrint(
-          'trying ${secrets.length} secrets for ${recordKey.toString().substring(5, 10)}',
+          'trying ${secrets.length} secrets for '
+          '${recordKey.toString().substring(5, 10)}',
         );
         for (final secret in secrets.reversed) {
           debugPrint(
@@ -362,7 +348,7 @@ class VeilidDhtStorage extends DistributedStorage {
         // TODO: Make sure that Veilid offline is detected at a higher level and not triggering errors here
         retries++;
         if (retries <= maxRetries) {
-          await Future.delayed(const Duration(milliseconds: 500));
+          await Future<void>.delayed(const Duration(milliseconds: 500));
         } else {
           rethrow;
         }
@@ -415,7 +401,7 @@ class VeilidDhtStorage extends DistributedStorage {
       // Derive DH secret with next public key
       secret =
           await Veilid.instance.getCryptoSystem(settings.myKeyPair!.kind).then(
-                (cs) async => cs.generateSharedSecret(
+                (cs) => cs.generateSharedSecret(
                   theirPublicKey,
                   settings.myKeyPair!.secret,
                   utf8.encode('dht'),
@@ -615,7 +601,7 @@ class VeilidDhtStorage extends DistributedStorage {
         // TODO: Make sure that Veilid offline is detected at a higher level and not triggering errors here
         retries++;
         if (retries <= maxRetries) {
-          await Future.delayed(const Duration(milliseconds: 500));
+          await Future<void>.delayed(const Duration(milliseconds: 500));
         } else {
           rethrow;
         }
