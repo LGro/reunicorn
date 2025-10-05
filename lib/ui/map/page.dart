@@ -488,8 +488,8 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  Future<void> _onFeatureTapped(dynamic id, Point<double> point,
-      LatLng coordinates, String layerId) async {
+  Future<void> _onFeatureTapped(Point<double> point, LatLng coordinates,
+      String id, String layerId, Annotation? annotation) async {
     // On individual location tap, call stored callback
     if (layerId == 'unclustered-points') {
       _markers[id]?.onTap.call();
