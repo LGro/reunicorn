@@ -523,6 +523,9 @@ class ContactsRepository {
             updatedContact.copyWith(
               mostRecentUpdate: updateTime,
               mostRecentChange: updateTime,
+              name: (contact.name == '???')
+                  ? contact.details?.names.values.firstOrNull ?? contact.name
+                  : contact.name,
             ),
           );
 
