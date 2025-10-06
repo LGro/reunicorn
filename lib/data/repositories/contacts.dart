@@ -683,6 +683,12 @@ class ContactsRepository {
         logDebug(e);
       }
       return false;
+    } on DHTExceptionNotAvailable catch (e) {
+      // TODO: Proper logging / other handling strategy / retry?
+      if (kDebugMode) {
+        logDebug(e);
+      }
+      return false;
     }
   }
 
