@@ -29,13 +29,16 @@ abstract class DistributedStorage {
   );
 
   Future<void> watchRecord(
+    String coagContactId,
     Typed<FixedEncodedString43> key,
-    Future<void> Function(Typed<FixedEncodedString43> key) onNetworkUpdate,
+    Future<void> Function(String coagContactId, Typed<FixedEncodedString43> key)
+        onNetworkUpdate,
   );
 
   Future<CoagContact?> getContact(
     CoagContact contact, {
     Iterable<TypedKeyPair> myMiscKeyPairs = const [],
+    bool useLocalCache = false,
   });
 
   Future<void> updateBackupRecord(

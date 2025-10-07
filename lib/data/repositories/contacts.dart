@@ -457,11 +457,13 @@ class ContactsRepository {
 
   //////
   // DHT
-  Future<bool> updateContactFromDHT(CoagContact contact) async {
+  Future<bool> updateContactFromDHT(CoagContact contact,
+      {bool useLocalCache = false}) async {
     logDebug('Attempting to update contact ${contact.name}');
     var success = false;
     try {
-      final updatedContact = await distributedStorage.getContact(contact);
+      final updatedContact = await distributedStorage.getContact(contact,
+          useLocalCache: useLocalCache);
 
       if (updatedContact != null) {
         success = true;
@@ -549,6 +551,7 @@ class ContactsRepository {
 
       if (contact.dhtSettings.recordKeyThemSharing != null) {
         await distributedStorage.watchRecord(
+          contact.coagContactId,
           contact.dhtSettings.recordKeyThemSharing!,
           _dhtRecordUpdateCallback,
         );
@@ -1027,13 +1030,17 @@ class ContactsRepository {
     );
   }
 
-  Future<void> _dhtRecordUpdateCallback(Typed<FixedEncodedString43> key) async {
-    for (final contact in _contacts.values) {
-      if (key == contact.dhtSettings.recordKeyThemSharing) {
-        await updateContactFromDHT(contact);
-        return;
-      }
+  Future<void> _dhtRecordUpdateCallback(
+      String coagContactId, Typed<FixedEncodedString43> key) async {
+    final contact = getContact(coagContactId);
+    if (contact == null) {
+      return;
     }
+    if (key != contact.dhtSettings.recordKeyThemSharing) {
+      return;
+    }
+    debugPrint('REUNICORN: callback $key');
+    await updateContactFromDHT(contact, useLocalCache: true);
   }
 
   /// Creating contact from just a name or from a profile link, i.e. with name

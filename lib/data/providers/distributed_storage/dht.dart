@@ -34,8 +34,7 @@ Future<Uint8List> getChunkedPayload(
   // Combine the remaining subkeys into the picture
   final chunks = await Future.wait(
     List.generate(numChunks, (i) => i + chunkOffset).map(
-      (i) async =>
-          record.get(crypto: crypto, refreshMode: refreshMode, subkey: i),
+      (i) => record.get(crypto: crypto, refreshMode: refreshMode, subkey: i),
     ),
   );
   final payload = Uint8List.fromList(
@@ -179,6 +178,8 @@ DhtSettings updateDhtSettingsFromContactUpdate(
 }
 
 class VeilidDhtStorage extends DistributedStorage {
+  Set<Typed<FixedEncodedString43>> watchedRecords = {};
+
   /// Create an empty DHT record, return key and writer in string representation
   @override
   Future<(Typed<FixedEncodedString43>, KeyPair)> createRecord({
@@ -448,13 +449,25 @@ class VeilidDhtStorage extends DistributedStorage {
 
   @override
   Future<void> watchRecord(
+    String coagContactId,
     Typed<FixedEncodedString43> key,
-    Future<void> Function(Typed<FixedEncodedString43> key) onNetworkUpdate,
+    Future<void> Function(String coagContactId, Typed<FixedEncodedString43> key)
+        onNetworkUpdate,
   ) async {
+    // Skip already watched records to avoid adding multiple callbacks
+    if (watchedRecords.contains(key)) {
+      return;
+    }
+
     final record = await DHTRecordPool.instance
         .openRecordRead(key, debugName: 'coag::read-to-watch');
+
     await record.watch(subkeys: [const ValueSubkeyRange(low: 0, high: 32)]);
-    await record.listen((record, data, subkeys) => onNetworkUpdate(record.key),
+    watchedRecords.add(key);
+
+    await record.listen(
+        // TODO: If we want to make use of data here, we also likely need to pass crypto to decrypt it
+        (record, data, subkeys) => onNetworkUpdate(coagContactId, record.key),
         localChanges: false);
   }
 
@@ -462,6 +475,7 @@ class VeilidDhtStorage extends DistributedStorage {
   Future<CoagContact?> getContact(
     CoagContact contact, {
     Iterable<TypedKeyPair> myMiscKeyPairs = const [],
+    bool useLocalCache = false,
   }) async {
     if (contact.dhtSettings.recordKeyThemSharing == null) {
       return null;
@@ -472,14 +486,16 @@ class VeilidDhtStorage extends DistributedStorage {
       contactJson,
       contactPicture,
     ) = await readRecord(
-      recordKey: contact.dhtSettings.recordKeyThemSharing!,
-      psk: contact.dhtSettings.initialSecret,
-      publicKey: contact.dhtSettings.theirPublicKey,
-      nextPublicKey: contact.dhtSettings.theirNextPublicKey,
-      keyPair: contact.dhtSettings.myKeyPair,
-      nextKeyPair: contact.dhtSettings.myNextKeyPair,
-      myMiscKeyPairs: myMiscKeyPairs,
-    );
+        recordKey: contact.dhtSettings.recordKeyThemSharing!,
+        psk: contact.dhtSettings.initialSecret,
+        publicKey: contact.dhtSettings.theirPublicKey,
+        nextPublicKey: contact.dhtSettings.theirNextPublicKey,
+        keyPair: contact.dhtSettings.myKeyPair,
+        nextKeyPair: contact.dhtSettings.myNextKeyPair,
+        myMiscKeyPairs: myMiscKeyPairs,
+        refreshMode: useLocalCache
+            ? DHTRecordRefreshMode.cached
+            : DHTRecordRefreshMode.network);
     if ((contactJson?.isEmpty ?? true) || contactJson == 'null') {
       debugPrint(
         'empty or null ${contact.dhtSettings.recordKeyThemSharing.toString().substring(5, 10)}: $contactJson',

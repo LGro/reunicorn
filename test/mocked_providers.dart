@@ -56,14 +56,15 @@ Future<ContactsRepository> contactsRepositoryFromContacts({
   required List<CoagContact> contacts,
   required Map<Typed<FixedEncodedString43>, CoagContactDHTSchema?> initialDht,
   String appUserName = dummyAppUserName,
-}) async => ContactsRepository(
-  DummyPersistentStorage(
-    Map.fromEntries(contacts.map((c) => MapEntry(c.coagContactId, c))),
-  ),
-  DummyDistributedStorage(initialDht: initialDht),
-  DummySystemContacts([]),
-  appUserName,
-);
+}) async =>
+    ContactsRepository(
+      DummyPersistentStorage(
+        Map.fromEntries(contacts.map((c) => MapEntry(c.coagContactId, c))),
+      ),
+      DummyDistributedStorage(initialDht: initialDht),
+      DummySystemContacts([]),
+      appUserName,
+    );
 
 class DummyPersistentStorage extends PersistentStorage {
   DummyPersistentStorage(this.contacts, {this.profileContactId});
@@ -174,10 +175,10 @@ class DummyDistributedStorage extends VeilidDhtStorage {
   List<String> log = [];
   Map<Typed<FixedEncodedString43>, CoagContactDHTSchema?> dht = {};
   Map<
-    Typed<FixedEncodedString43>,
-    Future<void> Function(Typed<FixedEncodedString43> key)
-  >
-  watchedRecords = {};
+          Typed<FixedEncodedString43>,
+          Future<void> Function(
+              String coagContactId, Typed<FixedEncodedString43> key)>
+      _watchedRecords = {};
 
   @override
   Future<(Typed<FixedEncodedString43>, KeyPair)> createRecord({
@@ -240,15 +241,17 @@ class DummyDistributedStorage extends VeilidDhtStorage {
 
   @override
   Future<void> watchRecord(
+    String coagContactId,
     Typed<FixedEncodedString43> key,
-    Future<void> Function(Typed<FixedEncodedString43> key) onNetworkUpdate,
+    Future<void> Function(String coagContactId, Typed<FixedEncodedString43> key)
+        onNetworkUpdate,
   ) async {
     log.add('watchRecord:$key');
     if (transparent) {
-      return super.watchRecord(key, onNetworkUpdate);
+      return super.watchRecord(coagContactId, key, onNetworkUpdate);
     }
     // TODO: Also call the updates when updates happen
-    watchedRecords[key] = onNetworkUpdate;
+    _watchedRecords[key] = onNetworkUpdate;
   }
 }
 
@@ -284,9 +287,8 @@ class DummySystemContacts extends SystemContactsBase {
     }
     log.add('updateContact:${json.encode(contact.toJson())}');
     if (contacts.where((c) => c.id == contact.id).isNotEmpty) {
-      contacts = contacts
-          .map((c) => (c.id == contact.id) ? contact : c)
-          .asList();
+      contacts =
+          contacts.map((c) => (c.id == contact.id) ? contact : c).asList();
     } else {
       contacts.add(contact);
     }
