@@ -248,7 +248,8 @@ class _CloseByRow extends StatelessWidget {
       title: Text([
         '${match.coagContactName} will be near you at ',
         '"${match.myLocationLabel}" between $start and $end',
-        if (!match.theyKnow) '\nThey do not know about this, share with them.'
+        // TODO: Make the on-tap something that helps with letting them know
+        if (!match.theyKnow) '\nThey do not know about this, let them know.'
       ].join()),
       onTap: () async {
         final contact =
