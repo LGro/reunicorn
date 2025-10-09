@@ -16,7 +16,7 @@ import '../utils.dart';
 
 const jsonAssetDirectory = 'test/assets/models/coag_contact';
 
-final dummyKeyPair = TypedKeyPair(
+final dummyKeyPair = KeyPair(
   kind: 0,
   key: FixedEncodedString43.fromBytes(Uint8List(32)),
   secret: FixedEncodedString43.fromBytes(Uint8List(32)),
@@ -199,7 +199,7 @@ void main() {
       temporaryLocations: const {},
       comment: '',
       sharedProfile: null,
-      theirIntroductionKey: Typed<PublicKey>(
+      theirIntroductionKey: PublicKey(
         kind: 1447838768,
         value: dummyFixedEncodedString43(2),
       ),

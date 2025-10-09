@@ -6,45 +6,71 @@ import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:equatable/equatable.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
-import 'package:protobuf/protobuf.dart';
 
 import '../../../veilid_support.dart';
 
 @immutable
-class TableDBArrayProtobufStateData<T extends GeneratedMessage>
-    extends Equatable {
-  const TableDBArrayProtobufStateData(
-      {required this.windowElements,
-      required this.length,
-      required this.windowTail,
-      required this.windowCount,
-      required this.follow});
+class TableDBArrayMigratedStateData<T> extends Equatable {
   // The view of the elements in the dhtlog
   // Span is from [tail-length, tail)
   final IList<T> windowElements;
+
   // The length of the entire array
   final int length;
+
   // One past the end of the last element (modulo length, can be zero)
   final int windowTail;
+
   // The total number of elements to try to keep in 'elements'
   final int windowCount;
+
   // If we should have the tail following the array
   final bool follow;
+
+  const TableDBArrayMigratedStateData({
+    required this.windowElements,
+    required this.length,
+    required this.windowTail,
+    required this.windowCount,
+    required this.follow,
+  });
 
   @override
   List<Object?> get props => [windowElements, windowTail, windowCount, follow];
 }
 
-typedef TableDBArrayProtobufState<T extends GeneratedMessage>
-    = AsyncValue<TableDBArrayProtobufStateData<T>>;
-typedef TableDBArrayProtobufBusyState<T extends GeneratedMessage>
-    = BlocBusyState<TableDBArrayProtobufState<T>>;
+typedef TableDBArrayMigratedState<T> =
+    AsyncValue<TableDBArrayMigratedStateData<T>>;
+typedef TableDBArrayMigratedBusyState<T> =
+    BlocBusyState<TableDBArrayMigratedState<T>>;
 
-class TableDBArrayProtobufCubit<T extends GeneratedMessage>
-    extends Cubit<TableDBArrayProtobufBusyState<T>>
-    with BlocBusyWrapper<TableDBArrayProtobufState<T>> {
-  TableDBArrayProtobufCubit({
-    required Future<TableDBArrayProtobuf<T>> Function() open,
+class TableDBArrayMigratedCubit<T>
+    extends Cubit<TableDBArrayMigratedBusyState<T>>
+    with BlocBusyWrapper<TableDBArrayMigratedState<T>> {
+  final WaitSet<void, void> _initWait = WaitSet();
+
+  late final TableDBArrayMigrated<T> _array;
+
+  StreamSubscription<void>? _subscription;
+
+  var _wantsCloseArray = false;
+
+  final _sspUpdate = SingleStatelessProcessor();
+
+  // Accumulated deltas since last update
+  var _headDelta = 0;
+
+  var _tailDelta = 0;
+
+  // Cubit window into the TableDBArray
+  var _tail = 0;
+
+  var _count = DHTShortArray.maxElements;
+
+  var _follow = true;
+
+  TableDBArrayMigratedCubit({
+    required Future<TableDBArrayMigrated<T>> Function() open,
   }) : super(const BlocBusyState(AsyncValue.loading())) {
     _initWait.add((_) async {
       // Open table db array
@@ -63,8 +89,12 @@ class TableDBArrayProtobufCubit<T extends GeneratedMessage>
   // length.
   // If tail is positive, the position is absolute from the head of the array
   // If follow is enabled, the tail offset will update when the array changes
-  Future<void> setWindow(
-      {int? tail, int? count, bool? follow, bool forceRefresh = false}) async {
+  Future<void> setWindow({
+    int? tail,
+    int? count,
+    bool? follow,
+    bool forceRefresh = false,
+  }) async {
     await _initWait();
     if (tail != null) {
       _tail = tail;
@@ -83,12 +113,13 @@ class TableDBArrayProtobufCubit<T extends GeneratedMessage>
     await _refreshNoWait(forceRefresh: forceRefresh);
   }
 
-  Future<void> _refreshNoWait({bool forceRefresh = false}) async =>
-      busy((emit) async => _refreshInner(emit, forceRefresh: forceRefresh));
+  Future<void> _refreshNoWait({bool forceRefresh = false}) =>
+      busy((emit) => _refreshInner(emit, forceRefresh: forceRefresh));
 
   Future<void> _refreshInner(
-      void Function(AsyncValue<TableDBArrayProtobufStateData<T>>) emit,
-      {bool forceRefresh = false}) async {
+    void Function(AsyncValue<TableDBArrayMigratedStateData<T>>) emit, {
+    bool forceRefresh = false,
+  }) async {
     final avElements = await _loadElements(_tail, _count);
     final err = avElements.asError;
     if (err != null) {
@@ -102,18 +133,20 @@ class TableDBArrayProtobufCubit<T extends GeneratedMessage>
       return;
     }
     final elements = avElements.asData!.value;
-    emit(AsyncValue.data(TableDBArrayProtobufStateData(
-        windowElements: elements,
-        length: _array.length,
-        windowTail: _tail,
-        windowCount: _count,
-        follow: _follow)));
+    emit(
+      AsyncValue.data(
+        TableDBArrayMigratedStateData(
+          windowElements: elements,
+          length: _array.length,
+          windowTail: _tail,
+          windowCount: _count,
+          follow: _follow,
+        ),
+      ),
+    );
   }
 
-  Future<AsyncValue<IList<T>>> _loadElements(
-    int tail,
-    int count,
-  ) async {
+  Future<AsyncValue<IList<T>>> _loadElements(int tail, int count) async {
     try {
       final length = _array.length;
       if (length == 0) {
@@ -139,7 +172,7 @@ class TableDBArrayProtobufCubit<T extends GeneratedMessage>
     _headDelta += upd.headDelta;
     _tailDelta += upd.tailDelta;
 
-    _sspUpdate.busyUpdate<T, TableDBArrayProtobufState<T>>(busy, (emit) async {
+    _sspUpdate.busyUpdate<T, TableDBArrayMigratedState<T>>(busy, (emit) async {
       // apply follow
       if (_follow) {
         if (_tail <= 0) {
@@ -177,23 +210,9 @@ class TableDBArrayProtobufCubit<T extends GeneratedMessage>
   }
 
   Future<R?> operate<R>(
-      Future<R?> Function(TableDBArrayProtobuf<T>) closure) async {
+    Future<R?> Function(TableDBArrayMigrated<T>) closure,
+  ) async {
     await _initWait();
     return closure(_array);
   }
-
-  final WaitSet<void, void> _initWait = WaitSet();
-  late final TableDBArrayProtobuf<T> _array;
-  StreamSubscription<void>? _subscription;
-  bool _wantsCloseArray = false;
-  final _sspUpdate = SingleStatelessProcessor();
-
-  // Accumulated deltas since last update
-  var _headDelta = 0;
-  var _tailDelta = 0;
-
-  // Cubit window into the TableDBArray
-  var _tail = 0;
-  var _count = DHTShortArray.maxElements;
-  var _follow = true;
 }

@@ -1,7 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:protobuf/protobuf.dart';
-
 import '../../../veilid_support.dart';
 
 ////////////////////////////////////////////////////////////////////////////
@@ -27,17 +25,12 @@ abstract class DHTAdd {
 extension DHTAddExt on DHTAdd {
   /// Convenience function:
   /// Like add but also encodes the input value as JSON
-  Future<void> addJson<T>(
-    T newValue,
-  ) =>
-      add(jsonEncodeBytes(newValue));
+  Future<void> addJson<T>(T newValue) => add(jsonEncodeBytes(newValue));
 
   /// Convenience function:
-  /// Like add but also encodes the input value as a protobuf object
-  Future<void> addProtobuf<T extends GeneratedMessage>(
-    T newValue,
-  ) =>
-      add(newValue.writeToBuffer());
+  /// Like add but also migrates the input value
+  Future<void> addMigrated<T>(MigrationCodec<T> migrationCodec, T newValue) =>
+      add(migrationCodec.toBytes(newValue));
 
   /// Convenience function:
   /// Like addAll but also encodes the input values as JSON
@@ -45,7 +38,9 @@ extension DHTAddExt on DHTAdd {
       addAll(values.map(jsonEncodeBytes).toList());
 
   /// Convenience function:
-  /// Like addAll but also encodes the input values as protobuf objects
-  Future<void> addAllProtobuf<T extends GeneratedMessage>(List<T> values) =>
-      addAll(values.map((x) => x.writeToBuffer()).toList());
+  /// Like addAll but also migrates the input values
+  Future<void> addAllMigrated<T>(
+    MigrationCodec<T> migrationCodec,
+    List<T> values,
+  ) => addAll(values.map((x) => migrationCodec.toBytes(x)).toList());
 }

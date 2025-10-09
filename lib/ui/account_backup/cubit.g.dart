@@ -11,10 +11,10 @@ BackupState _$BackupStateFromJson(Map<String, dynamic> json) => BackupState(
           BackupStatus.initial,
       dhtRecordKey: json['dht_record_key'] == null
           ? null
-          : Typed<FixedEncodedString43>.fromJson(json['dht_record_key']),
+          : RecordKey.fromJson(json['dht_record_key']),
       secret: json['secret'] == null
           ? null
-          : FixedEncodedString43.fromJson(json['secret']),
+          : Typed<BareSharedSecret>.fromJson(json['secret']),
     );
 
 Map<String, dynamic> _$BackupStateToJson(BackupState instance) =>

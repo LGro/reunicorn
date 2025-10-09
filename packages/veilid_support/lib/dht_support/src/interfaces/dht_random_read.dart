@@ -1,7 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:protobuf/protobuf.dart';
-
 import '../../../veilid_support.dart';
 
 ////////////////////////////////////////////////////////////////////////////
@@ -25,8 +23,11 @@ abstract class DHTRandomRead {
   /// the length of the container. May return fewer items than the length
   /// expected if the requested items are not available, but will always
   /// return a contiguous range starting at 'start'.
-  Future<List<Uint8List>?> getRange(int start,
-      {int? length, bool forceRefresh = false});
+  Future<List<Uint8List>?> getRange(
+    int start, {
+    int? length,
+    bool forceRefresh = false,
+  });
 
   /// Get a list of the positions that were written offline and not flushed yet
   Future<Set<int>> getOfflinePositions();
@@ -35,31 +36,49 @@ abstract class DHTRandomRead {
 extension DHTRandomReadExt on DHTRandomRead {
   /// Convenience function:
   /// Like get but also parses the returned element as JSON
-  Future<T?> getJson<T>(T Function(dynamic) fromJson, int pos,
-          {bool forceRefresh = false}) =>
-      get(pos, forceRefresh: forceRefresh)
-          .then((out) => jsonDecodeOptBytes(fromJson, out));
+  Future<T?> getJson<T>(
+    T Function(dynamic) fromJson,
+    int pos, {
+    bool forceRefresh = false,
+  }) => get(
+    pos,
+    forceRefresh: forceRefresh,
+  ).then((out) => jsonDecodeOptBytes(fromJson, out));
 
   /// Convenience function:
   /// Like getRange but also parses the returned elements as JSON
-  Future<List<T>?> getRangeJson<T>(T Function(dynamic) fromJson, int start,
-          {int? length, bool forceRefresh = false}) =>
-      getRange(start, length: length, forceRefresh: forceRefresh)
-          .then((out) => out?.map(fromJson).toList());
+  Future<List<T>?> getRangeJson<T>(
+    T Function(dynamic) fromJson,
+    int start, {
+    int? length,
+    bool forceRefresh = false,
+  }) => getRange(
+    start,
+    length: length,
+    forceRefresh: forceRefresh,
+  ).then((out) => out?.map(fromJson).toList());
 
   /// Convenience function:
-  /// Like get but also parses the returned element as a protobuf object
-  Future<T?> getProtobuf<T extends GeneratedMessage>(
-          T Function(List<int>) fromBuffer, int pos,
-          {bool forceRefresh = false}) =>
-      get(pos, forceRefresh: forceRefresh)
-          .then((out) => (out == null) ? null : fromBuffer(out));
+  /// Like get but also migrates the returned element
+  Future<MigratedValue<T>?> getMigrated<T>(
+    MigrationCodec<T> migrationCodec,
+    int pos, {
+    bool forceRefresh = false,
+  }) => get(
+    pos,
+    forceRefresh: forceRefresh,
+  ).then((out) => (out == null) ? null : migrationCodec.fromBytes(out));
 
   /// Convenience function:
-  /// Like getRange but also parses the returned elements as protobuf objects
-  Future<List<T>?> getRangeProtobuf<T extends GeneratedMessage>(
-          T Function(List<int>) fromBuffer, int start,
-          {int? length, bool forceRefresh = false}) =>
-      getRange(start, length: length, forceRefresh: forceRefresh)
-          .then((out) => out?.map(fromBuffer).toList());
+  /// Like getRange but also migrates the returned elements
+  Future<List<MigratedValue<T>>?> getRangeMigrated<T>(
+    MigrationCodec<T> migrationCodec,
+    int start, {
+    int? length,
+    bool forceRefresh = false,
+  }) => getRange(
+    start,
+    length: length,
+    forceRefresh: forceRefresh,
+  ).then((out) => out?.map(migrationCodec.fromBytes).toList());
 }

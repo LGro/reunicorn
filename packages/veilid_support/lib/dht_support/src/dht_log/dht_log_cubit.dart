@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc/bloc.dart';
@@ -11,29 +12,36 @@ import '../../../veilid_support.dart';
 
 @immutable
 class DHTLogStateData<T> extends Equatable {
-  const DHTLogStateData(
-      {required this.length,
-      required this.window,
-      required this.windowTail,
-      required this.windowSize,
-      required this.follow});
   // The total number of elements in the whole log
   final int length;
+
   // The view window of the elements in the dhtlog
   // Span is from [tail - window.length, tail)
   final IList<OnlineElementState<T>> window;
+
   // The position of the view window, one past the last element
   final int windowTail;
+
   // The total number of elements to try to keep in the window
   final int windowSize;
+
   // If we have the window following the log
   final bool follow;
+
+  const DHTLogStateData({
+    required this.length,
+    required this.window,
+    required this.windowTail,
+    required this.windowSize,
+    required this.follow,
+  });
 
   @override
   List<Object?> get props => [length, window, windowTail, windowSize, follow];
 
   @override
-  String toString() => 'DHTLogStateData('
+  String toString() =>
+      'DHTLogStateData('
       'length: $length, '
       'windowTail: $windowTail, '
       'windowSize: $windowSize, '
@@ -46,11 +54,35 @@ typedef DHTLogBusyState<T> = BlocBusyState<DHTLogState<T>>;
 
 class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
     with BlocBusyWrapper<DHTLogState<T>>, RefreshableCubit {
+  final WaitSet<void, bool> _initWait = WaitSet();
+
+  late final DHTLog _log;
+
+  final T Function(Uint8List data) _decodeElement;
+
+  StreamSubscription<void>? _subscription;
+
+  var _wantsCloseRecord = false;
+
+  final _sspUpdate = SingleStatelessProcessor();
+
+  // Accumulated deltas since last update
+  var _headDelta = 0;
+
+  var _tailDelta = 0;
+
+  // Cubit window into the DHTLog
+  var _windowTail = 0;
+
+  var _windowSize = DHTShortArray.maxElements;
+
+  var _follow = true;
+
   DHTLogCubit({
     required Future<DHTLog> Function() open,
-    required T Function(List<int> data) decodeElement,
-  })  : _decodeElement = decodeElement,
-        super(const BlocBusyState(AsyncValue.loading())) {
+    required T Function(Uint8List data) decodeElement,
+  }) : _decodeElement = decodeElement,
+       super(const BlocBusyState(AsyncValue.loading())) {
     _initWait.add((cancel) async {
       try {
         // Do record open/create
@@ -82,11 +114,12 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
   // length.
   // If tail is positive, the position is absolute from the head of the log
   // If follow is enabled, the tail offset will update when the log changes
-  Future<void> setWindow(
-      {int? windowTail,
-      int? windowSize,
-      bool? follow,
-      bool forceRefresh = false}) async {
+  Future<void> setWindow({
+    int? windowTail,
+    int? windowSize,
+    bool? follow,
+    bool forceRefresh = false,
+  }) async {
     await _initWait();
     if (windowTail != null) {
       _windowTail = windowTail;
@@ -109,8 +142,10 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
   Future<void> _refreshNoWait({bool forceRefresh = false}) =>
       busy((emit) => _refreshInner(emit, forceRefresh: forceRefresh));
 
-  Future<void> _refreshInner(void Function(AsyncValue<DHTLogStateData<T>>) emit,
-      {bool forceRefresh = false}) async {
+  Future<void> _refreshInner(
+    void Function(AsyncValue<DHTLogStateData<T>>) emit, {
+    bool forceRefresh = false,
+  }) async {
     late final int length;
     final windowElements = await _log.operate((reader) {
       length = reader.length;
@@ -121,19 +156,27 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
       return;
     }
 
-    emit(AsyncValue.data(DHTLogStateData(
-        length: length,
-        window: windowElements.$2,
-        windowTail: windowElements.$1 + windowElements.$2.length,
-        windowSize: windowElements.$2.length,
-        follow: _follow)));
+    emit(
+      AsyncValue.data(
+        DHTLogStateData(
+          length: length,
+          window: windowElements.$2,
+          windowTail: windowElements.$1 + windowElements.$2.length,
+          windowSize: windowElements.$2.length,
+          follow: _follow,
+        ),
+      ),
+    );
     setRefreshed();
   }
 
   // Tail is one past the last element to load
   Future<(int, IList<OnlineElementState<T>>)?> _loadElementsFromReader(
-      DHTLogReadOperations reader, int tail, int count,
-      {bool forceRefresh = false}) async {
+    DHTLogReadOperations reader,
+    int tail,
+    int count, {
+    bool forceRefresh = false,
+  }) async {
     final length = reader.length;
     final end = ((tail - 1) % length) + 1;
     final start = (count < end) ? end - count : 0;
@@ -148,13 +191,19 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
     }
 
     // Get the items
-    final allItems = (await reader.getRange(start,
-            length: end - start, forceRefresh: forceRefresh))
-        ?.indexed
-        .map((x) => OnlineElementState(
-            value: _decodeElement(x.$2),
-            isOffline: offlinePositions?.contains(x.$1) ?? false))
-        .toIList();
+    final allItems =
+        (await reader.getRange(
+              start,
+              length: end - start,
+              forceRefresh: forceRefresh,
+            ))?.indexed
+            .map(
+              (x) => OnlineElementState(
+                value: _decodeElement(x.$2),
+                isOffline: offlinePositions?.contains(x.$1) ?? false,
+              ),
+            )
+            .toIList();
     if (allItems == null) {
       return null;
     }
@@ -221,31 +270,17 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
   }
 
   Future<R> operateAppend<R>(
-      Future<R> Function(DHTLogWriteOperations) closure) async {
+    Future<R> Function(DHTLogWriteOperations) closure,
+  ) async {
     await _initWait();
     return _log.operateAppend(closure);
   }
 
   Future<R> operateAppendEventual<R>(
-      Future<R> Function(DHTLogWriteOperations) closure,
-      {Duration? timeout}) async {
+    Future<R> Function(DHTLogWriteOperations) closure, {
+    Duration? timeout,
+  }) async {
     await _initWait();
     return _log.operateAppendEventual(closure, timeout: timeout);
   }
-
-  final WaitSet<void, bool> _initWait = WaitSet();
-  late final DHTLog _log;
-  final T Function(List<int> data) _decodeElement;
-  StreamSubscription<void>? _subscription;
-  var _wantsCloseRecord = false;
-  final _sspUpdate = SingleStatelessProcessor();
-
-  // Accumulated deltas since last update
-  var _headDelta = 0;
-  var _tailDelta = 0;
-
-  // Cubit window into the DHTLog
-  var _windowTail = 0;
-  var _windowSize = DHTShortArray.maxElements;
-  var _follow = true;
 }

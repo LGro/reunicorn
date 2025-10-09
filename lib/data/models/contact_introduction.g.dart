@@ -9,12 +9,11 @@ part of 'contact_introduction.dart';
 ContactIntroduction _$ContactIntroductionFromJson(Map<String, dynamic> json) =>
     ContactIntroduction(
       otherName: json['other_name'] as String,
-      otherPublicKey: FixedEncodedString43.fromJson(json['other_public_key']),
-      publicKey: FixedEncodedString43.fromJson(json['public_key']),
-      dhtRecordKeyReceiving: Typed<FixedEncodedString43>.fromJson(
-          json['dht_record_key_receiving']),
-      dhtRecordKeySharing:
-          Typed<FixedEncodedString43>.fromJson(json['dht_record_key_sharing']),
+      otherPublicKey: Typed<BarePublicKey>.fromJson(json['other_public_key']),
+      publicKey: Typed<BarePublicKey>.fromJson(json['public_key']),
+      dhtRecordKeyReceiving:
+          RecordKey.fromJson(json['dht_record_key_receiving']),
+      dhtRecordKeySharing: RecordKey.fromJson(json['dht_record_key_sharing']),
       dhtWriterSharing: KeyPair.fromJson(json['dht_writer_sharing']),
       message: json['message'] as String?,
     );

@@ -10,13 +10,12 @@ import 'cubit.dart';
 class DhtSharingStatusWidget extends StatelessWidget {
   const DhtSharingStatusWidget({required this.recordKeys, super.key});
 
-  final Iterable<Typed<FixedEncodedString43>> recordKeys;
+  final Iterable<RecordKey> recordKeys;
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-    create: (context) => DhtSharingStatusCubit(recordKeys: recordKeys),
-    child: BlocBuilder<DhtSharingStatusCubit, DhtSharingStatusState>(
-      builder: (context, state) => Text(state.status),
-    ),
-  );
+      create: (context) => DhtSharingStatusCubit(recordKeys: recordKeys),
+      child: BlocBuilder<DhtSharingStatusCubit, DhtSharingStatusState>(
+        builder: (context, state) => Text(state.status),
+      ));
 }

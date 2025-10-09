@@ -24,8 +24,9 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     this.contactsRepository, {
     ReceiveRequestState? initialState,
   }) : super(
-         initialState ?? const ReceiveRequestState(ReceiveRequestStatus.qrcode),
-       ) {
+          initialState ??
+              const ReceiveRequestState(ReceiveRequestStatus.qrcode),
+        ) {
     if (initialState == null) {
       return;
     }
@@ -164,8 +165,8 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
       return;
     }
     // TODO: Handle fromString parsing errors
-    final psk = FixedEncodedString43.fromString(parts.removeLast());
-    final recordKey = TypedKey.fromString(parts.removeLast());
+    final psk = SharedSecret.fromString(parts.removeLast());
+    final recordKey = RecordKey.fromString(parts.removeLast());
     // Allow use of ~ in name
     final name = Uri.decodeComponent(parts.join('~'));
 
@@ -205,13 +206,13 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
       coagContactId: Uuid().v4(),
       // TODO: localize default to language
       name: name,
-      myIdentity: await generateTypedKeyPairBest(),
-      myIntroductionKeyPair: await generateTypedKeyPairBest(),
+      myIdentity: await generateKeyPairBest(),
+      myIntroductionKeyPair: await generateKeyPairBest(),
       // TODO: Handle fromString parsing errors
       dhtSettings: DhtSettings(
         recordKeyThemSharing: recordKey,
         initialSecret: psk,
-        myNextKeyPair: await contactsRepository.generateTypedKeyPair(),
+        myNextKeyPair: await contactsRepository.generateKeyPair(),
       ),
     );
 
@@ -228,15 +229,14 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
 
     // Update first to get share back settings and then try to share back
-    final dhtOperations = contactsRepository
-        .updateContactFromDHT(addedContact)
-        .then(
-          (success) => success
-              ? contactsRepository.tryShareWithContactDHT(
-                  addedContact.coagContactId,
-                )
-              : success,
-        );
+    final dhtOperations =
+        contactsRepository.updateContactFromDHT(addedContact).then(
+              (success) => success
+                  ? contactsRepository.tryShareWithContactDHT(
+                      addedContact.coagContactId,
+                    )
+                  : success,
+            );
     if (awaitDhtOperations) {
       await dhtOperations;
     } else {
@@ -318,7 +318,7 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
     // TODO: Handle fromString parsing errors
     final publicKey = PublicKey.fromString(parts.removeLast());
-    final recordKey = TypedKey.fromString(parts.removeLast());
+    final recordKey = RecordKey.fromString(parts.removeLast());
     // Allow use of ~ in name
     final name = Uri.decodeComponent(parts.join('~'));
 
@@ -334,8 +334,8 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     final contact = CoagContact(
       coagContactId: Uuid().v4(),
       name: name,
-      myIdentity: await contactsRepository.generateTypedKeyPair(),
-      myIntroductionKeyPair: await contactsRepository.generateTypedKeyPair(),
+      myIdentity: await contactsRepository.generateKeyPair(),
+      myIntroductionKeyPair: await contactsRepository.generateKeyPair(),
       dhtSettings: DhtSettings(
         recordKeyThemSharing: recordKey,
         theirNextPublicKey: publicKey,
@@ -358,15 +358,14 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
       return;
     }
 
-    final dhtOperations = contactsRepository
-        .updateContactFromDHT(addedContact)
-        .then(
-          (success) => success
-              ? contactsRepository.tryShareWithContactDHT(
-                  addedContact.coagContactId,
-                )
-              : success,
-        );
+    final dhtOperations =
+        contactsRepository.updateContactFromDHT(addedContact).then(
+              (success) => success
+                  ? contactsRepository.tryShareWithContactDHT(
+                      addedContact.coagContactId,
+                    )
+                  : success,
+            );
     if (awaitDhtOperations) {
       await dhtOperations;
     } else {
@@ -408,13 +407,13 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     // TODO: Handle parsing errors
     late KeyPair subkeyWriter;
     late int subkeyIndex;
-    late FixedEncodedString43 psk;
-    late TypedKey recordKey;
+    late SharedSecret psk;
+    late RecordKey recordKey;
     try {
       subkeyWriter = KeyPair.fromString(parts.removeLast());
       subkeyIndex = int.parse(parts.removeLast());
-      psk = FixedEncodedString43.fromString(parts.removeLast());
-      recordKey = TypedKey.fromString(parts.removeLast());
+      psk = SharedSecret.fromString(parts.removeLast());
+      recordKey = RecordKey.fromString(parts.removeLast());
     } catch (e) {
       // TODO: Emit error notice
       if (!isClosed) {

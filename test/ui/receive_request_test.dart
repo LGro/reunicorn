@@ -31,24 +31,24 @@ ContactsRepository _contactsRepositoryFromContacts(
           dummyDhtRecordKey(0): CoagContactDHTSchema(
             details: const ContactDetails(names: {'0': 'DHT 0'}),
             shareBackDHTKey: dummyDhtRecordKey(9).toString(),
-            shareBackPubKey: dummyTypedKeyPair(9, 9).key.toString(),
+            shareBackPubKey: dummyKeyPair(9, 9).key.toString(),
           ),
           dummyDhtRecordKey(1): CoagContactDHTSchema(
             details: const ContactDetails(names: {'1': 'DHT 1'}),
             shareBackDHTKey: dummyDhtRecordKey(8).toString(),
-            shareBackPubKey: dummyTypedKeyPair(8, 8).key.toString(),
+            shareBackPubKey: dummyKeyPair(8, 8).key.toString(),
           ),
           dummyDhtRecordKey(2): CoagContactDHTSchema(
             details: const ContactDetails(names: {'2': 'DHT 2'}),
             shareBackDHTKey: dummyDhtRecordKey(8).toString(),
-            shareBackPubKey: dummyTypedKeyPair(8, 8).key.toString(),
+            shareBackPubKey: dummyKeyPair(8, 8).key.toString(),
           ),
         },
       ),
       DummySystemContacts([]),
       appUserName,
       initialize: false,
-      generateTypedKeyPair: () async => dummyTypedKeyPair(),
+      generateKeyPair: () async => dummyKeyPair(),
       generateSharedSecret: () async => dummyPsk(42),
     );
 
@@ -62,21 +62,21 @@ void main() {
         CoagContact(
           coagContactId: '2',
           name: 'Existing Contact A',
-          myIdentity: dummyTypedKeyPair(3, 2),
-          myIntroductionKeyPair: dummyTypedKeyPair(3, 3),
+          myIdentity: dummyKeyPair(3, 2),
+          myIntroductionKeyPair: dummyKeyPair(3, 3),
           dhtSettings: DhtSettings(
-            myKeyPair: dummyTypedKeyPair(2, 1),
-            myNextKeyPair: dummyTypedKeyPair(2, 2),
+            myKeyPair: dummyKeyPair(2, 1),
+            myNextKeyPair: dummyKeyPair(2, 2),
           ),
         ),
         CoagContact(
           coagContactId: '5',
           name: 'Existing Contact B',
-          myIdentity: dummyTypedKeyPair(2, 3),
-          myIntroductionKeyPair: dummyTypedKeyPair(2, 4),
+          myIdentity: dummyKeyPair(2, 3),
+          myIntroductionKeyPair: dummyKeyPair(2, 4),
           dhtSettings: DhtSettings(
-            myKeyPair: dummyTypedKeyPair(5, 1),
-            myNextKeyPair: dummyTypedKeyPair(5, 5),
+            myKeyPair: dummyKeyPair(5, 1),
+            myNextKeyPair: dummyKeyPair(5, 5),
           ),
         ),
       ]);
@@ -270,7 +270,7 @@ void main() {
               rawValue: profileBasedOfferUrl(
                 'Offering Sharer',
                 dummyDhtRecordKey(4),
-                dummyTypedKeyPair(4, 4).key,
+                dummyKeyPair(4, 4).key,
               ).toString(),
             ),
           ],
@@ -290,7 +290,7 @@ void main() {
         expect(c.state.profile!.name, 'Offering Sharer');
         expect(
           c.state.profile!.dhtSettings.theirPublicKey,
-          dummyTypedKeyPair(4, 4).key,
+          dummyKeyPair(4, 4).key,
         );
         expect(c.state.profile!.dhtSettings.initialSecret, isNull);
         expect(
@@ -325,7 +325,7 @@ void main() {
                 dummyDhtRecordKey(4),
                 _dummyPsk(4),
                 4,
-                dummyTypedKeyPair(4, 4).toKeyPair(),
+                dummyKeyPair(4, 4).toKeyPair(),
               ).toString(),
             ),
           ],

@@ -1,7 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:protobuf/protobuf.dart';
-
 import '../../../veilid_support.dart';
 
 ////////////////////////////////////////////////////////////////////////////
@@ -21,8 +19,11 @@ abstract class DHTRandomWrite {
   ///
   /// Throws an IndexError if the position is not within the length
   /// of the container.
-  Future<bool> tryWriteItem(int pos, Uint8List newValue,
-      {Output<Uint8List>? output});
+  Future<bool> tryWriteItem(
+    int pos,
+    Uint8List newValue, {
+    Output<Uint8List>? output,
+  });
 }
 
 extension DHTRandomWriteExt on DHTRandomWrite {
@@ -30,25 +31,37 @@ extension DHTRandomWriteExt on DHTRandomWrite {
   /// Like tryWriteItem but also encodes the input value as JSON and parses the
   /// returned element as JSON
   Future<bool> tryWriteItemJson<T>(
-      T Function(dynamic) fromJson, int pos, T newValue,
-      {Output<T>? output}) async {
+    T Function(dynamic) fromJson,
+    int pos,
+    T newValue, {
+    Output<T>? output,
+  }) async {
     final outValueBytes = output == null ? null : Output<Uint8List>();
-    final out = await tryWriteItem(pos, jsonEncodeBytes(newValue),
-        output: outValueBytes);
+    final out = await tryWriteItem(
+      pos,
+      jsonEncodeBytes(newValue),
+      output: outValueBytes,
+    );
     output.mapSave(outValueBytes, (b) => jsonDecodeBytes(fromJson, b));
     return out;
   }
 
   /// Convenience function:
-  /// Like tryWriteItem but also encodes the input value as a protobuf object
-  /// and parses the returned element as a protobuf object
-  Future<bool> tryWriteItemProtobuf<T extends GeneratedMessage>(
-      T Function(List<int>) fromBuffer, int pos, T newValue,
-      {Output<T>? output}) async {
+  /// Like tryWriteItem but also migrates the input value
+  /// and migrates the returned element as well
+  Future<bool> tryWriteItemMigrated<T>(
+    MigrationCodec<T> migrationCodec,
+    int pos,
+    T newValue, {
+    Output<MigratedValue<T>>? output,
+  }) async {
     final outValueBytes = output == null ? null : Output<Uint8List>();
-    final out = await tryWriteItem(pos, newValue.writeToBuffer(),
-        output: outValueBytes);
-    output.mapSave(outValueBytes, fromBuffer);
+    final out = await tryWriteItem(
+      pos,
+      migrationCodec.toBytes(newValue),
+      output: outValueBytes,
+    );
+    output.mapSave(outValueBytes, migrationCodec.fromBytes);
     return out;
   }
 }

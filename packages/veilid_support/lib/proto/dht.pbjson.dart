@@ -17,8 +17,8 @@ import 'dart:typed_data' as $typed_data;
 const DHTData$json = {
   '1': 'DHTData',
   '2': [
-    {'1': 'keys', '3': 1, '4': 3, '5': 11, '6': '.veilid.TypedKey', '10': 'keys'},
-    {'1': 'hash', '3': 2, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'hash'},
+    {'1': 'keys', '3': 1, '4': 3, '5': 11, '6': '.veilid.RecordKey', '10': 'keys'},
+    {'1': 'hash', '3': 2, '4': 1, '5': 11, '6': '.veilid.HashDigest', '10': 'hash'},
     {'1': 'chunk', '3': 3, '4': 1, '5': 13, '10': 'chunk'},
     {'1': 'size', '3': 4, '4': 1, '5': 13, '10': 'size'},
   ],
@@ -26,9 +26,9 @@ const DHTData$json = {
 
 /// Descriptor for `DHTData`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List dHTDataDescriptor = $convert.base64Decode(
-    'CgdESFREYXRhEiQKBGtleXMYASADKAsyEC52ZWlsaWQuVHlwZWRLZXlSBGtleXMSJAoEaGFzaB'
-    'gCIAEoCzIQLnZlaWxpZC5UeXBlZEtleVIEaGFzaBIUCgVjaHVuaxgDIAEoDVIFY2h1bmsSEgoE'
-    'c2l6ZRgEIAEoDVIEc2l6ZQ==');
+    'CgdESFREYXRhEiUKBGtleXMYASADKAsyES52ZWlsaWQuUmVjb3JkS2V5UgRrZXlzEiYKBGhhc2'
+    'gYAiABKAsyEi52ZWlsaWQuSGFzaERpZ2VzdFIEaGFzaBIUCgVjaHVuaxgDIAEoDVIFY2h1bmsS'
+    'EgoEc2l6ZRgEIAEoDVIEc2l6ZQ==');
 
 @$core.Deprecated('Use dHTLogDescriptor instead')
 const DHTLog$json = {
@@ -49,7 +49,7 @@ final $typed_data.Uint8List dHTLogDescriptor = $convert.base64Decode(
 const DHTShortArray$json = {
   '1': 'DHTShortArray',
   '2': [
-    {'1': 'keys', '3': 1, '4': 3, '5': 11, '6': '.veilid.TypedKey', '10': 'keys'},
+    {'1': 'keys', '3': 1, '4': 3, '5': 11, '6': '.veilid.RecordKey', '10': 'keys'},
     {'1': 'index', '3': 2, '4': 1, '5': 12, '10': 'index'},
     {'1': 'seqs', '3': 3, '4': 3, '5': 13, '10': 'seqs'},
   ],
@@ -57,20 +57,21 @@ const DHTShortArray$json = {
 
 /// Descriptor for `DHTShortArray`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List dHTShortArrayDescriptor = $convert.base64Decode(
-    'Cg1ESFRTaG9ydEFycmF5EiQKBGtleXMYASADKAsyEC52ZWlsaWQuVHlwZWRLZXlSBGtleXMSFA'
-    'oFaW5kZXgYAiABKAxSBWluZGV4EhIKBHNlcXMYAyADKA1SBHNlcXM=');
+    'Cg1ESFRTaG9ydEFycmF5EiUKBGtleXMYASADKAsyES52ZWlsaWQuUmVjb3JkS2V5UgRrZXlzEh'
+    'QKBWluZGV4GAIgASgMUgVpbmRleBISCgRzZXFzGAMgAygNUgRzZXFz');
 
 @$core.Deprecated('Use ownedDHTRecordPointerDescriptor instead')
 const OwnedDHTRecordPointer$json = {
   '1': 'OwnedDHTRecordPointer',
   '2': [
-    {'1': 'record_key', '3': 1, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'recordKey'},
-    {'1': 'owner', '3': 2, '4': 1, '5': 11, '6': '.veilid.KeyPair', '10': 'owner'},
+    {'1': 'record_key', '3': 1, '4': 1, '5': 11, '6': '.veilid.RecordKey', '10': 'recordKey'},
+    {'1': 'owner', '3': 2, '4': 1, '5': 11, '6': '.veilid.BareKeyPair', '10': 'owner'},
   ],
 };
 
 /// Descriptor for `OwnedDHTRecordPointer`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List ownedDHTRecordPointerDescriptor = $convert.base64Decode(
-    'ChVPd25lZERIVFJlY29yZFBvaW50ZXISLwoKcmVjb3JkX2tleRgBIAEoCzIQLnZlaWxpZC5UeX'
-    'BlZEtleVIJcmVjb3JkS2V5EiUKBW93bmVyGAIgASgLMg8udmVpbGlkLktleVBhaXJSBW93bmVy');
+    'ChVPd25lZERIVFJlY29yZFBvaW50ZXISMAoKcmVjb3JkX2tleRgBIAEoCzIRLnZlaWxpZC5SZW'
+    'NvcmRLZXlSCXJlY29yZEtleRIpCgVvd25lchgCIAEoCzITLnZlaWxpZC5CYXJlS2V5UGFpclIF'
+    'b3duZXI=');
 

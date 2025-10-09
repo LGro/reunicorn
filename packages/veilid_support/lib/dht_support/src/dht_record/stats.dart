@@ -7,11 +7,17 @@ const maxLatencySamples = 100;
 const timeoutDuration = 10;
 
 extension LatencyStatsExt on LatencyStats {
-  String debugString() => 'fast($fastest)/avg($average)/slow($slowest)/'
+  String debugString() =>
+      'fast($fastest)/avg($average)/slow($slowest)/'
       'tm90($tm90)/tm75($tm75)/p90($p90)/p75($p75)';
 }
 
 class LatencyStatsAccounting {
+  /////////////////////////////
+  final int maxSamples;
+
+  final _samples = <TimestampDuration>[];
+
   LatencyStatsAccounting({required this.maxSamples});
 
   LatencyStats record(TimestampDuration dur) {
@@ -25,39 +31,42 @@ class LatencyStatsAccounting {
     final fastest = sortedList.first;
     final slowest = sortedList.last;
     final average = TimestampDuration(
-        value: sortedList.fold(BigInt.zero, (acc, x) => acc + x.value) ~/
-            BigInt.from(sortedList.length));
+      value:
+          sortedList.fold(BigInt.zero, (acc, x) => acc + x.value) ~/
+          BigInt.from(sortedList.length),
+    );
 
     final tm90len = (sortedList.length * 90 + 99) ~/ 100;
     final tm75len = (sortedList.length * 75 + 99) ~/ 100;
     final tm90 = TimestampDuration(
-        value: sortedList
-                .sublist(0, tm90len)
-                .fold(BigInt.zero, (acc, x) => acc + x.value) ~/
-            BigInt.from(tm90len));
+      value:
+          sortedList
+              .sublist(0, tm90len)
+              .fold(BigInt.zero, (acc, x) => acc + x.value) ~/
+          BigInt.from(tm90len),
+    );
     final tm75 = TimestampDuration(
-        value: sortedList
-                .sublist(0, tm75len)
-                .fold(BigInt.zero, (acc, x) => acc + x.value) ~/
-            BigInt.from(tm90len));
+      value:
+          sortedList
+              .sublist(0, tm75len)
+              .fold(BigInt.zero, (acc, x) => acc + x.value) ~/
+          BigInt.from(tm90len),
+    );
     final p90 = sortedList[tm90len - 1];
     final p75 = sortedList[tm75len - 1];
 
     final ls = LatencyStats(
-        fastest: fastest,
-        slowest: slowest,
-        average: average,
-        tm90: tm90,
-        tm75: tm75,
-        p90: p90,
-        p75: p75);
+      fastest: fastest,
+      slowest: slowest,
+      average: average,
+      tm90: tm90,
+      tm75: tm75,
+      p90: p90,
+      p75: p75,
+    );
 
     return ls;
   }
-
-  /////////////////////////////
-  final int maxSamples;
-  final _samples = <TimestampDuration>[];
 }
 
 class DHTCallStats {
@@ -90,11 +99,20 @@ class DHTCallStats {
   LatencyStats? latency;
   LatencyStats? successLatency;
   final latencyAcct = LatencyStatsAccounting(maxSamples: maxLatencySamples);
-  final successLatencyAcct =
-      LatencyStatsAccounting(maxSamples: maxLatencySamples);
+  final successLatencyAcct = LatencyStatsAccounting(
+    maxSamples: maxLatencySamples,
+  );
 }
 
 class DHTPerKeyStats {
+  //////////////////////////////
+
+  final String debugName;
+
+  final _stats = DHTCallStats();
+
+  final _perFuncStats = <String, DHTCallStats>{};
+
   DHTPerKeyStats(this.debugName);
 
   void record(String func, TimestampDuration dur, Exception? exc) {
@@ -118,23 +136,29 @@ class DHTPerKeyStats {
 
     return out.toString();
   }
-
-  //////////////////////////////
-
-  final String debugName;
-  final _stats = DHTCallStats();
-  final _perFuncStats = <String, DHTCallStats>{};
 }
 
 class DHTStats {
+  //////////////////////////////
+
+  final _statsPerKey = <RecordKey, DHTPerKeyStats>{};
+
+  final _statsPerFunc = <String, DHTCallStats>{};
+
   DHTStats();
 
-  Future<T> measure<T>(TypedKey key, String debugName, String func,
-      Future<T> Function() closure) async {
+  Future<T> measure<T>(
+    RecordKey key,
+    String debugName,
+    String func,
+    Future<T> Function() closure,
+  ) async {
     //
     final start = Veilid.instance.now();
-    final keyStats =
-        _statsPerKey.putIfAbsent(key, () => DHTPerKeyStats(debugName));
+    final keyStats = _statsPerKey.putIfAbsent(
+      key,
+      () => DHTPerKeyStats(debugName),
+    );
     final funcStats = _statsPerFunc.putIfAbsent(func, DHTCallStats.new);
 
     VeilidAPIException? exc;
@@ -172,9 +196,4 @@ class DHTStats {
 
     return out.toString();
   }
-
-  //////////////////////////////
-
-  final _statsPerKey = <TypedKey, DHTPerKeyStats>{};
-  final _statsPerFunc = <String, DHTCallStats>{};
 }

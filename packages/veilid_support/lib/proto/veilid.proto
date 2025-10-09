@@ -1,61 +1,97 @@
 syntax = "proto3";
 package veilid;
 
-// 32-byte value in bigendian format
-message CryptoKey {
-    fixed32 u0 = 1;
-    fixed32 u1 = 2;
-    fixed32 u2 = 3;
-    fixed32 u3 = 4;    
-    fixed32 u4 = 5;
-    fixed32 u5 = 6;
-    fixed32 u6 = 7;
-    fixed32 u7 = 8;    
+// Byte Array Types
+message BarePublicKey {
+    bytes data = 1;
 }
-
-// 64-byte value in bigendian format
-message Signature {
-    fixed32 u0 = 1;
-    fixed32 u1 = 2;
-    fixed32 u2 = 3;
-    fixed32 u3 = 4;    
-    fixed32 u4 = 5;
-    fixed32 u5 = 6;
-    fixed32 u6 = 7;
-    fixed32 u7 = 8;    
-    fixed32 u8 = 9;
-    fixed32 u9 = 10;
-    fixed32 u10 = 11;
-    fixed32 u11 = 12;    
-    fixed32 u12 = 13;
-    fixed32 u13 = 14;
-    fixed32 u14 = 15;
-    fixed32 u15 = 16;    
+message BareSignature {
+    bytes data = 1;
 }
-
-// 24-byte value in bigendian format
+message BareSecretKey {
+    bytes data = 1;
+}
+message BareSharedSecret {
+    bytes data = 1;
+}
+message BareHashDigest {
+    bytes data = 1;
+}
+message BareOpaqueRecordKey {
+    bytes data = 1;
+}
+message BareRouteId {
+    bytes data = 1;
+}
+message BareNodeId {
+    bytes data = 1;
+}
+message BareMemberId {
+    bytes data = 1;
+}
 message Nonce {
-    fixed32 u0 = 1;
-    fixed32 u1 = 2;
-    fixed32 u2 = 3;
-    fixed32 u3 = 4;    
-    fixed32 u4 = 5;
-    fixed32 u5 = 6;
+    bytes data = 1;
 }
 
-// 36-byte typed crypto key
-message TypedKey {
-    // CryptoKind FourCC in bigendian format
+// Type-prefixed Types
+message PublicKey {
     fixed32 kind = 1;
-    // Key value
-    CryptoKey value = 2;
+    bytes data = 2;
+}
+message Signature {
+    fixed32 kind = 1;
+    bytes data = 2;
+}
+message SecretKey {
+    fixed32 kind = 1;
+    bytes data = 2;
+}
+message HashDigest {
+    fixed32 kind = 1;
+    bytes data = 2;
+}
+message OpaqueRecordKey {
+    fixed32 kind = 1;
+    bytes data = 2;
+}
+message SharedSecret {
+    fixed32 kind = 1;
+    bytes data = 2;
+}
+message RouteId {
+    fixed32 kind = 1;
+    bytes data = 2;
+}
+message NodeId {
+    fixed32 kind = 1;
+    bytes data = 2;
+}
+message MemberId {
+    fixed32 kind = 1;
+    bytes data = 2;
 }
 
 // Key pair
+message BareKeyPair {
+    bytes key = 1;
+    bytes secret = 2;
+}
+
 message KeyPair {
-    // Public key
-    CryptoKey key = 1;
-    // Private key
-    CryptoKey secret = 2;
+    fixed32 kind = 1;
+    bytes key = 2;
+    bytes secret = 3;
+}
+
+// Record Key
+message BareRecordKey {
+    bytes key = 1;
+    optional bytes encryption_key = 2;
+}
+
+message RecordKey {
+    fixed32 kind = 1;
+    bytes key = 2;
+    optional bytes encryption_key = 3;
 }
 

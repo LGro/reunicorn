@@ -15,10 +15,7 @@ class RestoreCubit extends Cubit<RestoreState> {
 
   ContactsRepository contactsRepository;
 
-  Future<void> restore(
-    Typed<FixedEncodedString43> recordKey,
-    FixedEncodedString43 secret,
-  ) async {
+  Future<void> restore(RecordKey recordKey, SharedSecret secret) async {
     emit(const RestoreState(status: RestoreStatus.create));
 
     final result = await contactsRepository.restore(recordKey, secret);

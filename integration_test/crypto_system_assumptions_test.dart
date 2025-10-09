@@ -16,13 +16,9 @@ void main() {
     'DH derived symmetric key is consistent across derivations and parties',
     () async {
       final cryptoSystem =
-          await DHTRecordPool.instance.veilid.bestCryptoSystem();
-      final kpA = await cryptoSystem.generateKeyPair().then(
-            (kp) => TypedKeyPair.fromKeyPair(cryptoSystem.kind(), kp),
-          );
-      final kpB = await cryptoSystem.generateKeyPair().then(
-            (kp) => TypedKeyPair.fromKeyPair(cryptoSystem.kind(), kp),
-          );
+          await DHTRecordPool.instance.veilid.getCryptoSystem(cryptoKindVLD0);
+      final kpA = await cryptoSystem.generateKeyPair();
+      final kpB = await cryptoSystem.generateKeyPair();
 
       final secA1 = await cryptoSystem.generateSharedSecret(
         kpB.key,
@@ -45,13 +41,10 @@ void main() {
   );
 
   test('DH key exchange', () async {
-    final cryptoSystem = await DHTRecordPool.instance.veilid.bestCryptoSystem();
-    final kpA = await cryptoSystem.generateKeyPair().then(
-          (kp) => TypedKeyPair.fromKeyPair(cryptoSystem.kind(), kp),
-        );
-    final kpB = await cryptoSystem.generateKeyPair().then(
-          (kp) => TypedKeyPair.fromKeyPair(cryptoSystem.kind(), kp),
-        );
+    final cryptoSystem =
+        await DHTRecordPool.instance.veilid.getCryptoSystem(cryptoKindVLD0);
+    final kpA = await cryptoSystem.generateKeyPair();
+    final kpB = await cryptoSystem.generateKeyPair();
 
     final secA = await cryptoSystem.generateSharedSecret(
       kpB.key,

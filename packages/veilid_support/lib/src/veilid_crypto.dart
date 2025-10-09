@@ -2,40 +2,42 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import '../../../veilid_support.dart';
-
-abstract class VeilidCrypto {
-  Future<Uint8List> encrypt(Uint8List data);
-  Future<Uint8List> decrypt(Uint8List data);
-}
+import 'crypto_codec.dart';
 
 ////////////////////////////////////
 /// Encrypted for a specific symmetric key
-class VeilidCryptoPrivate implements VeilidCrypto {
-  VeilidCryptoPrivate._(VeilidCryptoSystem cryptoSystem, SharedSecret secretKey)
-      : _cryptoSystem = cryptoSystem,
-        _secret = secretKey;
+class VeilidCryptoPrivate implements CryptoCodec {
   final VeilidCryptoSystem _cryptoSystem;
+
   final SharedSecret _secret;
 
-  static Future<VeilidCryptoPrivate> fromTypedKey(
-      TypedKey typedSecret, String domain) async {
-    final cryptoSystem =
-        await Veilid.instance.getCryptoSystem(typedSecret.kind);
-    final keyMaterial = Uint8List.fromList(
-        [...typedSecret.value.decode(), ...utf8.encode(domain)]);
-    final secretKey = await cryptoSystem.generateHash(keyMaterial);
-    return VeilidCryptoPrivate._(cryptoSystem, secretKey);
+  VeilidCryptoPrivate._(VeilidCryptoSystem cryptoSystem, SharedSecret secretKey)
+    : _cryptoSystem = cryptoSystem,
+      _secret = secretKey;
+
+  static Future<VeilidCryptoPrivate> fromSecretKey(
+    SecretKey secretKey,
+    String domain,
+  ) async {
+    final cryptoSystem = await Veilid.instance.getCryptoSystem(secretKey.kind);
+    final keyMaterial = Uint8List.fromList([
+      ...secretKey.value.toBytes(),
+      ...utf8.encode(domain),
+    ]);
+    final secretHash = await cryptoSystem.generateHash(keyMaterial);
+    final sharedSecret = SharedSecret.fromBytes(secretHash.toBytes());
+    return VeilidCryptoPrivate._(cryptoSystem, sharedSecret);
   }
 
-  static Future<VeilidCryptoPrivate> fromTypedKeyPair(
-      TypedKeyPair typedKeyPair, String domain) async {
-    final typedSecret =
-        TypedKey(kind: typedKeyPair.kind, value: typedKeyPair.secret);
-    return fromTypedKey(typedSecret, domain);
-  }
+  static Future<VeilidCryptoPrivate> fromKeyPair(
+    KeyPair keyPair,
+    String domain,
+  ) => fromSecretKey(keyPair.secret, domain);
 
   static Future<VeilidCryptoPrivate> fromSharedSecret(
-      CryptoKind kind, SharedSecret sharedSecret) async {
+    CryptoKind kind,
+    SharedSecret sharedSecret,
+  ) async {
     final cryptoSystem = await Veilid.instance.getCryptoSystem(kind);
     return VeilidCryptoPrivate._(cryptoSystem, sharedSecret);
   }
@@ -51,7 +53,7 @@ class VeilidCryptoPrivate implements VeilidCrypto {
 
 ////////////////////////////////////
 /// No encryption
-class VeilidCryptoPublic implements VeilidCrypto {
+class VeilidCryptoPublic implements CryptoCodec {
   const VeilidCryptoPublic();
 
   @override

@@ -44,10 +44,10 @@ class ContactIntroduction extends Equatable {
   final String? message;
 
   /// Record key where the contact this is not the introduction for is sharing
-  final Typed<FixedEncodedString43> dhtRecordKeyReceiving;
+  final RecordKey dhtRecordKeyReceiving;
 
   /// Record key where the contact this is the introduction for can share
-  final Typed<FixedEncodedString43> dhtRecordKeySharing;
+  final RecordKey dhtRecordKeySharing;
 
   /// Writer for the key where the contact this is the introduction for can share
   final KeyPair dhtWriterSharing;

@@ -1,6 +1,6 @@
 /// Support functions for Veilid DHT data structures
 
-library dht_support;
+library;
 
 export 'src/dht_log/barrel.dart';
 export 'src/dht_record/barrel.dart';

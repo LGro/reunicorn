@@ -163,8 +163,8 @@ CoagContactDHTSchema filterAccordingToSharingProfile({
   required Map<String, int> activeCirclesWithMemberCount,
   required DhtSettings dhtSettings,
   required List<ContactIntroduction> introductions,
-  required Typed<PublicKey>? identityKey,
-  required Typed<PublicKey>? introductionKey,
+  required PublicKey? identityKey,
+  required PublicKey? introductionKey,
   List<String> connectionAttestations = const [],
   List<String> knownPersonalContactIds = const [],
 }) =>
@@ -211,7 +211,7 @@ class ContactsRepository {
     this.initialName, {
     bool initialize = true,
     this.notificationCallback,
-    this.generateTypedKeyPair = generateTypedKeyPairBest,
+    this.generateKeyPair = generateKeyPairBest,
     this.generateSharedSecret = generateRandomSharedSecretBest,
   }) {
     if (initialize) {
@@ -270,13 +270,13 @@ class ContactsRepository {
 
   bool veilidNetworkAvailable = false;
 
-  final Map<Typed<FixedEncodedString43>, BatchInvite> _batchInvites = {};
+  final Map<RecordKey, BatchInvite> _batchInvites = {};
 
   Timer? updateFromDhtTimer;
 
-  final Future<TypedKeyPair> Function() generateTypedKeyPair;
+  final Future<KeyPair> Function() generateKeyPair;
 
-  final Future<FixedEncodedString43> Function() generateSharedSecret;
+  final Future<SharedSecret> Function() generateSharedSecret;
 
   List<CloseByMatch>? _closeByMatches;
 
@@ -309,7 +309,7 @@ class ContactsRepository {
               nameId: const [defaultInitialCircleId],
             },
           ),
-          mainKeyPair: await generateTypedKeyPair(),
+          mainKeyPair: await generateKeyPair(),
         ),
       );
     }
@@ -719,7 +719,7 @@ class ContactsRepository {
   }
 
   /// Backup everything that is needed to restore an app "account"
-  Future<(Typed<FixedEncodedString43>, FixedEncodedString43)?> backup({
+  Future<(RecordKey, SharedSecret)?> backup({
     bool waitForRecordSync = false,
   }) async {
     final profile = getProfileInfo();
@@ -778,7 +778,7 @@ class ContactsRepository {
       //         shareBackDHTKey: null,
       //         shareBackPubKey: null),
       //     DhtSettings(
-      //         myKeyPair: await generateTypedKeyPair(),
+      //         myKeyPair: await generateKeyPair(),
       //         recordKeyMeSharing: backupDhtKey,
       //         writerMeSharing:dhtWriter ,
       //         initialSecret: backupSecretKey));
@@ -818,8 +818,8 @@ class ContactsRepository {
 
   /// Restore a previously backed up Reunicorn setup
   Future<bool> restore(
-    Typed<FixedEncodedString43> recordKey,
-    FixedEncodedString43 secret, {
+    RecordKey recordKey,
+    SharedSecret secret, {
     bool awaitDhtOperations = false,
   }) async {
     // TODO: read record
@@ -999,14 +999,8 @@ class ContactsRepository {
       ),
       dhtSettings: contact.dhtSettings,
       introductions: contact.introductionsForThem,
-      identityKey: Typed<PublicKey>(
-        kind: contact.myIdentity.kind,
-        value: contact.myIdentity.key,
-      ),
-      introductionKey: Typed<PublicKey>(
-        kind: contact.myIntroductionKeyPair.kind,
-        value: contact.myIntroductionKeyPair.key,
-      ),
+      identityKey: contact.myIdentity.key,
+      introductionKey: contact.myIntroductionKeyPair.key,
       connectionAttestations: await connectionAttestations(
         contact,
         getContacts().values,
@@ -1023,7 +1017,7 @@ class ContactsRepository {
           //       membership, not list instance
           myNextKeyPair: (contact.sharedProfile != updatedSharedProfile &&
                   contact.dhtSettings.myNextKeyPair == null)
-              ? await generateTypedKeyPair()
+              ? await generateKeyPair()
               : null,
         ),
       ),
@@ -1031,7 +1025,7 @@ class ContactsRepository {
   }
 
   Future<void> _dhtRecordUpdateCallback(
-      String coagContactId, Typed<FixedEncodedString43> key) async {
+      String coagContactId, RecordKey key) async {
     final contact = getContact(coagContactId);
     if (contact == null) {
       return;
@@ -1054,10 +1048,10 @@ class ContactsRepository {
     final contact = CoagContact(
       coagContactId: Uuid().v4(),
       name: name,
-      myIdentity: await generateTypedKeyPair(),
-      myIntroductionKeyPair: await generateTypedKeyPair(),
+      myIdentity: await generateKeyPair(),
+      myIntroductionKeyPair: await generateKeyPair(),
       dhtSettings: DhtSettings(
-        myKeyPair: await generateTypedKeyPair(),
+        myKeyPair: await generateKeyPair(),
         theirNextPublicKey: pubKey,
         // If we already have a pubkey, consider the handshake complete
         theyAckHandshakeComplete: pubKey != null,
@@ -1235,14 +1229,12 @@ class ContactsRepository {
   ////////////////
   // BATCH INVITES
 
-  Map<Typed<FixedEncodedString43>, BatchInvite> getBatchInvites() => {
-        ..._batchInvites,
-      };
+  Map<RecordKey, BatchInvite> getBatchInvites() => {..._batchInvites};
 
   Future<BatchInvite?> handleBatchInvite(
     String myNameId,
-    Typed<FixedEncodedString43> recordKey,
-    FixedEncodedString43 psk,
+    RecordKey recordKey,
+    SharedSecret psk,
     int mySubkey,
     KeyPair subkeyWriter,
   ) async {
@@ -1305,7 +1297,7 @@ class ContactsRepository {
     // generate one keypair to use for all contacts in that batch
     // NOTE: This is a focused purpose key pair like the main key pair for
     //       profile link based invite flows.
-    final batchKeyPair = await generateTypedKeyPair();
+    final batchKeyPair = await generateKeyPair();
 
     // TODO: Detect if someone has already written to my subkey and raise error
 
@@ -1346,12 +1338,8 @@ class ContactsRepository {
     return batch;
   }
 
-  Future<MapEntry<String, Typed<FixedEncodedString43>>?>
-      updateFromBatchInviteSubkey(
-    BatchInvite batch,
-    VeilidCrypto crypto,
-    int subkey,
-  ) async {
+  Future<MapEntry<String, RecordKey>?> updateFromBatchInviteSubkey(
+      BatchInvite batch, CryptoCodec crypto, int subkey) async {
     final record = await DHTRecordPool.instance.openRecordRead(
       batch.recordKey,
       debugName: 'coag::read',
@@ -1404,8 +1392,8 @@ class ContactsRepository {
     if (contact == null) {
       contact = CoagContact(
         coagContactId: Uuid().v4(),
-        myIdentity: await generateTypedKeyPair(),
-        myIntroductionKeyPair: await generateTypedKeyPair(),
+        myIdentity: await generateKeyPair(),
+        myIntroductionKeyPair: await generateKeyPair(),
         name: contactSubkeyContent.name,
         dhtSettings: DhtSettings(
           theyAckHandshakeComplete: true,
@@ -1430,7 +1418,7 @@ class ContactsRepository {
     // NOTE: This is separate from the contact creation above because while we
     // usually succeed creating a new contact, initializing the sharing might
     // fail, so we need to be able to retry here.
-    MapEntry<String, Typed<FixedEncodedString43>>? updatedConnectionRecord;
+    MapEntry<String, RecordKey>? updatedConnectionRecord;
     if (!batch.myConnectionRecords.containsKey(
       contactSubkeyContent.publicKey.toString(),
     )) {
@@ -1496,8 +1484,7 @@ class ContactsRepository {
     );
 
     // iterate over other subkeys
-    final subkeyFutures =
-        <Future<MapEntry<String, Typed<FixedEncodedString43>>?>>[];
+    final subkeyFutures = <Future<MapEntry<String, RecordKey>?>>[];
     for (var subkey = 1; subkey < batch.subkeyCount; subkey++) {
       if (subkey == batch.mySubkey) {
         continue;
@@ -1513,8 +1500,7 @@ class ContactsRepository {
       myConnectionRecords: {
         ...batch.myConnectionRecords,
         ...Map.fromEntries(
-          connectionRecordUpdates
-              .whereType<MapEntry<String, Typed<FixedEncodedString43>>>(),
+          connectionRecordUpdates.whereType<MapEntry<String, RecordKey>>(),
         ),
       },
     );
@@ -1587,18 +1573,18 @@ class ContactsRepository {
       }
 
       final introForA = ContactIntroduction(
-        publicKey: contactA!.theirIntroductionKey!.value,
+        publicKey: contactA!.theirIntroductionKey!,
         otherName: nameB,
-        otherPublicKey: contactB!.theirIntroductionKey!.value,
+        otherPublicKey: contactB!.theirIntroductionKey!,
         dhtRecordKeyReceiving: recordKeyB,
         dhtRecordKeySharing: recordKeyA,
         dhtWriterSharing: writerA,
         message: message,
       );
       final introForB = ContactIntroduction(
-        publicKey: contactB.theirIntroductionKey!.value,
+        publicKey: contactB.theirIntroductionKey!,
         otherName: nameA,
-        otherPublicKey: contactA.theirIntroductionKey!.value,
+        otherPublicKey: contactA.theirIntroductionKey!,
         dhtRecordKeyReceiving: recordKeyA,
         dhtRecordKeySharing: recordKeyB,
         dhtWriterSharing: writerB,
@@ -1656,8 +1642,8 @@ class ContactsRepository {
     final contact = CoagContact(
       coagContactId: Uuid().v4(),
       name: introduction.otherName,
-      myIdentity: await generateTypedKeyPair(),
-      myIntroductionKeyPair: await generateTypedKeyPair(),
+      myIdentity: await generateKeyPair(),
+      myIntroductionKeyPair: await generateKeyPair(),
       dhtSettings: DhtSettings(
         myKeyPair: myKeyPair,
         theirNextPublicKey: introduction.otherPublicKey,
@@ -1678,7 +1664,7 @@ class ContactsRepository {
     // Rotate introduction key pair for introducer
     await saveContact(
       introducer.copyWith(
-        myIntroductionKeyPair: await generateTypedKeyPair(),
+        myIntroductionKeyPair: await generateKeyPair(),
         myPreviousIntroductionKeyPairs: [
           introducer.myIntroductionKeyPair,
           ...introducer.myPreviousIntroductionKeyPairs,

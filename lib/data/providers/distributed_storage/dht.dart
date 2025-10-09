@@ -26,7 +26,7 @@ String? tryUtf8Decode(Uint8List? content) {
 
 Future<Uint8List> getChunkedPayload(
   DHTRecord record,
-  VeilidCrypto crypto,
+  CryptoCodec crypto,
   DHTRecordRefreshMode refreshMode, {
   required int numChunks,
   int chunkOffset = 0,
@@ -47,7 +47,7 @@ Future<Uint8List> getChunkedPayload(
 /// corresponding subkeys
 Future<(String?, Uint8List?)> _getJsonProfileAndPictureFromRecord(
   DHTRecord record,
-  VeilidCrypto crypto,
+  CryptoCodec crypto,
   DHTRecordRefreshMode refreshMode,
 ) async {
   // Get main profile content from first subkey
@@ -87,7 +87,7 @@ Iterable<Uint8List> chopPayloadChunks(
 DhtSettings rotateKeysInDhtSettings(
   DhtSettings settings,
   PublicKey? usedPublicKey,
-  TypedKeyPair? usedKeyPair,
+  KeyPair? usedKeyPair,
   bool ackHandshakeJustCompleted,
 ) {
   // If we have received handshake complete signal for the first time, or our
@@ -140,11 +140,11 @@ DhtSettings updateDhtSettingsFromContactUpdate(
   }
 
   // Try deserializing shareBackDhtKey
-  late Typed<FixedEncodedString43>? shareBackDhtKey;
+  late RecordKey? shareBackDhtKey;
   try {
     shareBackDhtKey =
         (update.shareBackDHTKey != null && update.shareBackDHTKey != 'null')
-            ? Typed<FixedEncodedString43>.fromString(update.shareBackDHTKey!)
+            ? RecordKey.fromString(update.shareBackDHTKey!)
             : null;
   } catch (e) {
     debugPrint('Error decoding share back dht key: $e');
@@ -178,13 +178,11 @@ DhtSettings updateDhtSettingsFromContactUpdate(
 }
 
 class VeilidDhtStorage extends DistributedStorage {
-  Set<Typed<FixedEncodedString43>> watchedRecords = {};
+  Set<RecordKey> watchedRecords = {};
 
   /// Create an empty DHT record, return key and writer in string representation
   @override
-  Future<(Typed<FixedEncodedString43>, KeyPair)> createRecord({
-    String? writer,
-  }) async {
+  Future<(RecordKey, KeyPair)> createRecord({String? writer}) async {
     final record = await DHTRecordPool.instance.createRecord(
       debugName: 'coag::create',
       // Create subkeys allowing max size of 32KiB per subkey given max record
@@ -204,20 +202,20 @@ class VeilidDhtStorage extends DistributedStorage {
 
   /// Read DHT record, return decrypted content
   @override
-  Future<(PublicKey?, TypedKeyPair?, String?, Uint8List?)> readRecord({
-    required Typed<FixedEncodedString43> recordKey,
-    TypedKeyPair? keyPair,
-    TypedKeyPair? nextKeyPair,
-    SecretKey? psk,
+  Future<(PublicKey?, KeyPair?, String?, Uint8List?)> readRecord({
+    required RecordKey recordKey,
+    KeyPair? keyPair,
+    KeyPair? nextKeyPair,
+    SharedSecret? psk,
     PublicKey? publicKey,
     PublicKey? nextPublicKey,
-    Iterable<TypedKeyPair> myMiscKeyPairs = const [],
+    Iterable<KeyPair> myMiscKeyPairs = const [],
     int maxRetries = 3,
     DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.network,
   }) async {
     // Derive all available DH secrets to try in addition to the pre shared key
     final domain = utf8.encode('dht');
-    final secrets = <(PublicKey?, TypedKeyPair?, SecretKey)>[
+    final secrets = <(PublicKey?, KeyPair?, SharedSecret)>[
       if (psk != null) (null, null, psk),
       if (publicKey != null && keyPair != null)
         (
@@ -450,9 +448,8 @@ class VeilidDhtStorage extends DistributedStorage {
   @override
   Future<void> watchRecord(
     String coagContactId,
-    Typed<FixedEncodedString43> key,
-    Future<void> Function(String coagContactId, Typed<FixedEncodedString43> key)
-        onNetworkUpdate,
+    RecordKey key,
+    Future<void> Function(String coagContactId, RecordKey key) onNetworkUpdate,
   ) async {
     // Skip already watched records to avoid adding multiple callbacks
     if (watchedRecords.contains(key)) {
@@ -474,7 +471,7 @@ class VeilidDhtStorage extends DistributedStorage {
   @override
   Future<CoagContact?> getContact(
     CoagContact contact, {
-    Iterable<TypedKeyPair> myMiscKeyPairs = const [],
+    Iterable<KeyPair> myMiscKeyPairs = const [],
     bool useLocalCache = false,
   }) async {
     if (contact.dhtSettings.recordKeyThemSharing == null) {
@@ -544,14 +541,12 @@ class VeilidDhtStorage extends DistributedStorage {
   @override
   Future<void> updateBackupRecord(
     AccountBackup backup,
-    Typed<FixedEncodedString43> recordKey,
+    RecordKey recordKey,
     KeyPair writer,
-    FixedEncodedString43 secret,
+    SharedSecret secret,
   ) async {
-    final crypto = await VeilidCryptoPrivate.fromSharedSecret(
-      recordKey.kind,
-      secret,
-    );
+    final crypto =
+        await VeilidCryptoPrivate.fromSharedSecret(recordKey.kind, secret);
     final record = await DHTRecordPool.instance.openRecordWrite(
       recordKey,
       writer,
@@ -573,8 +568,8 @@ class VeilidDhtStorage extends DistributedStorage {
   /// Read backup DHT record, return decrypted content
   @override
   Future<String?> readBackupRecord(
-    Typed<FixedEncodedString43> recordKey,
-    FixedEncodedString43 secret, {
+    RecordKey recordKey,
+    SharedSecret secret, {
     int maxRetries = 3,
     DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.network,
   }) async {

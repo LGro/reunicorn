@@ -6,6 +6,10 @@ part of 'dht_log.dart';
 abstract class DHTLogReadOperations implements DHTRandomRead {}
 
 class _DHTLogRead implements DHTLogReadOperations {
+  ////////////////////////////////////////////////////////////////////////////
+  // Fields
+  final _DHTLogSpine _spine;
+
   _DHTLogRead._(_DHTLogSpine spine) : _spine = spine;
 
   @override
@@ -21,14 +25,18 @@ class _DHTLogRead implements DHTLogReadOperations {
       return null;
     }
 
-    return lookup.scope((sa) => sa.operate((read) async {
-          if (lookup.pos >= read.length) {
-            veilidLoggy.error('DHTLog shortarray read @ ${lookup.pos}'
-                ' >= length ${read.length}');
-            return null;
-          }
-          return read.get(lookup.pos, forceRefresh: forceRefresh);
-        }));
+    return lookup.scope(
+      (sa) => sa.operate((read) async {
+        if (lookup.pos >= read.length) {
+          veilidLoggy.error(
+            'DHTLog shortarray read @ ${lookup.pos}'
+            ' >= length ${read.length}',
+          );
+          return null;
+        }
+        return read.get(lookup.pos, forceRefresh: forceRefresh);
+      }),
+    );
   }
 
   (int, int) _clampStartLen(int start, int? len) {
@@ -46,23 +54,28 @@ class _DHTLogRead implements DHTLogReadOperations {
   }
 
   @override
-  Future<List<Uint8List>?> getRange(int start,
-      {int? length, bool forceRefresh = false}) async {
+  Future<List<Uint8List>?> getRange(
+    int start, {
+    int? length,
+    bool forceRefresh = false,
+  }) async {
     final out = <Uint8List>[];
     (start, length) = _clampStartLen(start, length);
 
     final chunks = Iterable<int>.generate(length)
         .slices(kMaxDHTConcurrency)
-        .map((chunk) => chunk.map((pos) async {
-              try {
-                return await get(pos + start, forceRefresh: forceRefresh);
-                // Need some way to debug ParallelWaitError
-                // ignore: avoid_catches_without_on_clauses
-              } catch (e, st) {
-                veilidLoggy.error('$e\n$st\n');
-                rethrow;
-              }
-            }));
+        .map(
+          (chunk) => chunk.map((pos) async {
+            try {
+              return await get(pos + start, forceRefresh: forceRefresh);
+              // Need some way to debug ParallelWaitError
+              // ignore: avoid_catches_without_on_clauses
+            } catch (e, st) {
+              veilidLoggy.error('$e\n$st\n');
+              rethrow;
+            }
+          }),
+        );
 
     for (final chunk in chunks) {
       var elems = await chunk.wait;
@@ -99,22 +112,26 @@ class _DHTLogRead implements DHTLogReadOperations {
 
       // Check each segment for offline positions
       var foundOffline = false;
-      await lookup.scope((sa) => sa.operate((read) async {
-            final segmentOffline = await read.getOfflinePositions();
+      await lookup.scope(
+        (sa) => sa.operate((read) async {
+          final segmentOffline = await read.getOfflinePositions();
 
-            // For each shortarray segment go through their segment positions
-            // in reverse order and see if they are offline
-            for (var segmentPos = lookup.pos;
-                segmentPos >= 0 && pos >= 0;
-                segmentPos--, pos--) {
-              // If the position in the segment is offline, then
-              // mark the position in the log as offline
-              if (segmentOffline.contains(segmentPos)) {
-                positionOffline.add(pos);
-                foundOffline = true;
-              }
+          // For each shortarray segment go through their segment positions
+          // in reverse order and see if they are offline
+          for (
+            var segmentPos = lookup.pos;
+            segmentPos >= 0 && pos >= 0;
+            segmentPos--, pos--
+          ) {
+            // If the position in the segment is offline, then
+            // mark the position in the log as offline
+            if (segmentOffline.contains(segmentPos)) {
+              positionOffline.add(pos);
+              foundOffline = true;
             }
-          }));
+          }
+        }),
+      );
       // If we found nothing offline in this segment then we can stop
       if (!foundOffline) {
         break;
@@ -123,8 +140,4 @@ class _DHTLogRead implements DHTLogReadOperations {
 
     return positionOffline;
   }
-
-  ////////////////////////////////////////////////////////////////////////////
-  // Fields
-  final _DHTLogSpine _spine;
 }

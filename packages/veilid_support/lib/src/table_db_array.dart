@@ -6,41 +6,76 @@ import 'package:async_tools/async_tools.dart';
 import 'package:charcode/charcode.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
-import 'package:protobuf/protobuf.dart';
 
 import '../veilid_support.dart';
 import 'veilid_log.dart';
 
 @immutable
 class TableDBArrayUpdate extends Equatable {
-  const TableDBArrayUpdate(
-      {required this.headDelta, required this.tailDelta, required this.length})
-      : assert(length >= 0, 'should never have negative length');
   final int headDelta;
+
   final int tailDelta;
+
   final int length;
+
+  const TableDBArrayUpdate({
+    required this.headDelta,
+    required this.tailDelta,
+    required this.length,
+  }) : assert(length >= 0, 'should never have negative length');
 
   @override
   List<Object?> get props => [headDelta, tailDelta, length];
 }
 
 class _TableDBArrayBase {
-  _TableDBArrayBase({
-    required String table,
-    required VeilidCrypto crypto,
-  })  : _table = table,
-        _crypto = crypto {
+  ////////////////////////////////////////////////////////////
+  // Private implementation
+
+  static final _headKey = Uint8List.fromList([$_, $H, $E, $A, $D]);
+
+  final String _table;
+
+  late final VeilidTableDB _tableDB;
+
+  var _open = true;
+
+  var _initDone = false;
+
+  final CryptoCodec _crypto;
+
+  final WaitSet<void, void> _initWait = WaitSet();
+
+  final _mutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
+
+  // Change tracking
+  var _headDelta = 0;
+
+  var _tailDelta = 0;
+
+  // Head state
+  var _length = 0;
+
+  var _nextFree = 0;
+
+  var _maxEntry = 0;
+
+  static const _indexStride = 16384;
+
+  final List<(int, Uint8List)> _chunkCache = [];
+
+  final Map<int, Uint8List> _dirtyChunks = {};
+
+  static const _chunkCacheLength = 3;
+
+  final StreamController<TableDBArrayUpdate> _changeStream =
+      StreamController.broadcast();
+
+  _TableDBArrayBase({required String table, required CryptoCodec crypto})
+    : _table = table,
+      _crypto = crypto {
     _initWait.add(_init);
   }
-
-  // static Future<TableDBArray> make({
-  //   required String table,
-  //   required VeilidCrypto crypto,
-  // }) async {
-  //   final out = TableDBArray(table: table, crypto: crypto);
-  //   await out._initWait();
-  //   return out;
-  // }
 
   Future<void> initWait() async {
     await _initWait();
@@ -81,8 +116,8 @@ class _TableDBArrayBase {
   }
 
   Future<StreamSubscription<void>> listen(
-          void Function(TableDBArrayUpdate) onChanged) async =>
-      _changeStream.stream.listen(onChanged);
+    void Function(TableDBArrayUpdate) onChanged,
+  ) async => _changeStream.stream.listen(onChanged);
 
   ////////////////////////////////////////////////////////////
   // Public interface
@@ -145,8 +180,11 @@ class _TableDBArrayBase {
     return _writeTransaction((t) => _removeInner(t, pos, out: out));
   }
 
-  Future<void> _removeRange(int start, int end,
-      {Output<List<Uint8List>>? out}) async {
+  Future<void> _removeRange(
+    int start,
+    int end, {
+    Output<List<Uint8List>>? out,
+  }) async {
     await _initWait();
     return _writeTransaction((t) => _removeRangeInner(t, start, end, out: out));
   }
@@ -182,7 +220,9 @@ class _TableDBArrayBase {
   }
 
   Future<void> _addAllInner(
-      VeilidTableDBTransaction t, List<Uint8List> values) async {
+    VeilidTableDBTransaction t,
+    List<Uint8List> values,
+  ) async {
     var pos = _length;
     _length += values.length;
     _tailDelta += values.length;
@@ -198,7 +238,10 @@ class _TableDBArrayBase {
   }
 
   Future<void> _insertInner(
-      VeilidTableDBTransaction t, int pos, Uint8List value) async {
+    VeilidTableDBTransaction t,
+    int pos,
+    Uint8List value,
+  ) async {
     if (pos == _length) {
       return _addInner(t, value);
     }
@@ -215,7 +258,10 @@ class _TableDBArrayBase {
   }
 
   Future<void> _insertAllInner(
-      VeilidTableDBTransaction t, int pos, List<Uint8List> values) async {
+    VeilidTableDBTransaction t,
+    int pos,
+    List<Uint8List> values,
+  ) async {
     if (pos == _length) {
       return _addAllInner(t, values);
     }
@@ -282,8 +328,11 @@ class _TableDBArrayBase {
     return out;
   }
 
-  Future<void> _removeInner(VeilidTableDBTransaction t, int pos,
-      {Output<Uint8List>? out}) async {
+  Future<void> _removeInner(
+    VeilidTableDBTransaction t,
+    int pos, {
+    Output<Uint8List>? out,
+  }) async {
     if (pos < 0 || pos >= _length) {
       throw IndexError.withLength(pos, _length);
     }
@@ -298,8 +347,12 @@ class _TableDBArrayBase {
     await _removeIndexEntry(pos);
   }
 
-  Future<void> _removeRangeInner(VeilidTableDBTransaction t, int start, int end,
-      {Output<List<Uint8List>>? out}) async {
+  Future<void> _removeRangeInner(
+    VeilidTableDBTransaction t,
+    int start,
+    int end, {
+    Output<List<Uint8List>>? out,
+  }) async {
     final length = end - start;
     if (length < 0) {
       throw StateError('length should not be negative');
@@ -327,59 +380,63 @@ class _TableDBArrayBase {
     await _removeIndexEntries(start, length);
   }
 
-  ////////////////////////////////////////////////////////////
-  // Private implementation
-
-  static final _headKey = Uint8List.fromList([$_, $H, $E, $A, $D]);
   static Uint8List _entryKey(int k) =>
       (ByteData(4)..setUint32(0, k)).buffer.asUint8List();
+
   static Uint8List _chunkKey(int n) =>
       (ByteData(2)..setUint16(0, n)).buffer.asUint8List();
 
   Future<T> _writeTransaction<T>(
-          Future<T> Function(VeilidTableDBTransaction) closure) =>
-      _mutex.protect(() async {
-        if (!_open) {
-          throw StateError('not open');
-        }
+    Future<T> Function(VeilidTableDBTransaction) closure,
+  ) => _mutex.protect(() async {
+    if (!_open) {
+      throw StateError('not open');
+    }
 
-        final oldLength = _length;
-        final oldNextFree = _nextFree;
-        final oldMaxEntry = _maxEntry;
-        final oldHeadDelta = _headDelta;
-        final oldTailDelta = _tailDelta;
-        try {
-          final out = await transactionScope(_tableDB, (t) async {
-            final out = await closure(t);
-            await _saveHead(t);
-            await _flushDirtyChunks(t);
-            // Send change
-            _changeStream.add(TableDBArrayUpdate(
-                headDelta: _headDelta, tailDelta: _tailDelta, length: _length));
-            _headDelta = 0;
-            _tailDelta = 0;
-            return out;
-          });
-
-          return out;
-        } on Exception {
-          // restore head
-          _length = oldLength;
-          _nextFree = oldNextFree;
-          _maxEntry = oldMaxEntry;
-          _headDelta = oldHeadDelta;
-          _tailDelta = oldTailDelta;
-          // invalidate caches because they could have been written to
-          _chunkCache.clear();
-          _dirtyChunks.clear();
-          // propagate exception
-          rethrow;
-        }
+    final oldLength = _length;
+    final oldNextFree = _nextFree;
+    final oldMaxEntry = _maxEntry;
+    final oldHeadDelta = _headDelta;
+    final oldTailDelta = _tailDelta;
+    try {
+      final out = await transactionScope(_tableDB, (t) async {
+        final out = await closure(t);
+        await _saveHead(t);
+        await _flushDirtyChunks(t);
+        // Send change
+        _changeStream.add(
+          TableDBArrayUpdate(
+            headDelta: _headDelta,
+            tailDelta: _tailDelta,
+            length: _length,
+          ),
+        );
+        _headDelta = 0;
+        _tailDelta = 0;
+        return out;
       });
 
+      return out;
+    } on Exception {
+      // restore head
+      _length = oldLength;
+      _nextFree = oldNextFree;
+      _maxEntry = oldMaxEntry;
+      _headDelta = oldHeadDelta;
+      _tailDelta = oldTailDelta;
+      // invalidate caches because they could have been written to
+      _chunkCache.clear();
+      _dirtyChunks.clear();
+      // propagate exception
+      rethrow;
+    }
+  });
+
   Future<void> _storeEntry(
-          VeilidTableDBTransaction t, int entry, Uint8List value) async =>
-      t.store(0, _entryKey(entry), await _crypto.encrypt(value));
+    VeilidTableDBTransaction t,
+    int entry,
+    Uint8List value,
+  ) async => t.store(0, _entryKey(entry), await _crypto.encrypt(value));
 
   Future<Uint8List?> _loadEntry(int entry) async {
     final encryptedValue = await _tableDB.load(0, _entryKey(entry));
@@ -441,8 +498,8 @@ class _TableDBArrayBase {
 
       final srcChunk =
           (lastSrcChunk != null && (lastSrcChunk.$1 == srcChunkNumber))
-              ? lastSrcChunk.$2
-              : await _loadIndexChunk(srcChunkNumber);
+          ? lastSrcChunk.$2
+          : await _loadIndexChunk(srcChunkNumber);
       _dirtyChunks[srcChunkNumber] = srcChunk;
       lastSrcChunk = (srcChunkNumber, srcChunk);
 
@@ -452,14 +509,18 @@ class _TableDBArrayBase {
 
       final destChunk =
           (lastDestChunk != null && (lastDestChunk.$1 == destChunkNumber))
-              ? lastDestChunk.$2
-              : await _loadIndexChunk(destChunkNumber);
+          ? lastDestChunk.$2
+          : await _loadIndexChunk(destChunkNumber);
       _dirtyChunks[destChunkNumber] = destChunk;
       lastDestChunk = (destChunkNumber, destChunk);
 
       final toCopy = min(srcLength, destLength);
-      destChunk.setRange((destIndex - (toCopy - 1)) * 4, (destIndex + 1) * 4,
-          srcChunk, (srcIndex - (toCopy - 1)) * 4);
+      destChunk.setRange(
+        (destIndex - (toCopy - 1)) * 4,
+        (destIndex + 1) * 4,
+        srcChunk,
+        (srcIndex - (toCopy - 1)) * 4,
+      );
 
       dest -= toCopy;
       src -= toCopy;
@@ -502,8 +563,8 @@ class _TableDBArrayBase {
 
       final srcChunk =
           (lastSrcChunk != null && (lastSrcChunk.$1 == srcChunkNumber))
-              ? lastSrcChunk.$2
-              : await _loadIndexChunk(srcChunkNumber);
+          ? lastSrcChunk.$2
+          : await _loadIndexChunk(srcChunkNumber);
       _dirtyChunks[srcChunkNumber] = srcChunk;
       lastSrcChunk = (srcChunkNumber, srcChunk);
 
@@ -513,14 +574,18 @@ class _TableDBArrayBase {
 
       final destChunk =
           (lastDestChunk != null && (lastDestChunk.$1 == destChunkNumber))
-              ? lastDestChunk.$2
-              : await _loadIndexChunk(destChunkNumber);
+          ? lastDestChunk.$2
+          : await _loadIndexChunk(destChunkNumber);
       _dirtyChunks[destChunkNumber] = destChunk;
       lastDestChunk = (destChunkNumber, destChunk);
 
       final toCopy = min(srcLength, destLength);
       destChunk.setRange(
-          destIndex * 4, (destIndex + toCopy) * 4, srcChunk, srcIndex * 4);
+        destIndex * 4,
+        (destIndex + toCopy) * 4,
+        srcChunk,
+        srcIndex * 4,
+      );
 
       dest += toCopy;
       src += toCopy;
@@ -616,43 +681,16 @@ class _TableDBArrayBase {
     await t.store(0, _entryKey(entry), b.buffer.asUint8List());
     _nextFree = entry;
   }
-
-  final String _table;
-  late final VeilidTableDB _tableDB;
-  var _open = true;
-  var _initDone = false;
-  final VeilidCrypto _crypto;
-  final WaitSet<void, void> _initWait = WaitSet();
-  final _mutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
-
-  // Change tracking
-  var _headDelta = 0;
-  var _tailDelta = 0;
-
-  // Head state
-  var _length = 0;
-  var _nextFree = 0;
-  var _maxEntry = 0;
-  static const _indexStride = 16384;
-  final List<(int, Uint8List)> _chunkCache = [];
-  final Map<int, Uint8List> _dirtyChunks = {};
-  static const _chunkCacheLength = 3;
-
-  final StreamController<TableDBArrayUpdate> _changeStream =
-      StreamController.broadcast();
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 class TableDBArray extends _TableDBArrayBase {
-  TableDBArray({
-    required super.table,
-    required super.crypto,
-  });
+  TableDBArray({required super.table, required super.crypto});
 
   static Future<TableDBArray> make({
     required String table,
-    required VeilidCrypto crypto,
+    required CryptoCodec crypto,
   }) async {
     final out = TableDBArray(table: table, crypto: crypto);
     await out._initWait();
@@ -671,10 +709,7 @@ class TableDBArray extends _TableDBArrayBase {
   Future<void> insertAll(int pos, List<Uint8List> values) =>
       _insertAll(pos, values);
 
-  Future<Uint8List?> get(
-    int pos,
-  ) =>
-      _get(pos);
+  Future<Uint8List?> get(int pos) => _get(pos);
 
   Future<List<Uint8List>> getRange(int start, [int? end]) =>
       _getRange(start, end);
@@ -682,25 +717,34 @@ class TableDBArray extends _TableDBArrayBase {
   Future<void> remove(int pos, {Output<Uint8List>? out}) =>
       _remove(pos, out: out);
 
-  Future<void> removeRange(int start, int end,
-          {Output<List<Uint8List>>? out}) =>
-      _removeRange(start, end, out: out);
+  Future<void> removeRange(
+    int start,
+    int end, {
+    Output<List<Uint8List>>? out,
+  }) => _removeRange(start, end, out: out);
 }
 //////////////////////////////////////////////////////////////////////////////
 
 class TableDBArrayJson<T> extends _TableDBArrayBase {
-  TableDBArrayJson(
-      {required super.table,
-      required super.crypto,
-      required T Function(dynamic) fromJson})
-      : _fromJson = fromJson;
+  ////////////////////////////////////////////////////////////////////////////
+  final T Function(dynamic) _fromJson;
 
-  static Future<TableDBArrayJson<T>> make<T>(
-      {required String table,
-      required VeilidCrypto crypto,
-      required T Function(dynamic) fromJson}) async {
-    final out =
-        TableDBArrayJson<T>(table: table, crypto: crypto, fromJson: fromJson);
+  TableDBArrayJson({
+    required super.table,
+    required super.crypto,
+    required T Function(dynamic) fromJson,
+  }) : _fromJson = fromJson;
+
+  static Future<TableDBArrayJson<T>> make<T>({
+    required String table,
+    required CryptoCodec crypto,
+    required T Function(dynamic) fromJson,
+  }) async {
+    final out = TableDBArrayJson<T>(
+      table: table,
+      crypto: crypto,
+      fromJson: fromJson,
+    );
     await out._initWait();
     return out;
   }
@@ -718,9 +762,7 @@ class TableDBArrayJson<T> extends _TableDBArrayBase {
   Future<void> insertAll(int pos, List<T> values) =>
       _insertAll(pos, values.map(jsonEncodeBytes).toList());
 
-  Future<T> get(
-    int pos,
-  ) =>
+  Future<T> get(int pos) =>
       _get(pos).then((out) => jsonDecodeBytes(_fromJson, out));
 
   Future<List<T>> getRange(int start, [int? end]) =>
@@ -739,30 +781,34 @@ class TableDBArrayJson<T> extends _TableDBArrayBase {
     await _removeRange(start, end, out: outJson);
     if (outJson != null && outJson.value != null) {
       out!.save(
-          outJson.value!.map((x) => jsonDecodeBytes(_fromJson, x)).toList());
+        outJson.value!.map((x) => jsonDecodeBytes(_fromJson, x)).toList(),
+      );
     }
   }
-
-  ////////////////////////////////////////////////////////////////////////////
-  final T Function(dynamic) _fromJson;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
-class TableDBArrayProtobuf<T extends GeneratedMessage>
-    extends _TableDBArrayBase {
-  TableDBArrayProtobuf(
-      {required super.table,
-      required super.crypto,
-      required T Function(List<int>) fromBuffer})
-      : _fromBuffer = fromBuffer;
+class TableDBArrayMigrated<T> extends _TableDBArrayBase {
+  ////////////////////////////////////////////////////////////////////////////
+  final MigrationCodec<T> migrationCodec;
 
-  static Future<TableDBArrayProtobuf<T>> make<T extends GeneratedMessage>(
-      {required String table,
-      required VeilidCrypto crypto,
-      required T Function(List<int>) fromBuffer}) async {
-    final out = TableDBArrayProtobuf<T>(
-        table: table, crypto: crypto, fromBuffer: fromBuffer);
+  TableDBArrayMigrated({
+    required super.table,
+    required super.crypto,
+    required this.migrationCodec,
+  });
+
+  static Future<TableDBArrayMigrated<T>> make<T>({
+    required String table,
+    required CryptoCodec crypto,
+    required MigrationCodec<T> migrationCodec,
+  }) async {
+    final out = TableDBArrayMigrated<T>(
+      table: table,
+      crypto: crypto,
+      migrationCodec: migrationCodec,
+    );
     await out._initWait();
     return out;
   }
@@ -770,29 +816,30 @@ class TableDBArrayProtobuf<T extends GeneratedMessage>
   ////////////////////////////////////////////////////////////
   // Public interface
 
-  Future<void> add(T value) => _add(value.writeToBuffer());
+  Future<void> add(T value) => _add(migrationCodec.toBytes(value));
 
   Future<void> addAll(List<T> values) =>
-      _addAll(values.map((x) => x.writeToBuffer()).toList());
+      _addAll(values.map(migrationCodec.toBytes).toList());
 
-  Future<void> insert(int pos, T value) => _insert(pos, value.writeToBuffer());
+  Future<void> insert(int pos, T value) =>
+      _insert(pos, migrationCodec.toBytes(value));
 
   Future<void> insertAll(int pos, List<T> values) =>
-      _insertAll(pos, values.map((x) => x.writeToBuffer()).toList());
+      _insertAll(pos, values.map(migrationCodec.toBytes).toList());
 
-  Future<T> get(
-    int pos,
-  ) =>
-      _get(pos).then(_fromBuffer);
+  Future<T> get(int pos) =>
+      _get(pos).then((x) => migrationCodec.fromBytes(x).value);
 
-  Future<List<T>> getRange(int start, [int? end]) =>
-      _getRange(start, end).then((out) => out.map(_fromBuffer).toList());
+  Future<List<T>> getRange(int start, [int? end]) => _getRange(
+    start,
+    end,
+  ).then((out) => out.map((x) => migrationCodec.fromBytes(x).value).toList());
 
   Future<void> remove(int pos, {Output<T>? out}) async {
     final outProto = (out != null) ? Output<Uint8List>() : null;
     await _remove(pos, out: outProto);
     if (outProto != null && outProto.value != null) {
-      out!.save(_fromBuffer(outProto.value!));
+      out!.save(migrationCodec.fromBytes(outProto.value!).value);
     }
   }
 
@@ -800,10 +847,9 @@ class TableDBArrayProtobuf<T extends GeneratedMessage>
     final outProto = (out != null) ? Output<List<Uint8List>>() : null;
     await _removeRange(start, end, out: outProto);
     if (outProto != null && outProto.value != null) {
-      out!.save(outProto.value!.map(_fromBuffer).toList());
+      out!.save(
+        outProto.value!.map((x) => migrationCodec.fromBytes(x).value).toList(),
+      );
     }
   }
-
-  ////////////////////////////////////////////////////////////////////////////
-  final T Function(List<int>) _fromBuffer;
 }

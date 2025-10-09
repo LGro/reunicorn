@@ -1,7 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:protobuf/protobuf.dart';
-
 import '../../../veilid_support.dart';
 
 ////////////////////////////////////////////////////////////////////////////
@@ -34,22 +32,52 @@ abstract class DHTInsertRemove {
 }
 
 extension DHTInsertRemoveExt on DHTInsertRemove {
+  /// Like insert but also encodes the input value as JSON
+  Future<void> insertJson<T>(int pos, T newValue) =>
+      insert(pos, jsonEncodeBytes(newValue));
+
+  /// Convenience function:
+  /// Like insert but also migrates the input value
+  Future<void> insertMigrated<T>(
+    MigrationCodec<T> migrationCodec,
+    int pos,
+    T newValue,
+  ) => insert(pos, migrationCodec.toBytes(newValue));
+
+  /// Convenience function:
+  /// Like insertAll but also encodes the input values as JSON
+  Future<void> insertAllJson<T>(int pos, List<T> values) =>
+      insertAll(pos, values.map(jsonEncodeBytes).toList());
+
+  /// Convenience function:
+  /// Like insertAll but also migrates the input values
+  Future<void> insertAllMigrated<T>(
+    MigrationCodec<T> migrationCodec,
+    int pos,
+    List<T> values,
+  ) => insertAll(pos, values.map((x) => migrationCodec.toBytes(x)).toList());
+
   /// Convenience function:
   /// Like remove but also parses the returned element as JSON
-  Future<void> removeJson<T>(T Function(dynamic) fromJson, int pos,
-      {Output<T>? output}) async {
+  Future<void> removeJson<T>(
+    T Function(dynamic) fromJson,
+    int pos, {
+    Output<T>? output,
+  }) async {
     final outValueBytes = output == null ? null : Output<Uint8List>();
     await remove(pos, output: outValueBytes);
     output.mapSave(outValueBytes, (b) => jsonDecodeBytes(fromJson, b));
   }
 
   /// Convenience function:
-  /// Like remove but also parses the returned element as JSON
-  Future<void> removeProtobuf<T extends GeneratedMessage>(
-      T Function(List<int>) fromBuffer, int pos,
-      {Output<T>? output}) async {
+  /// Like remove but also migrates the returned element
+  Future<void> removeMigrated<T>(
+    MigrationCodec<T> migrationCodec,
+    int pos, {
+    Output<MigratedValue<T>>? output,
+  }) async {
     final outValueBytes = output == null ? null : Output<Uint8List>();
     await remove(pos, output: outValueBytes);
-    output.mapSave(outValueBytes, fromBuffer);
+    output.mapSave(outValueBytes, migrationCodec.fromBytes);
   }
 }

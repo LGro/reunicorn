@@ -12,22 +12,36 @@ import 'veilid_log.dart';
 const _ksfSyncAdd = 'ksfSyncAdd';
 
 class PersistentQueue<T> with TableDBBackedFromBuffer<IList<T>> {
+  final String _table;
+  final String _key;
+  final T Function(Uint8List) _fromBuffer;
+  final Uint8List Function(T) _toBuffer;
+  bool _deleteOnClose;
+  final WaitSet<void, void> _initWait = WaitSet();
+  final _queueMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
+  var _queue = IList<T>.empty();
+  final Future<void> Function(IList<T>) _closure;
+  final void Function(Object, StackTrace)? _onError;
+  Completer<void>? _queueDoneCompleter;
+  final StreamController<bool> _queueReady = StreamController();
+  final _sspQueueReady = SingleStateProcessor<bool>();
+
   //
-  PersistentQueue(
-      {required String table,
-      required String key,
-      required T Function(Uint8List) fromBuffer,
-      required Uint8List Function(T) toBuffer,
-      required Future<void> Function(IList<T>) closure,
-      bool deleteOnClose = false,
-      void Function(Object, StackTrace)? onError})
-      : _table = table,
-        _key = key,
-        _fromBuffer = fromBuffer,
-        _toBuffer = toBuffer,
-        _closure = closure,
-        _deleteOnClose = deleteOnClose,
-        _onError = onError {
+  PersistentQueue({
+    required String table,
+    required String key,
+    required T Function(Uint8List) fromBuffer,
+    required Uint8List Function(T) toBuffer,
+    required Future<void> Function(IList<T>) closure,
+    bool deleteOnClose = false,
+    void Function(Object, StackTrace)? onError,
+  }) : _table = table,
+       _key = key,
+       _fromBuffer = fromBuffer,
+       _toBuffer = toBuffer,
+       _closure = closure,
+       _deleteOnClose = deleteOnClose,
+       _onError = onError {
     _initWait.add(_init);
   }
 
@@ -196,18 +210,20 @@ class PersistentQueue<T> with TableDBBackedFromBuffer<IList<T>> {
           out = out.add(item);
         } on Exception catch (e, st) {
           veilidLoggy.debug(
-              'Dropping invalid item from persistent queue: $bytes\n'
-              'tableName=${tableName()}:tableKeyName=${tableKeyName()}\n',
-              e,
-              st);
+            'Dropping invalid item from persistent queue: $bytes\n'
+            'tableName=${tableName()}:tableKeyName=${tableKeyName()}\n',
+            e,
+            st,
+          );
         }
       }
     } on Exception catch (e, st) {
       veilidLoggy.debug(
-          'Dropping remainder of invalid persistent queue\n'
-          'tableName=${tableName()}:tableKeyName=${tableKeyName()}\n',
-          e,
-          st);
+        'Dropping remainder of invalid persistent queue\n'
+        'tableName=${tableName()}:tableKeyName=${tableKeyName()}\n',
+        e,
+        st,
+      );
     }
     return out;
   }
@@ -224,19 +240,4 @@ class PersistentQueue<T> with TableDBBackedFromBuffer<IList<T>> {
     }
     return writer.toBytes();
   }
-
-  final String _table;
-  final String _key;
-  final T Function(Uint8List) _fromBuffer;
-  final Uint8List Function(T) _toBuffer;
-  bool _deleteOnClose;
-  final WaitSet<void, void> _initWait = WaitSet();
-  final _queueMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
-  var _queue = IList<T>.empty();
-  final Future<void> Function(IList<T>) _closure;
-  final void Function(Object, StackTrace)? _onError;
-  Completer<void>? _queueDoneCompleter;
-
-  final StreamController<bool> _queueReady = StreamController();
-  final _sspQueueReady = SingleStateProcessor<bool>();
 }

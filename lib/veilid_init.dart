@@ -23,11 +23,11 @@ class AppGlobalInit {
 
     // DHT Record Pool
     await DHTRecordPool.init(
+        defaultKind: cryptoKindVLD0,
         logger: (message) => log.debug('DHTRecordPool: $message'));
   }
 
-  static Future<AppGlobalInit> initialize(
-      [String bootstrapUrl = 'bootstrap.veilid.net']) async {
+  static Future<AppGlobalInit> initialize(String bootstrapUrl) async {
     final appGlobalInit = AppGlobalInit._();
 
     log.info('Initializing Veilid');

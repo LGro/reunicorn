@@ -33,7 +33,7 @@ Widget contactsListView(
           contact,
           circleMemberships[contact.coagContactId]?.isNotEmpty ?? false,
         ),
-        onTap: () async => context.goNamed(
+        onTap: () => context.goNamed(
           'contactDetails',
           pathParameters: {'coagContactId': contact.coagContactId},
         ),
@@ -170,10 +170,9 @@ class _ContactListPageState extends State<ContactListPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               DhtSharingStatusWidget(
-                recordKeys: state.contacts
-                    .map((c) => c.dhtSettings.recordKeyMeSharing)
-                    .whereType<Typed<FixedEncodedString43>>(),
-              ),
+                  recordKeys: state.contacts
+                      .map((c) => c.dhtSettings.recordKeyMeSharing)
+                      .whereType<RecordKey>()),
             ],
           ),
         ],
@@ -201,7 +200,7 @@ class _ContactListPageState extends State<ContactListPage> {
           ),
         ],
         child: BlocConsumer<ContactListCubit, ContactListState>(
-          listener: (context, state) async {},
+          listener: (context, state) {},
           builder: (context, state) => Scaffold(
             appBar: AppBar(
               title: const Text('Contacts'),
@@ -216,7 +215,7 @@ class _ContactListPageState extends State<ContactListPage> {
                 //           builder: (context) => const IntroductionsPage())),
                 // ),
                 IconButton(
-                  onPressed: () async => Navigator.of(context).push(
+                  onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<IntroductionsPage>(
                       builder: (context) => const IntroductionsPage(),
                     ),
@@ -226,7 +225,7 @@ class _ContactListPageState extends State<ContactListPage> {
                 ),
                 // TODO: Show badge for unread updates
                 IconButton(
-                  onPressed: () async => Navigator.of(context).push(
+                  onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<ContactPage>(
                       builder: (context) => const UpdatesPage(),
                     ),
@@ -243,7 +242,7 @@ class _ContactListPageState extends State<ContactListPage> {
                           .isEmpty)
                   ? _noContactsBody()
                   : RefreshIndicator(
-                      onRefresh: () async =>
+                      onRefresh: () =>
                           context.read<ContactListCubit>().refresh().then(
                                 (success) => context.mounted
                                     ? (success

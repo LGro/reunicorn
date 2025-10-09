@@ -14,9 +14,9 @@ import "veilid.proto";
 message DHTData {
     // Other keys to concatenate
     // Uses the same writer as this DHTList with SMPL schema
-    repeated veilid.TypedKey keys = 1;
+    repeated veilid.RecordKey keys = 1;
     // Hash of reassembled data to verify contents
-    veilid.TypedKey hash = 2;
+    veilid.HashDigest hash = 2;
     // Chunk size per subkey
     uint32 chunk = 3;
     // Total data size
@@ -45,7 +45,7 @@ message DHTLog {
 message DHTShortArray {
     // Other keys to concatenate
     // Uses the same writer as this DHTList with SMPL schema
-    repeated veilid.TypedKey keys = 1;
+    repeated veilid.RecordKey keys = 1;
     
     // Item position index (uint8[256./])
     // Actual item location is:
@@ -64,7 +64,7 @@ message DHTShortArray {
 // A pointer to an child DHT record
 message OwnedDHTRecordPointer {
     // DHT Record key
-    veilid.TypedKey record_key = 1;
+    veilid.RecordKey record_key = 1;
     // DHT record owner key
-    veilid.KeyPair owner = 2;
+    veilid.BareKeyPair owner = 2;
 }

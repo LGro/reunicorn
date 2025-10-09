@@ -27,7 +27,7 @@ void main() {
     final theirPublicKey = dummyKeyPair.key;
 
     final hash = await sharedSecretVerificationHash(myKeyPair, theirPublicKey);
-    expect(hash.decode(), hasLength(32));
+    expect(hash.value.toBytes(), hasLength(32));
 
     final emojiVerification = sasEmojisFromHash(hash);
     // The expected value should be showing as emoji - otherwise check your font

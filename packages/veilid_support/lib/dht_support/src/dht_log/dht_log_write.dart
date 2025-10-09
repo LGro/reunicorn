@@ -25,8 +25,11 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
     // Write item to the segment
     try {
       await lookup.scope((sa) => sa.operateWrite((write) async {
-            final success =
-                await write.tryWriteItem(lookup.pos, newValue, output: output);
+            final success = await write.tryWriteItem(
+              lookup.pos,
+              newValue,
+              output: output,
+            );
             if (!success) {
               throw const DHTExceptionOutdated();
             }

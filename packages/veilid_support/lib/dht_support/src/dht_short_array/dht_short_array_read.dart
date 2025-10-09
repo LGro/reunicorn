@@ -6,6 +6,10 @@ part of 'dht_short_array.dart';
 abstract class DHTShortArrayReadOperations implements DHTRandomRead {}
 
 class _DHTShortArrayRead implements DHTShortArrayReadOperations {
+  ////////////////////////////////////////////////////////////////////////////
+  // Fields
+  final _DHTShortArrayHead _head;
+
   _DHTShortArrayRead._(_DHTShortArrayHead head) : _head = head;
 
   @override
@@ -23,11 +27,12 @@ class _DHTShortArrayRead implements DHTShortArrayReadOperations {
       final refresh = forceRefresh || _head.positionNeedsRefresh(pos);
       final outSeqNum = Output<int>();
       final out = await lookup.record.get(
-          subkey: lookup.recordSubkey,
-          refreshMode: refresh
-              ? DHTRecordRefreshMode.network
-              : DHTRecordRefreshMode.cached,
-          outSeqNum: outSeqNum);
+        subkey: lookup.recordSubkey,
+        refreshMode: refresh
+            ? DHTRecordRefreshMode.network
+            : DHTRecordRefreshMode.cached,
+        outSeqNum: outSeqNum,
+      );
       if (outSeqNum.value != null) {
         _head.updatePositionSeq(pos, false, outSeqNum.value!);
       }
@@ -53,23 +58,28 @@ class _DHTShortArrayRead implements DHTShortArrayReadOperations {
   }
 
   @override
-  Future<List<Uint8List>?> getRange(int start,
-      {int? length, bool forceRefresh = false}) async {
+  Future<List<Uint8List>?> getRange(
+    int start, {
+    int? length,
+    bool forceRefresh = false,
+  }) async {
     final out = <Uint8List>[];
     (start, length) = _clampStartLen(start, length);
 
     final chunks = Iterable<int>.generate(length)
         .slices(kMaxDHTConcurrency)
-        .map((chunk) => chunk.map((pos) async {
-              try {
-                return await get(pos + start, forceRefresh: forceRefresh);
-                // Need some way to debug ParallelWaitError
-                // ignore: avoid_catches_without_on_clauses
-              } catch (e, st) {
-                veilidLoggy.error('$e\n$st\n');
-                rethrow;
-              }
-            }));
+        .map(
+          (chunk) => chunk.map((pos) async {
+            try {
+              return await get(pos + start, forceRefresh: forceRefresh);
+              // Need some way to debug ParallelWaitError
+              // ignore: avoid_catches_without_on_clauses
+            } catch (e, st) {
+              veilidLoggy.error('$e\n$st\n');
+              rethrow;
+            }
+          }),
+        );
 
     for (final chunk in chunks) {
       var elems = await chunk.wait;
@@ -98,7 +108,7 @@ class _DHTShortArrayRead implements DHTShortArrayReadOperations {
     final indexOffline = <int>{};
     final inspects = await [
       _head._headRecord.inspect(),
-      ..._head._linkedRecords.map((lr) => lr.inspect())
+      ..._head._linkedRecords.map((lr) => lr.inspect()),
     ].wait;
 
     // Add to offline index
@@ -125,8 +135,4 @@ class _DHTShortArrayRead implements DHTShortArrayReadOperations {
     }
     return positionOffline;
   }
-
-  ////////////////////////////////////////////////////////////////////////////
-  // Fields
-  final _DHTShortArrayHead _head;
 }

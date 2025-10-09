@@ -10,8 +10,10 @@ import '../veilid_support.dart';
 import 'veilid_log.dart';
 
 Future<T> tableScope<T>(
-    String name, Future<T> Function(VeilidTableDB tdb) callback,
-    {int columnCount = 1}) async {
+  String name,
+  Future<T> Function(VeilidTableDB tdb) callback, {
+  int columnCount = 1,
+}) async {
   final tableDB = await Veilid.instance.openTableDB(name, columnCount);
   try {
     return await callback(tableDB);
@@ -59,10 +61,11 @@ abstract mixin class TableDBBackedJson<T> {
       return obj;
     } on Exception catch (e, st) {
       veilidLoggy.debug(
-          'Unable to load data from table store: '
-          '${tableName()}:${tableKeyName()}',
-          e,
-          st);
+        'Unable to load data from table store: '
+        '${tableName()}:${tableKeyName()}',
+        e,
+        st,
+      );
       return null;
     }
   }
@@ -134,18 +137,34 @@ abstract mixin class TableDBBackedFromBuffer<T> {
 }
 
 class TableDBValue<T> extends TableDBBackedJson<T> {
+  AsyncData<T>? _value;
+
+  final T Function() _makeInitialValue;
+
+  final String _tableName;
+
+  final String _tableKeyName;
+
+  final T? Function(Object? obj) _valueFromJson;
+
+  final Object? Function(T? obj) _valueToJson;
+
+  final StreamController<T> _streamController;
+
+  final WaitSet<void, void> _initWait = WaitSet();
+
   TableDBValue({
     required String tableName,
     required String tableKeyName,
     required T? Function(Object? obj) valueFromJson,
     required Object? Function(T? obj) valueToJson,
     required T Function() makeInitialValue,
-  })  : _tableName = tableName,
-        _valueFromJson = valueFromJson,
-        _valueToJson = valueToJson,
-        _tableKeyName = tableKeyName,
-        _makeInitialValue = makeInitialValue,
-        _streamController = StreamController<T>.broadcast() {
+  }) : _tableName = tableName,
+       _valueFromJson = valueFromJson,
+       _valueToJson = valueToJson,
+       _tableKeyName = tableKeyName,
+       _makeInitialValue = makeInitialValue,
+       _streamController = StreamController<T>.broadcast() {
     _initWait.add((_) async {
       await get();
     });
@@ -160,6 +179,7 @@ class TableDBValue<T> extends TableDBBackedJson<T> {
   }
 
   T get value => _value!.value;
+
   Stream<T> get stream => _streamController.stream;
 
   Future<T> get() async {
@@ -177,23 +197,17 @@ class TableDBValue<T> extends TableDBBackedJson<T> {
     _streamController.add(newVal);
   }
 
-  AsyncData<T>? _value;
-  final T Function() _makeInitialValue;
-  final String _tableName;
-  final String _tableKeyName;
-  final T? Function(Object? obj) _valueFromJson;
-  final Object? Function(T? obj) _valueToJson;
-  final StreamController<T> _streamController;
-  final WaitSet<void, void> _initWait = WaitSet();
-
   //////////////////////////////////////////////////////////////
   /// AsyncTableDBBacked
   @override
   String tableName() => _tableName;
+
   @override
   String tableKeyName() => _tableKeyName;
+
   @override
   T? valueFromJson(Object? obj) => _valueFromJson(obj);
+
   @override
   Object? valueToJson(T? val) => _valueToJson(val);
 }

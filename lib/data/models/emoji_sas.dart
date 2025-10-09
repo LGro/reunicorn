@@ -6,8 +6,8 @@ import 'dart:convert';
 import 'package:veilid/veilid.dart';
 
 // Their next or their current public key?
-Future<FixedEncodedString43> sharedSecretVerificationHash(
-        TypedKeyPair myKeyPair, FixedEncodedString43 theirPublicKey) async =>
+Future<HashDigest> sharedSecretVerificationHash(
+        KeyPair myKeyPair, PublicKey theirPublicKey) async =>
     Veilid.instance.getCryptoSystem(myKeyPair.kind).then((cs) async {
       final secret = await cs.generateSharedSecret(
           theirPublicKey, myKeyPair.secret, utf8.encode('verify'));
@@ -17,8 +17,8 @@ Future<FixedEncodedString43> sharedSecretVerificationHash(
 
 // Inspired by https://spec.matrix.org/latest/client-server-api/#sas-method-emoji
 /// Return the seven 6-bit indices (0..63) from the first 42 bits of [hash].
-List<int> sasEmojiIndicesFromHash(FixedEncodedString43 hash) {
-  final hashBytes = hash.decode();
+List<int> sasEmojiIndicesFromHash(HashDigest hash) {
+  final hashBytes = hash.value.toBytes();
   if (hashBytes.length < 6) {
     throw ArgumentError('Need at least 6 bytes to extract 42 bits.');
   }
@@ -38,7 +38,7 @@ List<int> sasEmojiIndicesFromHash(FixedEncodedString43 hash) {
 }
 
 /// Pick the 7 SAS emojis (from your 64-entry table) for the given [hash].
-List<SasEmoji> sasEmojisFromHash(FixedEncodedString43 hash) =>
+List<SasEmoji> sasEmojisFromHash(HashDigest hash) =>
     List<SasEmoji>.unmodifiable(
         sasEmojiIndicesFromHash(hash).map((i) => sasEmojiAlphabet[i]));
 

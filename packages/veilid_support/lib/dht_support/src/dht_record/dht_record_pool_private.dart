@@ -10,14 +10,17 @@ const _sfListen = 'listen';
 /// Watch state
 @immutable
 class _WatchState extends Equatable {
+  final List<ValueSubkeyRange>? subkeys;
+
+  final Timestamp? expiration;
+
+  final int? count;
+
   const _WatchState({
     required this.subkeys,
     required this.expiration,
     required this.count,
   });
-  final List<ValueSubkeyRange>? subkeys;
-  final Timestamp? expiration;
-  final int? count;
 
   @override
   List<Object?> get props => [subkeys, expiration, count];
@@ -25,31 +28,40 @@ class _WatchState extends Equatable {
 
 /// Data shared amongst all DHTRecord instances
 class _SharedDHTRecordData {
-  _SharedDHTRecordData(
-      {required this.recordDescriptor,
-      required this.defaultWriter,
-      required this.defaultRoutingContext});
   DHTRecordDescriptor recordDescriptor;
+
   KeyPair? defaultWriter;
+
   VeilidRoutingContext defaultRoutingContext;
+
   // lint conflict
   // ignore: omit_obvious_property_types
   bool needsWatchStateUpdate = false;
+
   _WatchState? unionWatchState;
+
+  _SharedDHTRecordData({
+    required this.recordDescriptor,
+    required this.defaultWriter,
+    required this.defaultRoutingContext,
+  });
 }
 
 // Per opened record data
 class _OpenedRecordInfo {
-  _OpenedRecordInfo(
-      {required DHTRecordDescriptor recordDescriptor,
-      required KeyPair? defaultWriter,
-      required VeilidRoutingContext defaultRoutingContext})
-      : shared = _SharedDHTRecordData(
-            recordDescriptor: recordDescriptor,
-            defaultWriter: defaultWriter,
-            defaultRoutingContext: defaultRoutingContext);
   _SharedDHTRecordData shared;
+
   Set<DHTRecord> records = {};
+
+  _OpenedRecordInfo({
+    required DHTRecordDescriptor recordDescriptor,
+    required KeyPair? defaultWriter,
+    required VeilidRoutingContext defaultRoutingContext,
+  }) : shared = _SharedDHTRecordData(
+         recordDescriptor: recordDescriptor,
+         defaultWriter: defaultWriter,
+         defaultRoutingContext: defaultRoutingContext,
+       );
 
   String get debugNames {
     final r = records.toList()

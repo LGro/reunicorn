@@ -50,11 +50,11 @@ class DhtSettings extends Equatable {
 
   /// Acknowledged key pair to use for deriving symmetric key for decrypting and
   /// encrypting updates
-  final TypedKeyPair? myKeyPair;
+  final KeyPair? myKeyPair;
 
   /// Replacement key pair to use for deriving symmetric key for decrypting and
   /// encrypting updates in the future as soon as acknowledged
-  final TypedKeyPair? myNextKeyPair;
+  final KeyPair? myNextKeyPair;
 
   /// Current public keys to derive a key for decrypting received updates
   final PublicKey? theirPublicKey;
@@ -63,25 +63,25 @@ class DhtSettings extends Equatable {
   /// and encrypting updates in the future
   final PublicKey? theirNextPublicKey;
 
-  final Typed<FixedEncodedString43>? recordKeyMeSharing;
+  final RecordKey? recordKeyMeSharing;
   final KeyPair? writerMeSharing;
-  final Typed<FixedEncodedString43>? recordKeyThemSharing;
+  final RecordKey? recordKeyThemSharing;
   final KeyPair? writerThemSharing;
-  final FixedEncodedString43? initialSecret;
+  final SharedSecret? initialSecret;
   final bool theyAckHandshakeComplete;
 
   Map<String, dynamic> toJson() => _$DhtSettingsToJson(this);
 
   DhtSettings copyWith({
-    TypedKeyPair? myKeyPair,
-    TypedKeyPair? myNextKeyPair,
+    KeyPair? myKeyPair,
+    KeyPair? myNextKeyPair,
     PublicKey? theirPublicKey,
     PublicKey? theirNextPublicKey,
-    Typed<FixedEncodedString43>? recordKeyMeSharing,
+    RecordKey? recordKeyMeSharing,
     KeyPair? writerMeSharing,
-    Typed<FixedEncodedString43>? recordKeyThemSharing,
+    RecordKey? recordKeyThemSharing,
     KeyPair? writerThemSharing,
-    FixedEncodedString43? initialSecret,
+    SharedSecret? initialSecret,
     bool? theyAckHandshakeComplete,
   }) =>
       DhtSettings(
@@ -331,7 +331,7 @@ class ProfileInfo extends Equatable {
   final ProfileSharingSettings sharingSettings;
 
   /// The main key pair used for profile invites
-  final TypedKeyPair? mainKeyPair;
+  final KeyPair? mainKeyPair;
 
   Map<String, dynamic> toJson() => _$ProfileInfoToJson(this);
   ProfileInfo copyWith({
@@ -340,7 +340,7 @@ class ProfileInfo extends Equatable {
     Map<String, ContactAddressLocation>? addressLocations,
     Map<String, ContactTemporaryLocation>? temporaryLocations,
     ProfileSharingSettings? sharingSettings,
-    TypedKeyPair? mainKeyPair,
+    KeyPair? mainKeyPair,
   }) =>
       ProfileInfo(
         id,
@@ -419,11 +419,11 @@ class CoagContact extends Equatable {
 
   /// Their long lived typed identity key, used for example to derive a
   /// connection attestation for enabling others to discover shared contacts
-  final Typed<PublicKey>? theirIdentity;
+  final PublicKey? theirIdentity;
 
   /// My long lived typed identity key pair, used for example to derive a
   /// connection attestation for enabling others to discover shared contacts
-  final TypedKeyPair myIdentity;
+  final KeyPair myIdentity;
 
   /// All connection attestations they provide for shared contact discovery
   final List<String> connectionAttestations;
@@ -453,15 +453,15 @@ class CoagContact extends Equatable {
 
   /// Current public key the app user can hand to others when introducing them
   /// to this contact
-  final Typed<PublicKey>? theirIntroductionKey;
+  final PublicKey? theirIntroductionKey;
 
   /// Current key pair of which the app user has shared the public key with this
   /// contact to facilitate encrypted communication for introductions
-  final TypedKeyPair myIntroductionKeyPair;
+  final KeyPair myIntroductionKeyPair;
 
   /// List of app user's previous key pairs of which they have shared the public
   /// key with this contact
-  final List<TypedKeyPair> myPreviousIntroductionKeyPairs;
+  final List<KeyPair> myPreviousIntroductionKeyPairs;
 
   /// Introductions the app user proposed them
   final List<ContactIntroduction> introductionsForThem;
@@ -515,16 +515,16 @@ class CoagContact extends Equatable {
     String? comment,
     String? systemContactId,
     ContactDetails? details,
-    Typed<PublicKey>? theirIdentity,
-    TypedKeyPair? myIdentity,
+    PublicKey? theirIdentity,
+    KeyPair? myIdentity,
     List<String>? connectionAttestations,
     Map<String, ContactAddressLocation>? addressLocations,
     Map<String, ContactTemporaryLocation>? temporaryLocations,
     DhtSettings? dhtSettings,
     CoagContactDHTSchema? sharedProfile,
-    Typed<PublicKey>? theirIntroductionKey,
-    TypedKeyPair? myIntroductionKeyPair,
-    List<TypedKeyPair>? myPreviousIntroductionKeyPairs,
+    PublicKey? theirIntroductionKey,
+    KeyPair? myIntroductionKeyPair,
+    List<KeyPair>? myPreviousIntroductionKeyPairs,
     List<ContactIntroduction>? introductionsByThem,
     List<ContactIntroduction>? introductionsForThem,
     String? origin,
@@ -711,14 +711,14 @@ class CoagContactDHTSchemaV2 extends Equatable {
 
   /// Long lived identity key, used for example to derive a connection
   /// attestation for enabling others to discover shared contacts
-  final Typed<PublicKey>? identityKey;
+  final PublicKey? identityKey;
 
   /// Attestations for connections between the author and their contacts
   final List<String> connectionAttestations;
 
   /// Author's public key the recipient can use to securely introduce them to
   /// others
-  final Typed<PublicKey>? introductionKey;
+  final PublicKey? introductionKey;
 
   /// Introduction proposals by the author for the recipient
   final List<ContactIntroduction> introductions;
@@ -734,11 +734,11 @@ class CoagContactDHTSchemaV2 extends Equatable {
     String? shareBackDHTKey,
     String? shareBackDHTWriter,
     String? shareBackPubKey,
-    Typed<PublicKey>? identityKey,
+    PublicKey? identityKey,
     Map<String, ContactAddressLocation>? addressLocations,
     Map<String, ContactTemporaryLocation>? temporaryLocations,
     List<String>? connectionAttestations,
-    Typed<PublicKey>? introductionKey,
+    PublicKey? introductionKey,
     List<ContactIntroduction>? introductions,
     bool? ackHandshakeComplete,
   }) =>

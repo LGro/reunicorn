@@ -70,8 +70,8 @@ class SettingsCubit extends Cubit<SettingsState> {
     final c1 = CoagContact(
       coagContactId: coagContactId,
       name: faker.person.name(),
-      myIdentity: await generateTypedKeyPairBest(),
-      myIntroductionKeyPair: await generateTypedKeyPairBest(),
+      myIdentity: await generateKeyPairBest(),
+      myIntroductionKeyPair: await generateKeyPairBest(),
       details: ContactDetails(
         // TODO: do too large noisy images break things?
         picture: generateRandomImage(20, 20),

@@ -24,8 +24,8 @@ final class BackupState extends Equatable {
       _$BackupStateFromJson(json);
 
   final BackupStatus status;
-  final Typed<FixedEncodedString43>? dhtRecordKey;
-  final FixedEncodedString43? secret;
+  final RecordKey? dhtRecordKey;
+  final SharedSecret? secret;
 
   Map<String, dynamic> toJson() => _$BackupStateToJson(this);
 

@@ -130,8 +130,8 @@ void main() {
         'events': [],
       },
       'share_back_d_h_t_key': dummyDhtRecordKey().toString(),
-      'share_back_pub_key': dummyTypedKeyPair().key.toString(),
-      'share_back_d_h_t_writer': dummyTypedKeyPair().toKeyPair().toString(),
+      'share_back_pub_key': dummyKeyPair().key.toString(),
+      'share_back_d_h_t_writer': dummyKeyPair().toKeyPair().toString(),
       'personal_unique_id': 'unicorn',
       'address_locations': {'0': addressLocationJson},
       'temporary_locations': {'0t': temporaryLocation.toJson()},
@@ -159,7 +159,7 @@ void main() {
     final contactJson = (json.decode(contents) as List<dynamic>).first;
     final migratedJson = await migrateContactAddIdentityAndIntroductionKeyPairs(
       contactJson as Map<String, dynamic>,
-      generateKeyPair: () async => dummyTypedKeyPair(),
+      generateKeyPair: () async => dummyKeyPair(),
     );
     final contact = CoagContact.fromJson(migratedJson);
     expect(contact.name, 'Display Name');

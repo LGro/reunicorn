@@ -19,7 +19,7 @@ import 'base.dart';
 /// Legacy migration: If I have not assigned an identity key pair to a contact
 Future<Map<String, dynamic>> migrateContactAddIdentityAndIntroductionKeyPairs(
   Map<String, dynamic> contactJson, {
-  Future<TypedKeyPair> Function() generateKeyPair = generateTypedKeyPairBest,
+  Future<KeyPair> Function() generateKeyPair = generateKeyPairBest,
 }) async {
   if (!contactJson.containsKey('my_identity')) {
     contactJson = {...contactJson};
@@ -37,19 +37,21 @@ Future<Map<String, dynamic>> migrateContactAddIdentityAndIntroductionKeyPairs(
 }
 
 Future<Database> getDatabase() async => openDatabase(
-  join(await getDatabasesPath(), 'contacts.db'),
-  onCreate: (db, version) {
-    db
-      ..execute('CREATE TABLE contacts(id TEXT PRIMARY KEY, contactJson TEXT)')
-      // TODO: Consider using specific columns for update attributes instead of one json string
-      ..execute('CREATE TABLE updates(id INTEGER PRIMARY KEY, updateJson TEXT)')
-      ..execute('CREATE TABLE batches(id TEXT PRIMARY KEY, batchJson TEXT)')
-      ..execute(
-        'CREATE TABLE settings(id TEXT PRIMARY KEY, settingsJson TEXT)',
-      );
-  },
-  version: 1,
-);
+      join(await getDatabasesPath(), 'contacts.db'),
+      onCreate: (db, version) {
+        db
+          ..execute(
+              'CREATE TABLE contacts(id TEXT PRIMARY KEY, contactJson TEXT)')
+          // TODO: Consider using specific columns for update attributes instead of one json string
+          ..execute(
+              'CREATE TABLE updates(id INTEGER PRIMARY KEY, updateJson TEXT)')
+          ..execute('CREATE TABLE batches(id TEXT PRIMARY KEY, batchJson TEXT)')
+          ..execute(
+            'CREATE TABLE settings(id TEXT PRIMARY KEY, settingsJson TEXT)',
+          );
+      },
+      version: 1,
+    );
 
 class SqliteStorage extends PersistentStorage {
   SqliteStorage() {
@@ -128,15 +130,15 @@ class SqliteStorage extends PersistentStorage {
 
   @override
   Future<void> removeContact(String coagContactId) async => getDatabase().then(
-    (db) =>
-        db.delete('contacts', where: '"id" = ?', whereArgs: [coagContactId]),
-  );
+        (db) => db
+            .delete('contacts', where: '"id" = ?', whereArgs: [coagContactId]),
+      );
 
   @override
   Future<void> addUpdate(ContactUpdate update) async => getDatabase().then(
-    (db) async =>
-        db.insert('updates', {'updateJson': json.encode(update.toJson())}),
-  );
+        (db) async =>
+            db.insert('updates', {'updateJson': json.encode(update.toJson())}),
+      );
 
   @override
   Future<List<ContactUpdate>> getUpdates() async => getDatabase()
@@ -175,15 +177,13 @@ class SqliteStorage extends PersistentStorage {
             (results) => (results.isEmpty)
                 ? {}
                 : (json.decode(results.first['settingsJson']! as String)
-                          as Map<String, dynamic>)
-                      .map(
-                        (key, value) => MapEntry(
-                          key,
-                          (value is List)
-                              ? List<String>.from(value)
-                              : <String>[],
-                        ),
-                      ),
+                        as Map<String, dynamic>)
+                    .map(
+                    (key, value) => MapEntry(
+                      key,
+                      (value is List) ? List<String>.from(value) : <String>[],
+                    ),
+                  ),
           );
 
   @override
@@ -201,11 +201,11 @@ class SqliteStorage extends PersistentStorage {
         (results) => (results.isEmpty)
             ? {}
             : ((json.decode(results.first['settingsJson']! as String)
-                      as Map<String, dynamic>)
-                  .map(
-                    (key, value) =>
-                        MapEntry(key, (value is String) ? value : '???'),
-                  )),
+                    as Map<String, dynamic>)
+                .map(
+                (key, value) =>
+                    MapEntry(key, (value is String) ? value : '???'),
+              )),
       );
 
   @override
@@ -231,29 +231,39 @@ class SqliteStorage extends PersistentStorage {
   @override
   Future<void> updateCircleMemberships(
     Map<String, List<String>> circleMemberships,
-  ) async => getDatabase().then(
-    (db) async => db.insert('settings', {
-      'id': 'circleMemberships',
-      'settingsJson': json.encode(circleMemberships),
-    }, conflictAlgorithm: ConflictAlgorithm.replace),
-  );
+  ) async =>
+      getDatabase().then(
+        (db) async => db.insert(
+            'settings',
+            {
+              'id': 'circleMemberships',
+              'settingsJson': json.encode(circleMemberships),
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace),
+      );
 
   @override
   Future<void> updateCircles(Map<String, String> circles) async =>
       getDatabase().then(
-        (db) async => db.insert('settings', {
-          'id': 'circles',
-          'settingsJson': json.encode(circles),
-        }, conflictAlgorithm: ConflictAlgorithm.replace),
+        (db) async => db.insert(
+            'settings',
+            {
+              'id': 'circles',
+              'settingsJson': json.encode(circles),
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace),
       );
 
   @override
   Future<void> updateProfileInfo(ProfileInfo info) async => getDatabase().then(
-    (db) async => db.insert('settings', {
-      'id': 'profileInfo',
-      'settingsJson': json.encode(info.toJson()),
-    }, conflictAlgorithm: ConflictAlgorithm.replace),
-  );
+        (db) async => db.insert(
+            'settings',
+            {
+              'id': 'profileInfo',
+              'settingsJson': json.encode(info.toJson()),
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace),
+      );
 
   Future<BatchInvite> getBatch(String recordKey) async {
     final db = await getDatabase();

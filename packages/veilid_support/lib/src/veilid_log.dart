@@ -3,7 +3,7 @@ import 'package:meta/meta.dart';
 import 'package:veilid/veilid.dart';
 
 // Loggy tools
-const LogLevel traceLevel = LogLevel('Trace', 1);
+const traceLevel = LogLevel('Trace', 1);
 
 extension TraceLoggy on Loggy {
   void trace(dynamic message, [Object? error, StackTrace? stackTrace]) =>

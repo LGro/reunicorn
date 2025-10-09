@@ -75,8 +75,12 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
         final outSeqNum = outSeqNums[i];
         dws.add((_) async {
           try {
-            final outValue = await lookup.record.tryWriteBytes(value,
-                subkey: lookup.recordSubkey, outSeqNum: outSeqNum);
+            final outValue = await lookup.record.tryWriteBytes(
+              value,
+              subkey: lookup.recordSubkey,
+              options: const SetDHTValueOptions(allowOffline: false),
+              outSeqNum: outSeqNum,
+            );
             if (outValue != null) {
               success = false;
             }
@@ -174,7 +178,9 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
 
     final outSeqNumWrite = Output<int>();
     final result = await lookup.record.tryWriteBytes(newValue,
-        subkey: lookup.recordSubkey, outSeqNum: outSeqNumWrite);
+        subkey: lookup.recordSubkey,
+        options: const SetDHTValueOptions(allowOffline: false),
+        outSeqNum: outSeqNumWrite);
     if (outSeqNumWrite.value != null) {
       _head.updatePositionSeq(pos, true, outSeqNumWrite.value!);
     }

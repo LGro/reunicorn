@@ -1,17 +1,17 @@
+import '../../../veilid_support.dart';
 import '../../proto/dht.pb.dart' as dhtproto;
 import '../../proto/proto.dart' as veilidproto;
-import '../../src/dynamic_debug.dart';
-import '../dht_support.dart';
 
 export '../../proto/dht.pb.dart';
 export '../../proto/dht.pbenum.dart';
 export '../../proto/dht.pbjson.dart';
 export '../../proto/dht.pbserver.dart';
 export '../../proto/proto.dart';
+export 'migrations/migrations.dart';
 
 /// OwnedDHTRecordPointer protobuf marshaling
 ///
-extension OwnedDHTRecordPointerProto on OwnedDHTRecordPointer {
+extension OwnedDHTRecordPointerToProto on OwnedDHTRecordPointer {
   dhtproto.OwnedDHTRecordPointer toProto() {
     final out = dhtproto.OwnedDHTRecordPointer()
       ..recordKey = recordKey.toProto()
@@ -21,12 +21,15 @@ extension OwnedDHTRecordPointerProto on OwnedDHTRecordPointer {
 }
 
 extension ProtoOwnedDHTRecordPointer on dhtproto.OwnedDHTRecordPointer {
-  OwnedDHTRecordPointer toVeilid() => OwnedDHTRecordPointer(
-      recordKey: recordKey.toVeilid(), owner: owner.toVeilid());
+  OwnedDHTRecordPointer toDart() => OwnedDHTRecordPointer(
+    recordKey: recordKey.toDart(),
+    owner: owner.toDart(),
+  );
 }
 
 void registerVeilidDHTProtoToDebug() {
   dynamic toDebug(dynamic obj) {
+    // veilid dht types
     if (obj is dhtproto.OwnedDHTRecordPointer) {
       return {
         r'$runtimeType': obj.runtimeType,
@@ -40,7 +43,7 @@ void registerVeilidDHTProtoToDebug() {
         'keys': obj.keys,
         'hash': obj.hash,
         'chunk': obj.chunk,
-        'size': obj.size
+        'size': obj.size,
       };
     }
     if (obj is dhtproto.DHTLog) {

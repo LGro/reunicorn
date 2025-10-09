@@ -17,8 +17,8 @@ import 'veilid.pb.dart' as $0;
 
 class DHTData extends $pb.GeneratedMessage {
   factory DHTData({
-    $core.Iterable<$0.TypedKey>? keys,
-    $0.TypedKey? hash,
+    $core.Iterable<$0.RecordKey>? keys,
+    $0.HashDigest? hash,
     $core.int? chunk,
     $core.int? size,
   }) {
@@ -42,8 +42,8 @@ class DHTData extends $pb.GeneratedMessage {
   factory DHTData.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DHTData', package: const $pb.PackageName(_omitMessageNames ? '' : 'dht'), createEmptyInstance: create)
-    ..pc<$0.TypedKey>(1, _omitFieldNames ? '' : 'keys', $pb.PbFieldType.PM, subBuilder: $0.TypedKey.create)
-    ..aOM<$0.TypedKey>(2, _omitFieldNames ? '' : 'hash', subBuilder: $0.TypedKey.create)
+    ..pc<$0.RecordKey>(1, _omitFieldNames ? '' : 'keys', $pb.PbFieldType.PM, subBuilder: $0.RecordKey.create)
+    ..aOM<$0.HashDigest>(2, _omitFieldNames ? '' : 'hash', subBuilder: $0.HashDigest.create)
     ..a<$core.int>(3, _omitFieldNames ? '' : 'chunk', $pb.PbFieldType.OU3)
     ..a<$core.int>(4, _omitFieldNames ? '' : 'size', $pb.PbFieldType.OU3)
     ..hasRequiredFields = false
@@ -73,19 +73,19 @@ class DHTData extends $pb.GeneratedMessage {
   /// Other keys to concatenate
   /// Uses the same writer as this DHTList with SMPL schema
   @$pb.TagNumber(1)
-  $core.List<$0.TypedKey> get keys => $_getList(0);
+  $core.List<$0.RecordKey> get keys => $_getList(0);
 
   /// Hash of reassembled data to verify contents
   @$pb.TagNumber(2)
-  $0.TypedKey get hash => $_getN(1);
+  $0.HashDigest get hash => $_getN(1);
   @$pb.TagNumber(2)
-  set hash($0.TypedKey v) { setField(2, v); }
+  set hash($0.HashDigest v) { setField(2, v); }
   @$pb.TagNumber(2)
   $core.bool hasHash() => $_has(1);
   @$pb.TagNumber(2)
   void clearHash() => clearField(2);
   @$pb.TagNumber(2)
-  $0.TypedKey ensureHash() => $_ensure(1);
+  $0.HashDigest ensureHash() => $_ensure(1);
 
   /// Chunk size per subkey
   @$pb.TagNumber(3)
@@ -201,7 +201,7 @@ class DHTLog extends $pb.GeneratedMessage {
 ///  Keys must use writable schema in order to make this list mutable
 class DHTShortArray extends $pb.GeneratedMessage {
   factory DHTShortArray({
-    $core.Iterable<$0.TypedKey>? keys,
+    $core.Iterable<$0.RecordKey>? keys,
     $core.List<$core.int>? index,
     $core.Iterable<$core.int>? seqs,
   }) {
@@ -222,7 +222,7 @@ class DHTShortArray extends $pb.GeneratedMessage {
   factory DHTShortArray.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DHTShortArray', package: const $pb.PackageName(_omitMessageNames ? '' : 'dht'), createEmptyInstance: create)
-    ..pc<$0.TypedKey>(1, _omitFieldNames ? '' : 'keys', $pb.PbFieldType.PM, subBuilder: $0.TypedKey.create)
+    ..pc<$0.RecordKey>(1, _omitFieldNames ? '' : 'keys', $pb.PbFieldType.PM, subBuilder: $0.RecordKey.create)
     ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'index', $pb.PbFieldType.OY)
     ..p<$core.int>(3, _omitFieldNames ? '' : 'seqs', $pb.PbFieldType.KU3)
     ..hasRequiredFields = false
@@ -252,7 +252,7 @@ class DHTShortArray extends $pb.GeneratedMessage {
   /// Other keys to concatenate
   /// Uses the same writer as this DHTList with SMPL schema
   @$pb.TagNumber(1)
-  $core.List<$0.TypedKey> get keys => $_getList(0);
+  $core.List<$0.RecordKey> get keys => $_getList(0);
 
   /// Item position index (uint8[256./])
   /// Actual item location is:
@@ -276,8 +276,8 @@ class DHTShortArray extends $pb.GeneratedMessage {
 /// A pointer to an child DHT record
 class OwnedDHTRecordPointer extends $pb.GeneratedMessage {
   factory OwnedDHTRecordPointer({
-    $0.TypedKey? recordKey,
-    $0.KeyPair? owner,
+    $0.RecordKey? recordKey,
+    $0.BareKeyPair? owner,
   }) {
     final $result = create();
     if (recordKey != null) {
@@ -293,8 +293,8 @@ class OwnedDHTRecordPointer extends $pb.GeneratedMessage {
   factory OwnedDHTRecordPointer.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'OwnedDHTRecordPointer', package: const $pb.PackageName(_omitMessageNames ? '' : 'dht'), createEmptyInstance: create)
-    ..aOM<$0.TypedKey>(1, _omitFieldNames ? '' : 'recordKey', subBuilder: $0.TypedKey.create)
-    ..aOM<$0.KeyPair>(2, _omitFieldNames ? '' : 'owner', subBuilder: $0.KeyPair.create)
+    ..aOM<$0.RecordKey>(1, _omitFieldNames ? '' : 'recordKey', subBuilder: $0.RecordKey.create)
+    ..aOM<$0.BareKeyPair>(2, _omitFieldNames ? '' : 'owner', subBuilder: $0.BareKeyPair.create)
     ..hasRequiredFields = false
   ;
 
@@ -321,27 +321,27 @@ class OwnedDHTRecordPointer extends $pb.GeneratedMessage {
 
   /// DHT Record key
   @$pb.TagNumber(1)
-  $0.TypedKey get recordKey => $_getN(0);
+  $0.RecordKey get recordKey => $_getN(0);
   @$pb.TagNumber(1)
-  set recordKey($0.TypedKey v) { setField(1, v); }
+  set recordKey($0.RecordKey v) { setField(1, v); }
   @$pb.TagNumber(1)
   $core.bool hasRecordKey() => $_has(0);
   @$pb.TagNumber(1)
   void clearRecordKey() => clearField(1);
   @$pb.TagNumber(1)
-  $0.TypedKey ensureRecordKey() => $_ensure(0);
+  $0.RecordKey ensureRecordKey() => $_ensure(0);
 
   /// DHT record owner key
   @$pb.TagNumber(2)
-  $0.KeyPair get owner => $_getN(1);
+  $0.BareKeyPair get owner => $_getN(1);
   @$pb.TagNumber(2)
-  set owner($0.KeyPair v) { setField(2, v); }
+  set owner($0.BareKeyPair v) { setField(2, v); }
   @$pb.TagNumber(2)
   $core.bool hasOwner() => $_has(1);
   @$pb.TagNumber(2)
   void clearOwner() => clearField(2);
   @$pb.TagNumber(2)
-  $0.KeyPair ensureOwner() => $_ensure(1);
+  $0.BareKeyPair ensureOwner() => $_ensure(1);
 }
 
 

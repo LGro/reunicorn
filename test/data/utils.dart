@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:io';
-import 'dart:typed_data';
 
-import 'package:veilid/veilid.dart';
 import 'package:yaml/yaml.dart';
 
 Future<String> readCurrentVersionFromPubspec() async {
@@ -15,15 +13,9 @@ Future<String> readCurrentVersionFromPubspec() async {
 
 Map<String, String> loadAllPreviousSchemaVersionJsons(
   String jsonAssetDirectory,
-) => Map.fromEntries(
-  Directory(jsonAssetDirectory)
-      .listSync()
-      .whereType<File>()
-      .where((file) => file.path.endsWith('.json'))
-      .map((file) => MapEntry(file.path, file.readAsStringSync())),
-);
-
-FixedEncodedString43 dummyFixedEncodedString43(int value) =>
-    FixedEncodedString43.fromBytes(
-      Uint8List.fromList(List<int>.filled(32, value)),
-    );
+) =>
+    Map.fromEntries(Directory(jsonAssetDirectory)
+        .listSync()
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.json'))
+        .map((file) => MapEntry(file.path, file.readAsStringSync())));

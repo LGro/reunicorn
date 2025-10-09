@@ -31,10 +31,10 @@ class BatchSubkeySchema extends Equatable {
 
   final String name;
 
-  final FixedEncodedString43 publicKey;
+  final PublicKey publicKey;
 
   /// For public keys as map keys, DHT record keys as values
-  final Map<String, Typed<FixedEncodedString43>> records;
+  final Map<String, RecordKey> records;
 
   Map<String, dynamic> toJson() => _$BatchSubkeySchemaToJson(this);
 
@@ -64,47 +64,48 @@ class BatchInvite extends Equatable {
   final String label;
   final DateTime expiration;
 
-  final Typed<FixedEncodedString43> recordKey;
-  final FixedEncodedString43 psk;
+  final RecordKey recordKey;
+  final SharedSecret psk;
 
   final int subkeyCount;
   final int mySubkey;
   final KeyPair subkeyWriter;
 
   final String myName;
-  final TypedKeyPair myKeyPair;
+  final KeyPair myKeyPair;
 
   /// For contact public keys as map keys, DHT record keys as values
-  final Map<String, Typed<FixedEncodedString43>> myConnectionRecords;
+  final Map<String, RecordKey> myConnectionRecords;
 
   Map<String, dynamic> toJson() => _$BatchInviteToJson(this);
 
   BatchInvite copyWith({
-    Map<String, Typed<FixedEncodedString43>>? myConnectionRecords,
-  }) => BatchInvite(
-    label: this.label,
-    expiration: this.expiration,
-    recordKey: this.recordKey,
-    psk: this.psk,
-    subkeyCount: this.subkeyCount,
-    mySubkey: this.mySubkey,
-    subkeyWriter: this.subkeyWriter,
-    myName: this.myName,
-    myKeyPair: this.myKeyPair,
-    myConnectionRecords: myConnectionRecords ?? this.myConnectionRecords,
-  );
+    Map<String, RecordKey>? myConnectionRecords,
+  }) =>
+      BatchInvite(
+        label: this.label,
+        expiration: this.expiration,
+        recordKey: this.recordKey,
+        psk: this.psk,
+        subkeyCount: this.subkeyCount,
+        mySubkey: this.mySubkey,
+        subkeyWriter: this.subkeyWriter,
+        myName: this.myName,
+        myKeyPair: this.myKeyPair,
+        myConnectionRecords: myConnectionRecords ?? this.myConnectionRecords,
+      );
 
   @override
   List<Object?> get props => [
-    label,
-    expiration,
-    recordKey,
-    psk,
-    subkeyCount,
-    mySubkey,
-    subkeyWriter,
-    myKeyPair,
-    myName,
-    myConnectionRecords,
-  ];
+        label,
+        expiration,
+        recordKey,
+        psk,
+        subkeyCount,
+        mySubkey,
+        subkeyWriter,
+        myKeyPair,
+        myName,
+        myConnectionRecords,
+      ];
 }

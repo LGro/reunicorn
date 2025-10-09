@@ -12,6 +12,4 @@ _AccountRecordInfo _$AccountRecordInfoFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$AccountRecordInfoToJson(_AccountRecordInfo instance) =>
-    <String, dynamic>{
-      'account_record': instance.accountRecord.toJson(),
-    };
+    <String, dynamic>{'account_record': instance.accountRecord.toJson()};

@@ -5,15 +5,13 @@ import 'package:veilid_support/veilid_support.dart';
 
 import 'models/coag_contact.dart';
 
-Future<TypedKeyPair> generateTypedKeyPairBest() async =>
-    DHTRecordPool.instance.veilid.bestCryptoSystem().then(
-          (cs) => cs.generateKeyPair().then(
-                (kp) => TypedKeyPair.fromKeyPair(cs.kind(), kp),
-              ),
-        );
+Future<KeyPair> generateKeyPairBest() => Veilid.instance
+    .getCryptoSystem(cryptoKindVLD0)
+    .then((cs) => cs.generateKeyPair());
 
-Future<FixedEncodedString43> generateRandomSharedSecretBest() async =>
-    Veilid.instance.bestCryptoSystem().then((cs) => cs.randomSharedSecret());
+Future<SharedSecret> generateRandomSharedSecretBest() => Veilid.instance
+    .getCryptoSystem(cryptoKindVLD0)
+    .then((cs) => cs.randomSharedSecret());
 
 Map<String, String> knownContacts(
   String coagContactId,

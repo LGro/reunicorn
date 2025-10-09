@@ -8,19 +8,30 @@ import 'package:meta/meta.dart';
 import '../../../veilid_support.dart';
 
 typedef InitialStateFunction<T> = Future<T?> Function(DHTRecord);
-typedef StateFunction<T> = Future<T?> Function(
-    DHTRecord, List<ValueSubkeyRange>, Uint8List?);
+typedef StateFunction<T> =
+    Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, Uint8List?);
 typedef WatchFunction = Future<void> Function(DHTRecord);
 
 abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
+  @protected
+  final WaitSet<void, bool> initWait = WaitSet();
+
+  StreamSubscription<DHTRecordWatchChange>? _subscription;
+
+  DHTRecord? record;
+
+  bool _wantsCloseRecord;
+
+  final StateFunction<T> _stateFunction;
+
   DHTRecordCubit({
     required Future<DHTRecord> Function() open,
     required InitialStateFunction<T> initialStateFunction,
     required StateFunction<T> stateFunction,
     required WatchFunction watchFunction,
-  })  : _wantsCloseRecord = false,
-        _stateFunction = stateFunction,
-        super(const AsyncValue.loading()) {
+  }) : _wantsCloseRecord = false,
+       _stateFunction = stateFunction,
+       super(const AsyncValue.loading()) {
     initWait.add((cancel) async {
       try {
         // Do record open/create
@@ -98,8 +109,10 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
 
     for (final skr in subkeys) {
       for (var sk = skr.low; sk <= skr.high; sk++) {
-        final data = await record!
-            .get(subkey: sk, refreshMode: DHTRecordRefreshMode.update);
+        final data = await record!.get(
+          subkey: sk,
+          refreshMode: DHTRecordRefreshMode.update,
+        );
         if (data != null) {
           final newState = await _stateFunction(record!, updateSubkeys, data);
           if (newState != null) {
@@ -114,12 +127,4 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
       }
     }
   }
-
-  @protected
-  final WaitSet<void, bool> initWait = WaitSet();
-
-  StreamSubscription<DHTRecordWatchChange>? _subscription;
-  DHTRecord? record;
-  bool _wantsCloseRecord;
-  final StateFunction<T> _stateFunction;
 }

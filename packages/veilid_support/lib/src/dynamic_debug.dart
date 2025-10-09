@@ -3,8 +3,6 @@ import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:convert/convert.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
-import 'online_element_state.dart';
-
 typedef ToDebugFunction = dynamic Function(dynamic protoObj);
 
 // This should be implemented to add toDebug capability
@@ -18,8 +16,8 @@ abstract class ToDebugMap {
 class DynamicDebug {
   /// Add a 'toDebug' handler to the chain
   static void registerToDebug(ToDebugFunction toDebugFunction) {
-    final _oldToDebug = _toDebug;
-    _toDebug = (obj) => _oldToDebug(toDebugFunction(obj));
+    final oldToDebug = _toDebug;
+    _toDebug = (obj) => oldToDebug(toDebugFunction(obj));
   }
 
   /// Convert a type to a debug version of the same type that
@@ -80,13 +78,6 @@ class DynamicDebug {
         r'$runtimeType': obj.runtimeType,
         'busy': obj.busy,
         'state': toDebug(obj.state),
-      };
-    }
-    if (obj is OnlineElementState<dynamic>) {
-      return {
-        r'$runtimeType': obj.runtimeType,
-        'isOffline': obj.isOffline,
-        'value': toDebug(obj.value),
       };
     }
     if (obj is List<int>) {

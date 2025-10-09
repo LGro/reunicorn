@@ -1,21 +1,66 @@
 part of 'dht_short_array.dart';
 
 class DHTShortArrayHeadLookup {
-  DHTShortArrayHeadLookup(
-      {required this.record, required this.recordSubkey, required this.seq});
   final DHTRecord record;
+
   final int recordSubkey;
+
   final int? seq;
+
+  DHTShortArrayHeadLookup({
+    required this.record,
+    required this.recordSubkey,
+    required this.seq,
+  });
 }
 
 class _DHTShortArrayHead {
+  ////////////////////////////////////////////////////////////////////////////
+
+  // Head/element mutex to ensure we keep the representation valid
+  final _headMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
+
+  // Subscription to head record internal changes
+  StreamSubscription<DHTRecordWatchChange>? _subscription;
+
+  // Notify closure for external head changes
+  void Function()? onUpdatedHead;
+
+  // Head DHT record
+  final DHTRecord _headRecord;
+
+  // How many elements per linked record
+  late final int _stride;
+
+  // List of additional records after the head record used for element data
+  List<DHTRecord> _linkedRecords;
+
+  // Ordering of the subkey indices.
+  // Elements are subkey numbers. Represents the element order.
+  List<int> _index;
+
+  // List of free subkeys for elements that have been removed.
+  // Used to optimize allocations.
+  List<int> _free;
+
+  // The sequence numbers of each subkey.
+  // Index is by subkey number not by element index.
+  // (n-1 for head record and then the next n for linked records)
+  List<int?> _seqs;
+
+  // The local sequence numbers for each subkey.
+  List<int?> _localSeqs;
+
+  // Migration codec
+  static final _migrationCodec = DHTShortArrayMigrationCodec();
+
   _DHTShortArrayHead({required DHTRecord headRecord})
-      : _headRecord = headRecord,
-        _linkedRecords = [],
-        _index = [],
-        _free = [],
-        _seqs = [],
-        _localSeqs = [] {
+    : _headRecord = headRecord,
+      _linkedRecords = [],
+      _index = [],
+      _free = [],
+      _seqs = [],
+      _localSeqs = [] {
     _calculateStride();
   }
 
@@ -47,9 +92,12 @@ class _DHTShortArrayHead {
     return head;
   }
 
-  TypedKey get recordKey => _headRecord.key;
-  OwnedDHTRecordPointer get recordPointer => _headRecord.ownedDHTRecordPointer;
+  RecordKey get recordKey => _headRecord.key;
+
+  OwnedDHTRecordPointer? get recordPointer => _headRecord.ownedDHTRecordPointer;
+
   int get length => _index.length;
+
   bool get isOpen => _headRecord.isOpen;
 
   Future<void> close() async {
@@ -69,11 +117,10 @@ class _DHTShortArrayHead {
   /// Returns false if the deletion was marked for later
   Future<bool> delete() => _headMutex.protect(_headRecord.delete);
 
-  Future<T> operate<T>(Future<T> Function(_DHTShortArrayHead) closure) async =>
-      _headMutex.protect(() async => closure(this));
+  Future<T> operate<T>(Future<T> Function(_DHTShortArrayHead) closure) =>
+      _headMutex.protect(() => closure(this));
 
-  Future<T> operateWrite<T>(
-          Future<T> Function(_DHTShortArrayHead) closure) async =>
+  Future<T> operateWrite<T>(Future<T> Function(_DHTShortArrayHead) closure) =>
       _headMutex.protect(() async {
         final oldLinkedRecords = List.of(_linkedRecords);
         final oldIndex = List.of(_index);
@@ -82,7 +129,7 @@ class _DHTShortArrayHead {
         try {
           final out = await closure(this);
           // Write head assuming it has been changed
-          if (!await _writeHead()) {
+          if (!await _writeHead(allowOffline: false)) {
             // Failed to write head means head got overwritten so write should
             // be considered failed
             throw const DHTExceptionOutdated();
@@ -102,8 +149,9 @@ class _DHTShortArrayHead {
       });
 
   Future<T> operateWriteEventual<T>(
-      Future<T> Function(_DHTShortArrayHead) closure,
-      {Duration? timeout}) async {
+    Future<T> Function(_DHTShortArrayHead) closure, {
+    Duration? timeout,
+  }) {
     final timeoutTs = timeout == null
         ? null
         : Veilid.instance.now().offset(TimestampDuration.fromDuration(timeout));
@@ -153,7 +201,7 @@ class _DHTShortArrayHead {
             }
           }
           // Try to do the head write
-        } while (!await _writeHead());
+        } while (!await _writeHead(allowOffline: false));
 
         onUpdatedHead?.call();
       } on Exception {
@@ -172,15 +220,18 @@ class _DHTShortArrayHead {
   /// Serialize and write out the current head record, possibly updating it
   /// if a newer copy is available online. Returns true if the write was
   /// successful
-  Future<bool> _writeHead() async {
+  Future<bool> _writeHead({required bool allowOffline}) async {
     assert(_headMutex.isLocked, 'should be in mutex here');
 
-    final headBuffer = _toProto().writeToBuffer();
-
-    final existingData = await _headRecord.tryWriteBytes(headBuffer);
-    if (existingData != null) {
+    final existingHead = await _headRecord.tryWriteMigrated(
+      _migrationCodec,
+      _toProto(),
+      options: SetDHTValueOptions(allowOffline: allowOffline),
+    );
+    if (existingHead != null) {
       // Head write failed, incorporate update
-      await _updateHead(proto.DHTShortArray.fromBuffer(existingData));
+      // Ignore migration, will be written back with the next _writeHead
+      await _updateHead(existingHead.value);
       return false;
     }
 
@@ -192,17 +243,19 @@ class _DHTShortArrayHead {
     assert(_headMutex.isLocked, 'should be in mutex here');
 
     // Get the set of new linked keys and validate it
-    final updatedLinkedKeys = head.keys.map((p) => p.toVeilid()).toList();
+    final updatedLinkedKeys = head.keys.map((p) => p.toDart()).toList();
     final updatedIndex = List.of(head.index);
-    final updatedSeqs =
-        List.of(head.seqs.map((x) => x == 0xFFFFFFFF ? null : x));
+    final updatedSeqs = List.of(
+      head.seqs.map((x) => x == 0xFFFFFFFF ? null : x),
+    );
     final updatedFree = _makeFreeList(updatedLinkedKeys, updatedIndex);
 
     // See which records are actually new
-    final oldRecords = Map<TypedKey, DHTRecord>.fromEntries(
-        _linkedRecords.map((lr) => MapEntry(lr.key, lr)));
-    final newRecords = <TypedKey, DHTRecord>{};
-    final sameRecords = <TypedKey, DHTRecord>{};
+    final oldRecords = Map<RecordKey, DHTRecord>.fromEntries(
+      _linkedRecords.map((lr) => MapEntry(lr.key, lr)),
+    );
+    final newRecords = <RecordKey, DHTRecord>{};
+    final sameRecords = <RecordKey, DHTRecord>{};
     final updatedLinkedRecords = <DHTRecord>[];
     try {
       for (var n = 0; n < updatedLinkedKeys.length; n++) {
@@ -236,10 +289,13 @@ class _DHTShortArrayHead {
     final localReports = await [_headRecord, ...updatedLinkedRecords].map((r) {
       final start = (r.key == _headRecord.key) ? 1 : 0;
       return r.inspect(
-          subkeys: [ValueSubkeyRange.make(start, start + _stride - 1)]);
+        subkeys: [ValueSubkeyRange.make(start, start + _stride - 1)],
+      );
     }).wait;
-    final updatedLocalSeqs =
-        localReports.map((l) => l.localSeqs).expand((e) => e).toList();
+    final updatedLocalSeqs = localReports
+        .map((l) => l.localSeqs)
+        .expand((e) => e)
+        .toList();
 
     // Make the new head cache
     _linkedRecords = updatedLinkedRecords;
@@ -252,8 +308,11 @@ class _DHTShortArrayHead {
   // Pull the latest or updated copy of the head record from the network
   Future<void> _loadHead() async {
     // Get an updated head record copy if one exists
-    final head = await _headRecord.getProtobuf(proto.DHTShortArray.fromBuffer,
-        subkey: 0, refreshMode: DHTRecordRefreshMode.network);
+    final head = await _headRecord.getMigrated(
+      _migrationCodec,
+      subkey: 0,
+      refreshMode: DHTRecordRefreshMode.network,
+    );
     if (head == null) {
       throw StateError('shortarray head missing during refresh');
     }
@@ -265,7 +324,9 @@ class _DHTShortArrayHead {
   // Linked record management
 
   Future<DHTRecord> _getOrCreateLinkedRecord(
-      int recordNumber, bool allowCreate) async {
+    int recordNumber,
+    bool allowCreate,
+  ) async {
     if (recordNumber == 0) {
       return _headRecord;
     }
@@ -288,15 +349,23 @@ class _DHTShortArrayHead {
       final crypto = _headRecord.crypto;
 
       final schema = DHTSchema.smpl(
-          oCnt: 0,
-          members: [DHTSchemaMember(mKey: smplWriter.key, mCnt: _stride)]);
+        oCnt: 0,
+        members: [
+          DHTSchemaMember(
+            mKey: (await pool.veilid.generateMemberId(smplWriter.key)).value,
+            mCnt: _stride,
+          ),
+        ],
+      );
       final dhtRecord = await pool.createRecord(
-          debugName: '${_headRecord.debugName}_linked_$recordNumber',
-          parent: parent,
-          routingContext: routingContext,
-          schema: schema,
-          crypto: crypto,
-          writer: smplWriter);
+        debugName: '${_headRecord.debugName}_linked_$recordNumber',
+        parent: parent,
+        routingContext: routingContext,
+        schema: schema,
+        crypto: crypto,
+        writer: smplWriter,
+        encryptionKeyOverride: EncryptionKeyOverride.fromRecordKey(parent),
+      );
 
       // Add to linked records
       _linkedRecords.add(dhtRecord);
@@ -306,7 +375,9 @@ class _DHTShortArrayHead {
 
   /// Open a linked record for reading or writing, same as the head record
   Future<DHTRecord> _openLinkedRecord(
-      TypedKey recordKey, int recordNumber) async {
+    RecordKey recordKey,
+    int recordNumber,
+  ) async {
     final writer = _headRecord.writer;
     return (writer != null)
         ? await DHTRecordPool.instance.openRecordWrite(
@@ -324,8 +395,7 @@ class _DHTShortArrayHead {
           );
   }
 
-  Future<DHTShortArrayHeadLookup> lookupPosition(
-      int pos, bool allowCreate) async {
+  Future<DHTShortArrayHeadLookup> lookupPosition(int pos, bool allowCreate) {
     final idx = _index[pos];
     return lookupIndex(idx, allowCreate);
   }
@@ -336,7 +406,10 @@ class _DHTShortArrayHead {
     final record = await _getOrCreateLinkedRecord(recordNumber, allowCreate);
     final recordSubkey = (idx % _stride) + ((recordNumber == 0) ? 1 : 0);
     return DHTShortArrayHeadLookup(
-        record: record, recordSubkey: recordSubkey, seq: seq);
+      record: record,
+      recordSubkey: recordSubkey,
+      seq: seq,
+    );
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -401,14 +474,13 @@ class _DHTShortArrayHead {
 
   /// Validate the head from the DHT is properly formatted
   /// and calculate the free list from it while we're here
-  List<int> _makeFreeList(
-      List<Typed<FixedEncodedString43>> linkedKeys, List<int> index) {
+  List<int> _makeFreeList(List<RecordKey> linkedKeys, List<int> index) {
     // Ensure nothing is duplicated in the linked keys set
     final newKeys = linkedKeys.toSet();
     assert(
-        newKeys.length <=
-            (DHTShortArray.maxElements + (_stride - 1)) ~/ _stride,
-        'too many keys: $newKeys.length');
+      newKeys.length <= (DHTShortArray.maxElements + (_stride - 1)) ~/ _stride,
+      'too many keys: $newKeys.length',
+    );
     assert(newKeys.length == linkedKeys.length, 'duplicated linked keys');
     final newIndex = index.toSet();
     assert(newIndex.length <= DHTShortArray.maxElements, 'too many indexes');
@@ -483,10 +555,7 @@ class _DHTShortArrayHead {
     // This will update any existing watches if necessary
     try {
       // Update changes to the head record
-      // Don't watch for local changes because this class already handles
-      // notifying listeners and knows when it makes local changes
-      _subscription ??=
-          await _headRecord.listen(localChanges: false, _onHeadValueChanged);
+      _subscription ??= await _headRecord.listen(_onHeadValueChanged);
 
       await _headRecord.watch(subkeys: [ValueSubkeyRange.single(0)]);
     } on Exception {
@@ -506,7 +575,10 @@ class _DHTShortArrayHead {
   // Called when the shortarray changes online and we find out from a watch
   // but not when we make a change locally
   Future<void> _onHeadValueChanged(
-      DHTRecord record, Uint8List? data, List<ValueSubkeyRange> subkeys) async {
+    DHTRecord record,
+    Uint8List? data,
+    List<ValueSubkeyRange> subkeys,
+  ) async {
     // If head record subkey zero changes, then the layout
     // of the dhtshortarray has changed
     if (data == null) {
@@ -519,7 +591,7 @@ class _DHTShortArrayHead {
     }
 
     // Decode updated head
-    final headData = proto.DHTShortArray.fromBuffer(data);
+    final headData = _migrationCodec.fromBytes(data).value;
 
     // Then update the head record
     await _headMutex.protect(() async {
@@ -527,33 +599,4 @@ class _DHTShortArrayHead {
       onUpdatedHead?.call();
     });
   }
-
-  ////////////////////////////////////////////////////////////////////////////
-
-  // Head/element mutex to ensure we keep the representation valid
-  final _headMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
-  // Subscription to head record internal changes
-  StreamSubscription<DHTRecordWatchChange>? _subscription;
-  // Notify closure for external head changes
-  void Function()? onUpdatedHead;
-
-  // Head DHT record
-  final DHTRecord _headRecord;
-  // How many elements per linked record
-  late final int _stride;
-
-  // List of additional records after the head record used for element data
-  List<DHTRecord> _linkedRecords;
-  // Ordering of the subkey indices.
-  // Elements are subkey numbers. Represents the element order.
-  List<int> _index;
-  // List of free subkeys for elements that have been removed.
-  // Used to optimize allocations.
-  List<int> _free;
-  // The sequence numbers of each subkey.
-  // Index is by subkey number not by element index.
-  // (n-1 for head record and then the next n for linked records)
-  List<int?> _seqs;
-  // The local sequence numbers for each subkey.
-  List<int?> _localSeqs;
 }

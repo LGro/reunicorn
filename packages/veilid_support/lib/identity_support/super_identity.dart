@@ -29,12 +29,12 @@ sealed class SuperIdentity with _$SuperIdentity {
     /// changing this can migrate/forward the SuperIdentity to a new DHT record
     /// Instances should not hash this recordKey, rather the actual record
     /// key used to store the superIdentity, as this may change.
-    required TypedKey recordKey,
+    required RecordKey recordKey,
 
     /// Public key of the SuperIdentity used to sign identity keys for recovery
     /// This must match the owner of the superRecord DHT record and can not be
     /// changed without changing the record
-    required PublicKey publicKey,
+    @JsonKey(name: 'public_key') required BarePublicKey barePublicKey,
 
     /// Current identity instance
     /// The most recently generated identity instance for this SuperIdentity
@@ -48,12 +48,12 @@ sealed class SuperIdentity with _$SuperIdentity {
     /// Deprecated superRecords
     /// These may be compromised and should not be considered valid for
     /// new signatures, but may be used to validate old signatures
-    required List<TypedKey> deprecatedSuperRecordKeys,
+    required List<RecordKey> deprecatedSuperRecordKeys,
 
     /// Signature of recordKey, currentInstance signature,
     /// signatures of deprecatedInstances, and deprecatedSuperRecordKeys
     /// by publicKey
-    required Signature signature,
+    @JsonKey(name: 'signature') required BareSignature bareSignature,
   }) = _SuperIdentity;
 
   ////////////////////////////////////////////////////////////////////////////
@@ -65,48 +65,63 @@ sealed class SuperIdentity with _$SuperIdentity {
   const SuperIdentity._();
 
   /// Ensure a SuperIdentity is valid
-  Future<void> validate({required TypedKey superRecordKey}) async {
+  Future<void> validate({required RecordKey superRecordKey}) async {
+    if (publicKey.kind != superRecordKey.kind) {
+      // Public key kind must match record key kind
+      throw IdentityException.invalid;
+    }
     // Validate current IdentityInstance
-    if (!await currentInstance.validateIdentityInstance(
-        superRecordKey: superRecordKey, superPublicKey: publicKey)) {
+    if (!await currentInstance.validate(
+      superRecordKey: superRecordKey,
+      superPublicKey: publicKey,
+    )) {
       // Invalid current IdentityInstance signature(s)
       throw IdentityException.invalid;
     }
 
     // Validate deprecated IdentityInstances
     for (final deprecatedInstance in deprecatedInstances) {
-      if (!await deprecatedInstance.validateIdentityInstance(
-          superRecordKey: superRecordKey, superPublicKey: publicKey)) {
+      if (!await deprecatedInstance.validate(
+        superRecordKey: superRecordKey,
+        superPublicKey: publicKey,
+      )) {
         // Invalid deprecated IdentityInstance signature(s)
         throw IdentityException.invalid;
       }
     }
 
     // Validate SuperIdentity
-    final deprecatedInstancesSignatures =
-        deprecatedInstances.map((x) => x.signature).toList();
+    final deprecatedInstancesSignatures = deprecatedInstances
+        .map((x) => x.signature.value)
+        .toList();
     if (!await _validateSuperIdentitySignature(
-        recordKey: recordKey,
-        currentInstanceSignature: currentInstance.signature,
-        deprecatedInstancesSignatures: deprecatedInstancesSignatures,
-        deprecatedSuperRecordKeys: deprecatedSuperRecordKeys,
-        publicKey: publicKey,
-        signature: signature)) {
+      recordKey: recordKey,
+      currentInstanceSignature: currentInstance.signature.value,
+      deprecatedInstancesSignatures: deprecatedInstancesSignatures,
+      deprecatedSuperRecordKeys: deprecatedSuperRecordKeys,
+      publicKey: publicKey,
+      signature: signature,
+    )) {
       // Invalid SuperIdentity signature
       throw IdentityException.invalid;
     }
   }
 
   /// Opens an existing super identity, validates it, and returns it
-  static Future<SuperIdentity?> open({required TypedKey superRecordKey}) async {
+  static Future<SuperIdentity?> open({
+    required RecordKey superRecordKey,
+  }) async {
     final pool = DHTRecordPool.instance;
 
     // SuperIdentity DHT record is public/unencrypted
-    return (await pool.openRecordRead(superRecordKey,
-            debugName: 'SuperIdentity::openSuperIdentity::SuperIdentityRecord'))
-        .deleteScope((superRec) async {
-      final superIdentity = await superRec.getJson(SuperIdentity.fromJson,
-          refreshMode: DHTRecordRefreshMode.network);
+    return (await pool.openRecordRead(
+      superRecordKey,
+      debugName: 'SuperIdentity::openSuperIdentity::SuperIdentityRecord',
+    )).deleteScope((superRec) async {
+      final superIdentity = await superRec.getJson(
+        SuperIdentity.fromJson,
+        refreshMode: DHTRecordRefreshMode.network,
+      );
       if (superIdentity == null) {
         return null;
       }
@@ -129,11 +144,19 @@ sealed class SuperIdentity with _$SuperIdentity {
   Future<VeilidCryptoSystem> get cryptoSystem =>
       Veilid.instance.getCryptoSystem(recordKey.kind);
 
-  KeyPair writer(SecretKey secretKey) =>
-      KeyPair(key: publicKey, secret: secretKey);
+  KeyPair writer(SecretKey secretKey) {
+    final kind = recordKey.kind;
+    assert(secretKey.kind == kind, 'secretKey kind must match recordKey kind');
+    return KeyPair.fromBareKeyPair(
+      kind,
+      BareKeyPair(key: barePublicKey, secret: secretKey.value),
+    );
+  }
 
-  TypedKey get typedPublicKey =>
-      TypedKey(kind: recordKey.kind, value: publicKey);
+  PublicKey get publicKey =>
+      PublicKey(kind: recordKey.kind, value: barePublicKey);
+  Signature get signature =>
+      Signature(kind: recordKey.kind, value: bareSignature);
 
   Future<VeilidCryptoSystem> validateSecret(SecretKey secretKey) async {
     final cs = await cryptoSystem;
@@ -148,33 +171,36 @@ sealed class SuperIdentity with _$SuperIdentity {
   // Internal implementation
 
   static Uint8List signatureBytes({
-    required TypedKey recordKey,
-    required Signature currentInstanceSignature,
-    required List<Signature> deprecatedInstancesSignatures,
-    required List<TypedKey> deprecatedSuperRecordKeys,
+    required RecordKey recordKey,
+    required BareSignature currentInstanceSignature,
+    required List<BareSignature> deprecatedInstancesSignatures,
+    required List<RecordKey> deprecatedSuperRecordKeys,
   }) {
     final sigBuf = BytesBuilder()
-      ..add(recordKey.decode())
-      ..add(currentInstanceSignature.decode())
-      ..add(deprecatedInstancesSignatures.expand((s) => s.decode()).toList())
-      ..add(deprecatedSuperRecordKeys.expand((s) => s.decode()).toList());
+      ..add(recordKey.opaque.toBytes())
+      ..add(currentInstanceSignature.toBytes())
+      ..add(deprecatedInstancesSignatures.expand((s) => s.toBytes()).toList())
+      ..add(
+        deprecatedSuperRecordKeys.expand((s) => s.opaque.toBytes()).toList(),
+      );
     return sigBuf.toBytes();
   }
 
   static Future<bool> _validateSuperIdentitySignature({
-    required TypedKey recordKey,
-    required Signature currentInstanceSignature,
-    required List<Signature> deprecatedInstancesSignatures,
-    required List<TypedKey> deprecatedSuperRecordKeys,
+    required RecordKey recordKey,
+    required BareSignature currentInstanceSignature,
+    required List<BareSignature> deprecatedInstancesSignatures,
+    required List<RecordKey> deprecatedSuperRecordKeys,
     required PublicKey publicKey,
     required Signature signature,
   }) async {
     final cs = await Veilid.instance.getCryptoSystem(recordKey.kind);
     final sigBytes = SuperIdentity.signatureBytes(
-        recordKey: recordKey,
-        currentInstanceSignature: currentInstanceSignature,
-        deprecatedInstancesSignatures: deprecatedInstancesSignatures,
-        deprecatedSuperRecordKeys: deprecatedSuperRecordKeys);
+      recordKey: recordKey,
+      currentInstanceSignature: currentInstanceSignature,
+      deprecatedInstancesSignatures: deprecatedInstancesSignatures,
+      deprecatedSuperRecordKeys: deprecatedSuperRecordKeys,
+    );
     return cs.verify(publicKey, sigBytes, signature);
   }
 }

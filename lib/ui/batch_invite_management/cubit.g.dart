@@ -9,13 +9,12 @@ part of 'cubit.dart';
 Batch _$BatchFromJson(Map<String, dynamic> json) => Batch(
       label: json['label'] as String,
       expiration: DateTime.parse(json['expiration'] as String),
-      dhtRecordKey:
-          Typed<FixedEncodedString43>.fromJson(json['dht_record_key']),
+      dhtRecordKey: RecordKey.fromJson(json['dht_record_key']),
       writer: KeyPair.fromJson(json['writer']),
       subkeyWriters: (json['subkey_writers'] as List<dynamic>)
           .map(KeyPair.fromJson)
           .toList(),
-      psk: FixedEncodedString43.fromJson(json['psk']),
+      psk: Typed<BareSharedSecret>.fromJson(json['psk']),
       numPopulatedSubkeys: (json['num_populated_subkeys'] as num?)?.toInt(),
     );
 

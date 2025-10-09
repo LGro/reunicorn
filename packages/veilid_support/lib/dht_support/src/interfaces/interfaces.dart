@@ -7,4 +7,6 @@ export 'dht_random_swap.dart';
 export 'dht_random_write.dart';
 export 'dht_truncate.dart';
 export 'exceptions.dart';
+export '../../../src/protobuf_migration_codec.dart';
 export 'refreshable_cubit.dart';
+export 'retry.dart';

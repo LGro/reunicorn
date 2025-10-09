@@ -23,9 +23,9 @@ Map<String, dynamic> _$BatchInviteInfoSchemaToJson(
 BatchSubkeySchema _$BatchSubkeySchemaFromJson(Map<String, dynamic> json) =>
     BatchSubkeySchema(
       json['name'] as String,
-      FixedEncodedString43.fromJson(json['public_key']),
+      Typed<BarePublicKey>.fromJson(json['public_key']),
       (json['records'] as Map<String, dynamic>).map(
-        (k, e) => MapEntry(k, Typed<FixedEncodedString43>.fromJson(e)),
+        (k, e) => MapEntry(k, RecordKey.fromJson(e)),
       ),
     );
 
@@ -39,16 +39,16 @@ Map<String, dynamic> _$BatchSubkeySchemaToJson(BatchSubkeySchema instance) =>
 BatchInvite _$BatchInviteFromJson(Map<String, dynamic> json) => BatchInvite(
       label: json['label'] as String,
       expiration: DateTime.parse(json['expiration'] as String),
-      recordKey: Typed<FixedEncodedString43>.fromJson(json['record_key']),
-      psk: FixedEncodedString43.fromJson(json['psk']),
+      recordKey: RecordKey.fromJson(json['record_key']),
+      psk: Typed<BareSharedSecret>.fromJson(json['psk']),
       subkeyCount: (json['subkey_count'] as num).toInt(),
       mySubkey: (json['my_subkey'] as num).toInt(),
       subkeyWriter: KeyPair.fromJson(json['subkey_writer']),
       myName: json['my_name'] as String,
-      myKeyPair: TypedKeyPair.fromJson(json['my_key_pair']),
+      myKeyPair: KeyPair.fromJson(json['my_key_pair']),
       myConnectionRecords:
           (json['my_connection_records'] as Map<String, dynamic>?)?.map(
-                (k, e) => MapEntry(k, Typed<FixedEncodedString43>.fromJson(e)),
+                (k, e) => MapEntry(k, RecordKey.fromJson(e)),
               ) ??
               const {},
     );

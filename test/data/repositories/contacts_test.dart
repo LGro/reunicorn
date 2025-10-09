@@ -121,7 +121,7 @@ void main() {
     final filtered = filterAccordingToSharingProfile(
       profile: profile,
       activeCirclesWithMemberCount: {'Circle': 2},
-      dhtSettings: DhtSettings(myNextKeyPair: dummyTypedKeyPair()),
+      dhtSettings: DhtSettings(myNextKeyPair: dummyKeyPair()),
       identityKey: null,
       introductionKey: null,
       introductions: [],

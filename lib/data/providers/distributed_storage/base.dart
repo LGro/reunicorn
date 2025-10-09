@@ -10,14 +10,14 @@ import '../../models/coag_contact.dart';
 
 abstract class DistributedStorage {
   /// Create an empty DHT record, return key and writer in string representation
-  Future<(Typed<FixedEncodedString43>, KeyPair)> createRecord({String? writer});
+  Future<(RecordKey, KeyPair)> createRecord({String? writer});
 
   /// Read DHT record for given key and secret, return decrypted content
-  Future<(PublicKey?, TypedKeyPair?, String?, Uint8List?)> readRecord({
-    required Typed<FixedEncodedString43> recordKey,
-    required TypedKeyPair keyPair,
-    TypedKeyPair? nextKeyPair,
-    SecretKey? psk,
+  Future<(PublicKey?, KeyPair?, String?, Uint8List?)> readRecord({
+    required RecordKey recordKey,
+    required KeyPair keyPair,
+    KeyPair? nextKeyPair,
+    SharedSecret? psk,
     PublicKey? publicKey,
     PublicKey? nextPublicKey,
   });
@@ -30,26 +30,25 @@ abstract class DistributedStorage {
 
   Future<void> watchRecord(
     String coagContactId,
-    Typed<FixedEncodedString43> key,
-    Future<void> Function(String coagContactId, Typed<FixedEncodedString43> key)
-        onNetworkUpdate,
+    RecordKey key,
+    Future<void> Function(String coagContactId, RecordKey key) onNetworkUpdate,
   );
 
   Future<CoagContact?> getContact(
     CoagContact contact, {
-    Iterable<TypedKeyPair> myMiscKeyPairs = const [],
+    Iterable<KeyPair> myMiscKeyPairs = const [],
     bool useLocalCache = false,
   });
 
   Future<void> updateBackupRecord(
     AccountBackup backup,
-    Typed<FixedEncodedString43> recordKey,
+    RecordKey recordKey,
     KeyPair writer,
-    FixedEncodedString43 secret,
+    SharedSecret secret,
   );
 
   Future<String?> readBackupRecord(
-    Typed<FixedEncodedString43> recordKey,
-    FixedEncodedString43 secret,
+    RecordKey recordKey,
+    SharedSecret secret,
   );
 }

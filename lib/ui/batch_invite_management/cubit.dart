@@ -22,22 +22,23 @@ Future<Batch> createBatch(
   String label,
   DateTime expiration,
 ) async {
-  final cryptoSystem = await Veilid.instance.bestCryptoSystem();
+  final cryptoSystem = await Veilid.instance.getCryptoSystem(cryptoKindVLD0);
   final routingContext = await Veilid.instance.routingContext();
 
   // Generate writer key pairs for owner and subkeys
   final ownerWriter = await cryptoSystem.generateKeyPair();
   final subkeyWriters = await Future.wait(
-    List.generate(numSubKeys, (_) async => cryptoSystem.generateKeyPair()),
+    List.generate(numSubKeys, (_) => cryptoSystem.generateKeyPair()),
   );
 
   // Create record with individual subkey writers
   final record = await routingContext.createDHTRecord(
+    cryptoKindVLD0,
     DHTSchema.smpl(
       oCnt: 1,
-      members: subkeyWriters
-          .map((w) => DHTSchemaMember(mKey: w.key, mCnt: 1))
-          .toList(),
+      members: await Future.wait(subkeyWriters
+          .map((w) => DHTSchemaMember.fromPublicKey(Veilid.instance, w.key, 1))
+          .toList()),
     ),
     owner: ownerWriter,
   );

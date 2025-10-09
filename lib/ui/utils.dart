@@ -155,8 +155,8 @@ Iterable<String> generateBatchInviteLinks(Batch batch) =>
 // TODO: Pass dhtSettings to all the Url generators to make it easier to test that the correct keys are used?
 Uri directSharingUrl(
   String name,
-  Typed<FixedEncodedString43> dhtRecordKey,
-  FixedEncodedString43 psk,
+  RecordKey dhtRecordKey,
+  SharedSecret psk,
 ) =>
     Uri(
       scheme: 'https',
@@ -174,8 +174,8 @@ Uri profileUrl(String name, PublicKey publicKey) => Uri(
 
 Uri batchInviteUrl(
   String label,
-  Typed<FixedEncodedString43> dhtRecordKey,
-  FixedEncodedString43 psk,
+  RecordKey dhtRecordKey,
+  SharedSecret psk,
   int subKeyIndex,
   KeyPair writer,
 ) =>
@@ -195,8 +195,8 @@ Uri batchInviteUrl(
 
 Uri profileBasedOfferUrl(
   String name,
-  Typed<FixedEncodedString43> dhtRecordKey,
-  FixedEncodedString43 publicKey,
+  RecordKey dhtRecordKey,
+  PublicKey publicKey,
 ) =>
     Uri(
       scheme: 'https',
@@ -230,7 +230,7 @@ Iterable<(CoagContact, ContactIntroduction)> pendingIntroductions(
               .where(
                 (i) => !contacts
                     .map((c) => c.dhtSettings.recordKeyThemSharing)
-                    .whereType<Typed<FixedEncodedString43>>()
+                    .whereType<RecordKey>()
                     .contains(i.dhtRecordKeyReceiving),
               )
               .map((i) => (c, i)),

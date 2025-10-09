@@ -26,8 +26,7 @@ Uint8List randomUint8List(int length) {
   return Uint8List.fromList(List.generate(length, (_) => random.nextInt(256)));
 }
 
-Typed<FixedEncodedString43> dummyDhtRecordKey([int? i]) =>
-    Typed<FixedEncodedString43>(
+RecordKey dummyDhtRecordKey([int? i]) => RecordKey(
       kind: cryptoKindVLD0,
       value: (i == null)
           ? FixedEncodedString43.fromBytes(randomUint8List(32))
@@ -39,8 +38,7 @@ Typed<FixedEncodedString43> dummyDhtRecordKey([int? i]) =>
 FixedEncodedString43 dummyPsk(int i) =>
     FixedEncodedString43.fromBytes(Uint8List.fromList(List.filled(32, i)));
 
-TypedKeyPair dummyTypedKeyPair([int pub = 0, int sec = 1]) =>
-    TypedKeyPair.fromKeyPair(
+KeyPair dummyKeyPair([int pub = 0, int sec = 1]) => KeyPair.fromKeyPair(
       cryptoKindVLD0,
       KeyPair(
         key: FixedEncodedString43.fromBytes(
@@ -164,7 +162,7 @@ class DummyPersistentStorage extends PersistentStorage {
 
 class DummyDistributedStorage extends VeilidDhtStorage {
   DummyDistributedStorage({
-    Map<Typed<FixedEncodedString43>, CoagContactDHTSchema?>? initialDht,
+    Map<RecordKey, CoagContactDHTSchema?>? initialDht,
     this.transparent = false,
   }) {
     if (initialDht != null) {
@@ -173,15 +171,12 @@ class DummyDistributedStorage extends VeilidDhtStorage {
   }
   final bool transparent;
   List<String> log = [];
-  Map<Typed<FixedEncodedString43>, CoagContactDHTSchema?> dht = {};
-  Map<
-          Typed<FixedEncodedString43>,
-          Future<void> Function(
-              String coagContactId, Typed<FixedEncodedString43> key)>
+  Map<RecordKey, CoagContactDHTSchema?> dht = {};
+  Map<RecordKey, Future<void> Function(String coagContactId, RecordKey key)>
       _watchedRecords = {};
 
   @override
-  Future<(Typed<FixedEncodedString43>, KeyPair)> createRecord({
+  Future<(RecordKey, KeyPair)> createRecord({
     String? writer,
   }) async {
     log.add('createDHTRecord');
@@ -192,18 +187,18 @@ class DummyDistributedStorage extends VeilidDhtStorage {
     }
     final recordKey = dummyDhtRecordKey();
     dht[recordKey] = null;
-    return (recordKey, dummyTypedKeyPair().toKeyPair());
+    return (recordKey, dummyKeyPair());
   }
 
   @override
-  Future<(PublicKey?, TypedKeyPair?, String?, Uint8List?)> readRecord({
-    required Typed<FixedEncodedString43> recordKey,
-    TypedKeyPair? keyPair,
-    TypedKeyPair? nextKeyPair,
+  Future<(PublicKey?, KeyPair?, String?, Uint8List?)> readRecord({
+    required RecordKey recordKey,
+    KeyPair? keyPair,
+    KeyPair? nextKeyPair,
     SecretKey? psk,
     PublicKey? publicKey,
     PublicKey? nextPublicKey,
-    Iterable<TypedKeyPair> myMiscKeyPairs = const [],
+    Iterable<KeyPair> myMiscKeyPairs = const [],
     int maxRetries = 3,
     DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.network,
   }) async {

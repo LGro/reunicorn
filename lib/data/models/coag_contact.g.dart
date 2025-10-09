@@ -9,32 +9,31 @@ part of 'coag_contact.dart';
 DhtSettings _$DhtSettingsFromJson(Map<String, dynamic> json) => DhtSettings(
       myNextKeyPair: json['my_next_key_pair'] == null
           ? null
-          : TypedKeyPair.fromJson(json['my_next_key_pair']),
+          : KeyPair.fromJson(json['my_next_key_pair']),
       myKeyPair: json['my_key_pair'] == null
           ? null
-          : TypedKeyPair.fromJson(json['my_key_pair']),
+          : KeyPair.fromJson(json['my_key_pair']),
       theirNextPublicKey: json['their_next_public_key'] == null
           ? null
-          : FixedEncodedString43.fromJson(json['their_next_public_key']),
+          : Typed<BarePublicKey>.fromJson(json['their_next_public_key']),
       theirPublicKey: json['their_public_key'] == null
           ? null
-          : FixedEncodedString43.fromJson(json['their_public_key']),
+          : Typed<BarePublicKey>.fromJson(json['their_public_key']),
       recordKeyMeSharing: json['record_key_me_sharing'] == null
           ? null
-          : Typed<FixedEncodedString43>.fromJson(json['record_key_me_sharing']),
+          : RecordKey.fromJson(json['record_key_me_sharing']),
       writerMeSharing: json['writer_me_sharing'] == null
           ? null
           : KeyPair.fromJson(json['writer_me_sharing']),
       recordKeyThemSharing: json['record_key_them_sharing'] == null
           ? null
-          : Typed<FixedEncodedString43>.fromJson(
-              json['record_key_them_sharing']),
+          : RecordKey.fromJson(json['record_key_them_sharing']),
       writerThemSharing: json['writer_them_sharing'] == null
           ? null
           : KeyPair.fromJson(json['writer_them_sharing']),
       initialSecret: json['initial_secret'] == null
           ? null
-          : FixedEncodedString43.fromJson(json['initial_secret']),
+          : Typed<BareSharedSecret>.fromJson(json['initial_secret']),
       theyAckHandshakeComplete:
           json['they_ack_handshake_complete'] as bool? ?? false,
     );
@@ -152,7 +151,7 @@ ProfileInfo _$ProfileInfoFromJson(Map<String, dynamic> json) => ProfileInfo(
               json['sharing_settings'] as Map<String, dynamic>),
       mainKeyPair: json['main_key_pair'] == null
           ? null
-          : TypedKeyPair.fromJson(json['main_key_pair']),
+          : KeyPair.fromJson(json['main_key_pair']),
     );
 
 Map<String, dynamic> _$ProfileInfoToJson(ProfileInfo instance) =>
@@ -173,15 +172,14 @@ CoagContact _$CoagContactFromJson(Map<String, dynamic> json) => CoagContact(
       name: json['name'] as String,
       dhtSettings:
           DhtSettings.fromJson(json['dht_settings'] as Map<String, dynamic>),
-      myIdentity: TypedKeyPair.fromJson(json['my_identity']),
-      myIntroductionKeyPair:
-          TypedKeyPair.fromJson(json['my_introduction_key_pair']),
+      myIdentity: KeyPair.fromJson(json['my_identity']),
+      myIntroductionKeyPair: KeyPair.fromJson(json['my_introduction_key_pair']),
       details: json['details'] == null
           ? null
           : ContactDetails.fromJson(json['details'] as Map<String, dynamic>),
       theirIdentity: json['their_identity'] == null
           ? null
-          : Typed<FixedEncodedString43>.fromJson(json['their_identity']),
+          : Typed<BarePublicKey>.fromJson(json['their_identity']),
       connectionAttestations:
           (json['connection_attestations'] as List<dynamic>?)
                   ?.map((e) => e as String)
@@ -207,11 +205,10 @@ CoagContact _$CoagContactFromJson(Map<String, dynamic> json) => CoagContact(
               json['shared_profile'] as Map<String, dynamic>),
       theirIntroductionKey: json['their_introduction_key'] == null
           ? null
-          : Typed<FixedEncodedString43>.fromJson(
-              json['their_introduction_key']),
+          : Typed<BarePublicKey>.fromJson(json['their_introduction_key']),
       myPreviousIntroductionKeyPairs:
           (json['my_previous_introduction_key_pairs'] as List<dynamic>?)
-                  ?.map(TypedKeyPair.fromJson)
+                  ?.map(KeyPair.fromJson)
                   .toList() ??
               const [],
       introductionsForThem: (json['introductions_for_them'] as List<dynamic>?)
@@ -311,7 +308,7 @@ CoagContactDHTSchemaV2 _$CoagContactDHTSchemaV2FromJson(
       shareBackDHTWriter: json['share_back_d_h_t_writer'] as String?,
       identityKey: json['identity_key'] == null
           ? null
-          : Typed<FixedEncodedString43>.fromJson(json['identity_key']),
+          : Typed<BarePublicKey>.fromJson(json['identity_key']),
       addressLocations: (json['address_locations'] as Map<String, dynamic>?)
               ?.map(
             (k, e) => MapEntry(
@@ -331,7 +328,7 @@ CoagContactDHTSchemaV2 _$CoagContactDHTSchemaV2FromJson(
               const [],
       introductionKey: json['introduction_key'] == null
           ? null
-          : Typed<FixedEncodedString43>.fromJson(json['introduction_key']),
+          : Typed<BarePublicKey>.fromJson(json['introduction_key']),
       introductions: (json['introductions'] as List<dynamic>?)
               ?.map((e) =>
                   ContactIntroduction.fromJson(e as Map<String, dynamic>))

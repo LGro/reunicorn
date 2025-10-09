@@ -19,20 +19,19 @@ import '../test/mocked_providers.dart';
 
 const appUserName = 'App User Name';
 
-Typed<FixedEncodedString43> _dummyDhtRecordKey(int i) =>
-    Typed<FixedEncodedString43>(
-      kind: cryptoKindVLD0,
-      value: FixedEncodedString43.fromBytes(
+RecordKey _dummyDhtRecordKey(int i) => RecordKey.fromBareRecordKey(
+      cryptoKindVLD0,
+      BareRecordKey.fromBytes(
         Uint8List.fromList(List.filled(32, i)),
       ),
     );
 
-FixedEncodedString43 _dummyPsk(int i) =>
-    FixedEncodedString43.fromBytes(Uint8List.fromList(List.filled(32, i)));
+SharedSecret _dummyPsk(int i) =>
+    SharedSecret.fromBytes(Uint8List.fromList(List.filled(32, i)));
 
 Future<ContactsRepository> _contactsRepositoryFromContacts({
   required List<CoagContact> contacts,
-  required Map<Typed<FixedEncodedString43>, CoagContactDHTSchema> initialDht,
+  required Map<RecordKey, CoagContactDHTSchema> initialDht,
 }) async =>
     ContactsRepository(
       DummyPersistentStorage(
@@ -50,7 +49,7 @@ void main() {
   group('Test Cubit State Transitions', () {
     ContactsRepository? contactsRepository;
     var initialContacts = <CoagContact>[];
-    var initialDht = <Typed<FixedEncodedString43>, CoagContactDHTSchema>{};
+    var initialDht = <RecordKey, CoagContactDHTSchema>{};
 
     setUp(() async {
       await AppGlobalInit.initialize();
@@ -58,19 +57,19 @@ void main() {
         CoagContact(
           coagContactId: '2',
           name: 'Existing Contact A',
-          myIdentity: await generateTypedKeyPairBest(),
-          myIntroductionKeyPair: await generateTypedKeyPairBest(),
+          myIdentity: await generateKeyPairBest(),
+          myIntroductionKeyPair: await generateKeyPairBest(),
           dhtSettings: DhtSettings(
-            myNextKeyPair: await generateTypedKeyPairBest(),
+            myNextKeyPair: await generateKeyPairBest(),
           ),
         ),
         CoagContact(
           coagContactId: '5',
           name: 'Existing Contact B',
-          myIdentity: await generateTypedKeyPairBest(),
-          myIntroductionKeyPair: await generateTypedKeyPairBest(),
+          myIdentity: await generateKeyPairBest(),
+          myIntroductionKeyPair: await generateKeyPairBest(),
           dhtSettings: DhtSettings(
-            myNextKeyPair: await generateTypedKeyPairBest(),
+            myNextKeyPair: await generateKeyPairBest(),
           ),
         ),
       ];
@@ -78,21 +77,21 @@ void main() {
         _dummyDhtRecordKey(0): CoagContactDHTSchema(
           details: const ContactDetails(names: {'0': 'DHT 0'}),
           shareBackDHTKey: _dummyDhtRecordKey(9).toString(),
-          shareBackPubKey: await generateTypedKeyPairBest().then(
+          shareBackPubKey: await generateKeyPairBest().then(
             (kp) => kp.key.toString(),
           ),
         ),
         _dummyDhtRecordKey(1): CoagContactDHTSchema(
           details: const ContactDetails(names: {'1': 'DHT 1'}),
           shareBackDHTKey: _dummyDhtRecordKey(8).toString(),
-          shareBackPubKey: await generateTypedKeyPairBest().then(
+          shareBackPubKey: await generateKeyPairBest().then(
             (kp) => kp.key.toString(),
           ),
         ),
         _dummyDhtRecordKey(2): CoagContactDHTSchema(
           details: const ContactDetails(names: {'2': 'DHT 2'}),
           shareBackDHTKey: _dummyDhtRecordKey(8).toString(),
-          shareBackPubKey: await generateTypedKeyPairBest().then(
+          shareBackPubKey: await generateKeyPairBest().then(
             (kp) => kp.key.toString(),
           ),
         ),
@@ -323,7 +322,7 @@ void main() {
     //       c.qrCodeCaptured(mobile_scanner.BarcodeCapture(barcodes: [
     //     mobile_scanner.Barcode(
     //         rawValue: batchInviteUrl('Batch Label', _dummyDhtRecordKey(4),
-    //                 _dummyPsk(4), 4, _dummyTypedKeyPair(4, 4).toKeyPair())
+    //                 _dummyPsk(4), 4, _dummyKeyPair(4, 4).toKeyPair())
     //             .toString())
     //   ])),
     //   expect: () => [

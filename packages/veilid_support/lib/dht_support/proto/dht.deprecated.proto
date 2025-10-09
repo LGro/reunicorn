@@ -1,0 +1,70 @@
+syntax = "proto3";
+package dht.deprecated;
+import "veilid.deprecated.proto";
+
+// DHTData - represents chunked blob data in the DHT
+// Header in subkey 0 follows this structure
+//
+// stride = descriptor subkey count on first key - 1
+// Subkeys 1..=stride on the first key are concatenated chunks
+// Subkeys 0..stride on the 'keys' keys are concatenated chunks
+//
+// Keys must use writable schema in order to make this data mutable
+
+message DHTData {
+    // Other keys to concatenate
+    // Uses the same writer as this DHTList with SMPL schema
+    repeated veilid.deprecated.TypedKey keys = 1;
+    // Hash of reassembled data to verify contents
+    veilid.deprecated.TypedKey hash = 2;
+    // Chunk size per subkey
+    uint32 chunk = 3;
+    // Total data size
+    uint32 size = 4;
+}
+
+// DHTLog - represents a ring buffer of many elements with append/truncate semantics
+// Header in subkey 0 of first key follows this structure
+message DHTLog {
+    // Position of the start of the log (oldest items)
+    uint32 head = 1;
+    // Position of the end of the log (newest items)
+    uint32 tail = 2;
+    // Stride of each segment of the dhtlog
+    uint32 stride = 3;
+}
+
+// DHTShortArray - represents a re-orderable collection of up to 256 individual elements
+// Header in subkey 0 of first key follows this structure
+//
+// stride = descriptor subkey count on first key - 1
+// Subkeys 1..=stride on the first key are individual elements
+// Subkeys 0..stride on the 'keys' keys are also individual elements
+//
+// Keys must use writable schema in order to make this list mutable
+message DHTShortArray {
+    // Other keys to concatenate
+    // Uses the same writer as this DHTList with SMPL schema
+    repeated veilid.deprecated.TypedKey keys = 1;
+    
+    // Item position index (uint8[256./])
+    // Actual item location is:
+    //   idx = index[n] + 1 (offset for header at idx 0)
+    //   key = idx / stride
+    //   subkey = idx % stride
+    bytes index = 2;
+    
+    // Most recent sequence numbers for elements
+    repeated uint32 seqs = 3;
+    
+    // Free items are not represented in the list but can be
+    // calculated through iteration
+}
+
+// A pointer to an child DHT record
+message OwnedDHTRecordPointer {
+    // DHT Record key
+    veilid.deprecated.TypedKey record_key = 1;
+    // DHT record owner key
+    veilid.deprecated.KeyPair owner = 2;
+}

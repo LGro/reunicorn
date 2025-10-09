@@ -12,11 +12,22 @@ typedef DHTShortArrayCubitState<T> = BlocBusyState<DHTShortArrayState<T>>;
 
 class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayCubitState<T>>
     with BlocBusyWrapper<DHTShortArrayState<T>>, RefreshableCubit {
+  final WaitSet<void, bool> _initWait = WaitSet();
+
+  late final DHTShortArray _shortArray;
+
+  final MigrationCodec<T> migrationCodec;
+
+  StreamSubscription<void>? _subscription;
+
+  var _wantsCloseRecord = false;
+
+  final _sspUpdate = SingleStatelessProcessor();
+
   DHTShortArrayCubit({
     required Future<DHTShortArray> Function() open,
-    required T Function(List<int> data) decodeElement,
-  })  : _decodeElement = decodeElement,
-        super(const BlocBusyState(AsyncValue.loading())) {
+    required this.migrationCodec,
+  }) : super(const BlocBusyState(AsyncValue.loading())) {
     _initWait.add((cancel) async {
       try {
         // Do record open/create
@@ -51,11 +62,13 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayCubitState<T>>
     await _refreshNoWait(forceRefresh: forceRefresh);
   }
 
-  Future<void> _refreshNoWait({bool forceRefresh = false}) async =>
-      busy((emit) async => _refreshInner(emit, forceRefresh: forceRefresh));
+  Future<void> _refreshNoWait({bool forceRefresh = false}) =>
+      busy((emit) => _refreshInner(emit, forceRefresh: forceRefresh));
 
-  Future<void> _refreshInner(void Function(DHTShortArrayState<T>) emit,
-      {bool forceRefresh = false}) async {
+  Future<void> _refreshInner(
+    void Function(DHTShortArrayState<T>) emit, {
+    bool forceRefresh = false,
+  }) async {
     try {
       final newState = await _shortArray.operate((reader) async {
         // If this is writeable get the offline positions
@@ -67,9 +80,12 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayCubitState<T>>
         // Get the items
         final allItems = (await reader.getRange(0, forceRefresh: forceRefresh))
             ?.indexed
-            .map((x) => OnlineElementState(
-                value: _decodeElement(x.$2),
-                isOffline: offlinePositions?.contains(x.$1) ?? false))
+            .map(
+              (x) => OnlineElementState(
+                value: migrationCodec.fromBytes(x.$2).value,
+                isOffline: offlinePositions?.contains(x.$1) ?? false,
+              ),
+            )
             .toIList();
         return allItems;
       });
@@ -92,8 +108,7 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayCubitState<T>>
     // still processing the last one.
     // Only called after init future has run, or during it
     // so we dont have to wait for that here.
-    _sspUpdate.busyUpdate<T, DHTShortArrayState<T>>(
-        busy, (emit) async => _refreshInner(emit));
+    _sspUpdate.busyUpdate<T, DHTShortArrayState<T>>(busy, _refreshInner);
   }
 
   @override
@@ -108,28 +123,24 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayCubitState<T>>
   }
 
   Future<R> operate<R>(
-      Future<R> Function(DHTShortArrayReadOperations) closure) async {
+    Future<R> Function(DHTShortArrayReadOperations) closure,
+  ) async {
     await _initWait();
     return _shortArray.operate(closure);
   }
 
   Future<R> operateWrite<R>(
-      Future<R> Function(DHTShortArrayWriteOperations) closure) async {
+    Future<R> Function(DHTShortArrayWriteOperations) closure,
+  ) async {
     await _initWait();
     return _shortArray.operateWrite(closure);
   }
 
   Future<R> operateWriteEventual<R>(
-      Future<R> Function(DHTShortArrayWriteOperations) closure,
-      {Duration? timeout}) async {
+    Future<R> Function(DHTShortArrayWriteOperations) closure, {
+    Duration? timeout,
+  }) async {
     await _initWait();
     return _shortArray.operateWriteEventual(closure, timeout: timeout);
   }
-
-  final WaitSet<void, bool> _initWait = WaitSet();
-  late final DHTShortArray _shortArray;
-  final T Function(List<int> data) _decodeElement;
-  StreamSubscription<void>? _subscription;
-  bool _wantsCloseRecord = false;
-  final _sspUpdate = SingleStatelessProcessor();
 }

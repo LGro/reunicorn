@@ -1,10 +1,13 @@
 import 'package:veilid/veilid.dart';
 
 class DHTSeqChange {
-  const DHTSeqChange(this.subkey, this.oldSeq, this.newSeq);
   final int subkey;
+
   final int? oldSeq;
+
   final int newSeq;
+
+  const DHTSeqChange(this.subkey, this.oldSeq, this.newSeq);
 }
 
 extension DHTReportReportExt on DHTRecordReport {
@@ -24,8 +27,9 @@ extension DHTReportReportExt on DHTRecordReport {
         if (nseq != null && (lseq == null || nseq > lseq)) {
           if (currentSubkeys.isNotEmpty &&
               currentSubkeys.last.high == (sk - 1)) {
-            currentSubkeys.add(ValueSubkeyRange(
-                low: currentSubkeys.removeLast().low, high: sk));
+            currentSubkeys.add(
+              ValueSubkeyRange(low: currentSubkeys.removeLast().low, high: sk),
+            );
           } else {
             currentSubkeys.add(ValueSubkeyRange.single(sk));
           }

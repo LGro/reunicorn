@@ -9,6 +9,9 @@ import 'table_db.dart';
 
 abstract class AsyncTableDBBackedCubit<T> extends Cubit<AsyncValue<T?>>
     with TableDBBackedJson<T?> {
+  final WaitSet<void, void> _initWait = WaitSet();
+  final _mutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
+
   AsyncTableDBBackedCubit() : super(const AsyncValue.loading()) {
     _initWait.add(_build);
   }
@@ -44,7 +47,4 @@ abstract class AsyncTableDBBackedCubit<T> extends Cubit<AsyncValue<T?>>
       emit(AsyncValue.error(e, st));
     }
   }
-
-  final WaitSet<void, void> _initWait = WaitSet();
-  final Mutex _mutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
 }

@@ -34,7 +34,7 @@ class SettingsRepository {
     unawaited(_init());
   }
 
-  String _bootstrapServer = 'bootstrap-v1.veilid.net';
+  String _bootstrapServer = 'bootstrap-v1.staging.veilid.net';
   bool _darkMode = false;
   String _customMapProviderUrl = '';
   String _mapStyleJson = '{}';

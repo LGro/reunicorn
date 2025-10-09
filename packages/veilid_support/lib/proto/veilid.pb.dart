@@ -13,58 +13,23 @@ import 'dart:core' as $core;
 
 import 'package:protobuf/protobuf.dart' as $pb;
 
-/// 32-byte value in bigendian format
-class CryptoKey extends $pb.GeneratedMessage {
-  factory CryptoKey({
-    $core.int? u0,
-    $core.int? u1,
-    $core.int? u2,
-    $core.int? u3,
-    $core.int? u4,
-    $core.int? u5,
-    $core.int? u6,
-    $core.int? u7,
+/// Byte Array Types
+class BarePublicKey extends $pb.GeneratedMessage {
+  factory BarePublicKey({
+    $core.List<$core.int>? data,
   }) {
     final $result = create();
-    if (u0 != null) {
-      $result.u0 = u0;
-    }
-    if (u1 != null) {
-      $result.u1 = u1;
-    }
-    if (u2 != null) {
-      $result.u2 = u2;
-    }
-    if (u3 != null) {
-      $result.u3 = u3;
-    }
-    if (u4 != null) {
-      $result.u4 = u4;
-    }
-    if (u5 != null) {
-      $result.u5 = u5;
-    }
-    if (u6 != null) {
-      $result.u6 = u6;
-    }
-    if (u7 != null) {
-      $result.u7 = u7;
+    if (data != null) {
+      $result.data = data;
     }
     return $result;
   }
-  CryptoKey._() : super();
-  factory CryptoKey.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory CryptoKey.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  BarePublicKey._() : super();
+  factory BarePublicKey.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BarePublicKey.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CryptoKey', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
-    ..a<$core.int>(1, _omitFieldNames ? '' : 'u0', $pb.PbFieldType.OF3)
-    ..a<$core.int>(2, _omitFieldNames ? '' : 'u1', $pb.PbFieldType.OF3)
-    ..a<$core.int>(3, _omitFieldNames ? '' : 'u2', $pb.PbFieldType.OF3)
-    ..a<$core.int>(4, _omitFieldNames ? '' : 'u3', $pb.PbFieldType.OF3)
-    ..a<$core.int>(5, _omitFieldNames ? '' : 'u4', $pb.PbFieldType.OF3)
-    ..a<$core.int>(6, _omitFieldNames ? '' : 'u5', $pb.PbFieldType.OF3)
-    ..a<$core.int>(7, _omitFieldNames ? '' : 'u6', $pb.PbFieldType.OF3)
-    ..a<$core.int>(8, _omitFieldNames ? '' : 'u7', $pb.PbFieldType.OF3)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BarePublicKey', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -72,188 +37,49 @@ class CryptoKey extends $pb.GeneratedMessage {
   'Using this can add significant overhead to your binary. '
   'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
   'Will be removed in next major version')
-  CryptoKey clone() => CryptoKey()..mergeFromMessage(this);
+  BarePublicKey clone() => BarePublicKey()..mergeFromMessage(this);
   @$core.Deprecated(
   'Using this can add significant overhead to your binary. '
   'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
   'Will be removed in next major version')
-  CryptoKey copyWith(void Function(CryptoKey) updates) => super.copyWith((message) => updates(message as CryptoKey)) as CryptoKey;
+  BarePublicKey copyWith(void Function(BarePublicKey) updates) => super.copyWith((message) => updates(message as BarePublicKey)) as BarePublicKey;
 
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static CryptoKey create() => CryptoKey._();
-  CryptoKey createEmptyInstance() => create();
-  static $pb.PbList<CryptoKey> createRepeated() => $pb.PbList<CryptoKey>();
+  static BarePublicKey create() => BarePublicKey._();
+  BarePublicKey createEmptyInstance() => create();
+  static $pb.PbList<BarePublicKey> createRepeated() => $pb.PbList<BarePublicKey>();
   @$core.pragma('dart2js:noInline')
-  static CryptoKey getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CryptoKey>(create);
-  static CryptoKey? _defaultInstance;
+  static BarePublicKey getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BarePublicKey>(create);
+  static BarePublicKey? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.int get u0 => $_getIZ(0);
+  $core.List<$core.int> get data => $_getN(0);
   @$pb.TagNumber(1)
-  set u0($core.int v) { $_setUnsignedInt32(0, v); }
+  set data($core.List<$core.int> v) { $_setBytes(0, v); }
   @$pb.TagNumber(1)
-  $core.bool hasU0() => $_has(0);
+  $core.bool hasData() => $_has(0);
   @$pb.TagNumber(1)
-  void clearU0() => clearField(1);
-
-  @$pb.TagNumber(2)
-  $core.int get u1 => $_getIZ(1);
-  @$pb.TagNumber(2)
-  set u1($core.int v) { $_setUnsignedInt32(1, v); }
-  @$pb.TagNumber(2)
-  $core.bool hasU1() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearU1() => clearField(2);
-
-  @$pb.TagNumber(3)
-  $core.int get u2 => $_getIZ(2);
-  @$pb.TagNumber(3)
-  set u2($core.int v) { $_setUnsignedInt32(2, v); }
-  @$pb.TagNumber(3)
-  $core.bool hasU2() => $_has(2);
-  @$pb.TagNumber(3)
-  void clearU2() => clearField(3);
-
-  @$pb.TagNumber(4)
-  $core.int get u3 => $_getIZ(3);
-  @$pb.TagNumber(4)
-  set u3($core.int v) { $_setUnsignedInt32(3, v); }
-  @$pb.TagNumber(4)
-  $core.bool hasU3() => $_has(3);
-  @$pb.TagNumber(4)
-  void clearU3() => clearField(4);
-
-  @$pb.TagNumber(5)
-  $core.int get u4 => $_getIZ(4);
-  @$pb.TagNumber(5)
-  set u4($core.int v) { $_setUnsignedInt32(4, v); }
-  @$pb.TagNumber(5)
-  $core.bool hasU4() => $_has(4);
-  @$pb.TagNumber(5)
-  void clearU4() => clearField(5);
-
-  @$pb.TagNumber(6)
-  $core.int get u5 => $_getIZ(5);
-  @$pb.TagNumber(6)
-  set u5($core.int v) { $_setUnsignedInt32(5, v); }
-  @$pb.TagNumber(6)
-  $core.bool hasU5() => $_has(5);
-  @$pb.TagNumber(6)
-  void clearU5() => clearField(6);
-
-  @$pb.TagNumber(7)
-  $core.int get u6 => $_getIZ(6);
-  @$pb.TagNumber(7)
-  set u6($core.int v) { $_setUnsignedInt32(6, v); }
-  @$pb.TagNumber(7)
-  $core.bool hasU6() => $_has(6);
-  @$pb.TagNumber(7)
-  void clearU6() => clearField(7);
-
-  @$pb.TagNumber(8)
-  $core.int get u7 => $_getIZ(7);
-  @$pb.TagNumber(8)
-  set u7($core.int v) { $_setUnsignedInt32(7, v); }
-  @$pb.TagNumber(8)
-  $core.bool hasU7() => $_has(7);
-  @$pb.TagNumber(8)
-  void clearU7() => clearField(8);
+  void clearData() => clearField(1);
 }
 
-/// 64-byte value in bigendian format
-class Signature extends $pb.GeneratedMessage {
-  factory Signature({
-    $core.int? u0,
-    $core.int? u1,
-    $core.int? u2,
-    $core.int? u3,
-    $core.int? u4,
-    $core.int? u5,
-    $core.int? u6,
-    $core.int? u7,
-    $core.int? u8,
-    $core.int? u9,
-    $core.int? u10,
-    $core.int? u11,
-    $core.int? u12,
-    $core.int? u13,
-    $core.int? u14,
-    $core.int? u15,
+class BareSignature extends $pb.GeneratedMessage {
+  factory BareSignature({
+    $core.List<$core.int>? data,
   }) {
     final $result = create();
-    if (u0 != null) {
-      $result.u0 = u0;
-    }
-    if (u1 != null) {
-      $result.u1 = u1;
-    }
-    if (u2 != null) {
-      $result.u2 = u2;
-    }
-    if (u3 != null) {
-      $result.u3 = u3;
-    }
-    if (u4 != null) {
-      $result.u4 = u4;
-    }
-    if (u5 != null) {
-      $result.u5 = u5;
-    }
-    if (u6 != null) {
-      $result.u6 = u6;
-    }
-    if (u7 != null) {
-      $result.u7 = u7;
-    }
-    if (u8 != null) {
-      $result.u8 = u8;
-    }
-    if (u9 != null) {
-      $result.u9 = u9;
-    }
-    if (u10 != null) {
-      $result.u10 = u10;
-    }
-    if (u11 != null) {
-      $result.u11 = u11;
-    }
-    if (u12 != null) {
-      $result.u12 = u12;
-    }
-    if (u13 != null) {
-      $result.u13 = u13;
-    }
-    if (u14 != null) {
-      $result.u14 = u14;
-    }
-    if (u15 != null) {
-      $result.u15 = u15;
+    if (data != null) {
+      $result.data = data;
     }
     return $result;
   }
-  Signature._() : super();
-  factory Signature.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory Signature.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  BareSignature._() : super();
+  factory BareSignature.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BareSignature.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Signature', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
-    ..a<$core.int>(1, _omitFieldNames ? '' : 'u0', $pb.PbFieldType.OF3)
-    ..a<$core.int>(2, _omitFieldNames ? '' : 'u1', $pb.PbFieldType.OF3)
-    ..a<$core.int>(3, _omitFieldNames ? '' : 'u2', $pb.PbFieldType.OF3)
-    ..a<$core.int>(4, _omitFieldNames ? '' : 'u3', $pb.PbFieldType.OF3)
-    ..a<$core.int>(5, _omitFieldNames ? '' : 'u4', $pb.PbFieldType.OF3)
-    ..a<$core.int>(6, _omitFieldNames ? '' : 'u5', $pb.PbFieldType.OF3)
-    ..a<$core.int>(7, _omitFieldNames ? '' : 'u6', $pb.PbFieldType.OF3)
-    ..a<$core.int>(8, _omitFieldNames ? '' : 'u7', $pb.PbFieldType.OF3)
-    ..a<$core.int>(9, _omitFieldNames ? '' : 'u8', $pb.PbFieldType.OF3)
-    ..a<$core.int>(10, _omitFieldNames ? '' : 'u9', $pb.PbFieldType.OF3)
-    ..a<$core.int>(11, _omitFieldNames ? '' : 'u10', $pb.PbFieldType.OF3)
-    ..a<$core.int>(12, _omitFieldNames ? '' : 'u11', $pb.PbFieldType.OF3)
-    ..a<$core.int>(13, _omitFieldNames ? '' : 'u12', $pb.PbFieldType.OF3)
-    ..a<$core.int>(14, _omitFieldNames ? '' : 'u13', $pb.PbFieldType.OF3)
-    ..a<$core.int>(15, _omitFieldNames ? '' : 'u14', $pb.PbFieldType.OF3)
-    ..a<$core.int>(16, _omitFieldNames ? '' : 'u15', $pb.PbFieldType.OF3)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BareSignature', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -261,196 +87,390 @@ class Signature extends $pb.GeneratedMessage {
   'Using this can add significant overhead to your binary. '
   'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
   'Will be removed in next major version')
-  Signature clone() => Signature()..mergeFromMessage(this);
+  BareSignature clone() => BareSignature()..mergeFromMessage(this);
   @$core.Deprecated(
   'Using this can add significant overhead to your binary. '
   'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
   'Will be removed in next major version')
-  Signature copyWith(void Function(Signature) updates) => super.copyWith((message) => updates(message as Signature)) as Signature;
+  BareSignature copyWith(void Function(BareSignature) updates) => super.copyWith((message) => updates(message as BareSignature)) as BareSignature;
 
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static Signature create() => Signature._();
-  Signature createEmptyInstance() => create();
-  static $pb.PbList<Signature> createRepeated() => $pb.PbList<Signature>();
+  static BareSignature create() => BareSignature._();
+  BareSignature createEmptyInstance() => create();
+  static $pb.PbList<BareSignature> createRepeated() => $pb.PbList<BareSignature>();
   @$core.pragma('dart2js:noInline')
-  static Signature getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Signature>(create);
-  static Signature? _defaultInstance;
+  static BareSignature getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BareSignature>(create);
+  static BareSignature? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.int get u0 => $_getIZ(0);
+  $core.List<$core.int> get data => $_getN(0);
   @$pb.TagNumber(1)
-  set u0($core.int v) { $_setUnsignedInt32(0, v); }
+  set data($core.List<$core.int> v) { $_setBytes(0, v); }
   @$pb.TagNumber(1)
-  $core.bool hasU0() => $_has(0);
+  $core.bool hasData() => $_has(0);
   @$pb.TagNumber(1)
-  void clearU0() => clearField(1);
-
-  @$pb.TagNumber(2)
-  $core.int get u1 => $_getIZ(1);
-  @$pb.TagNumber(2)
-  set u1($core.int v) { $_setUnsignedInt32(1, v); }
-  @$pb.TagNumber(2)
-  $core.bool hasU1() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearU1() => clearField(2);
-
-  @$pb.TagNumber(3)
-  $core.int get u2 => $_getIZ(2);
-  @$pb.TagNumber(3)
-  set u2($core.int v) { $_setUnsignedInt32(2, v); }
-  @$pb.TagNumber(3)
-  $core.bool hasU2() => $_has(2);
-  @$pb.TagNumber(3)
-  void clearU2() => clearField(3);
-
-  @$pb.TagNumber(4)
-  $core.int get u3 => $_getIZ(3);
-  @$pb.TagNumber(4)
-  set u3($core.int v) { $_setUnsignedInt32(3, v); }
-  @$pb.TagNumber(4)
-  $core.bool hasU3() => $_has(3);
-  @$pb.TagNumber(4)
-  void clearU3() => clearField(4);
-
-  @$pb.TagNumber(5)
-  $core.int get u4 => $_getIZ(4);
-  @$pb.TagNumber(5)
-  set u4($core.int v) { $_setUnsignedInt32(4, v); }
-  @$pb.TagNumber(5)
-  $core.bool hasU4() => $_has(4);
-  @$pb.TagNumber(5)
-  void clearU4() => clearField(5);
-
-  @$pb.TagNumber(6)
-  $core.int get u5 => $_getIZ(5);
-  @$pb.TagNumber(6)
-  set u5($core.int v) { $_setUnsignedInt32(5, v); }
-  @$pb.TagNumber(6)
-  $core.bool hasU5() => $_has(5);
-  @$pb.TagNumber(6)
-  void clearU5() => clearField(6);
-
-  @$pb.TagNumber(7)
-  $core.int get u6 => $_getIZ(6);
-  @$pb.TagNumber(7)
-  set u6($core.int v) { $_setUnsignedInt32(6, v); }
-  @$pb.TagNumber(7)
-  $core.bool hasU6() => $_has(6);
-  @$pb.TagNumber(7)
-  void clearU6() => clearField(7);
-
-  @$pb.TagNumber(8)
-  $core.int get u7 => $_getIZ(7);
-  @$pb.TagNumber(8)
-  set u7($core.int v) { $_setUnsignedInt32(7, v); }
-  @$pb.TagNumber(8)
-  $core.bool hasU7() => $_has(7);
-  @$pb.TagNumber(8)
-  void clearU7() => clearField(8);
-
-  @$pb.TagNumber(9)
-  $core.int get u8 => $_getIZ(8);
-  @$pb.TagNumber(9)
-  set u8($core.int v) { $_setUnsignedInt32(8, v); }
-  @$pb.TagNumber(9)
-  $core.bool hasU8() => $_has(8);
-  @$pb.TagNumber(9)
-  void clearU8() => clearField(9);
-
-  @$pb.TagNumber(10)
-  $core.int get u9 => $_getIZ(9);
-  @$pb.TagNumber(10)
-  set u9($core.int v) { $_setUnsignedInt32(9, v); }
-  @$pb.TagNumber(10)
-  $core.bool hasU9() => $_has(9);
-  @$pb.TagNumber(10)
-  void clearU9() => clearField(10);
-
-  @$pb.TagNumber(11)
-  $core.int get u10 => $_getIZ(10);
-  @$pb.TagNumber(11)
-  set u10($core.int v) { $_setUnsignedInt32(10, v); }
-  @$pb.TagNumber(11)
-  $core.bool hasU10() => $_has(10);
-  @$pb.TagNumber(11)
-  void clearU10() => clearField(11);
-
-  @$pb.TagNumber(12)
-  $core.int get u11 => $_getIZ(11);
-  @$pb.TagNumber(12)
-  set u11($core.int v) { $_setUnsignedInt32(11, v); }
-  @$pb.TagNumber(12)
-  $core.bool hasU11() => $_has(11);
-  @$pb.TagNumber(12)
-  void clearU11() => clearField(12);
-
-  @$pb.TagNumber(13)
-  $core.int get u12 => $_getIZ(12);
-  @$pb.TagNumber(13)
-  set u12($core.int v) { $_setUnsignedInt32(12, v); }
-  @$pb.TagNumber(13)
-  $core.bool hasU12() => $_has(12);
-  @$pb.TagNumber(13)
-  void clearU12() => clearField(13);
-
-  @$pb.TagNumber(14)
-  $core.int get u13 => $_getIZ(13);
-  @$pb.TagNumber(14)
-  set u13($core.int v) { $_setUnsignedInt32(13, v); }
-  @$pb.TagNumber(14)
-  $core.bool hasU13() => $_has(13);
-  @$pb.TagNumber(14)
-  void clearU13() => clearField(14);
-
-  @$pb.TagNumber(15)
-  $core.int get u14 => $_getIZ(14);
-  @$pb.TagNumber(15)
-  set u14($core.int v) { $_setUnsignedInt32(14, v); }
-  @$pb.TagNumber(15)
-  $core.bool hasU14() => $_has(14);
-  @$pb.TagNumber(15)
-  void clearU14() => clearField(15);
-
-  @$pb.TagNumber(16)
-  $core.int get u15 => $_getIZ(15);
-  @$pb.TagNumber(16)
-  set u15($core.int v) { $_setUnsignedInt32(15, v); }
-  @$pb.TagNumber(16)
-  $core.bool hasU15() => $_has(15);
-  @$pb.TagNumber(16)
-  void clearU15() => clearField(16);
+  void clearData() => clearField(1);
 }
 
-/// 24-byte value in bigendian format
+class BareSecretKey extends $pb.GeneratedMessage {
+  factory BareSecretKey({
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  BareSecretKey._() : super();
+  factory BareSecretKey.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BareSecretKey.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BareSecretKey', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  BareSecretKey clone() => BareSecretKey()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  BareSecretKey copyWith(void Function(BareSecretKey) updates) => super.copyWith((message) => updates(message as BareSecretKey)) as BareSecretKey;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static BareSecretKey create() => BareSecretKey._();
+  BareSecretKey createEmptyInstance() => create();
+  static $pb.PbList<BareSecretKey> createRepeated() => $pb.PbList<BareSecretKey>();
+  @$core.pragma('dart2js:noInline')
+  static BareSecretKey getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BareSecretKey>(create);
+  static BareSecretKey? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<$core.int> get data => $_getN(0);
+  @$pb.TagNumber(1)
+  set data($core.List<$core.int> v) { $_setBytes(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasData() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearData() => clearField(1);
+}
+
+class BareSharedSecret extends $pb.GeneratedMessage {
+  factory BareSharedSecret({
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  BareSharedSecret._() : super();
+  factory BareSharedSecret.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BareSharedSecret.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BareSharedSecret', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  BareSharedSecret clone() => BareSharedSecret()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  BareSharedSecret copyWith(void Function(BareSharedSecret) updates) => super.copyWith((message) => updates(message as BareSharedSecret)) as BareSharedSecret;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static BareSharedSecret create() => BareSharedSecret._();
+  BareSharedSecret createEmptyInstance() => create();
+  static $pb.PbList<BareSharedSecret> createRepeated() => $pb.PbList<BareSharedSecret>();
+  @$core.pragma('dart2js:noInline')
+  static BareSharedSecret getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BareSharedSecret>(create);
+  static BareSharedSecret? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<$core.int> get data => $_getN(0);
+  @$pb.TagNumber(1)
+  set data($core.List<$core.int> v) { $_setBytes(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasData() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearData() => clearField(1);
+}
+
+class BareHashDigest extends $pb.GeneratedMessage {
+  factory BareHashDigest({
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  BareHashDigest._() : super();
+  factory BareHashDigest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BareHashDigest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BareHashDigest', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  BareHashDigest clone() => BareHashDigest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  BareHashDigest copyWith(void Function(BareHashDigest) updates) => super.copyWith((message) => updates(message as BareHashDigest)) as BareHashDigest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static BareHashDigest create() => BareHashDigest._();
+  BareHashDigest createEmptyInstance() => create();
+  static $pb.PbList<BareHashDigest> createRepeated() => $pb.PbList<BareHashDigest>();
+  @$core.pragma('dart2js:noInline')
+  static BareHashDigest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BareHashDigest>(create);
+  static BareHashDigest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<$core.int> get data => $_getN(0);
+  @$pb.TagNumber(1)
+  set data($core.List<$core.int> v) { $_setBytes(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasData() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearData() => clearField(1);
+}
+
+class BareOpaqueRecordKey extends $pb.GeneratedMessage {
+  factory BareOpaqueRecordKey({
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  BareOpaqueRecordKey._() : super();
+  factory BareOpaqueRecordKey.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BareOpaqueRecordKey.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BareOpaqueRecordKey', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  BareOpaqueRecordKey clone() => BareOpaqueRecordKey()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  BareOpaqueRecordKey copyWith(void Function(BareOpaqueRecordKey) updates) => super.copyWith((message) => updates(message as BareOpaqueRecordKey)) as BareOpaqueRecordKey;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static BareOpaqueRecordKey create() => BareOpaqueRecordKey._();
+  BareOpaqueRecordKey createEmptyInstance() => create();
+  static $pb.PbList<BareOpaqueRecordKey> createRepeated() => $pb.PbList<BareOpaqueRecordKey>();
+  @$core.pragma('dart2js:noInline')
+  static BareOpaqueRecordKey getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BareOpaqueRecordKey>(create);
+  static BareOpaqueRecordKey? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<$core.int> get data => $_getN(0);
+  @$pb.TagNumber(1)
+  set data($core.List<$core.int> v) { $_setBytes(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasData() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearData() => clearField(1);
+}
+
+class BareRouteId extends $pb.GeneratedMessage {
+  factory BareRouteId({
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  BareRouteId._() : super();
+  factory BareRouteId.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BareRouteId.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BareRouteId', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  BareRouteId clone() => BareRouteId()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  BareRouteId copyWith(void Function(BareRouteId) updates) => super.copyWith((message) => updates(message as BareRouteId)) as BareRouteId;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static BareRouteId create() => BareRouteId._();
+  BareRouteId createEmptyInstance() => create();
+  static $pb.PbList<BareRouteId> createRepeated() => $pb.PbList<BareRouteId>();
+  @$core.pragma('dart2js:noInline')
+  static BareRouteId getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BareRouteId>(create);
+  static BareRouteId? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<$core.int> get data => $_getN(0);
+  @$pb.TagNumber(1)
+  set data($core.List<$core.int> v) { $_setBytes(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasData() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearData() => clearField(1);
+}
+
+class BareNodeId extends $pb.GeneratedMessage {
+  factory BareNodeId({
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  BareNodeId._() : super();
+  factory BareNodeId.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BareNodeId.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BareNodeId', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  BareNodeId clone() => BareNodeId()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  BareNodeId copyWith(void Function(BareNodeId) updates) => super.copyWith((message) => updates(message as BareNodeId)) as BareNodeId;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static BareNodeId create() => BareNodeId._();
+  BareNodeId createEmptyInstance() => create();
+  static $pb.PbList<BareNodeId> createRepeated() => $pb.PbList<BareNodeId>();
+  @$core.pragma('dart2js:noInline')
+  static BareNodeId getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BareNodeId>(create);
+  static BareNodeId? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<$core.int> get data => $_getN(0);
+  @$pb.TagNumber(1)
+  set data($core.List<$core.int> v) { $_setBytes(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasData() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearData() => clearField(1);
+}
+
+class BareMemberId extends $pb.GeneratedMessage {
+  factory BareMemberId({
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  BareMemberId._() : super();
+  factory BareMemberId.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BareMemberId.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BareMemberId', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  BareMemberId clone() => BareMemberId()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  BareMemberId copyWith(void Function(BareMemberId) updates) => super.copyWith((message) => updates(message as BareMemberId)) as BareMemberId;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static BareMemberId create() => BareMemberId._();
+  BareMemberId createEmptyInstance() => create();
+  static $pb.PbList<BareMemberId> createRepeated() => $pb.PbList<BareMemberId>();
+  @$core.pragma('dart2js:noInline')
+  static BareMemberId getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BareMemberId>(create);
+  static BareMemberId? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<$core.int> get data => $_getN(0);
+  @$pb.TagNumber(1)
+  set data($core.List<$core.int> v) { $_setBytes(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasData() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearData() => clearField(1);
+}
+
 class Nonce extends $pb.GeneratedMessage {
   factory Nonce({
-    $core.int? u0,
-    $core.int? u1,
-    $core.int? u2,
-    $core.int? u3,
-    $core.int? u4,
-    $core.int? u5,
+    $core.List<$core.int>? data,
   }) {
     final $result = create();
-    if (u0 != null) {
-      $result.u0 = u0;
-    }
-    if (u1 != null) {
-      $result.u1 = u1;
-    }
-    if (u2 != null) {
-      $result.u2 = u2;
-    }
-    if (u3 != null) {
-      $result.u3 = u3;
-    }
-    if (u4 != null) {
-      $result.u4 = u4;
-    }
-    if (u5 != null) {
-      $result.u5 = u5;
+    if (data != null) {
+      $result.data = data;
     }
     return $result;
   }
@@ -459,12 +479,7 @@ class Nonce extends $pb.GeneratedMessage {
   factory Nonce.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Nonce', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
-    ..a<$core.int>(1, _omitFieldNames ? '' : 'u0', $pb.PbFieldType.OF3)
-    ..a<$core.int>(2, _omitFieldNames ? '' : 'u1', $pb.PbFieldType.OF3)
-    ..a<$core.int>(3, _omitFieldNames ? '' : 'u2', $pb.PbFieldType.OF3)
-    ..a<$core.int>(4, _omitFieldNames ? '' : 'u3', $pb.PbFieldType.OF3)
-    ..a<$core.int>(5, _omitFieldNames ? '' : 'u4', $pb.PbFieldType.OF3)
-    ..a<$core.int>(6, _omitFieldNames ? '' : 'u5', $pb.PbFieldType.OF3)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -490,82 +505,37 @@ class Nonce extends $pb.GeneratedMessage {
   static Nonce? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.int get u0 => $_getIZ(0);
+  $core.List<$core.int> get data => $_getN(0);
   @$pb.TagNumber(1)
-  set u0($core.int v) { $_setUnsignedInt32(0, v); }
+  set data($core.List<$core.int> v) { $_setBytes(0, v); }
   @$pb.TagNumber(1)
-  $core.bool hasU0() => $_has(0);
+  $core.bool hasData() => $_has(0);
   @$pb.TagNumber(1)
-  void clearU0() => clearField(1);
-
-  @$pb.TagNumber(2)
-  $core.int get u1 => $_getIZ(1);
-  @$pb.TagNumber(2)
-  set u1($core.int v) { $_setUnsignedInt32(1, v); }
-  @$pb.TagNumber(2)
-  $core.bool hasU1() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearU1() => clearField(2);
-
-  @$pb.TagNumber(3)
-  $core.int get u2 => $_getIZ(2);
-  @$pb.TagNumber(3)
-  set u2($core.int v) { $_setUnsignedInt32(2, v); }
-  @$pb.TagNumber(3)
-  $core.bool hasU2() => $_has(2);
-  @$pb.TagNumber(3)
-  void clearU2() => clearField(3);
-
-  @$pb.TagNumber(4)
-  $core.int get u3 => $_getIZ(3);
-  @$pb.TagNumber(4)
-  set u3($core.int v) { $_setUnsignedInt32(3, v); }
-  @$pb.TagNumber(4)
-  $core.bool hasU3() => $_has(3);
-  @$pb.TagNumber(4)
-  void clearU3() => clearField(4);
-
-  @$pb.TagNumber(5)
-  $core.int get u4 => $_getIZ(4);
-  @$pb.TagNumber(5)
-  set u4($core.int v) { $_setUnsignedInt32(4, v); }
-  @$pb.TagNumber(5)
-  $core.bool hasU4() => $_has(4);
-  @$pb.TagNumber(5)
-  void clearU4() => clearField(5);
-
-  @$pb.TagNumber(6)
-  $core.int get u5 => $_getIZ(5);
-  @$pb.TagNumber(6)
-  set u5($core.int v) { $_setUnsignedInt32(5, v); }
-  @$pb.TagNumber(6)
-  $core.bool hasU5() => $_has(5);
-  @$pb.TagNumber(6)
-  void clearU5() => clearField(6);
+  void clearData() => clearField(1);
 }
 
-/// 36-byte typed crypto key
-class TypedKey extends $pb.GeneratedMessage {
-  factory TypedKey({
+/// Type-prefixed Types
+class PublicKey extends $pb.GeneratedMessage {
+  factory PublicKey({
     $core.int? kind,
-    CryptoKey? value,
+    $core.List<$core.int>? data,
   }) {
     final $result = create();
     if (kind != null) {
       $result.kind = kind;
     }
-    if (value != null) {
-      $result.value = value;
+    if (data != null) {
+      $result.data = data;
     }
     return $result;
   }
-  TypedKey._() : super();
-  factory TypedKey.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory TypedKey.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  PublicKey._() : super();
+  factory PublicKey.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PublicKey.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'TypedKey', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PublicKey', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
     ..a<$core.int>(1, _omitFieldNames ? '' : 'kind', $pb.PbFieldType.OF3)
-    ..aOM<CryptoKey>(2, _omitFieldNames ? '' : 'value', subBuilder: CryptoKey.create)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -573,24 +543,23 @@ class TypedKey extends $pb.GeneratedMessage {
   'Using this can add significant overhead to your binary. '
   'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
   'Will be removed in next major version')
-  TypedKey clone() => TypedKey()..mergeFromMessage(this);
+  PublicKey clone() => PublicKey()..mergeFromMessage(this);
   @$core.Deprecated(
   'Using this can add significant overhead to your binary. '
   'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
   'Will be removed in next major version')
-  TypedKey copyWith(void Function(TypedKey) updates) => super.copyWith((message) => updates(message as TypedKey)) as TypedKey;
+  PublicKey copyWith(void Function(PublicKey) updates) => super.copyWith((message) => updates(message as PublicKey)) as PublicKey;
 
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static TypedKey create() => TypedKey._();
-  TypedKey createEmptyInstance() => create();
-  static $pb.PbList<TypedKey> createRepeated() => $pb.PbList<TypedKey>();
+  static PublicKey create() => PublicKey._();
+  PublicKey createEmptyInstance() => create();
+  static $pb.PbList<PublicKey> createRepeated() => $pb.PbList<PublicKey>();
   @$core.pragma('dart2js:noInline')
-  static TypedKey getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TypedKey>(create);
-  static TypedKey? _defaultInstance;
+  static PublicKey getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PublicKey>(create);
+  static PublicKey? _defaultInstance;
 
-  /// CryptoKind FourCC in bigendian format
   @$pb.TagNumber(1)
   $core.int get kind => $_getIZ(0);
   @$pb.TagNumber(1)
@@ -600,26 +569,603 @@ class TypedKey extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   void clearKind() => clearField(1);
 
-  /// Key value
   @$pb.TagNumber(2)
-  CryptoKey get value => $_getN(1);
+  $core.List<$core.int> get data => $_getN(1);
   @$pb.TagNumber(2)
-  set value(CryptoKey v) { setField(2, v); }
+  set data($core.List<$core.int> v) { $_setBytes(1, v); }
   @$pb.TagNumber(2)
-  $core.bool hasValue() => $_has(1);
+  $core.bool hasData() => $_has(1);
   @$pb.TagNumber(2)
-  void clearValue() => clearField(2);
+  void clearData() => clearField(2);
+}
+
+class Signature extends $pb.GeneratedMessage {
+  factory Signature({
+    $core.int? kind,
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (kind != null) {
+      $result.kind = kind;
+    }
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  Signature._() : super();
+  factory Signature.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory Signature.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Signature', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'kind', $pb.PbFieldType.OF3)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  Signature clone() => Signature()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  Signature copyWith(void Function(Signature) updates) => super.copyWith((message) => updates(message as Signature)) as Signature;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static Signature create() => Signature._();
+  Signature createEmptyInstance() => create();
+  static $pb.PbList<Signature> createRepeated() => $pb.PbList<Signature>();
+  @$core.pragma('dart2js:noInline')
+  static Signature getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Signature>(create);
+  static Signature? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get kind => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set kind($core.int v) { $_setUnsignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasKind() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearKind() => clearField(1);
+
   @$pb.TagNumber(2)
-  CryptoKey ensureValue() => $_ensure(1);
+  $core.List<$core.int> get data => $_getN(1);
+  @$pb.TagNumber(2)
+  set data($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasData() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearData() => clearField(2);
+}
+
+class SecretKey extends $pb.GeneratedMessage {
+  factory SecretKey({
+    $core.int? kind,
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (kind != null) {
+      $result.kind = kind;
+    }
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  SecretKey._() : super();
+  factory SecretKey.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory SecretKey.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'SecretKey', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'kind', $pb.PbFieldType.OF3)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  SecretKey clone() => SecretKey()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  SecretKey copyWith(void Function(SecretKey) updates) => super.copyWith((message) => updates(message as SecretKey)) as SecretKey;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SecretKey create() => SecretKey._();
+  SecretKey createEmptyInstance() => create();
+  static $pb.PbList<SecretKey> createRepeated() => $pb.PbList<SecretKey>();
+  @$core.pragma('dart2js:noInline')
+  static SecretKey getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SecretKey>(create);
+  static SecretKey? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get kind => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set kind($core.int v) { $_setUnsignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasKind() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearKind() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.List<$core.int> get data => $_getN(1);
+  @$pb.TagNumber(2)
+  set data($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasData() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearData() => clearField(2);
+}
+
+class HashDigest extends $pb.GeneratedMessage {
+  factory HashDigest({
+    $core.int? kind,
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (kind != null) {
+      $result.kind = kind;
+    }
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  HashDigest._() : super();
+  factory HashDigest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory HashDigest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'HashDigest', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'kind', $pb.PbFieldType.OF3)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  HashDigest clone() => HashDigest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  HashDigest copyWith(void Function(HashDigest) updates) => super.copyWith((message) => updates(message as HashDigest)) as HashDigest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static HashDigest create() => HashDigest._();
+  HashDigest createEmptyInstance() => create();
+  static $pb.PbList<HashDigest> createRepeated() => $pb.PbList<HashDigest>();
+  @$core.pragma('dart2js:noInline')
+  static HashDigest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<HashDigest>(create);
+  static HashDigest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get kind => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set kind($core.int v) { $_setUnsignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasKind() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearKind() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.List<$core.int> get data => $_getN(1);
+  @$pb.TagNumber(2)
+  set data($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasData() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearData() => clearField(2);
+}
+
+class OpaqueRecordKey extends $pb.GeneratedMessage {
+  factory OpaqueRecordKey({
+    $core.int? kind,
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (kind != null) {
+      $result.kind = kind;
+    }
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  OpaqueRecordKey._() : super();
+  factory OpaqueRecordKey.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory OpaqueRecordKey.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'OpaqueRecordKey', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'kind', $pb.PbFieldType.OF3)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  OpaqueRecordKey clone() => OpaqueRecordKey()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  OpaqueRecordKey copyWith(void Function(OpaqueRecordKey) updates) => super.copyWith((message) => updates(message as OpaqueRecordKey)) as OpaqueRecordKey;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static OpaqueRecordKey create() => OpaqueRecordKey._();
+  OpaqueRecordKey createEmptyInstance() => create();
+  static $pb.PbList<OpaqueRecordKey> createRepeated() => $pb.PbList<OpaqueRecordKey>();
+  @$core.pragma('dart2js:noInline')
+  static OpaqueRecordKey getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<OpaqueRecordKey>(create);
+  static OpaqueRecordKey? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get kind => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set kind($core.int v) { $_setUnsignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasKind() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearKind() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.List<$core.int> get data => $_getN(1);
+  @$pb.TagNumber(2)
+  set data($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasData() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearData() => clearField(2);
+}
+
+class SharedSecret extends $pb.GeneratedMessage {
+  factory SharedSecret({
+    $core.int? kind,
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (kind != null) {
+      $result.kind = kind;
+    }
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  SharedSecret._() : super();
+  factory SharedSecret.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory SharedSecret.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'SharedSecret', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'kind', $pb.PbFieldType.OF3)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  SharedSecret clone() => SharedSecret()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  SharedSecret copyWith(void Function(SharedSecret) updates) => super.copyWith((message) => updates(message as SharedSecret)) as SharedSecret;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SharedSecret create() => SharedSecret._();
+  SharedSecret createEmptyInstance() => create();
+  static $pb.PbList<SharedSecret> createRepeated() => $pb.PbList<SharedSecret>();
+  @$core.pragma('dart2js:noInline')
+  static SharedSecret getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SharedSecret>(create);
+  static SharedSecret? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get kind => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set kind($core.int v) { $_setUnsignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasKind() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearKind() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.List<$core.int> get data => $_getN(1);
+  @$pb.TagNumber(2)
+  set data($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasData() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearData() => clearField(2);
+}
+
+class RouteId extends $pb.GeneratedMessage {
+  factory RouteId({
+    $core.int? kind,
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (kind != null) {
+      $result.kind = kind;
+    }
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  RouteId._() : super();
+  factory RouteId.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory RouteId.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'RouteId', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'kind', $pb.PbFieldType.OF3)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  RouteId clone() => RouteId()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  RouteId copyWith(void Function(RouteId) updates) => super.copyWith((message) => updates(message as RouteId)) as RouteId;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static RouteId create() => RouteId._();
+  RouteId createEmptyInstance() => create();
+  static $pb.PbList<RouteId> createRepeated() => $pb.PbList<RouteId>();
+  @$core.pragma('dart2js:noInline')
+  static RouteId getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<RouteId>(create);
+  static RouteId? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get kind => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set kind($core.int v) { $_setUnsignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasKind() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearKind() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.List<$core.int> get data => $_getN(1);
+  @$pb.TagNumber(2)
+  set data($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasData() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearData() => clearField(2);
+}
+
+class NodeId extends $pb.GeneratedMessage {
+  factory NodeId({
+    $core.int? kind,
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (kind != null) {
+      $result.kind = kind;
+    }
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  NodeId._() : super();
+  factory NodeId.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory NodeId.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'NodeId', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'kind', $pb.PbFieldType.OF3)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  NodeId clone() => NodeId()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  NodeId copyWith(void Function(NodeId) updates) => super.copyWith((message) => updates(message as NodeId)) as NodeId;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static NodeId create() => NodeId._();
+  NodeId createEmptyInstance() => create();
+  static $pb.PbList<NodeId> createRepeated() => $pb.PbList<NodeId>();
+  @$core.pragma('dart2js:noInline')
+  static NodeId getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<NodeId>(create);
+  static NodeId? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get kind => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set kind($core.int v) { $_setUnsignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasKind() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearKind() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.List<$core.int> get data => $_getN(1);
+  @$pb.TagNumber(2)
+  set data($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasData() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearData() => clearField(2);
+}
+
+class MemberId extends $pb.GeneratedMessage {
+  factory MemberId({
+    $core.int? kind,
+    $core.List<$core.int>? data,
+  }) {
+    final $result = create();
+    if (kind != null) {
+      $result.kind = kind;
+    }
+    if (data != null) {
+      $result.data = data;
+    }
+    return $result;
+  }
+  MemberId._() : super();
+  factory MemberId.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory MemberId.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'MemberId', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'kind', $pb.PbFieldType.OF3)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  MemberId clone() => MemberId()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  MemberId copyWith(void Function(MemberId) updates) => super.copyWith((message) => updates(message as MemberId)) as MemberId;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static MemberId create() => MemberId._();
+  MemberId createEmptyInstance() => create();
+  static $pb.PbList<MemberId> createRepeated() => $pb.PbList<MemberId>();
+  @$core.pragma('dart2js:noInline')
+  static MemberId getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<MemberId>(create);
+  static MemberId? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get kind => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set kind($core.int v) { $_setUnsignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasKind() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearKind() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.List<$core.int> get data => $_getN(1);
+  @$pb.TagNumber(2)
+  set data($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasData() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearData() => clearField(2);
 }
 
 /// Key pair
-class KeyPair extends $pb.GeneratedMessage {
-  factory KeyPair({
-    CryptoKey? key,
-    CryptoKey? secret,
+class BareKeyPair extends $pb.GeneratedMessage {
+  factory BareKeyPair({
+    $core.List<$core.int>? key,
+    $core.List<$core.int>? secret,
   }) {
     final $result = create();
+    if (key != null) {
+      $result.key = key;
+    }
+    if (secret != null) {
+      $result.secret = secret;
+    }
+    return $result;
+  }
+  BareKeyPair._() : super();
+  factory BareKeyPair.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BareKeyPair.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BareKeyPair', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'key', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'secret', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  BareKeyPair clone() => BareKeyPair()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  BareKeyPair copyWith(void Function(BareKeyPair) updates) => super.copyWith((message) => updates(message as BareKeyPair)) as BareKeyPair;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static BareKeyPair create() => BareKeyPair._();
+  BareKeyPair createEmptyInstance() => create();
+  static $pb.PbList<BareKeyPair> createRepeated() => $pb.PbList<BareKeyPair>();
+  @$core.pragma('dart2js:noInline')
+  static BareKeyPair getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BareKeyPair>(create);
+  static BareKeyPair? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<$core.int> get key => $_getN(0);
+  @$pb.TagNumber(1)
+  set key($core.List<$core.int> v) { $_setBytes(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasKey() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearKey() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.List<$core.int> get secret => $_getN(1);
+  @$pb.TagNumber(2)
+  set secret($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasSecret() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearSecret() => clearField(2);
+}
+
+class KeyPair extends $pb.GeneratedMessage {
+  factory KeyPair({
+    $core.int? kind,
+    $core.List<$core.int>? key,
+    $core.List<$core.int>? secret,
+  }) {
+    final $result = create();
+    if (kind != null) {
+      $result.kind = kind;
+    }
     if (key != null) {
       $result.key = key;
     }
@@ -633,8 +1179,9 @@ class KeyPair extends $pb.GeneratedMessage {
   factory KeyPair.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'KeyPair', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
-    ..aOM<CryptoKey>(1, _omitFieldNames ? '' : 'key', subBuilder: CryptoKey.create)
-    ..aOM<CryptoKey>(2, _omitFieldNames ? '' : 'secret', subBuilder: CryptoKey.create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'kind', $pb.PbFieldType.OF3)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'key', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(3, _omitFieldNames ? '' : 'secret', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -659,29 +1206,175 @@ class KeyPair extends $pb.GeneratedMessage {
   static KeyPair getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<KeyPair>(create);
   static KeyPair? _defaultInstance;
 
-  /// Public key
   @$pb.TagNumber(1)
-  CryptoKey get key => $_getN(0);
+  $core.int get kind => $_getIZ(0);
   @$pb.TagNumber(1)
-  set key(CryptoKey v) { setField(1, v); }
+  set kind($core.int v) { $_setUnsignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasKind() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearKind() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.List<$core.int> get key => $_getN(1);
+  @$pb.TagNumber(2)
+  set key($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasKey() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearKey() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.List<$core.int> get secret => $_getN(2);
+  @$pb.TagNumber(3)
+  set secret($core.List<$core.int> v) { $_setBytes(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasSecret() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearSecret() => clearField(3);
+}
+
+/// Record Key
+class BareRecordKey extends $pb.GeneratedMessage {
+  factory BareRecordKey({
+    $core.List<$core.int>? key,
+    $core.List<$core.int>? encryptionKey,
+  }) {
+    final $result = create();
+    if (key != null) {
+      $result.key = key;
+    }
+    if (encryptionKey != null) {
+      $result.encryptionKey = encryptionKey;
+    }
+    return $result;
+  }
+  BareRecordKey._() : super();
+  factory BareRecordKey.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BareRecordKey.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BareRecordKey', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'key', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'encryptionKey', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  BareRecordKey clone() => BareRecordKey()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  BareRecordKey copyWith(void Function(BareRecordKey) updates) => super.copyWith((message) => updates(message as BareRecordKey)) as BareRecordKey;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static BareRecordKey create() => BareRecordKey._();
+  BareRecordKey createEmptyInstance() => create();
+  static $pb.PbList<BareRecordKey> createRepeated() => $pb.PbList<BareRecordKey>();
+  @$core.pragma('dart2js:noInline')
+  static BareRecordKey getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BareRecordKey>(create);
+  static BareRecordKey? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<$core.int> get key => $_getN(0);
+  @$pb.TagNumber(1)
+  set key($core.List<$core.int> v) { $_setBytes(0, v); }
   @$pb.TagNumber(1)
   $core.bool hasKey() => $_has(0);
   @$pb.TagNumber(1)
   void clearKey() => clearField(1);
-  @$pb.TagNumber(1)
-  CryptoKey ensureKey() => $_ensure(0);
 
-  /// Private key
   @$pb.TagNumber(2)
-  CryptoKey get secret => $_getN(1);
+  $core.List<$core.int> get encryptionKey => $_getN(1);
   @$pb.TagNumber(2)
-  set secret(CryptoKey v) { setField(2, v); }
+  set encryptionKey($core.List<$core.int> v) { $_setBytes(1, v); }
   @$pb.TagNumber(2)
-  $core.bool hasSecret() => $_has(1);
+  $core.bool hasEncryptionKey() => $_has(1);
   @$pb.TagNumber(2)
-  void clearSecret() => clearField(2);
+  void clearEncryptionKey() => clearField(2);
+}
+
+class RecordKey extends $pb.GeneratedMessage {
+  factory RecordKey({
+    $core.int? kind,
+    $core.List<$core.int>? key,
+    $core.List<$core.int>? encryptionKey,
+  }) {
+    final $result = create();
+    if (kind != null) {
+      $result.kind = kind;
+    }
+    if (key != null) {
+      $result.key = key;
+    }
+    if (encryptionKey != null) {
+      $result.encryptionKey = encryptionKey;
+    }
+    return $result;
+  }
+  RecordKey._() : super();
+  factory RecordKey.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory RecordKey.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'RecordKey', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilid'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'kind', $pb.PbFieldType.OF3)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'key', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(3, _omitFieldNames ? '' : 'encryptionKey', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  RecordKey clone() => RecordKey()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  RecordKey copyWith(void Function(RecordKey) updates) => super.copyWith((message) => updates(message as RecordKey)) as RecordKey;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static RecordKey create() => RecordKey._();
+  RecordKey createEmptyInstance() => create();
+  static $pb.PbList<RecordKey> createRepeated() => $pb.PbList<RecordKey>();
+  @$core.pragma('dart2js:noInline')
+  static RecordKey getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<RecordKey>(create);
+  static RecordKey? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get kind => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set kind($core.int v) { $_setUnsignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasKind() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearKind() => clearField(1);
+
   @$pb.TagNumber(2)
-  CryptoKey ensureSecret() => $_ensure(1);
+  $core.List<$core.int> get key => $_getN(1);
+  @$pb.TagNumber(2)
+  set key($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasKey() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearKey() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.List<$core.int> get encryptionKey => $_getN(2);
+  @$pb.TagNumber(3)
+  set encryptionKey($core.List<$core.int> v) { $_setBytes(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasEncryptionKey() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearEncryptionKey() => clearField(3);
 }
 
 
