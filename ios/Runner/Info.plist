@@ -53,7 +53,10 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
+		<string>remote-notification</string>
 	</array>
+	<key>UIApplicationExitsOnSuspend</key>
+	<false/>
 	<key>NSBonjourServices</key>
 	<array>
 	</array>

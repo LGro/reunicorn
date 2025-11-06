@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:background_fetch/background_fetch.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
@@ -242,14 +243,43 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> with WidgetsBindingObserver {
+  static const platform = MethodChannel('apns_token');
+
+  String? _apnsToken;
+
   String? _providedNameOnFirstLaunch;
 
   final _seedColor = Colors.indigo;
+
+  Future<void> _initAPNs() async {
+    platform.setMethodCallHandler((call) async {
+      if (call.method == 'onApnsToken') {
+        final raw = call.arguments;
+
+        // Only accept clean String token.
+        if (raw is! String || raw.isEmpty) {
+          debugPrint('Invalid APNs token received: $raw');
+          return;
+        }
+
+        if (mounted) {
+          setState(() => _apnsToken = raw);
+        }
+
+        debugPrint('APNs token: $raw');
+      }
+    });
+
+    // Request permission and register for notifications
+    await platform.invokeMethod('register');
+  }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    unawaited(_initAPNs());
 
     unawaited(_checkFirstLaunch());
 
@@ -265,7 +295,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
         ),
         (String taskId) async {
           // This is the callback function that will be called periodically
-          logDebug("[BackgroundFetch] Event received: $taskId");
+          logDebug('[BackgroundFetch] Event received: $taskId');
 
           final log = <String>[];
           final startTime = DateTime.now();
@@ -308,7 +338,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
           await BackgroundFetch.finish(taskId);
           return;
         },
-      ).then((int status) {
+      ).then((status) {
         logDebug('[BackgroundFetch] configure success: $status');
       }).catchError((e) {
         logDebug('[BackgroundFetch] configure ERROR: $e');
@@ -387,7 +417,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) => FutureProvider<AppGlobalInit?>(
         initialData: null,
-        create: (context) async =>
+        create: (context) =>
             // TODO: Pass initially specified boostrap url
             AppGlobalInit.initialize('bootstrap-v1.veilid.net'),
         // AppGlobalInit.initialize can throw Already attached VeilidAPIException which is fine
