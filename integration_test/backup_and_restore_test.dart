@@ -10,6 +10,7 @@ import 'package:reunicorn/ui/utils.dart';
 import 'package:reunicorn/veilid_init.dart';
 
 import '../test/mocked_providers.dart';
+import 'utils.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +21,7 @@ void main() {
 
   setUp(() async {
     // Initialize repositories
-    await AppGlobalInit.initialize();
+    await AppGlobalInit.initialize(veilidBootstrapUrl);
     _distStorage = DummyDistributedStorage(transparent: true);
 
     _cRepoA = ContactsRepository(

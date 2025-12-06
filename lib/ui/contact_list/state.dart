@@ -1,4 +1,4 @@
-// Copyright 2024 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 part of 'cubit.dart';
@@ -25,13 +25,14 @@ final class ContactListState extends Equatable {
 
   final Map<String, List<String>> circleMemberships;
   final Iterable<CoagContact> contacts;
-  final Map<String, String> circles;
+  // TODO: Can this be simplified to store just circle IDs? we don't seem to need other info
+  final Map<String, Circle> circles;
   final ContactListStatus status;
 
   ContactListState copyWith({
     ContactListStatus? status,
     Map<String, List<String>>? circleMemberships,
-    Map<String, String>? circles,
+    Map<String, Circle>? circles,
     Iterable<CoagContact>? contacts,
   }) => ContactListState(
     status ?? this.status,

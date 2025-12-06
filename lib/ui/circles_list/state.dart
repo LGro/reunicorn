@@ -1,4 +1,4 @@
-// Copyright 2024 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 part of 'cubit.dart';
@@ -16,6 +16,7 @@ final class CirclesListState extends Equatable {
   const CirclesListState(
     this.status, {
     this.circleMemberships = const {},
+    this.circleMemberPictures = const {},
     this.filter = '',
     this.circles = const {},
   });
@@ -25,25 +26,32 @@ final class CirclesListState extends Equatable {
 
   final Map<String, List<String>> circleMemberships;
   final Map<String, String> circles;
+  final Map<String, List<List<int>>> circleMemberPictures;
   final String filter;
   final CirclesListStatus status;
 
   CirclesListState copyWith({
     CirclesListStatus? status,
     Map<String, List<String>>? circleMemberships,
-    String? selectedCircle,
+    Map<String, List<List<int>>>? circleMemberPictures,
     Map<String, String>? circles,
     String? filter,
-    Iterable<CoagContact>? contacts,
   }) => CirclesListState(
     status ?? this.status,
     circleMemberships: circleMemberships ?? this.circleMemberships,
     filter: filter ?? this.filter,
+    circleMemberPictures: circleMemberPictures ?? this.circleMemberPictures,
     circles: circles ?? this.circles,
   );
 
   Map<String, dynamic> toJson() => _$CirclesListStateToJson(this);
 
   @override
-  List<Object?> get props => [status, circleMemberships, circles, filter];
+  List<Object?> get props => [
+    status,
+    circleMemberships,
+    circles,
+    circleMemberPictures,
+    filter,
+  ];
 }

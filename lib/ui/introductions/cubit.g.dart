@@ -8,7 +8,8 @@ part of 'cubit.dart';
 
 IntroductionsState _$IntroductionsStateFromJson(Map<String, dynamic> json) =>
     IntroductionsState(
-      contacts: (json['contacts'] as Map<String, dynamic>?)?.map(
+      contacts:
+          (json['contacts'] as Map<String, dynamic>?)?.map(
             (k, e) =>
                 MapEntry(k, CoagContact.fromJson(e as Map<String, dynamic>)),
           ) ??

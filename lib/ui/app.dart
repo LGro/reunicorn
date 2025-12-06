@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:background_fetch/background_fetch.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
@@ -13,13 +14,22 @@ import 'package:go_router/go_router.dart';
 import 'package:loggy/loggy.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
+import '../data/models/circle.dart';
+import '../data/models/coag_contact.dart';
+import '../data/models/community.dart';
 import '../data/models/contact_location.dart';
-import '../data/providers/distributed_storage/dht.dart';
-import '../data/providers/persistent_storage/sqlite.dart';
-import '../data/providers/system_contacts/system_contacts.dart';
-import '../data/repositories/contacts.dart';
+import '../data/models/contact_update.dart';
+import '../data/models/profile_info.dart';
+import '../data/models/profile_sharing_settings.dart';
+import '../data/repositories/contact_dht.dart';
+import '../data/repositories/contact_system.dart';
+import '../data/repositories/contact_update.dart';
 import '../data/repositories/settings.dart';
+import '../data/services/storage/base.dart';
+import '../data/services/storage/sqlite.dart';
+import '../data/utils.dart';
 import '../l10n/app_localizations.dart';
 import '../notification_service.dart';
 import '../tick.dart';
@@ -95,13 +105,13 @@ class AppRouter {
             currentIndex: (state.topRoute?.name == null)
                 ? 0
                 : (navBarItems.indexWhere(
-                          (i) => i.$2.contains(state.topRoute?.name),
-                        ) ==
-                        -1)
-                    ? 0
-                    : navBarItems.indexWhere(
                         (i) => i.$2.contains(state.topRoute?.name),
-                      ),
+                      ) ==
+                      -1)
+                ? 0
+                : navBarItems.indexWhere(
+                    (i) => i.$2.contains(state.topRoute?.name),
+                  ),
             showUnselectedLabels: true,
             onTap: (i) => context.go(navBarItems[i].$1),
           ),
@@ -142,13 +152,17 @@ class AppRouter {
             builder: (_, state) => const MapPage(),
             routes: [
               GoRoute(
-                  path: 'atLocation/:latitude/:longitude',
-                  name: 'mapAtLocation',
-                  builder: (_, state) => MapPage(
-                      latitude: double.tryParse(
-                          state.pathParameters['latitude'] ?? ''),
-                      longitude: double.tryParse(
-                          state.pathParameters['longitude'] ?? ''))),
+                path: 'atLocation/:latitude/:longitude',
+                name: 'mapAtLocation',
+                builder: (_, state) => MapPage(
+                  latitude: double.tryParse(
+                    state.pathParameters['latitude'] ?? '',
+                  ),
+                  longitude: double.tryParse(
+                    state.pathParameters['longitude'] ?? '',
+                  ),
+                ),
+              ),
               GoRoute(
                 path: 'importIcs',
                 name: 'importIcs',
@@ -235,8 +249,54 @@ class AppRouter {
   GoRouter get router => _router;
 }
 
+Future<void> initializeProfile(
+  Storage<ProfileInfo> profileStorage,
+  Storage<Circle> circleStorage,
+  String initialName,
+) async {
+  final existingProfile = await getProfileInfo(profileStorage);
+  if (existingProfile != null) {
+    return;
+  }
+
+  // Add initial circle
+  final initialCircle = Circle(id: Uuid().v4(), name: 'Friends', memberIds: []);
+  await circleStorage.set(initialCircle.id, initialCircle);
+
+  // Add basic profile
+  final nameId = Uuid().v4();
+  final profile = ProfileInfo(
+    Uuid().v4(),
+    details: ContactDetails(names: {nameId: initialName}),
+    sharingSettings: ProfileSharingSettings(
+      names: {
+        nameId: [initialCircle.id],
+      },
+    ),
+    mainKeyPair: await generateKeyPairBest(),
+  );
+  await profileStorage.set(profile.id, profile);
+}
+
 class App extends StatefulWidget {
-  const App({super.key});
+  const App(
+    this.profileStorage,
+    this.contactStorage,
+    this.circleStorage,
+    this.updateStorage,
+    this.communityStorage,
+    this.contactDhtRepository,
+    this.systemContactRepository, {
+    super.key,
+  });
+
+  final Storage<ProfileInfo> profileStorage;
+  final Storage<CoagContact> contactStorage;
+  final Storage<Circle> circleStorage;
+  final Storage<ContactUpdate> updateStorage;
+  final Storage<Community> communityStorage;
+  final ContactDhtRepository contactDhtRepository;
+  final SystemContactRepository systemContactRepository;
 
   @override
   _AppState createState() => _AppState();
@@ -252,6 +312,9 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   final _seedColor = Colors.indigo;
 
   Future<void> _initAPNs() async {
+    if (!Platform.isIOS) {
+      return;
+    }
     platform.setMethodCallHandler((call) async {
       if (call.method == 'onApnsToken') {
         final raw = call.arguments;
@@ -286,63 +349,67 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     // Configure background fetch
     unawaited(
       BackgroundFetch.configure(
-        BackgroundFetchConfig(
-          minimumFetchInterval: 15,
-          stopOnTerminate: false,
-          enableHeadless: true,
-          requiredNetworkType: NetworkType.ANY,
-          requiresBatteryNotLow: true,
-        ),
-        (String taskId) async {
-          // This is the callback function that will be called periodically
-          logDebug('[BackgroundFetch] Event received: $taskId');
+            BackgroundFetchConfig(
+              minimumFetchInterval: 15,
+              stopOnTerminate: false,
+              enableHeadless: true,
+              requiredNetworkType: NetworkType.ANY,
+              requiresBatteryNotLow: true,
+            ),
+            (String taskId) async {
+              // This is the callback function that will be called periodically
+              logDebug('[BackgroundFetch] Event received: $taskId');
 
-          final log = <String>[];
-          final startTime = DateTime.now();
-          log.add('Start update to and from DHT at $startTime');
+              final log = <String>[];
+              final startTime = DateTime.now();
+              log.add('Start update to and from DHT at $startTime');
 
-          // TODO: Passing an empty string for initial name seems hacky
-          final repo = ContactsRepository(
-            SqliteStorage(),
-            VeilidDhtStorage(),
-            SystemContacts(),
-            '',
-            initialize: false,
-            notificationCallback: NotificationService().showNotification,
-          );
+              final contactStorage = SqliteStorage<CoagContact>(
+                'contact',
+                contactMigrateFromJson,
+              );
+              final contactRepo = ContactDhtRepository(
+                contactStorage,
+                SqliteStorage<Circle>('circle', circleMigrateFromJson),
+                SqliteStorage<ProfileInfo>('profile', profileMigrateFromJson),
+              );
+              final updateRepo = UpdateRepository(
+                contactStorage,
+                SqliteStorage<ContactUpdate>(
+                  'update',
+                  contactUpdateMigrateFromJson,
+                ),
+                notificationCallback: NotificationService().showNotification,
+              );
 
-          // Await initialization with potential initial DHT updates unless it
-          // exceeds 25s to respect the background task limit of 30s on iOS
-          try {
-            await repo
-                .initialize(scheduleRegularUpdates: false)
-                .timeout(const Duration(seconds: 25));
-          } on TimeoutException {
-            await BackgroundFetch.finish(taskId);
-            return;
-          }
+              // Await initialization with potential initial DHT updates unless it
+              // exceeds 25s to respect the background task limit of 30s on iOS
+              await Future<void>.delayed(const Duration(seconds: 25));
 
-          log.add('Initialization finished at at ${DateTime.now()}');
+              log.add('Initialization finished at at ${DateTime.now()}');
 
-          await Future<void>.delayed(
-            const Duration(seconds: 25) - DateTime.now().difference(startTime),
-          );
+              await Future<void>.delayed(
+                const Duration(seconds: 25) -
+                    DateTime.now().difference(startTime),
+              );
 
-          log.add(
-            'Returning successfully after waiting until ${DateTime.now()}',
-          );
+              log.add(
+                'Returning successfully after waiting until ${DateTime.now()}',
+              );
 
-          logDebug('[BackgroundFetch] $log');
+              logDebug('[BackgroundFetch] $log');
 
-          // Signal completion of your task
-          await BackgroundFetch.finish(taskId);
-          return;
-        },
-      ).then((status) {
-        logDebug('[BackgroundFetch] configure success: $status');
-      }).catchError((e) {
-        logDebug('[BackgroundFetch] configure ERROR: $e');
-      }),
+              // Signal completion of your task
+              await BackgroundFetch.finish(taskId);
+              return;
+            },
+          )
+          .then((status) {
+            logDebug('[BackgroundFetch] configure success: $status');
+          })
+          .catchError((e) {
+            logDebug('[BackgroundFetch] configure ERROR: $e');
+          }),
     );
 
     // BackgroundFetch.scheduleTask(TaskConfig(
@@ -383,20 +450,24 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused) {
       // App goes to background
       unawaited(
-        BackgroundFetch.start().then((int status) {
-          logDebug('[BackgroundFetch] start success: $status');
-        }).catchError((e) {
-          logDebug('[BackgroundFetch] start ERROR: $e');
-        }),
+        BackgroundFetch.start()
+            .then((int status) {
+              logDebug('[BackgroundFetch] start success: $status');
+            })
+            .catchError((e) {
+              logDebug('[BackgroundFetch] start ERROR: $e');
+            }),
       );
     } else if (state == AppLifecycleState.resumed) {
       // App comes to foreground
       unawaited(
-        BackgroundFetch.stop().then((int status) {
-          logDebug('[BackgroundFetch] stop success: $status');
-        }).catchError((e) {
-          logDebug('[BackgroundFetch] stop ERROR: $e');
-        }),
+        BackgroundFetch.stop()
+            .then((int status) {
+              logDebug('[BackgroundFetch] stop success: $status');
+            })
+            .catchError((e) {
+              logDebug('[BackgroundFetch] stop ERROR: $e');
+            }),
       );
     }
   }
@@ -416,85 +487,104 @@ class _AppState extends State<App> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) => FutureProvider<AppGlobalInit?>(
-        initialData: null,
-        create: (context) =>
-            // TODO: Pass initially specified boostrap url
-            AppGlobalInit.initialize('bootstrap-v1.veilid.net'),
-        // AppGlobalInit.initialize can throw Already attached VeilidAPIException which is fine
-        catchError: (context, error) => null,
-        builder: (context, child) {
-          final globalInit = context.watch<AppGlobalInit?>();
-          // Splash screen until we're done with init
-          if (globalInit == null) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (_providedNameOnFirstLaunch == null ||
-              _providedNameOnFirstLaunch!.isEmpty) {
-            return MaterialApp(
-              title: 'Reunicorn',
-              debugShowCheckedModeBanner: true,
-              themeMode: ThemeMode.system,
-              theme: ThemeData(
-                colorScheme: ColorScheme.fromSeed(seedColor: _seedColor),
-                useMaterial3: true,
-              ),
-              darkTheme: ThemeData(
-                colorScheme: ColorScheme.fromSeed(
-                  seedColor: _seedColor,
-                  brightness: Brightness.dark,
-                ),
-                useMaterial3: true,
-              ),
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              home: WelcomeScreen(_setFirstLaunchComplete),
-            );
-          }
+    initialData: null,
+    create: (context) =>
+        // TODO: Pass initially specified boostrap url
+        AppGlobalInit.initialize('bootstrap-v1.staging.veilid.net'),
+    // AppGlobalInit.initialize can throw Already attached VeilidAPIException which is fine
+    catchError: (context, error) => null,
+    builder: (context, child) {
+      final globalInit = context.watch<AppGlobalInit?>();
+      // Splash screen until we're done with init
+      if (globalInit == null) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (_providedNameOnFirstLaunch == null ||
+          _providedNameOnFirstLaunch!.isEmpty) {
+        return MaterialApp(
+          title: 'Reunicorn',
+          debugShowCheckedModeBanner: true,
+          themeMode: ThemeMode.system,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: _seedColor),
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: _seedColor,
+              brightness: Brightness.dark,
+            ),
+            useMaterial3: true,
+          ),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: WelcomeScreen(_setFirstLaunchComplete),
+        );
+      }
 
-          // Once init is done, we proceed with the app
-          return BackgroundTicker(
-            child: MultiRepositoryProvider(
-              providers: [
-                RepositoryProvider(
-                  create: (_) => SettingsRepository(
-                    darkMode: MediaQuery.of(context).platformBrightness ==
-                        Brightness.dark,
-                  ),
-                ),
-                RepositoryProvider(
-                  create: (context) => ContactsRepository(
-                    SqliteStorage(),
-                    VeilidDhtStorage(),
-                    SystemContacts(),
-                    _providedNameOnFirstLaunch!,
-                  ),
-                ),
-              ],
-              child: MaterialApp.router(
-                title: 'Reunicorn',
-                debugShowCheckedModeBanner: true,
-                themeMode: ThemeMode.system,
-                theme: ThemeData(
-                  colorScheme: ColorScheme.fromSeed(seedColor: _seedColor),
-                  useMaterial3: true,
-                ),
-                darkTheme: ThemeData(
-                  colorScheme: ColorScheme.fromSeed(
-                    seedColor: _seedColor,
-                    brightness: Brightness.dark,
-                  ),
-                  useMaterial3: true,
-                ),
-                routerDelegate: AppRouter().router.routerDelegate,
-                routeInformationProvider:
-                    AppRouter().router.routeInformationProvider,
-                routeInformationParser:
-                    AppRouter().router.routeInformationParser,
-                localizationsDelegates: AppLocalizations.localizationsDelegates,
-                supportedLocales: AppLocalizations.supportedLocales,
+      if (_providedNameOnFirstLaunch != null) {
+        unawaited(
+          initializeProfile(
+            widget.profileStorage,
+            widget.circleStorage,
+            _providedNameOnFirstLaunch!,
+          ),
+        );
+      }
+
+      // Once init is done, we proceed with the app
+      return BackgroundTicker(
+        child: MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<Storage<ProfileInfo>>(
+              create: (_) => widget.profileStorage,
+            ),
+            RepositoryProvider<Storage<CoagContact>>(
+              create: (_) => widget.contactStorage,
+            ),
+            RepositoryProvider<Storage<Circle>>(
+              create: (_) => widget.circleStorage,
+            ),
+            RepositoryProvider<Storage<ContactUpdate>>(
+              create: (_) => widget.updateStorage,
+            ),
+            RepositoryProvider<Storage<Community>>(
+              create: (_) => widget.communityStorage,
+            ),
+            RepositoryProvider(create: (_) => widget.contactDhtRepository),
+            RepositoryProvider(create: (_) => widget.systemContactRepository),
+            RepositoryProvider(
+              create: (_) => SettingsRepository(
+                darkMode:
+                    MediaQuery.of(context).platformBrightness ==
+                    Brightness.dark,
               ),
             ),
-          );
-        },
+          ],
+          child: MaterialApp.router(
+            title: 'Reunicorn',
+            debugShowCheckedModeBanner: true,
+            themeMode: ThemeMode.system,
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: _seedColor),
+              useMaterial3: true,
+            ),
+            darkTheme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: _seedColor,
+                brightness: Brightness.dark,
+              ),
+              useMaterial3: true,
+            ),
+            routerDelegate: AppRouter().router.routerDelegate,
+            routeInformationProvider:
+                AppRouter().router.routeInformationProvider,
+            routeInformationParser: AppRouter().router.routeInformationParser,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
+        ),
       );
+    },
+  );
 }

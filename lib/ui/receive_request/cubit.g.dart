@@ -16,12 +16,12 @@ ReceiveRequestState _$ReceiveRequestStateFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$ReceiveRequestStateToJson(
-        ReceiveRequestState instance) =>
-    <String, dynamic>{
-      'status': _$ReceiveRequestStatusEnumMap[instance.status]!,
-      'profile': instance.profile?.toJson(),
-      'fragment': instance.fragment,
-    };
+  ReceiveRequestState instance,
+) => <String, dynamic>{
+  'status': _$ReceiveRequestStatusEnumMap[instance.status]!,
+  'profile': instance.profile?.toJson(),
+  'fragment': instance.fragment,
+};
 
 const _$ReceiveRequestStatusEnumMap = {
   ReceiveRequestStatus.handleBatchInvite: 'handleBatchInvite',

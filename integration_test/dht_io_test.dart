@@ -8,11 +8,13 @@ import 'package:integration_test/integration_test.dart';
 import 'package:reunicorn/veilid_init.dart';
 import 'package:veilid_support/veilid_support.dart';
 
+import 'utils.dart';
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() async {
-    await AppGlobalInit.initialize();
+    await AppGlobalInit.initialize(veilidBootstrapUrl);
   });
 
   test('Create, write and read a DHT record', () async {

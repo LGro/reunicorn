@@ -7,23 +7,24 @@ part of 'cubit.dart';
 // **************************************************************************
 
 ProfileState _$ProfileStateFromJson(Map<String, dynamic> json) => ProfileState(
-      profileInfo: json['profile_info'] == null
-          ? null
-          : ProfileInfo.fromJson(json['profile_info'] as Map<String, dynamic>),
-      status: $enumDecodeNullable(_$ProfileStatusEnumMap, json['status']) ??
-          ProfileStatus.initial,
-      circles: (json['circles'] as Map<String, dynamic>?)?.map(
-            (k, e) => MapEntry(k, e as String),
-          ) ??
-          const {},
-      circleMemberships:
-          (json['circle_memberships'] as Map<String, dynamic>?)?.map(
-                (k, e) => MapEntry(
-                    k, (e as List<dynamic>).map((e) => e as String).toList()),
-              ) ??
-              const {},
-      permissionsGranted: json['permissions_granted'] as bool? ?? false,
-    );
+  profileInfo: json['profile_info'] == null
+      ? null
+      : ProfileInfo.fromJson(json['profile_info'] as Map<String, dynamic>),
+  status:
+      $enumDecodeNullable(_$ProfileStatusEnumMap, json['status']) ??
+      ProfileStatus.initial,
+  circles:
+      (json['circles'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as String),
+      ) ??
+      const {},
+  circleMemberships:
+      (json['circle_memberships'] as Map<String, dynamic>?)?.map(
+        (k, e) =>
+            MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
+      ) ??
+      const {},
+);
 
 Map<String, dynamic> _$ProfileStateToJson(ProfileState instance) =>
     <String, dynamic>{
@@ -31,7 +32,6 @@ Map<String, dynamic> _$ProfileStateToJson(ProfileState instance) =>
       'profile_info': instance.profileInfo?.toJson(),
       'circles': instance.circles,
       'circle_memberships': instance.circleMemberships,
-      'permissions_granted': instance.permissionsGranted,
     };
 
 const _$ProfileStatusEnumMap = {

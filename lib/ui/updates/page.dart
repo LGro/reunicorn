@@ -8,7 +8,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/models/coag_contact.dart';
-import '../../data/repositories/contacts.dart';
+import '../../data/models/contact_update.dart';
+import '../../data/repositories/contact_dht.dart';
+import '../../data/services/storage/base.dart';
 import '../utils.dart';
 import 'cubit.dart';
 
@@ -47,29 +49,29 @@ Widget updateTile(
   String change, {
   required void Function()? onTap,
   List<int>? picture,
-}) =>
-    ListTile(
-      onTap: onTap,
-      leading: (picture == null || picture.isEmpty)
-          ? const CircleAvatar(radius: 18, child: Icon(Icons.person))
-          : CircleAvatar(
-              backgroundImage: MemoryImage(Uint8List.fromList(picture)),
-              radius: 18),
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(child: Text(name, overflow: TextOverflow.ellipsis)),
-          Text(timing),
-        ],
-      ),
-      subtitle: Row(
-        children: [
-          // TODO: Use flexible for old and new value to trim them both dynamically
-          // Or use Expanded for dynamic multiline
-          Expanded(child: Text('Updated $change')),
-        ],
-      ),
-    );
+}) => ListTile(
+  onTap: onTap,
+  leading: (picture == null || picture.isEmpty)
+      ? const CircleAvatar(radius: 18, child: Icon(Icons.person))
+      : CircleAvatar(
+          backgroundImage: MemoryImage(Uint8List.fromList(picture)),
+          radius: 18,
+        ),
+  title: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Flexible(child: Text(name, overflow: TextOverflow.ellipsis)),
+      Text(timing),
+    ],
+  ),
+  subtitle: Row(
+    children: [
+      // TODO: Use flexible for old and new value to trim them both dynamically
+      // Or use Expanded for dynamic multiline
+      Expanded(child: Text('Updated $change')),
+    ],
+  ),
+);
 
 // updateTile(
 //     'Ronja Dudeli van Makolle Longname The Fourth',
@@ -89,71 +91,70 @@ class UpdatesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-      create: (ctx) => UpdatesCubit(ctx.read<ContactsRepository>()),
-      child: Builder(
-        builder: (context) => Scaffold(
-          appBar: AppBar(title: const Text('Updates')),
-          body: RefreshIndicator(
-            onRefresh: () async => context.read<UpdatesCubit>().refresh().then(
-                  (success) => context.mounted
-                      ? (success
-                          ? ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Successfully refreshed!'),
-                              ),
-                            )
-                          : ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Refreshing failed, try again later!',
-                                ),
-                              ),
-                            ))
-                      : null,
-                ),
-            child: BlocConsumer<UpdatesCubit, UpdatesState>(
-              listener: (context, state) {},
-              builder: (context, state) => ListView(
-                children: (state.updates.isEmpty)
-                    ? [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          child: const Text(
-                            'No updates yet, share with others or ask others to share with you!',
-                            style: TextStyle(fontSize: 16),
+    create: (ctx) => UpdatesCubit(
+      ctx.read<Storage<ContactUpdate>>(),
+      ctx.read<ContactDhtRepository>(),
+    ),
+    child: Builder(
+      builder: (context) => Scaffold(
+        appBar: AppBar(title: const Text('Updates')),
+        body: RefreshIndicator(
+          onRefresh: () => context.read<UpdatesCubit>().refresh().then(
+            (success) => context.mounted
+                ? (success
+                      ? ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Successfully refreshed!'),
                           ),
+                        )
+                      : ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Refreshing failed, try again later!',
+                            ),
+                          ),
+                        ))
+                : null,
+          ),
+          child: BlocConsumer<UpdatesCubit, UpdatesState>(
+            listener: (context, state) {},
+            builder: (context, state) => ListView(
+              children: (state.updates.isEmpty)
+                  ? [
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        child: const Text(
+                          'No updates yet, share with others or ask others to share with you!',
+                          style: TextStyle(fontSize: 16),
                         ),
-                      ]
-                    : state.updates
+                      ),
+                    ]
+                  : state.updates
                         .map(
                           (u) => updateTile(
                             getContactNameForUpdate(u.oldContact, u.newContact),
                             formatTimeDifference(
-                                DateTime.now().difference(u.timestamp)),
+                              DateTime.now().difference(u.timestamp),
+                            ),
                             contactUpdateSummary(u.oldContact, u.newContact),
                             // TODO: For location updates, bring to map, centered around location with time slider at right time instead
                             onTap: (u.coagContactId == null)
                                 ? null
-                                : () {
-                                    final contact = context
-                                        .read<ContactsRepository>()
-                                        .getContact(u.coagContactId!);
-                                    if (contact == null) {
-                                      // TODO: display error?
-                                      return;
-                                    }
-                                    context.goNamed('contactDetails',
-                                        pathParameters: {
-                                          'coagContactId': contact.coagContactId
-                                        });
-                                  },
+                                : () => context.goNamed(
+                                    'contactDetails',
+                                    pathParameters: {
+                                      'coagContactId':
+                                          u.newContact.coagContactId,
+                                    },
+                                  ),
                             picture: u.newContact.details?.picture,
                           ),
                         )
                         .toList(),
-              ),
             ),
           ),
         ),
-      ));
+      ),
+    ),
+  );
 }

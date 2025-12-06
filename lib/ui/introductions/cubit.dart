@@ -6,38 +6,84 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../data/models/coag_contact.dart';
 import '../../data/models/contact_introduction.dart';
-import '../../data/repositories/contacts.dart';
+import '../../data/services/storage/base.dart';
+import '../../data/utils.dart';
 
 part 'state.dart';
 part 'cubit.g.dart';
 
 class IntroductionsCubit extends Cubit<IntroductionsState> {
-  IntroductionsCubit(this.contactsRepository)
-      : super(IntroductionsState(contacts: contactsRepository.getContacts())) {
-    _contactsSubscription = contactsRepository.getContactStream().listen((
-      idUpdatedContact,
-    ) {
-      if (!isClosed) {
-        emit(IntroductionsState(contacts: contactsRepository.getContacts()));
-      }
-    });
+  IntroductionsCubit(this._contactStorage) : super(const IntroductionsState()) {
+    _contactSubscription = _contactStorage.changeEvents.listen(
+      (_) => fetchData(),
+    );
+    unawaited(fetchData());
   }
 
-  final ContactsRepository contactsRepository;
-  late final StreamSubscription<String> _contactsSubscription;
+  final Storage<CoagContact> _contactStorage;
+  late final StreamSubscription<StorageEvent<CoagContact>> _contactSubscription;
+
+  Future<void> fetchData() async {
+    if (!isClosed) {
+      emit(IntroductionsState(contacts: await _contactStorage.getAll()));
+    }
+  }
 
   Future<String?> accept(
     CoagContact introducer,
-    ContactIntroduction introduction,
-  ) async =>
-      contactsRepository.acceptIntroduction(introducer, introduction);
+    ContactIntroduction introduction, {
+    bool awaitUpdateFromDht = false,
+  }) async {
+    // Find the key pair to use for encrypting communication with the introduced
+    final myKeyPair = [
+      introducer.myIntroductionKeyPair,
+      ...introducer.myPreviousIntroductionKeyPairs,
+    ].where((kp) => kp.key == introduction.publicKey).firstOrNull;
+    if (myKeyPair == null) {
+      return null;
+    }
+
+    // Create new contact for the introduced
+    final contact = CoagContact(
+      coagContactId: Uuid().v4(),
+      name: introduction.otherName,
+      myIdentity: await generateKeyPairBest(),
+      myIntroductionKeyPair: await generateKeyPairBest(),
+      dhtSettings: DhtSettings(
+        myKeyPair: myKeyPair,
+        theirNextPublicKey: introduction.otherPublicKey,
+        recordKeyMeSharing: introduction.dhtRecordKeySharing,
+        writerMeSharing: introduction.dhtWriterSharing,
+        recordKeyThemSharing: introduction.dhtRecordKeyReceiving,
+        theyAckHandshakeComplete: true,
+      ),
+    );
+
+    await _contactStorage.set(contact.coagContactId, contact);
+
+    // Rotate introduction key pair for introducer
+    // TODO: Can this cause issues when someone introduces multiple contacts at once?
+    await _contactStorage.set(
+      introducer.coagContactId,
+      introducer.copyWith(
+        myIntroductionKeyPair: await generateKeyPairBest(),
+        myPreviousIntroductionKeyPairs: [
+          introducer.myIntroductionKeyPair,
+          ...introducer.myPreviousIntroductionKeyPairs,
+        ],
+      ),
+    );
+
+    return contact.coagContactId;
+  }
 
   @override
   Future<void> close() {
-    _contactsSubscription.cancel();
+    unawaited(_contactSubscription.cancel());
     return super.close();
   }
 }

@@ -7,15 +7,16 @@ part of 'cubit.dart';
 // **************************************************************************
 
 BackupState _$BackupStateFromJson(Map<String, dynamic> json) => BackupState(
-      status: $enumDecodeNullable(_$BackupStatusEnumMap, json['status']) ??
-          BackupStatus.initial,
-      dhtRecordKey: json['dht_record_key'] == null
-          ? null
-          : RecordKey.fromJson(json['dht_record_key']),
-      secret: json['secret'] == null
-          ? null
-          : Typed<BareSharedSecret>.fromJson(json['secret']),
-    );
+  status:
+      $enumDecodeNullable(_$BackupStatusEnumMap, json['status']) ??
+      BackupStatus.initial,
+  dhtRecordKey: json['dht_record_key'] == null
+      ? null
+      : RecordKey.fromJson(json['dht_record_key']),
+  secret: json['secret'] == null
+      ? null
+      : Typed<BareSharedSecret>.fromJson(json['secret']),
+);
 
 Map<String, dynamic> _$BackupStateToJson(BackupState instance) =>
     <String, dynamic>{

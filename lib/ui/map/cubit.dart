@@ -7,41 +7,46 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../data/models/circle.dart';
 import '../../data/models/coag_contact.dart';
-import '../../data/repositories/contacts.dart';
+import '../../data/models/profile_info.dart';
 import '../../data/repositories/settings.dart';
+import '../../data/services/storage/base.dart';
+import '../../data/utils.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
 
 class MapCubit extends Cubit<MapState> {
-  MapCubit(this.contactsRepository, this.settingsRepository)
-      : super(const MapState(status: MapStatus.initial)) {
-    _profileInfoSubscription = contactsRepository.getProfileInfoStream().listen(
-          (_) async => refresh(),
-        );
-    _circlesSubscription = contactsRepository.getCirclesStream().listen(
-          (_) async => refresh(),
-        );
+  MapCubit(
+    this.contactStorage,
+    this.circleStorage,
+    this.profileStorage,
+    this.settingsRepository,
+  ) : super(const MapState(status: MapStatus.initial)) {
+    _profileSubscription = profileStorage.changeEvents.listen((_) => refresh());
+    _circleSubscription = circleStorage.changeEvents.listen((_) => refresh());
     // TODO: Does it help the performance significantly to only update the affected contact's data?
-    _contactsSubscription = contactsRepository.getContactStream().listen(
-          (coagContactId) async => refresh(),
-        );
+    _contactSubscription = contactStorage.changeEvents.listen((_) => refresh());
 
     unawaited(refresh());
   }
 
-  final ContactsRepository contactsRepository;
+  final Storage<CoagContact> contactStorage;
+  final Storage<ProfileInfo> profileStorage;
+  final Storage<Circle> circleStorage;
   final SettingsRepository settingsRepository;
-  late final StreamSubscription<void> _circlesSubscription;
-  late final StreamSubscription<String> _contactsSubscription;
-  late final StreamSubscription<ProfileInfo> _profileInfoSubscription;
+  late final StreamSubscription<StorageEvent<Circle>> _circleSubscription;
+  late final StreamSubscription<StorageEvent<CoagContact>> _contactSubscription;
+  late final StreamSubscription<StorageEvent<ProfileInfo>> _profileSubscription;
 
   Future<void> refresh() async {
-    final profileInfo = contactsRepository.getProfileInfo();
-    final circleMemberships = contactsRepository.getCircleMemberships();
-    final circles = contactsRepository.getCircles();
-    final contacts = contactsRepository.getContacts().values;
+    final profileInfo = await getProfileInfo(profileStorage);
+    final circles = await circleStorage.getAll();
+    final circleMemberships = circlesByContactIds(circles.values);
+    final contacts = await contactStorage.getAll().then(
+      (contacts) => contacts.values,
+    );
 
     emit(
       MapState(
@@ -49,17 +54,18 @@ class MapCubit extends Cubit<MapState> {
         profileInfo: profileInfo,
         contacts: contacts.toList(),
         circleMemberships: circleMemberships,
-        circles: circles,
+        circles: circles.map((id, c) => MapEntry(id, c.name)),
       ),
     );
   }
 
   Future<void> removeLocation(String locationId) async {
-    final profileInfo = contactsRepository.getProfileInfo();
+    final profileInfo = await getProfileInfo(profileStorage);
     if (profileInfo == null) {
       return;
     }
-    await contactsRepository.setProfileInfo(
+    await profileStorage.set(
+      profileInfo.id,
       profileInfo.copyWith(
         temporaryLocations: {...profileInfo.temporaryLocations}
           ..remove(locationId),
@@ -69,9 +75,9 @@ class MapCubit extends Cubit<MapState> {
 
   @override
   Future<void> close() {
-    _circlesSubscription.cancel();
-    _contactsSubscription.cancel();
-    _profileInfoSubscription.cancel();
+    _circleSubscription.cancel();
+    _contactSubscription.cancel();
+    _profileSubscription.cancel();
     return super.close();
   }
 }

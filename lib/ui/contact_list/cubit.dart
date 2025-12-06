@@ -1,4 +1,4 @@
-// Copyright 2024 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -6,59 +6,62 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../data/models/circle.dart';
 import '../../data/models/coag_contact.dart';
-import '../../data/repositories/contacts.dart';
+import '../../data/services/storage/base.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
 
 class ContactListCubit extends Cubit<ContactListState> {
-  ContactListCubit(this.contactsRepository)
+  ContactListCubit(this.contactStorage, this.circleStorage)
     : super(const ContactListState(ContactListStatus.initial)) {
-    // TODO: Also listen to circle updates?
-    _contactsSubscription = contactsRepository.getContactStream().listen((
-      idUpdatedContact,
-    ) {
-      if (!isClosed) {
-        emit(
-          state.copyWith(
-            circleMemberships: contactsRepository.getCircleMemberships(),
-            circles: contactsRepository.getCircles(),
-            contacts: contactsRepository.getContacts().values.toList()
-              ..sortBy((c) => c.name.toLowerCase()),
-          ),
-        );
-      }
-    });
-
-    emit(
-      ContactListState(
-        ContactListStatus.success,
-        contacts: contactsRepository.getContacts().values.toList()
-          ..sortBy((c) => c.name.toLowerCase()),
-        circles: contactsRepository.getCircles(),
-        circleMemberships: contactsRepository.getCircleMemberships(),
-      ),
+    _contactsSubscription = contactStorage.changeEvents.listen(
+      (e) => fetchData(),
     );
+
+    unawaited(fetchData());
   }
 
-  final ContactsRepository contactsRepository;
-  late final StreamSubscription<String> _contactsSubscription;
+  final Storage<CoagContact> contactStorage;
+  final Storage<Circle> circleStorage;
+  late final StreamSubscription<StorageEvent<CoagContact>>
+  _contactsSubscription;
+
+  Future<void> fetchData() async {
+    if (!isClosed) {
+      final circles = await circleStorage.getAll();
+      emit(
+        ContactListState(
+          ContactListStatus.success,
+          contacts: await contactStorage.getAll().then(
+            (contacts) =>
+                contacts.values.toList()..sortBy((c) => c.name.toLowerCase()),
+          ),
+          circles: circles,
+          circleMemberships: circlesByContactIds(circles.values),
+        ),
+      );
+    }
+  }
 
   Future<bool> refresh() async {
-    final results = await Future.wait([
-      contactsRepository.updateAndWatchReceivingDHT(),
-      contactsRepository.updateSharingDHT(),
-      contactsRepository.updateAllBatchInvites().then((_) => true),
-    ]);
-    return results.every((r) => r);
+    // FIXME
+    return false;
+    // final results = await Future.wait([
+    //   contactsRepository.updateAndWatchReceivingDHT(),
+    //   contactsRepository.updateSharingDHT(),
+    //   contactsRepository.updateAllBatchInvites().then((_) => true),
+    // ]);
+    // return results.every((r) => r);
   }
 
   @override
   Future<void> close() {
-    _contactsSubscription.cancel();
+    unawaited(_contactsSubscription.cancel());
     return super.close();
   }
 }

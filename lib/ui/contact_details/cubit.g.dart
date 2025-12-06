@@ -12,24 +12,33 @@ ContactDetailsState _$ContactDetailsStateFromJson(Map<String, dynamic> json) =>
       contact: json['contact'] == null
           ? null
           : CoagContact.fromJson(json['contact'] as Map<String, dynamic>),
-      circles: (json['circles'] as Map<String, dynamic>?)?.map(
+      circles:
+          (json['circles'] as Map<String, dynamic>?)?.map(
             (k, e) => MapEntry(k, e as String),
           ) ??
           const {},
-      knownContacts: (json['known_contacts'] as Map<String, dynamic>?)?.map(
+      knownContacts:
+          (json['known_contacts'] as Map<String, dynamic>?)?.map(
             (k, e) => MapEntry(k, e as String),
+          ) ??
+          const {},
+      allContacts:
+          (json['all_contacts'] as Map<String, dynamic>?)?.map(
+            (k, e) =>
+                MapEntry(k, CoagContact.fromJson(e as Map<String, dynamic>)),
           ) ??
           const {},
     );
 
 Map<String, dynamic> _$ContactDetailsStateToJson(
-        ContactDetailsState instance) =>
-    <String, dynamic>{
-      'contact': instance.contact?.toJson(),
-      'status': _$ContactDetailsStatusEnumMap[instance.status]!,
-      'circles': instance.circles,
-      'known_contacts': instance.knownContacts,
-    };
+  ContactDetailsState instance,
+) => <String, dynamic>{
+  'contact': instance.contact?.toJson(),
+  'status': _$ContactDetailsStatusEnumMap[instance.status]!,
+  'circles': instance.circles,
+  'known_contacts': instance.knownContacts,
+  'all_contacts': instance.allContacts.map((k, e) => MapEntry(k, e.toJson())),
+};
 
 const _$ContactDetailsStatusEnumMap = {
   ContactDetailsStatus.initial: 'initial',

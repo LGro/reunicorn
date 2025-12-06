@@ -7,12 +7,13 @@ import 'package:reunicorn/data/models/emoji_sas.dart';
 import 'package:reunicorn/veilid_init.dart';
 
 import '../test/utils.dart';
+import 'utils.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() async {
-    await AppGlobalInit.initialize();
+    await AppGlobalInit.initialize(veilidBootstrapUrl);
   });
 
   // TODO: This could be a simple unit test, does not need to run on device

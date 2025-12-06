@@ -10,49 +10,53 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../data/models/coag_contact.dart';
-import '../../../data/repositories/contacts.dart';
+import '../../../data/repositories/contact_system.dart';
+import '../../../data/services/storage/base.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
 
 class LinkToSystemContactCubit extends Cubit<LinkToSystemContactState> {
-  LinkToSystemContactCubit(this.contactsRepository, String coagContactId)
-      : super(
-          LinkToSystemContactState(
-            contact: contactsRepository.getContact(coagContactId),
-          ),
-        ) {
-    _contactsSubscription = contactsRepository.getContactStream().listen((
-      updatedContactId,
-    ) {
-      if (updatedContactId == coagContactId && !isClosed) {
-        // TODO: Add contact not found status?
-        emit(
-          state.copyWith(
-            contact: contactsRepository.getContact(updatedContactId),
-          ),
-        );
-      }
-    });
-    unawaited(checkPermission());
+  LinkToSystemContactCubit(this._contactStorage, String coagContactId)
+    : super(const LinkToSystemContactState()) {
+    _contactSubscription = _contactStorage.changeEvents.listen(
+      (e) => e.when(
+        delete: (contact) {
+          return;
+        },
+        set: (oldContact, newContact) {
+          if (newContact.coagContactId == coagContactId && !isClosed) {
+            emit(state.copyWith(contact: newContact));
+          }
+          return;
+        },
+      ),
+    );
+    unawaited(initialize(coagContactId));
   }
 
-  final ContactsRepository contactsRepository;
-  late final StreamSubscription<String> _contactsSubscription;
+  final Storage<CoagContact> _contactStorage;
+  late final StreamSubscription<StorageEvent<CoagContact>> _contactSubscription;
 
-  /// Check if system contact access was granted
-  Future<void> checkPermission() async =>
-      Permission.contacts.status.then((status) async {
-        if (!isClosed) {
-          emit(state.copyWith(permissionGranted: status.isGranted));
-          if (status.isGranted) {
-            await loadSystemContacts();
-          }
-        }
-      });
+  Future<void> initialize(String contactId) async {
+    final contacts = await _contactStorage.getAll();
+    final permissionStatus = await Permission.contacts.status;
+    if (!isClosed) {
+      emit(
+        state.copyWith(
+          contact: contacts[contactId],
+          permissionGranted: permissionStatus.isGranted,
+          linkedSystemContactIds: getAllLinkedSystemContactIds(contacts.values),
+        ),
+      );
+      if (permissionStatus.isGranted) {
+        await loadSystemContacts();
+      }
+    }
+  }
 
   /// Ask for system contact access (if not already granted)
-  Future<void> requestPermission() async =>
+  Future<void> requestPermission() =>
       FlutterContacts.requestPermission().then((status) async {
         if (!isClosed) {
           emit(state.copyWith(permissionGranted: status));
@@ -63,7 +67,8 @@ class LinkToSystemContactCubit extends Cubit<LinkToSystemContactState> {
       });
 
   /// Load contacts from system address book
-  Future<void> loadSystemContacts() async => FlutterContacts.getContacts(
+  Future<void> loadSystemContacts() =>
+      FlutterContacts.getContacts(
         withProperties: true,
         withThumbnail: true,
         withAccounts: true,
@@ -79,8 +84,9 @@ class LinkToSystemContactCubit extends Cubit<LinkToSystemContactState> {
             state.copyWith(
               contacts: contacts,
               accounts: uniqueAccounts,
-              selectedAccount:
-                  (uniqueAccounts.length > 1) ? uniqueAccounts.first : null,
+              selectedAccount: (uniqueAccounts.length > 1)
+                  ? uniqueAccounts.first
+                  : null,
             ),
           );
         }
@@ -90,40 +96,29 @@ class LinkToSystemContactCubit extends Cubit<LinkToSystemContactState> {
   Future<void> createNewSystemContact(
     String displayName, {
     Account? account,
-  }) async =>
-      (state.contact == null)
-          ? null
-          : FlutterContacts.insertContact(
-              Contact(
-                displayName: displayName,
-                name: Name(first: displayName),
-                accounts: (account == null) ? null : [account],
-              ),
-            )
-              .then(
-                (systemContact) => contactsRepository.saveContact(
-                  state.contact!.copyWith(systemContactId: systemContact.id),
-                ),
-              )
-              .then(
-                (_) => contactsRepository.updateSystemContact(
-                  state.contact!.coagContactId,
-                ),
-              );
+  }) async => (state.contact == null)
+      ? null
+      : FlutterContacts.insertContact(
+          Contact(
+            displayName: displayName,
+            name: Name(first: displayName),
+            accounts: (account == null) ? null : [account],
+          ),
+        ).then(
+          (systemContact) => _contactStorage.set(
+            state.contact!.coagContactId,
+            state.contact!.copyWith(systemContactId: systemContact.id),
+          ),
+        );
 
   /// Link app contact to existing system contact
   Future<void> linkExistingSystemContact(String systemContactId) async =>
       (state.contact == null)
-          ? null
-          : contactsRepository
-              .saveContact(
-                state.contact!.copyWith(systemContactId: systemContactId),
-              )
-              .then(
-                (_) => contactsRepository.updateSystemContact(
-                  state.contact!.coagContactId,
-                ),
-              );
+      ? null
+      : _contactStorage.set(
+          state.contact!.coagContactId,
+          state.contact!.copyWith(systemContactId: systemContactId),
+        );
 
   /// Select an account to potentially add a new system contact to
   void setSelectedAccount(Account? account) =>
@@ -132,7 +127,7 @@ class LinkToSystemContactCubit extends Cubit<LinkToSystemContactState> {
   /// Close subscriptions
   @override
   Future<void> close() {
-    _contactsSubscription.cancel();
+    unawaited(_contactSubscription.cancel());
     return super.close();
   }
 }

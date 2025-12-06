@@ -1,18 +1,25 @@
 // Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'package:equatable/equatable.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:geolocator/geolocator.dart';
 
+import 'circle.dart';
 import 'coag_contact.dart';
 import 'contact_location.dart';
+import 'profile_info.dart';
+import 'utils.dart';
 
-(DateTime, DateTime, Duration) getOverlapOrOffset(
-    {required DateTime start1,
-    required DateTime end1,
-    required DateTime start2,
-    required DateTime end2}) {
+part 'close_by_match.freezed.dart';
+part 'close_by_match.g.dart';
+
+(DateTime, DateTime, Duration) getOverlapOrOffset({
+  required DateTime start1,
+  required DateTime end1,
+  required DateTime start2,
+  required DateTime end2,
+}) {
   // In case they don't overlap
   if (start1.isAfter(end2)) {
     return (start2, end2, end2.difference(start1));
@@ -24,44 +31,26 @@ import 'contact_location.dart';
   return (
     start1.isAfter(start2) ? start1 : start2,
     end1.isBefore(end2) ? end1 : end2,
-    Duration.zero
+    Duration.zero,
   );
 }
 
-class CloseByMatch extends Equatable {
-  const CloseByMatch(
-      {required this.myLocationLabel,
-      required this.theirLocationId,
-      required this.theirLocationLabel,
-      required this.coagContactId,
-      required this.coagContactName,
-      required this.start,
-      required this.end,
-      required this.offset,
-      required this.theyKnow});
+@freezed
+sealed class CloseByMatch with _$CloseByMatch implements JsonEncodable {
+  factory CloseByMatch({
+    required String myLocationLabel,
+    required String theirLocationId,
+    required String theirLocationLabel,
+    required String coagContactId,
+    required String coagContactName,
+    required DateTime start,
+    required DateTime end,
+    required Duration offset,
+    required bool theyKnow,
+  }) = _CloseByMatch;
 
-  final String myLocationLabel;
-  final String theirLocationId;
-  final String theirLocationLabel;
-  final String coagContactId;
-  final String coagContactName;
-  final DateTime start;
-  final DateTime end;
-  final Duration offset;
-  final bool theyKnow;
-
-  @override
-  List<Object?> get props => [
-        myLocationLabel,
-        theirLocationId,
-        theirLocationLabel,
-        coagContactId,
-        coagContactName,
-        start,
-        end,
-        offset,
-        theyKnow,
-      ];
+  factory CloseByMatch.fromJson(Map<String, dynamic> json) =>
+      _$CloseByMatchFromJson(json);
 }
 
 Iterable<CloseByMatch> closeByAddressWithTemporary({
@@ -76,10 +65,15 @@ Iterable<CloseByMatch> closeByAddressWithTemporary({
   final matches = <CloseByMatch>[];
   for (final my in myAddressLocations.entries) {
     for (final their in theirTemporaryLocations.entries) {
-      if (Geolocator.distanceBetween(my.value.latitude, my.value.longitude,
-              their.value.latitude, their.value.longitude) <
+      if (Geolocator.distanceBetween(
+            my.value.latitude,
+            my.value.longitude,
+            their.value.latitude,
+            their.value.longitude,
+          ) <
           distanceThresholdKm * 1000) {
-        matches.add(CloseByMatch(
+        matches.add(
+          CloseByMatch(
             myLocationLabel: my.key,
             theirLocationId: their.key,
             theirLocationLabel: their.value.name,
@@ -88,7 +82,9 @@ Iterable<CloseByMatch> closeByAddressWithTemporary({
             start: their.value.start,
             end: their.value.end,
             offset: Duration.zero,
-            theyKnow: mySharedLocationIds.contains(my.key)));
+            theyKnow: mySharedLocationIds.contains(my.key),
+          ),
+        );
       }
     }
   }
@@ -108,15 +104,21 @@ Iterable<CloseByMatch> closeByTemporaryWithTemporary({
   for (final my in myTemporaryLocations.entries) {
     for (final their in theirTemporaryLocations.entries) {
       final (start, end, offset) = getOverlapOrOffset(
-          start1: my.value.start,
-          end1: my.value.end,
-          start2: their.value.start,
-          end2: their.value.end);
-      if (Geolocator.distanceBetween(my.value.latitude, my.value.longitude,
-                  their.value.latitude, their.value.longitude) <
+        start1: my.value.start,
+        end1: my.value.end,
+        start2: their.value.start,
+        end2: their.value.end,
+      );
+      if (Geolocator.distanceBetween(
+                my.value.latitude,
+                my.value.longitude,
+                their.value.latitude,
+                their.value.longitude,
+              ) <
               distanceThresholdKm * 1000 &&
           offset.abs() <= timeThreshold) {
-        matches.add(CloseByMatch(
+        matches.add(
+          CloseByMatch(
             myLocationLabel: my.value.name,
             theirLocationId: their.key,
             theirLocationLabel: their.value.name,
@@ -125,7 +127,9 @@ Iterable<CloseByMatch> closeByTemporaryWithTemporary({
             start: start,
             end: end,
             offset: offset,
-            theyKnow: mySharedLocationIds.contains(my.key)));
+            theyKnow: mySharedLocationIds.contains(my.key),
+          ),
+        );
       }
     }
   }
@@ -144,10 +148,15 @@ Iterable<CloseByMatch> closeByTemporaryWithAddress({
   final matches = <CloseByMatch>[];
   for (final my in myTemporaryLocations.entries) {
     for (final their in theirAddressLocations.entries) {
-      if (Geolocator.distanceBetween(my.value.latitude, my.value.longitude,
-              their.value.latitude, their.value.longitude) <
+      if (Geolocator.distanceBetween(
+            my.value.latitude,
+            my.value.longitude,
+            their.value.latitude,
+            their.value.longitude,
+          ) <
           distanceThresholdKm * 1000) {
-        matches.add(CloseByMatch(
+        matches.add(
+          CloseByMatch(
             myLocationLabel: my.value.name,
             theirLocationId: their.key,
             theirLocationLabel: their.key,
@@ -156,7 +165,9 @@ Iterable<CloseByMatch> closeByTemporaryWithAddress({
             start: my.value.start,
             end: my.value.end,
             offset: Duration.zero,
-            theyKnow: mySharedLocationIds.contains(my.key)));
+            theyKnow: mySharedLocationIds.contains(my.key),
+          ),
+        );
       }
     }
   }
@@ -165,15 +176,18 @@ Iterable<CloseByMatch> closeByTemporaryWithAddress({
 
 // TODO: Runtime benchmark this and see if optimizations are necessary
 List<CloseByMatch> closeByMatchesForContact(
-    ProfileInfo profileInfo,
-    CoagContact contact,
-    Set<String> circleIds,
-    Duration timeThreshold,
-    double distanceThresholdKm,
-    {bool includePastTemporaryLocations = false}) {
+  ProfileInfo profileInfo,
+  CoagContact contact,
+  Set<String> circleIds,
+  Duration timeThreshold,
+  double distanceThresholdKm, {
+  bool includePastTemporaryLocations = false,
+}) {
   // Get labels of address locations I share with any of the given circle IDs
   final mySharedAddressLocationIds = profileInfo
-      .sharingSettings.addresses.entries
+      .sharingSettings
+      .addresses
+      .entries
       .where((e) => e.value.toSet().intersectsWith(circleIds))
       .map((e) => e.key)
       .toSet();
@@ -185,42 +199,82 @@ List<CloseByMatch> closeByMatchesForContact(
       .toSet();
 
   // Optionally, remove locations that were scheduled to end in the past
-  final myTemporaryLocations = includePastTemporaryLocations
-      ? profileInfo.temporaryLocations
-      : {...profileInfo.temporaryLocations}
-    ..removeWhere((k, v) => v.end.isBefore(DateTime.now()));
-  final theirTemporaryLocations = includePastTemporaryLocations
-      ? contact.temporaryLocations
-      : {...contact.temporaryLocations}
-    ..removeWhere((k, v) => v.end.isBefore(DateTime.now()));
+  final myTemporaryLocations =
+      includePastTemporaryLocations
+            ? profileInfo.temporaryLocations
+            : {...profileInfo.temporaryLocations}
+        ..removeWhere((k, v) => v.end.isBefore(DateTime.now()));
+  final theirTemporaryLocations =
+      includePastTemporaryLocations
+            ? contact.temporaryLocations
+            : {...contact.temporaryLocations}
+        ..removeWhere((k, v) => v.end.isBefore(DateTime.now()));
 
   // Combine all potential location matches
   final matches = [
     ...closeByAddressWithTemporary(
-        myAddressLocations: profileInfo.addressLocations,
-        theirTemporaryLocations: theirTemporaryLocations,
-        timeThreshold: timeThreshold,
-        distanceThresholdKm: distanceThresholdKm,
-        mySharedLocationIds: mySharedAddressLocationIds,
-        coagContactId: contact.coagContactId,
-        theirName: contact.name),
+      myAddressLocations: profileInfo.addressLocations,
+      theirTemporaryLocations: theirTemporaryLocations,
+      timeThreshold: timeThreshold,
+      distanceThresholdKm: distanceThresholdKm,
+      mySharedLocationIds: mySharedAddressLocationIds,
+      coagContactId: contact.coagContactId,
+      theirName: contact.name,
+    ),
     ...closeByTemporaryWithTemporary(
-        myTemporaryLocations: myTemporaryLocations,
-        theirTemporaryLocations: theirTemporaryLocations,
-        timeThreshold: timeThreshold,
-        distanceThresholdKm: distanceThresholdKm,
-        mySharedLocationIds: mySharedTemporaryLocationIds,
-        coagContactId: contact.coagContactId,
-        theirName: contact.name),
+      myTemporaryLocations: myTemporaryLocations,
+      theirTemporaryLocations: theirTemporaryLocations,
+      timeThreshold: timeThreshold,
+      distanceThresholdKm: distanceThresholdKm,
+      mySharedLocationIds: mySharedTemporaryLocationIds,
+      coagContactId: contact.coagContactId,
+      theirName: contact.name,
+    ),
     ...closeByTemporaryWithAddress(
-        myTemporaryLocations: myTemporaryLocations,
-        theirAddressLocations: contact.addressLocations,
-        timeThreshold: timeThreshold,
-        distanceThresholdKm: distanceThresholdKm,
-        mySharedLocationIds: mySharedTemporaryLocationIds,
-        coagContactId: contact.coagContactId,
-        theirName: contact.name),
+      myTemporaryLocations: myTemporaryLocations,
+      theirAddressLocations: contact.addressLocations,
+      timeThreshold: timeThreshold,
+      distanceThresholdKm: distanceThresholdKm,
+      mySharedLocationIds: mySharedTemporaryLocationIds,
+      coagContactId: contact.coagContactId,
+      theirName: contact.name,
+    ),
   ];
 
   return matches;
+}
+
+List<CloseByMatch> closeByMatches(
+  ProfileInfo profile,
+  Iterable<CoagContact> contacts,
+  Iterable<Circle> circles,
+) {
+  const timeThreshold = Duration.zero;
+  const distanceThresholdKm = 10.0;
+  return contacts
+      .map(
+        (contact) => closeByMatchesForContact(
+          profile,
+          contact,
+          circles
+              .where(
+                (circle) => circle.memberIds.contains(contact.coagContactId),
+              )
+              .map((circle) => circle.id)
+              .toSet(),
+          timeThreshold,
+          distanceThresholdKm,
+        ),
+      )
+      .expand((x) => x)
+      .toList()
+    ..sort((a, b) {
+      if (a.start.isBefore(b.start)) {
+        return -1;
+      }
+      if (b.start.isBefore(a.start)) {
+        return 1;
+      }
+      return 0;
+    });
 }

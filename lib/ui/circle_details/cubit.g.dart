@@ -11,18 +11,23 @@ CircleDetailsState _$CircleDetailsStateFromJson(Map<String, dynamic> json) =>
       $enumDecode(_$CircleDetailsStatusEnumMap, json['status']),
       circleMemberships:
           (json['circle_memberships'] as Map<String, dynamic>?)?.map(
-                (k, e) => MapEntry(
-                    k, (e as List<dynamic>).map((e) => e as String).toList()),
-              ) ??
-              const {},
+            (k, e) => MapEntry(
+              k,
+              (e as List<dynamic>).map((e) => e as String).toList(),
+            ),
+          ) ??
+          const {},
       circleId: json['circle_id'] as String?,
       profileInfo: json['profile_info'] == null
           ? null
           : ProfileInfo.fromJson(json['profile_info'] as Map<String, dynamic>),
-      contacts: (json['contacts'] as List<dynamic>?)
-              ?.map((e) => CoagContact.fromJson(e as Map<String, dynamic>)) ??
+      contacts:
+          (json['contacts'] as List<dynamic>?)?.map(
+            (e) => CoagContact.fromJson(e as Map<String, dynamic>),
+          ) ??
           const [],
-      circles: (json['circles'] as Map<String, dynamic>?)?.map(
+      circles:
+          (json['circles'] as Map<String, dynamic>?)?.map(
             (k, e) => MapEntry(k, e as String),
           ) ??
           const {},

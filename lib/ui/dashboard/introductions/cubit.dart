@@ -8,34 +8,16 @@ import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import '../../../data/models/coag_contact.dart';
-import '../../../data/repositories/contacts.dart';
 
 part 'state.dart';
 part 'cubit.g.dart';
 
 class IntroductionsCubit extends Cubit<IntroductionsState> {
-  IntroductionsCubit(this.contactsRepository)
-      : super(const IntroductionsState(IntroductionsStatus.initial)) {
-    _contactsSubscription =
-        contactsRepository.getContactStream().listen((_) => emit(
-              IntroductionsState(
-                IntroductionsStatus.success,
-                contacts: contactsRepository.getContacts().values.toList(),
-              ),
-            ));
-
-    emit(IntroductionsState(
-      IntroductionsStatus.success,
-      contacts: contactsRepository.getContacts().values.toList(),
-    ));
-  }
-
-  final ContactsRepository contactsRepository;
-  late final StreamSubscription<String> _contactsSubscription;
+  IntroductionsCubit()
+    : super(const IntroductionsState(IntroductionsStatus.initial));
 
   @override
   Future<void> close() {
-    _contactsSubscription.cancel();
     return super.close();
   }
 }

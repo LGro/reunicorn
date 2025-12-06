@@ -1,15 +1,16 @@
-// Copyright 2024 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'coag_contact.dart';
+import 'utils.dart';
 
 part 'contact_update.g.dart';
 
 @JsonSerializable()
-class ContactUpdate extends Equatable {
+class ContactUpdate extends Equatable implements JsonEncodable {
   const ContactUpdate({
     required this.coagContactId,
     required this.oldContact,
@@ -42,3 +43,7 @@ class ContactUpdate extends Equatable {
   @override
   List<Object?> get props => [coagContactId, oldContact, newContact, timestamp];
 }
+
+Future<ContactUpdate> contactUpdateMigrateFromJson(
+  Map<String, dynamic> json,
+) async => ContactUpdate.fromJson(json);

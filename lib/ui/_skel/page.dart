@@ -4,7 +4,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../data/repositories/contacts.dart';
+import '../../data/models/coag_contact.dart';
+import '../../data/services/storage/base.dart';
 import 'cubit.dart';
 
 class SkelWidget extends StatelessWidget {
@@ -12,8 +13,10 @@ class SkelWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-      create: (context) => SkelCubit(context.read<ContactsRepository>()),
-      child: BlocConsumer<SkelCubit, SkelState>(
-          listener: (context, state) async {},
-          builder: (context, state) => const SizedBox()));
+    create: (context) => SkelCubit(context.read<Storage<CoagContact>>()),
+    child: BlocConsumer<SkelCubit, SkelState>(
+      listener: (context, state) {},
+      builder: (context, state) => const SizedBox(),
+    ),
+  );
 }

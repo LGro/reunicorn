@@ -52,7 +52,7 @@ void main() {
     var initialDht = <RecordKey, CoagContactDHTSchema>{};
 
     setUp(() async {
-      await AppGlobalInit.initialize();
+      await AppGlobalInit.initialize('bootstrap-v1.veilid.net');
       initialContacts = [
         CoagContact(
           coagContactId: '2',
@@ -106,7 +106,7 @@ void main() {
     blocTest<ReceiveRequestCubit, ReceiveRequestState>(
       'successful direct sharing qt scanning, no dht info available yet',
       build: () => ReceiveRequestCubit(contactsRepository!),
-      act: (c) async => c.qrCodeCaptured(
+      act: (c) => c.qrCodeCaptured(
         mobile_scanner.BarcodeCapture(
           barcodes: [
             mobile_scanner.Barcode(
@@ -156,7 +156,7 @@ void main() {
     blocTest<ReceiveRequestCubit, ReceiveRequestState>(
       'direct sharing qr code, dht available',
       build: () => ReceiveRequestCubit(contactsRepository!),
-      act: (c) async => c.qrCodeCaptured(
+      act: (c) => c.qrCodeCaptured(
         mobile_scanner.BarcodeCapture(
           barcodes: [
             mobile_scanner.Barcode(
@@ -214,7 +214,7 @@ void main() {
     blocTest<ReceiveRequestCubit, ReceiveRequestState>(
       'successful profile qr scanning',
       build: () => ReceiveRequestCubit(contactsRepository!),
-      act: (c) async => c.qrCodeCaptured(
+      act: (c) => c.qrCodeCaptured(
         mobile_scanner.BarcodeCapture(
           barcodes: [
             mobile_scanner.Barcode(
@@ -264,7 +264,7 @@ void main() {
     blocTest<ReceiveRequestCubit, ReceiveRequestState>(
       'successful profile based offer qr scanning',
       build: () => ReceiveRequestCubit(contactsRepository!),
-      act: (c) async => c.qrCodeCaptured(
+      act: (c) => c.qrCodeCaptured(
         mobile_scanner.BarcodeCapture(
           barcodes: [
             mobile_scanner.Barcode(

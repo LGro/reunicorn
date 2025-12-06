@@ -9,24 +9,28 @@ import 'package:flutter/services.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:loggy/loggy.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:uuid/uuid.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../data/models/coag_contact.dart';
-import '../../data/repositories/contacts.dart';
+import '../../data/models/community.dart';
+import '../../data/models/profile_info.dart';
+import '../../data/services/storage/base.dart';
 import '../../data/utils.dart';
+import 'utils/direct_sharing.dart';
+import 'utils/profile_based.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
 
 class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
   ReceiveRequestCubit(
-    this.contactsRepository, {
+    this._contactStorage,
+    this._profileStorage,
+    this._communityStorage, {
     ReceiveRequestState? initialState,
   }) : super(
-          initialState ??
-              const ReceiveRequestState(ReceiveRequestStatus.qrcode),
-        ) {
+         initialState ?? const ReceiveRequestState(ReceiveRequestStatus.qrcode),
+       ) {
     if (initialState == null) {
       return;
     }
@@ -41,7 +45,9 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
   }
 
-  final ContactsRepository contactsRepository;
+  final Storage<CoagContact> _contactStorage;
+  final Storage<ProfileInfo> _profileStorage;
+  final Storage<Community> _communityStorage;
 
   Future<void> pasteInvite() async {
     final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
@@ -147,7 +153,6 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
   }
 
-  // name~recordKey~psk
   Future<void> handleDirectSharing(
     String fragment, {
     bool awaitDhtOperations = false,
@@ -156,98 +161,18 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
       emit(const ReceiveRequestState(ReceiveRequestStatus.processing));
     }
 
-    final parts = fragment.split('~');
-    if (parts.length < 3) {
-      // TODO: Emit error notice
-      if (!isClosed) {
-        emit(const ReceiveRequestState(ReceiveRequestStatus.qrcode));
-      }
-      return;
-    }
-    // TODO: Handle fromString parsing errors
-    final psk = SharedSecret.fromString(parts.removeLast());
-    final recordKey = RecordKey.fromString(parts.removeLast());
-    // Allow use of ~ in name
-    final name = Uri.decodeComponent(parts.join('~'));
-
-    // If we're already receiving from that record, redirect to existing contact/
-    // TODO: Should we check for ID or pubkey change / mismatch?
-    final existingContactsThemSharing = contactsRepository
-        .getContacts()
-        .values
-        .where((c) => c.dhtSettings.recordKeyThemSharing == recordKey);
-    if (existingContactsThemSharing.isNotEmpty) {
-      if (!isClosed) {
-        emit(
-          state.copyWith(
-            status: ReceiveRequestStatus.success,
-            profile: existingContactsThemSharing.first,
-          ),
-        );
-      }
-      return;
-    }
-
-    // If I accidentally scanned my own QR code, don't add a contact
-    final existingContactsMeSharing = contactsRepository
-        .getContacts()
-        .values
-        .where((c) => c.dhtSettings.recordKeyMeSharing == recordKey);
-    if (existingContactsMeSharing.isNotEmpty) {
-      if (!isClosed) {
-        // TODO: Provide error feedback
-        emit(const ReceiveRequestState(ReceiveRequestStatus.qrcode));
-      }
-      return;
-    }
-
-    // Otherwise, add new contact with the information we already have
-    final contact = CoagContact(
-      coagContactId: Uuid().v4(),
-      // TODO: localize default to language
-      name: name,
-      myIdentity: await generateKeyPairBest(),
-      myIntroductionKeyPair: await generateKeyPairBest(),
-      // TODO: Handle fromString parsing errors
-      dhtSettings: DhtSettings(
-        recordKeyThemSharing: recordKey,
-        initialSecret: psk,
-        myNextKeyPair: await contactsRepository.generateKeyPair(),
-      ),
+    final contact = await createContactFromDirectSharing(
+      fragment,
+      _contactStorage,
     );
-
-    // Save contact and trigger optional DHT update if connected, this allows
-    // to scan a QR code offline and fetch data later if not available now
-    await contactsRepository.saveContact(contact);
-
-    final addedContact = contactsRepository.getContact(contact.coagContactId);
-    if (addedContact == null) {
-      if (!isClosed) {
-        emit(const ReceiveRequestState(ReceiveRequestStatus.qrcode));
-      }
-      return;
-    }
-
-    // Update first to get share back settings and then try to share back
-    final dhtOperations =
-        contactsRepository.updateContactFromDHT(addedContact).then(
-              (success) => success
-                  ? contactsRepository.tryShareWithContactDHT(
-                      addedContact.coagContactId,
-                    )
-                  : success,
-            );
-    if (awaitDhtOperations) {
-      await dhtOperations;
-    } else {
-      unawaited(dhtOperations);
-    }
 
     if (!isClosed) {
       return emit(
         state.copyWith(
-          status: ReceiveRequestStatus.success,
-          profile: addedContact,
+          status: (contact == null)
+              ? ReceiveRequestStatus.qrcode
+              : ReceiveRequestStatus.success,
+          profile: contact,
         ),
       );
     }
@@ -277,7 +202,7 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     // Allow use of ~ in name
     final name = Uri.decodeComponent(parts.join('~'));
 
-    final profileInfo = contactsRepository.getProfileInfo();
+    final profileInfo = await getProfileInfo(_profileStorage);
     if (profileInfo?.mainKeyPair?.key.toString() == publicKey.toString()) {
       // TODO: Display "this is you, share it with others, it'll be great" msg
       if (!isClosed) {
@@ -287,11 +212,8 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
 
     // TODO: Check if contact already exists - key generation can take a moment and this can cause duplicate entries if people resubmit
-    final contact = await contactsRepository.createContactForInvite(
-      name,
-      pubKey: publicKey,
-      awaitDhtSharingAttempt: awaitDhtOperations,
-    );
+    final contact = await createContactForInvite(name, pubKey: publicKey);
+    await _contactStorage.set(contact.coagContactId, contact);
 
     if (!isClosed) {
       return emit(
@@ -300,7 +222,6 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
   }
 
-  // name~typedRecordKey~publicKey
   Future<void> handleSharingOffer(
     String fragment, {
     bool awaitDhtOperations = false,
@@ -308,21 +229,9 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     if (!isClosed) {
       emit(const ReceiveRequestState(ReceiveRequestStatus.processing));
     }
-    final parts = fragment.split('~');
-    if (parts.length < 3) {
-      // TODO: Emit error notice
-      if (!isClosed) {
-        emit(const ReceiveRequestState(ReceiveRequestStatus.qrcode));
-      }
-      return;
-    }
-    // TODO: Handle fromString parsing errors
-    final publicKey = PublicKey.fromString(parts.removeLast());
-    final recordKey = RecordKey.fromString(parts.removeLast());
-    // Allow use of ~ in name
-    final name = Uri.decodeComponent(parts.join('~'));
 
-    if (contactsRepository.getProfileInfo()?.mainKeyPair == null) {
+    final profileInfo = await getProfileInfo(_profileStorage);
+    if (profileInfo?.mainKeyPair == null) {
       // TODO: Emit error notice
       if (!isClosed) {
         emit(const ReceiveRequestState(ReceiveRequestStatus.qrcode));
@@ -330,60 +239,26 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
       return;
     }
 
-    // Otherwise, add new contact with the information we already have
-    final contact = CoagContact(
-      coagContactId: Uuid().v4(),
-      name: name,
-      myIdentity: await contactsRepository.generateKeyPair(),
-      myIntroductionKeyPair: await contactsRepository.generateKeyPair(),
-      dhtSettings: DhtSettings(
-        recordKeyThemSharing: recordKey,
-        theirNextPublicKey: publicKey,
-        myNextKeyPair: contactsRepository.getProfileInfo()!.mainKeyPair!,
-        // We skip the DH key exchange and directly start with all pub keys
-        theyAckHandshakeComplete: true,
-      ),
+    final contact = await createContactFromProfileInvite(
+      fragment,
+      profileInfo!.mainKeyPair!,
+      _contactStorage,
     );
-
-    // Save contact and trigger optional DHT update if connected, this allows
-    // to scan a QR code offline and fetch data later if not available now
-    await contactsRepository.saveContact(contact);
-    await contactsRepository.updateContactSharedProfile(contact.coagContactId);
-
-    final addedContact = contactsRepository.getContact(contact.coagContactId);
-    if (addedContact == null) {
-      if (!isClosed) {
-        emit(const ReceiveRequestState(ReceiveRequestStatus.qrcode));
-      }
-      return;
-    }
-
-    final dhtOperations =
-        contactsRepository.updateContactFromDHT(addedContact).then(
-              (success) => success
-                  ? contactsRepository.tryShareWithContactDHT(
-                      addedContact.coagContactId,
-                    )
-                  : success,
-            );
-    if (awaitDhtOperations) {
-      await dhtOperations;
-    } else {
-      unawaited(dhtOperations);
-    }
 
     if (!isClosed) {
       return emit(
         state.copyWith(
-          status: ReceiveRequestStatus.success,
-          profile: addedContact,
+          status: (contact == null)
+              ? ReceiveRequestStatus.qrcode
+              : ReceiveRequestStatus.success,
+          profile: contact,
         ),
       );
     }
   }
 
-  // label~recordKey~psk~subkeyIndex~subkeyWriter
-  Future<void> handleBatchInvite({required String myNameId}) async {
+  // recordKey~writer
+  Future<void> handleBatchInvite() async {
     if (state.fragment == null) {
       // TODO: Emit error
       if (!isClosed) {
@@ -393,7 +268,7 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
 
     final parts = state.fragment!.split('~');
-    if (parts.length < 5) {
+    if (parts.length != 2) {
       // TODO: Emit error notice
       if (!isClosed) {
         emit(const ReceiveRequestState(ReceiveRequestStatus.qrcode));
@@ -405,14 +280,10 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
 
     // TODO: Handle parsing errors
-    late KeyPair subkeyWriter;
-    late int subkeyIndex;
-    late SharedSecret psk;
     late RecordKey recordKey;
+    late KeyPair writer;
     try {
-      subkeyWriter = KeyPair.fromString(parts.removeLast());
-      subkeyIndex = int.parse(parts.removeLast());
-      psk = SharedSecret.fromString(parts.removeLast());
+      writer = KeyPair.fromString(parts.removeLast());
       recordKey = RecordKey.fromString(parts.removeLast());
     } catch (e) {
       // TODO: Emit error notice
@@ -422,28 +293,13 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
       return;
     }
 
-    final batch = await contactsRepository.handleBatchInvite(
-      myNameId,
-      recordKey,
-      psk,
-      subkeyIndex,
-      subkeyWriter,
+    final community = Community(
+      recordKey: recordKey,
+      recordWriter: writer,
+      members: [],
+      mostRecentUpdate: DateTime.now(),
     );
-
-    // TODO: Emit error notice
-    if (batch == null) {
-      if (!isClosed) {
-        emit(const ReceiveRequestState(ReceiveRequestStatus.qrcode));
-      }
-      return;
-    }
-    if (!isClosed) {
-      emit(state.copyWith(status: ReceiveRequestStatus.batchInviteConfirmed));
-    }
-
-    // TODO: Report successful intermediate step with option to cancel further
-    //       processing for now / or do this unawaited in the first place?
-    await contactsRepository.batchInviteUpdate(batch);
+    await _communityStorage.set(community.recordKey.toString(), community);
 
     if (!isClosed) {
       emit(state.copyWith(status: ReceiveRequestStatus.batchInviteSuccess));

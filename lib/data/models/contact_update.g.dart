@@ -6,15 +6,14 @@ part of 'contact_update.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-ContactUpdate _$ContactUpdateFromJson(Map<String, dynamic> json) =>
-    ContactUpdate(
-      coagContactId: json['coag_contact_id'] as String?,
-      oldContact:
-          CoagContact.fromJson(json['old_contact'] as Map<String, dynamic>),
-      newContact:
-          CoagContact.fromJson(json['new_contact'] as Map<String, dynamic>),
-      timestamp: DateTime.parse(json['timestamp'] as String),
-    );
+ContactUpdate _$ContactUpdateFromJson(
+  Map<String, dynamic> json,
+) => ContactUpdate(
+  coagContactId: json['coag_contact_id'] as String?,
+  oldContact: CoagContact.fromJson(json['old_contact'] as Map<String, dynamic>),
+  newContact: CoagContact.fromJson(json['new_contact'] as Map<String, dynamic>),
+  timestamp: DateTime.parse(json['timestamp'] as String),
+);
 
 Map<String, dynamic> _$ContactUpdateToJson(ContactUpdate instance) =>
     <String, dynamic>{

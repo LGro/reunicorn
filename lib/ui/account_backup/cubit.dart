@@ -5,20 +5,20 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:veilid/veilid.dart';
-import '../../data/repositories/contacts.dart';
+import '../../data/repositories/backup_dht.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
 
 class BackupCubit extends Cubit<BackupState> {
-  BackupCubit(this.contactsRepository) : super(const BackupState());
+  BackupCubit(this._backupRepository) : super(const BackupState());
 
-  ContactsRepository contactsRepository;
+  final BackupRepository _backupRepository;
 
   Future<void> backup() async {
     emit(const BackupState(status: BackupStatus.create));
 
-    final result = await contactsRepository.backup();
+    final result = await _backupRepository.backup();
 
     if (!isClosed) {
       if (result == null) {

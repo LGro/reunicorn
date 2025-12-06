@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'coag_contact.dart';
+import 'profile_info.dart';
 
 part 'backup.g.dart';
 

@@ -9,8 +9,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../data/models/circle.dart';
+import '../../../data/models/coag_contact.dart';
 import '../../../data/models/contact_location.dart';
-import '../../../data/repositories/contacts.dart';
+import '../../../data/models/profile_info.dart';
+import '../../../data/services/storage/base.dart';
+import '../../../data/utils.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
@@ -49,22 +53,30 @@ Future<CheckInStatus> checkLocationAccess() async {
 }
 
 class CheckInCubit extends Cubit<CheckInState> {
-  CheckInCubit(this.contactsRepository)
+  CheckInCubit(this._circleStorage, this._profileStorage)
     : super(
-        CheckInState(
+        const CheckInState(
           status: CheckInStatus.initial,
-          circles: contactsRepository.getCircles(),
-          circleMemberships: contactsRepository.getCircleMemberships(),
+          circles: {},
+          circleMemberships: {},
         ),
       ) {
     unawaited(initialPermissionsCheck());
   }
 
-  final ContactsRepository contactsRepository;
+  final Storage<Circle> _circleStorage;
+  final Storage<ProfileInfo> _profileStorage;
 
   Future<void> initialPermissionsCheck() async {
+    final circles = await _circleStorage.getAll();
     if (!isClosed) {
-      emit(state.copyWith(status: await checkLocationAccess()));
+      emit(
+        state.copyWith(
+          circles: circles.map((id, c) => MapEntry(id, c.name)),
+          circleMemberships: circlesByContactIds(circles.values),
+          status: await checkLocationAccess(),
+        ),
+      );
     }
   }
 
@@ -80,7 +92,7 @@ class CheckInCubit extends Cubit<CheckInState> {
       emit(state.copyWith(status: CheckInStatus.checkingIn));
     }
 
-    final profileInfo = contactsRepository.getProfileInfo();
+    final profileInfo = await getProfileInfo(_profileStorage);
     if (profileInfo == null) {
       return false;
     }
@@ -91,7 +103,8 @@ class CheckInCubit extends Cubit<CheckInState> {
         ),
       );
 
-      await contactsRepository.setProfileInfo(
+      await _profileStorage.set(
+        profileInfo.id,
         profileInfo.copyWith(
           temporaryLocations: Map.fromEntries([
             // Ensure all others are checked out

@@ -6,8 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../data/models/circle.dart';
 import '../../data/models/coag_contact.dart';
-import '../../data/repositories/contacts.dart';
+import '../../data/models/profile_info.dart';
+import '../../data/repositories/contact_dht.dart';
+import '../../data/services/storage/base.dart';
 import '../contact_details/page.dart';
 import '../profile/page.dart';
 import '../utils.dart';
@@ -229,18 +232,14 @@ Widget _sharedInformationList(BuildContext context, CircleDetailsState state) =>
                   },
                   label: label,
                   doShare: doShare,
-                  updateDetailSharingSettings: (sharingSettings) async =>
-                      context
-                          .read<CircleDetailsCubit>()
-                          .contactsRepository
-                          .setProfileInfo(
-                            state.profileInfo!.copyWith(
-                              sharingSettings: state
-                                  .profileInfo!
-                                  .sharingSettings
-                                  .copyWith(names: sharingSettings),
-                            ),
-                          ),
+                  updateDetailSharingSettings: (sharingSettings) =>
+                      context.read<Storage<ProfileInfo>>().set(
+                        state.profileInfo!.id,
+                        state.profileInfo!.copyWith(
+                          sharingSettings: state.profileInfo!.sharingSettings
+                              .copyWith(names: sharingSettings),
+                        ),
+                      ),
                 ),
           ),
         if (state.profileInfo!.details.phones.isNotEmpty)
@@ -260,27 +259,22 @@ Widget _sharedInformationList(BuildContext context, CircleDetailsState state) =>
                 state.profileInfo!.sharingSettings.phones[l],
             circles: state.circles,
             circleMemberships: state.circleMemberships,
-            editCallback: (label, doShare) async =>
-                updateSharedInformationWithCircle(
-                  state: state,
-                  detailSharingSettings: {
-                    ...state.profileInfo!.sharingSettings.phones,
-                  },
-                  label: label,
-                  doShare: doShare,
-                  updateDetailSharingSettings: (sharingSettings) async =>
-                      context
-                          .read<CircleDetailsCubit>()
-                          .contactsRepository
-                          .setProfileInfo(
-                            state.profileInfo!.copyWith(
-                              sharingSettings: state
-                                  .profileInfo!
-                                  .sharingSettings
-                                  .copyWith(phones: sharingSettings),
-                            ),
-                          ),
-                ),
+            editCallback: (label, doShare) => updateSharedInformationWithCircle(
+              state: state,
+              detailSharingSettings: {
+                ...state.profileInfo!.sharingSettings.phones,
+              },
+              label: label,
+              doShare: doShare,
+              updateDetailSharingSettings: (sharingSettings) =>
+                  context.read<Storage<ProfileInfo>>().set(
+                    state.profileInfo!.id,
+                    state.profileInfo!.copyWith(
+                      sharingSettings: state.profileInfo!.sharingSettings
+                          .copyWith(phones: sharingSettings),
+                    ),
+                  ),
+            ),
           ),
         if (state.profileInfo!.details.emails.isNotEmpty)
           ...detailsList(
@@ -308,17 +302,13 @@ Widget _sharedInformationList(BuildContext context, CircleDetailsState state) =>
                   label: label,
                   doShare: doShare,
                   updateDetailSharingSettings: (sharingSettings) async =>
-                      context
-                          .read<CircleDetailsCubit>()
-                          .contactsRepository
-                          .setProfileInfo(
-                            state.profileInfo!.copyWith(
-                              sharingSettings: state
-                                  .profileInfo!
-                                  .sharingSettings
-                                  .copyWith(emails: sharingSettings),
-                            ),
-                          ),
+                      context.read<Storage<ProfileInfo>>().set(
+                        state.profileInfo!.id,
+                        state.profileInfo!.copyWith(
+                          sharingSettings: state.profileInfo!.sharingSettings
+                              .copyWith(emails: sharingSettings),
+                        ),
+                      ),
                 ),
           ),
         if (state.profileInfo!.addressLocations.isNotEmpty)
@@ -348,18 +338,14 @@ Widget _sharedInformationList(BuildContext context, CircleDetailsState state) =>
                   },
                   label: label,
                   doShare: doShare,
-                  updateDetailSharingSettings: (sharingSettings) async =>
-                      context
-                          .read<CircleDetailsCubit>()
-                          .contactsRepository
-                          .setProfileInfo(
-                            state.profileInfo!.copyWith(
-                              sharingSettings: state
-                                  .profileInfo!
-                                  .sharingSettings
-                                  .copyWith(addresses: sharingSettings),
-                            ),
-                          ),
+                  updateDetailSharingSettings: (sharingSettings) =>
+                      context.read<Storage<ProfileInfo>>().set(
+                        state.profileInfo!.id,
+                        state.profileInfo!.copyWith(
+                          sharingSettings: state.profileInfo!.sharingSettings
+                              .copyWith(addresses: sharingSettings),
+                        ),
+                      ),
                 ),
           ),
         if (state.profileInfo!.details.socialMedias.isNotEmpty)
@@ -387,18 +373,14 @@ Widget _sharedInformationList(BuildContext context, CircleDetailsState state) =>
                   },
                   label: label,
                   doShare: doShare,
-                  updateDetailSharingSettings: (sharingSettings) async =>
-                      context
-                          .read<CircleDetailsCubit>()
-                          .contactsRepository
-                          .setProfileInfo(
-                            state.profileInfo!.copyWith(
-                              sharingSettings: state
-                                  .profileInfo!
-                                  .sharingSettings
-                                  .copyWith(socialMedias: sharingSettings),
-                            ),
-                          ),
+                  updateDetailSharingSettings: (sharingSettings) =>
+                      context.read<Storage<ProfileInfo>>().set(
+                        state.profileInfo!.id,
+                        state.profileInfo!.copyWith(
+                          sharingSettings: state.profileInfo!.sharingSettings
+                              .copyWith(socialMedias: sharingSettings),
+                        ),
+                      ),
                 ),
           ),
         if (state.profileInfo!.details.websites.isNotEmpty)
@@ -426,18 +408,14 @@ Widget _sharedInformationList(BuildContext context, CircleDetailsState state) =>
                   },
                   label: label,
                   doShare: doShare,
-                  updateDetailSharingSettings: (sharingSettings) async =>
-                      context
-                          .read<CircleDetailsCubit>()
-                          .contactsRepository
-                          .setProfileInfo(
-                            state.profileInfo!.copyWith(
-                              sharingSettings: state
-                                  .profileInfo!
-                                  .sharingSettings
-                                  .copyWith(websites: sharingSettings),
-                            ),
-                          ),
+                  updateDetailSharingSettings: (sharingSettings) =>
+                      context.read<Storage<ProfileInfo>>().set(
+                        state.profileInfo!.id,
+                        state.profileInfo!.copyWith(
+                          sharingSettings: state.profileInfo!.sharingSettings
+                              .copyWith(websites: sharingSettings),
+                        ),
+                      ),
                 ),
           ),
         if (state.profileInfo!.details.events.isNotEmpty)
@@ -472,18 +450,14 @@ Widget _sharedInformationList(BuildContext context, CircleDetailsState state) =>
                   },
                   label: label,
                   doShare: doShare,
-                  updateDetailSharingSettings: (sharingSettings) async =>
-                      context
-                          .read<CircleDetailsCubit>()
-                          .contactsRepository
-                          .setProfileInfo(
-                            state.profileInfo!.copyWith(
-                              sharingSettings: state
-                                  .profileInfo!
-                                  .sharingSettings
-                                  .copyWith(events: sharingSettings),
-                            ),
-                          ),
+                  updateDetailSharingSettings: (sharingSettings) =>
+                      context.read<Storage<ProfileInfo>>().set(
+                        state.profileInfo!.id,
+                        state.profileInfo!.copyWith(
+                          sharingSettings: state.profileInfo!.sharingSettings
+                              .copyWith(events: sharingSettings),
+                        ),
+                      ),
                 ),
           ),
         if (state.profileInfo?.pictures != null)
@@ -569,13 +543,15 @@ class _CircleDetailsPageState extends State<CircleDetailsPage> {
     providers: [
       BlocProvider(
         create: (context) => CircleDetailsCubit(
-          context.read<ContactsRepository>(),
+          context.read<Storage<Circle>>(),
+          context.read<Storage<CoagContact>>(),
+          context.read<Storage<ProfileInfo>>(),
           widget.circleId,
         ),
       ),
     ],
     child: BlocConsumer<CircleDetailsCubit, CircleDetailsState>(
-      listener: (context, state) async {},
+      listener: (context, state) {},
       builder: (context, state) => Scaffold(
         appBar: AppBar(
           actions: [

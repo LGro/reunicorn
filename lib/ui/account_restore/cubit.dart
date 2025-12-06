@@ -5,20 +5,20 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:veilid/veilid.dart';
-import '../../data/repositories/contacts.dart';
+import '../../data/repositories/backup_dht.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
 
 class RestoreCubit extends Cubit<RestoreState> {
-  RestoreCubit(this.contactsRepository) : super(const RestoreState());
+  RestoreCubit(this._backupRepository) : super(const RestoreState());
 
-  ContactsRepository contactsRepository;
+  final BackupRepository _backupRepository;
 
   Future<void> restore(RecordKey recordKey, SharedSecret secret) async {
     emit(const RestoreState(status: RestoreStatus.create));
 
-    final result = await contactsRepository.restore(recordKey, secret);
+    final result = await _backupRepository.restore(recordKey, secret);
 
     if (!isClosed) {
       emit(

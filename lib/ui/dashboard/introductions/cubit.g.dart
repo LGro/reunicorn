@@ -9,7 +9,8 @@ part of 'cubit.dart';
 IntroductionsState _$IntroductionsStateFromJson(Map<String, dynamic> json) =>
     IntroductionsState(
       $enumDecode(_$IntroductionsStatusEnumMap, json['status']),
-      contacts: (json['contacts'] as List<dynamic>?)
+      contacts:
+          (json['contacts'] as List<dynamic>?)
               ?.map((e) => CoagContact.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],

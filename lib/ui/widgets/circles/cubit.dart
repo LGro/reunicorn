@@ -1,66 +1,89 @@
-// Copyright 2024 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-import '../../../data/repositories/contacts.dart';
+import '../../../data/models/circle.dart';
+import '../../../data/services/storage/base.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
 
+// TODO: Switch view model to use Map<String, Circle> circles instead of this
+List<(String, String, bool, int)> circlesWithMembership(
+  String contactId,
+  Map<String, Circle> circles,
+) => circles
+    .map(
+      (id, circle) => MapEntry(id, (
+        id,
+        circle.name,
+        circle.memberIds.contains(contactId),
+        circle.memberIds.length,
+      )),
+    )
+    .values
+    .toList();
+
 class CirclesCubit extends Cubit<CirclesState> {
-  CirclesCubit(this.contactsRepository, this.coagContactId)
-    : super(
-        CirclesState(contactsRepository.circlesWithMembership(coagContactId)),
-      ) {
-    _circlesSubscription = contactsRepository.getCirclesStream().listen((c) {
-      if (!isClosed) {
-        emit(
-          CirclesState(contactsRepository.circlesWithMembership(coagContactId)),
-        );
-      }
-    });
+  CirclesCubit(this._circleStorage, this.contactId)
+    : super(const CirclesState([])) {
+    _circleSubscription = _circleStorage.changeEvents.listen(
+      (_) => fetchData(),
+    );
+    unawaited(fetchData());
+  }
+
+  final Storage<Circle> _circleStorage;
+  final String contactId;
+  late final StreamSubscription<StorageEvent<Circle>> _circleSubscription;
+
+  Future<void> fetchData() async {
+    final circles = await _circleStorage.getAll();
     if (!isClosed) {
-      emit(
-        CirclesState(contactsRepository.circlesWithMembership(coagContactId)),
-      );
+      emit(CirclesState(circlesWithMembership(contactId, circles)));
     }
   }
 
-  final ContactsRepository contactsRepository;
-  final String coagContactId;
-  late final StreamSubscription<void> _circlesSubscription;
-
   Future<void> update(List<(String, String, bool)> circles) async {
     // Check if there is a new circle, add it
-    final storedCircles = contactsRepository.getCircles();
+    final storedCircles = await _circleStorage.getAll();
     for (final (id, label, _) in circles) {
       if (!storedCircles.containsKey(id)) {
-        storedCircles[id] = label;
-        await contactsRepository.addCircle(id, label);
+        final newCircle = Circle(id: id, name: label, memberIds: []);
+        storedCircles[id] = newCircle;
+        await _circleStorage.set(id, newCircle);
       }
     }
 
-    await contactsRepository.updateCirclesForContact(
-      coagContactId,
-      circles.where((c) => c.$3).map((c) => c.$1).asList(),
-    );
-
-    if (!isClosed) {
-      emit(
-        CirclesState(contactsRepository.circlesWithMembership(coagContactId)),
-      );
+    for (final (id, _, isMember) in circles) {
+      final circle = storedCircles[id];
+      if (circle == null) {
+        // Shouldn't happen since we just added all new circles above
+        continue;
+      }
+      if (isMember && !circle.memberIds.contains(contactId)) {
+        await _circleStorage.set(
+          circle.id,
+          circle.copyWith(memberIds: [contactId, ...circle.memberIds]),
+        );
+      }
+      if (!isMember && circle.memberIds.contains(contactId)) {
+        await _circleStorage.set(
+          circle.id,
+          circle.copyWith(memberIds: [...circle.memberIds]..remove(contactId)),
+        );
+      }
     }
   }
 
   @override
   Future<void> close() {
-    _circlesSubscription.cancel();
+    unawaited(_circleSubscription.cancel());
     return super.close();
   }
 }

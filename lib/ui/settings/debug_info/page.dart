@@ -1,11 +1,9 @@
-// Copyright 2024 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../data/repositories/contacts.dart';
 import '../../../debug_log.dart';
 
 class DebugInfoPage extends StatelessWidget {
@@ -19,12 +17,6 @@ class DebugInfoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final combinedInfo = [
-      'Database',
-      context.read<ContactsRepository>().persistentStorage.debugInfo(),
-      '---',
-      'Repository',
-      'Contacts: ${context.read<ContactsRepository>().getContacts().length}',
-      '---',
       'Log',
       ...DebugLogger().getRecentLogs(count: 100),
     ].join('\n');

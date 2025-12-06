@@ -7,18 +7,18 @@ part of 'batch_invites.dart';
 // **************************************************************************
 
 BatchInviteInfoSchema _$BatchInviteInfoSchemaFromJson(
-        Map<String, dynamic> json) =>
-    BatchInviteInfoSchema(
-      json['label'] as String,
-      DateTime.parse(json['expiration'] as String),
-    );
+  Map<String, dynamic> json,
+) => BatchInviteInfoSchema(
+  json['label'] as String,
+  DateTime.parse(json['expiration'] as String),
+);
 
 Map<String, dynamic> _$BatchInviteInfoSchemaToJson(
-        BatchInviteInfoSchema instance) =>
-    <String, dynamic>{
-      'label': instance.label,
-      'expiration': instance.expiration.toIso8601String(),
-    };
+  BatchInviteInfoSchema instance,
+) => <String, dynamic>{
+  'label': instance.label,
+  'expiration': instance.expiration.toIso8601String(),
+};
 
 BatchSubkeySchema _$BatchSubkeySchemaFromJson(Map<String, dynamic> json) =>
     BatchSubkeySchema(
@@ -37,21 +37,21 @@ Map<String, dynamic> _$BatchSubkeySchemaToJson(BatchSubkeySchema instance) =>
     };
 
 BatchInvite _$BatchInviteFromJson(Map<String, dynamic> json) => BatchInvite(
-      label: json['label'] as String,
-      expiration: DateTime.parse(json['expiration'] as String),
-      recordKey: RecordKey.fromJson(json['record_key']),
-      psk: Typed<BareSharedSecret>.fromJson(json['psk']),
-      subkeyCount: (json['subkey_count'] as num).toInt(),
-      mySubkey: (json['my_subkey'] as num).toInt(),
-      subkeyWriter: KeyPair.fromJson(json['subkey_writer']),
-      myName: json['my_name'] as String,
-      myKeyPair: KeyPair.fromJson(json['my_key_pair']),
-      myConnectionRecords:
-          (json['my_connection_records'] as Map<String, dynamic>?)?.map(
-                (k, e) => MapEntry(k, RecordKey.fromJson(e)),
-              ) ??
-              const {},
-    );
+  label: json['label'] as String,
+  expiration: DateTime.parse(json['expiration'] as String),
+  recordKey: RecordKey.fromJson(json['record_key']),
+  psk: Typed<BareSharedSecret>.fromJson(json['psk']),
+  subkeyCount: (json['subkey_count'] as num).toInt(),
+  mySubkey: (json['my_subkey'] as num).toInt(),
+  subkeyWriter: KeyPair.fromJson(json['subkey_writer']),
+  myName: json['my_name'] as String,
+  myKeyPair: KeyPair.fromJson(json['my_key_pair']),
+  myConnectionRecords:
+      (json['my_connection_records'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, RecordKey.fromJson(e)),
+      ) ??
+      const {},
+);
 
 Map<String, dynamic> _$BatchInviteToJson(BatchInvite instance) =>
     <String, dynamic>{
@@ -64,6 +64,7 @@ Map<String, dynamic> _$BatchInviteToJson(BatchInvite instance) =>
       'subkey_writer': instance.subkeyWriter.toJson(),
       'my_name': instance.myName,
       'my_key_pair': instance.myKeyPair.toJson(),
-      'my_connection_records':
-          instance.myConnectionRecords.map((k, e) => MapEntry(k, e.toJson())),
+      'my_connection_records': instance.myConnectionRecords.map(
+        (k, e) => MapEntry(k, e.toJson()),
+      ),
     };

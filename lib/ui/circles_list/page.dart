@@ -9,7 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
-import '../../data/repositories/contacts.dart';
+import '../../data/models/circle.dart';
+import '../../data/services/storage/base.dart';
 import '../circle_details/page.dart';
 import '../utils.dart';
 import 'cubit.dart';
@@ -134,138 +135,125 @@ class _CirclesListPageState extends State<CirclesListPage> {
     BuildContext context,
     Map<String, String> circles,
     Map<String, List<String>> circleMemberships,
-  ) =>
-      GridView.count(
-        restorationId: 'circles_grid_view',
-        crossAxisCount: (MediaQuery.of(context).size.width >
-                MediaQuery.of(context).size.height)
-            ? 5
-            : 2,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        padding: const EdgeInsets.all(8),
-        childAspectRatio: 1,
-        children: (circles.entries.toList()
-              ..sortBy((c) => c.value.toLowerCase()))
-            .map<Widget>(
-              (circle) => GestureDetector(
-                onTap: () async => Navigator.of(context)
-                    .push(CircleDetailsPage.route(circle.key)),
-                child: _GridCircleItem(
-                  circle.value,
-                  circleMemberships.values
-                      .where((cIds) => cIds.contains(circle.key))
-                      .length,
-                  pictures: context
-                      .read<CirclesListCubit>()
-                      .contactsRepository
-                      .getContacts()
-                      .values
-                      .where(
-                        (contact) =>
-                            circleMemberships[contact.coagContactId]?.contains(
-                              circle.key,
-                            ) ??
-                            false,
-                      )
-                      .map((contact) => contact.details?.picture)
-                      .whereType<List<int>>()
+    Map<String, List<List<int>>> circleMemberPictures,
+  ) => GridView.count(
+    restorationId: 'circles_grid_view',
+    crossAxisCount:
+        (MediaQuery.of(context).size.width > MediaQuery.of(context).size.height)
+        ? 5
+        : 2,
+    mainAxisSpacing: 8,
+    crossAxisSpacing: 8,
+    padding: const EdgeInsets.all(8),
+    childAspectRatio: 1,
+    children: (circles.entries.toList()..sortBy((c) => c.value.toLowerCase()))
+        .map<Widget>(
+          (circle) => GestureDetector(
+            onTap: () =>
+                Navigator.of(context).push(CircleDetailsPage.route(circle.key)),
+            child: _GridCircleItem(
+              circle.value,
+              circleMemberships.values
+                  .where((cIds) => cIds.contains(circle.key))
+                  .length,
+              pictures:
+                  (circleMemberPictures[circle.key] ?? [])
                       .map(Uint8List.fromList)
                       .toList()
                     // Shuffle when opening the page but not at each re-draw
                     ..shuffle(Random(_sessionSeed)),
-                ),
-              ),
-            )
-            .toList(),
-      );
+            ),
+          ),
+        )
+        .toList(),
+  );
 
   Widget _newCircleForm(
     BuildContext context,
     List<String> existingCircleNames,
-  ) =>
-      Form(
-        key: _formKey,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(width: 10),
-            Expanded(
-              child: TextFormField(
-                controller: _newCircleController,
-                autocorrect: false,
-                decoration: const InputDecoration(
-                  isDense: true,
-                  border: OutlineInputBorder(),
-                  hintText: 'New circle name',
-                ),
-                // TODO: Instead just open the corresponding circle details?
-                validator: (value) {
-                  if (existingCircleNames
-                      .map((n) => n.toLowerCase())
-                      .contains(value?.toLowerCase())) {
-                    return 'This circle name already exists.';
-                  }
-                  return null;
-                },
-                onChanged: (_) => _formKey.currentState!.validate(),
-              ),
+  ) => Form(
+    key: _formKey,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(width: 10),
+        Expanded(
+          child: TextFormField(
+            controller: _newCircleController,
+            autocorrect: false,
+            decoration: const InputDecoration(
+              isDense: true,
+              border: OutlineInputBorder(),
+              hintText: 'New circle name',
             ),
-            const SizedBox(width: 8),
-            IconButton.filled(
-              onPressed: (_newCircleName.isEmpty)
-                  ? null
-                  : () async {
-                      if (_formKey.currentState!.validate()) {
-                        final circleId = await context
-                            .read<CirclesListCubit>()
-                            .addCircle(_newCircleName);
-                        _resetState();
-                        if (context.mounted) {
-                          await Navigator.of(
-                            context,
-                          ).push(CircleDetailsPage.route(circleId));
-                        }
-                      }
-                    },
-              icon: const Icon(Icons.add),
-            ),
-            const SizedBox(width: 5),
-          ],
+            // TODO: Instead just open the corresponding circle details?
+            validator: (value) {
+              if (existingCircleNames
+                  .map((n) => n.toLowerCase())
+                  .contains(value?.toLowerCase())) {
+                return 'This circle name already exists.';
+              }
+              return null;
+            },
+            onChanged: (_) => _formKey.currentState!.validate(),
+          ),
         ),
-      );
+        const SizedBox(width: 8),
+        IconButton.filled(
+          onPressed: (_newCircleName.isEmpty)
+              ? null
+              : () async {
+                  if (_formKey.currentState!.validate()) {
+                    final circleId = await context
+                        .read<CirclesListCubit>()
+                        .addCircle(_newCircleName);
+                    _resetState();
+                    if (context.mounted) {
+                      await Navigator.of(
+                        context,
+                      ).push(CircleDetailsPage.route(circleId));
+                    }
+                  }
+                },
+          icon: const Icon(Icons.add),
+        ),
+        const SizedBox(width: 5),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(context.loc.circles.capitalize())),
-        body: MultiBlocProvider(
-          providers: [
-            BlocProvider(
-              create: (context) =>
-                  CirclesListCubit(context.read<ContactsRepository>()),
-            ),
-          ],
-          child: BlocConsumer<CirclesListCubit, CirclesListState>(
-            listener: (context, state) async {},
-            builder: (context, state) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: _circlesGrid(
-                      context,
-                      state.circles,
-                      state.circleMemberships,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _newCircleForm(context, state.circles.values.toList()),
-                  const SizedBox(height: 10),
-                ],
+    appBar: AppBar(title: Text(context.loc.circles.capitalize())),
+    body: MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) =>
+              CirclesListCubit(context.read<Storage<Circle>>()),
+        ),
+      ],
+      child: BlocConsumer<CirclesListCubit, CirclesListState>(
+        listener: (context, state) {},
+        builder: (context, state) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Column(
+            children: [
+              Expanded(
+                child: _circlesGrid(
+                  context,
+                  state.circles,
+                  state.circleMemberships,
+                  state.circleMemberPictures,
+                ),
               ),
-            ),
+              const SizedBox(height: 10),
+              _newCircleForm(context, state.circles.values.toList()),
+              const SizedBox(height: 10),
+            ],
           ),
         ),
-      );
+      ),
+    ),
+  );
 }

@@ -85,7 +85,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get welcomeText =>
-      'This is the first bit of personal information that you can selectively share with others in a moment.';
+      'This is the first bit of personal information that you can soon share with others.';
 
   @override
   String get welcomeCallToActionButton => 'Let\'s connect';

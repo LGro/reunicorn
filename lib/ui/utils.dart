@@ -12,7 +12,6 @@ import 'package:veilid/veilid.dart';
 import '../data/models/coag_contact.dart';
 import '../data/models/contact_introduction.dart';
 import '../l10n/app_localizations.dart';
-import 'batch_invite_management/cubit.dart';
 
 extension LocalizationExt on BuildContext {
   AppLocalizations get loc => AppLocalizations.of(this)!;
@@ -140,70 +139,102 @@ String contactUpdateSummary(CoagContact oldContact, CoagContact newContact) {
   return results.join(', ');
 }
 
-Iterable<String> generateBatchInviteLinks(Batch batch) =>
-    batch.subkeyWriters.toList().asMap().entries.map(
-          (w) => batchInviteUrl(
-            batch.label,
-            batch.dhtRecordKey,
-            batch.psk,
-            // Index of the writer in the list + 1 is the corresponding subkey
-            w.key + 1,
-            w.value,
-          ).toString(),
-        );
-
-// TODO: Pass dhtSettings to all the Url generators to make it easier to test that the correct keys are used?
-Uri directSharingUrl(
-  String name,
-  RecordKey dhtRecordKey,
-  SharedSecret psk,
-) =>
-    Uri(
-      scheme: 'https',
-      host: 'reunicorn.app',
-      path: '/c',
-      fragment: [name, dhtRecordKey.toString(), psk.toString()].join('~'),
-    );
-
 Uri profileUrl(String name, PublicKey publicKey) => Uri(
-      scheme: 'https',
-      host: 'reunicorn.app',
-      path: '/p',
-      fragment: [name, publicKey.toString()].join('~'),
-    );
+  scheme: 'https',
+  host: 'reunicorn.app',
+  path: '/p',
+  fragment: [name, publicKey.toString()].join('~'),
+);
 
-Uri batchInviteUrl(
-  String label,
-  RecordKey dhtRecordKey,
-  SharedSecret psk,
-  int subKeyIndex,
-  KeyPair writer,
-) =>
-    Uri(
-      scheme: 'https',
-      host: 'reunicorn.app',
-      path: '/b',
-      fragment: [
-        label,
-        dhtRecordKey.toString(),
-        psk.toString(),
-        // Index of the writer in the list + 1 is the corresponding subkey
-        subKeyIndex.toString(),
-        writer.toString(),
-      ].join('~'),
-    );
+class DirectSharingInvite {
+  String name;
+  RecordKey recordKey;
+  SharedSecret psk;
 
-Uri profileBasedOfferUrl(
-  String name,
-  RecordKey dhtRecordKey,
-  PublicKey publicKey,
-) =>
-    Uri(
-      scheme: 'https',
-      host: 'reunicorn.app',
-      path: '/o',
-      fragment: [name, dhtRecordKey.toString(), publicKey.toString()].join('~'),
+  DirectSharingInvite(this.name, this.recordKey, this.psk);
+
+  factory DirectSharingInvite.parse(String fragment) {
+    final parts = fragment.split('~');
+    if (parts.length < 3) {
+      throw Exception(
+        'Expected at least three parts in direct sharing invite link fragment '
+        'but got ${parts.length}',
+      );
+    }
+
+    final psk = SharedSecret.fromString(parts.removeLast());
+    final recordKey = RecordKey.fromString(parts.removeLast());
+    final name = Uri.decodeComponent(parts.join('~'));
+
+    return DirectSharingInvite(name, recordKey, psk);
+  }
+
+  Uri get uri => Uri(
+    scheme: 'https',
+    host: 'reunicorn.app',
+    path: '/c',
+    fragment: [name, recordKey.toString(), psk.toString()].join('~'),
+  );
+}
+
+class ProfileBasedInvite {
+  String name;
+  RecordKey recordKey;
+  PublicKey publicKey;
+
+  ProfileBasedInvite(this.name, this.recordKey, this.publicKey);
+
+  factory ProfileBasedInvite.parse(String fragment) {
+    final parts = fragment.split('~');
+    if (parts.length != 3) {
+      throw Exception(
+        'Expected three parts in profile based invite link fragment but got '
+        '${parts.length}',
+      );
+    }
+
+    final publicKey = PublicKey.fromString(parts.removeLast());
+    final recordKey = RecordKey.fromString(parts.removeLast());
+    final name = Uri.decodeComponent(parts.join('~'));
+
+    return ProfileBasedInvite(name, recordKey, publicKey);
+  }
+
+  Uri get uri => Uri(
+    scheme: 'https',
+    host: 'reunicorn.app',
+    path: '/o',
+    fragment: [name, recordKey.toString(), publicKey.toString()].join('~'),
+  );
+}
+
+class CommunityInvite {
+  final RecordKey recordKey;
+  final KeyPair recordWriter;
+
+  CommunityInvite(this.recordKey, this.recordWriter);
+
+  factory CommunityInvite.parse({required String fragment}) {
+    final parts = fragment.split('~');
+    if (parts.length != 2) {
+      throw Exception(
+        'Expected two parts in community invite link fragment but got '
+        '${parts.length}',
+      );
+    }
+    return CommunityInvite(
+      RecordKey.fromString(parts.first),
+      KeyPair.fromString(parts.last),
     );
+  }
+
+  Uri get uri => Uri(
+    scheme: 'https',
+    host: 'reunicorn.app',
+    path: '/i',
+    fragment: '$recordKey~$recordWriter',
+  );
+}
 
 bool showSharingInitializing(CoagContact contact) =>
     contact.dhtSettings.recordKeyThemSharing == null ||
@@ -223,66 +254,67 @@ bool showDirectSharing(CoagContact contact) =>
 /// Returns introducer and introduction for pending introductions
 Iterable<(CoagContact, ContactIntroduction)> pendingIntroductions(
   Iterable<CoagContact> contacts,
-) =>
-    contacts
-        .map(
-          (c) => c.introductionsByThem
-              .where(
-                (i) => !contacts
-                    .map((c) => c.dhtSettings.recordKeyThemSharing)
-                    .whereType<RecordKey>()
-                    .contains(i.dhtRecordKeyReceiving),
-              )
-              .map((i) => (c, i)),
-        )
-        .expand((i) => i);
+) => contacts
+    .map(
+      (c) => c.introductionsByThem
+          .where(
+            (i) => !contacts
+                .map((c) => c.dhtSettings.recordKeyThemSharing)
+                .whereType<RecordKey>()
+                .contains(i.dhtRecordKeyReceiving),
+          )
+          .map((i) => (c, i)),
+    )
+    .expand((i) => i);
 
 Widget buildEditOrAddWidgetSkeleton(
   BuildContext context, {
   required String title,
   required List<Widget> children,
   required Widget onSaveWidget,
-}) =>
-    Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 8, left: 8, right: 8, bottom: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton.filledTonal(
-                onPressed: Navigator.of(context).pop,
-                icon: const Icon(Icons.cancel_outlined),
-              ),
-              Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              onSaveWidget,
-            ],
+}) => Column(
+  mainAxisSize: MainAxisSize.min,
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Padding(
+      padding: const EdgeInsets.only(top: 8, left: 8, right: 8, bottom: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton.filledTonal(
+            onPressed: Navigator.of(context).pop,
+            icon: const Icon(Icons.cancel_outlined),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: children,
+          Expanded(
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
           ),
-        ),
-      ],
-    );
+          onSaveWidget,
+        ],
+      ),
+    ),
+    Padding(
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    ),
+  ],
+);
 
 List<(String, String)> labelValueMapToTupleList(Map<String, String> map) =>
     map.map((key, value) => MapEntry(key, (key, value))).values.toList();
 
-Future<Uint8List> iconToUint8List(IconData iconData,
-    {double size = 48, Color color = Colors.black}) async {
+Future<Uint8List> iconToUint8List(
+  IconData iconData, {
+  double size = 48,
+  Color color = Colors.black,
+}) async {
   final pictureRecorder = ui.PictureRecorder();
   final canvas = Canvas(pictureRecorder);
 
@@ -313,18 +345,24 @@ Future<Uint8List> iconToUint8List(IconData iconData,
     final paint = Paint()..color = Colors.red;
     fallbackCanvas.drawCircle(Offset(size / 2, size / 2), size / 2, paint);
     final fallbackPicture = fallbackRecorder.endRecording();
-    final fallbackImage =
-        await fallbackPicture.toImage(size.toInt(), size.toInt());
-    final fallbackByteData =
-        await fallbackImage.toByteData(format: ui.ImageByteFormat.png);
+    final fallbackImage = await fallbackPicture.toImage(
+      size.toInt(),
+      size.toInt(),
+    );
+    final fallbackByteData = await fallbackImage.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     return fallbackByteData?.buffer.asUint8List() ?? Uint8List(0);
   }
   return byteData.buffer.asUint8List();
 }
 
 Future<Uint8List> createCircularImageWithBorder(
-    Uint8List imageBytes, double size,
-    {Color borderColor = Colors.white, double borderWidth = 2.0}) async {
+  Uint8List imageBytes,
+  double size, {
+  Color borderColor = Colors.white,
+  double borderWidth = 2.0,
+}) async {
   final codec = await ui.instantiateImageCodec(imageBytes);
   final frameInfo = await codec.getNextFrame();
   final originalImage = frameInfo.image;
@@ -333,8 +371,12 @@ Future<Uint8List> createCircularImageWithBorder(
   final canvas = Canvas(recorder);
 
   final radius = size / 2;
-  final imageRect = Rect.fromLTWH(borderWidth, borderWidth,
-      size - (borderWidth * 2), size - (borderWidth * 2));
+  final imageRect = Rect.fromLTWH(
+    borderWidth,
+    borderWidth,
+    size - (borderWidth * 2),
+    size - (borderWidth * 2),
+  );
 
   // Draw border circle
   final Paint borderPaint = Paint()
@@ -345,16 +387,21 @@ Future<Uint8List> createCircularImageWithBorder(
   canvas.drawCircle(Offset(radius, radius), radius, borderPaint);
 
   // Clip to inner circle for image
-  canvas.clipRRect(RRect.fromRectAndRadius(
-      imageRect, Radius.circular((size - borderWidth * 2) / 2)));
+  canvas.clipRRect(
+    RRect.fromRectAndRadius(
+      imageRect,
+      Radius.circular((size - borderWidth * 2) / 2),
+    ),
+  );
 
   // Calculate center crop dimensions for rectangular images
   final originalWidth = originalImage.width.toDouble();
   final originalHeight = originalImage.height.toDouble();
 
   // Find the smaller dimension to create a square crop from center
-  final cropSize =
-      originalWidth < originalHeight ? originalWidth : originalHeight;
+  final cropSize = originalWidth < originalHeight
+      ? originalWidth
+      : originalHeight;
 
   // Calculate offset to crop from center
   final cropLeft = (originalWidth - cropSize) / 2;
@@ -365,18 +412,14 @@ Future<Uint8List> createCircularImageWithBorder(
 
   // Draw the center-cropped, scaled image
   final imagePaint = Paint()..isAntiAlias = true;
-  canvas.drawImageRect(
-    originalImage,
-    sourceRect,
-    imageRect,
-    imagePaint,
-  );
+  canvas.drawImageRect(originalImage, sourceRect, imageRect, imagePaint);
 
   final picture = recorder.endRecording();
   final circularImage = await picture.toImage(size.toInt(), size.toInt());
 
-  final byteData =
-      await circularImage.toByteData(format: ui.ImageByteFormat.png);
+  final byteData = await circularImage.toByteData(
+    format: ui.ImageByteFormat.png,
+  );
   if (byteData == null) {
     // Fallback: create a simple red circle as default marker
     final fallbackRecorder = ui.PictureRecorder();
@@ -384,10 +427,13 @@ Future<Uint8List> createCircularImageWithBorder(
     final paint = Paint()..color = Colors.red;
     fallbackCanvas.drawCircle(Offset(size / 2, size / 2), size / 2, paint);
     final fallbackPicture = fallbackRecorder.endRecording();
-    final fallbackImage =
-        await fallbackPicture.toImage(size.toInt(), size.toInt());
-    final fallbackByteData =
-        await fallbackImage.toByteData(format: ui.ImageByteFormat.png);
+    final fallbackImage = await fallbackPicture.toImage(
+      size.toInt(),
+      size.toInt(),
+    );
+    final fallbackByteData = await fallbackImage.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     return fallbackByteData?.buffer.asUint8List() ?? Uint8List(0);
   }
   return byteData.buffer.asUint8List();

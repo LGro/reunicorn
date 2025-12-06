@@ -8,6 +8,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'bloc_observer.dart';
+import 'data/models/circle.dart';
+import 'data/models/coag_contact.dart';
+import 'data/models/community.dart';
+import 'data/models/contact_update.dart';
+import 'data/models/profile_info.dart';
+import 'data/repositories/contact_dht.dart';
+import 'data/repositories/contact_system.dart';
+import 'data/services/storage/sqlite.dart';
 import 'notification_service.dart';
 import 'tools/loggy.dart';
 import 'ui/app.dart';
@@ -25,7 +33,46 @@ void main() async {
 
     await NotificationService().init();
 
-    runApp(const App());
+    final profileStorage = SqliteStorage<ProfileInfo>(
+      'profile',
+      profileMigrateFromJson,
+    );
+    final contactStorage = SqliteStorage<CoagContact>(
+      'contact',
+      contactMigrateFromJson,
+    );
+    final circleStorage = SqliteStorage<Circle>(
+      'circle',
+      circleMigrateFromJson,
+    );
+    final updateStorage = SqliteStorage<ContactUpdate>(
+      'update',
+      contactUpdateMigrateFromJson,
+    );
+    final communityStorage = SqliteStorage<Community>(
+      'community',
+      communityMigrateFromJson,
+    );
+
+    unawaited(contactStorage.getAll());
+    final contactDhtRepository = ContactDhtRepository(
+      contactStorage,
+      circleStorage,
+      profileStorage,
+    );
+    final systemContactRepository = SystemContactRepository(contactStorage);
+
+    runApp(
+      App(
+        profileStorage,
+        contactStorage,
+        circleStorage,
+        updateStorage,
+        communityStorage,
+        contactDhtRepository,
+        systemContactRepository,
+      ),
+    );
   }
 
   if (kDebugMode) {

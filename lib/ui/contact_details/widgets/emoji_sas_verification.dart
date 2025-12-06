@@ -8,7 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../data/models/coag_contact.dart';
 import '../../../data/models/emoji_sas.dart';
-import '../../../data/repositories/contacts.dart';
+import '../../../data/services/storage/base.dart';
 
 class EmojiWrap extends StatelessWidget {
   const EmojiWrap({
@@ -66,10 +66,7 @@ class EmojiWrap extends StatelessWidget {
                       emoji,
                       textAlign: TextAlign.center,
                       textScaler: textScaler,
-                      style: TextStyle(
-                        fontSize: baseEmojiFontSize,
-                        height: 1,
-                      ),
+                      style: TextStyle(fontSize: baseEmojiFontSize, height: 1),
                     ),
                     SizedBox(height: 8.0 * layoutScale),
                     Text(
@@ -79,8 +76,9 @@ class EmojiWrap extends StatelessWidget {
                       overflow: TextOverflow.visible,
                       textScaler: textScaler,
                       style: TextStyle(
-                          fontSize: baseLabelFontSize,
-                          fontWeight: FontWeight.w600),
+                        fontSize: baseLabelFontSize,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -98,42 +96,49 @@ class EmojiSasVerification extends StatelessWidget {
   final CoagContact contact;
 
   @override
-  Widget build(BuildContext context) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (contact.dhtSettings.myKeyPair == null ||
-            contact.dhtSettings.theirNextPublicKey == null)
-          const SizedBox()
-        else ...[
-          Padding(
-            padding: const EdgeInsets.only(left: 12, top: 8, right: 12),
-            child: Text(
-              'Connection Security Verification',
-              textScaler: const TextScaler.linear(1.4),
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      if (contact.dhtSettings.myKeyPair == null ||
+          contact.dhtSettings.theirNextPublicKey == null)
+        const SizedBox()
+      else ...[
+        Padding(
+          padding: const EdgeInsets.only(left: 12, top: 8, right: 12),
+          child: Text(
+            'Connection Security Verification',
+            textScaler: const TextScaler.linear(1.4),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
-          Card(
-              child: Padding(
-            padding:
-                const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 12),
+        ),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: 12,
+              right: 12,
+              top: 8,
+              bottom: 12,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (contact.verified)
                   const Text('Your connection is verified as secure!')
                 else ...[
-                  Text('To verify your connection security, call or text '
-                      '${contact.name} and ask if they see the same emoji in '
-                      'the following order. If they match you can be more '
-                      'confident that nobody snoops on what you share.'),
+                  Text(
+                    'To verify your connection security, call or text '
+                    '${contact.name} and ask if they see the same emoji in '
+                    'the following order. If they match you can be more '
+                    'confident that nobody snoops on what you share.',
+                  ),
                   FutureBuilder<List<SasEmoji>>(
                     future: sharedSecretVerificationHash(
-                            contact.dhtSettings.myKeyPair!,
-                            contact.dhtSettings.theirNextPublicKey!)
-                        .then(sasEmojisFromHash),
+                      contact.dhtSettings.myKeyPair!,
+                      contact.dhtSettings.theirNextPublicKey!,
+                    ).then(sasEmojisFromHash),
                     builder: (context, emoji) => Center(
                       child: (!emoji.hasData)
                           ? const CircularProgressIndicator()
@@ -145,30 +150,39 @@ class EmojiSasVerification extends StatelessWidget {
                     ),
                   ),
                   Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        FilledButton.tonal(
-                            onPressed: () {},
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStatePropertyAll(
-                                Theme.of(context).colorScheme.error,
-                              ),
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      FilledButton.tonal(
+                        onPressed: () {},
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStatePropertyAll(
+                            Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                        child: Text(
+                          'They differ',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onError,
+                          ),
+                        ),
+                      ),
+                      FilledButton.tonal(
+                        // TODO: Move that out of the widget
+                        onPressed: () =>
+                            context.read<Storage<CoagContact>>().set(
+                              contact.coagContactId,
+                              contact.copyWith(verified: true),
                             ),
-                            child: Text(
-                              'They differ',
-                              style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onError),
-                            )),
-                        FilledButton.tonal(
-                            onPressed: () => context
-                                .read<ContactsRepository>()
-                                .markContactVerified(contact.coagContactId),
-                            child: const Text('They match')),
-                      ]),
+                        child: const Text('They match'),
+                      ),
+                    ],
+                  ),
                 ],
               ],
             ),
-          )),
-        ],
-      ]);
+          ),
+        ),
+      ],
+    ],
+  );
 }

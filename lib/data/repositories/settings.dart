@@ -9,23 +9,30 @@ import 'package:shared_preferences/shared_preferences.dart';
 String maptilerToken() =>
     const String.fromEnvironment('REUNICORN_MAPTILER_TOKEN');
 
-Future<String> loadMapStyle(
-    {required bool darkMode,
-    required String spriteUrl,
-    required String glyphsUrl,
-    required String pmTilesUrl}) async {
-  final jsonString = await rootBundle.loadString(darkMode
-      ? 'assets/map-style-dataviz-black.json'
-      : 'assets/map-style-dataviz-white.json');
+Future<String> loadMapStyle({
+  required bool darkMode,
+  required String spriteUrl,
+  required String glyphsUrl,
+  required String pmTilesUrl,
+}) async {
+  final jsonString = await rootBundle.loadString(
+    darkMode
+        ? 'assets/map-style-dataviz-black.json'
+        : 'assets/map-style-dataviz-white.json',
+  );
   return jsonString
       .replaceFirst(
-          'pmtiles://https://demo-bucket.protomaps.com/v4.pmtiles', pmTilesUrl)
+        'pmtiles://https://demo-bucket.protomaps.com/v4.pmtiles',
+        pmTilesUrl,
+      )
       .replaceFirst(
-          'https://protomaps.github.io/basemaps-assets/sprites/v4/black',
-          spriteUrl)
+        'https://protomaps.github.io/basemaps-assets/sprites/v4/black',
+        spriteUrl,
+      )
       .replaceFirst(
-          'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
-          glyphsUrl);
+        'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+        glyphsUrl,
+      );
 }
 
 class SettingsRepository {
@@ -34,7 +41,7 @@ class SettingsRepository {
     unawaited(_init());
   }
 
-  String _bootstrapServer = 'bootstrap-v1.veilid.net';
+  String _bootstrapServer = 'bootstrap-v1.staging.veilid.net';
   bool _darkMode = false;
   String _customMapProviderUrl = '';
   String _mapStyleJson = '{}';
@@ -81,6 +88,6 @@ class SettingsRepository {
       : [
           'https://api.maptiler.com/maps/dataviz-',
           if (_darkMode) 'dark' else 'light',
-          '/style.json?key=${maptilerToken()}'
+          '/style.json?key=${maptilerToken()}',
         ].join();
 }

@@ -4,6 +4,8 @@
 import 'package:veilid_support/veilid_support.dart';
 
 import 'models/coag_contact.dart';
+import 'models/profile_info.dart';
+import 'services/storage/base.dart';
 
 Future<KeyPair> generateKeyPairBest() => Veilid.instance
     .getCryptoSystem(cryptoKindVLD0)
@@ -38,3 +40,6 @@ Map<String, String> knownContacts(
         .map((c) => MapEntry(c.coagContactId, c.name)),
   );
 }
+
+Future<ProfileInfo?> getProfileInfo(Storage<ProfileInfo> profileStorage) =>
+    profileStorage.getAll().then((profiles) => profiles.values.firstOrNull);

@@ -18,6 +18,7 @@ final class LinkToSystemContactState extends Equatable {
     this.contact,
     this.contacts = const [],
     this.accounts = const {},
+    this.linkedSystemContactIds = const {},
     this.permissionGranted = false,
     this.selectedAccount,
   });
@@ -31,6 +32,7 @@ final class LinkToSystemContactState extends Equatable {
   final List<Contact> contacts;
   final Set<Account> accounts;
   final Account? selectedAccount;
+  final Set<String> linkedSystemContactIds;
 
   Map<String, dynamic> toJson() => _$LinkToSystemContactStateToJson(this);
 
@@ -41,12 +43,15 @@ final class LinkToSystemContactState extends Equatable {
     List<Contact>? contacts,
     Set<Account>? accounts,
     Account? selectedAccount,
+    Set<String>? linkedSystemContactIds,
   }) => LinkToSystemContactState(
     status: status ?? this.status,
     permissionGranted: permissionGranted ?? this.permissionGranted,
     contact: contact ?? this.contact?.copyWith(),
     contacts: contacts ?? [...this.contacts],
     accounts: accounts ?? {...this.accounts},
+    linkedSystemContactIds:
+        linkedSystemContactIds ?? {...this.linkedSystemContactIds},
     selectedAccount: selectedAccount ?? selectedAccount,
   );
 
@@ -56,6 +61,7 @@ final class LinkToSystemContactState extends Equatable {
     permissionGranted,
     accounts,
     selectedAccount,
+    linkedSystemContactIds,
     contact,
     contacts,
   ];

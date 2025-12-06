@@ -8,47 +8,50 @@ import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../data/models/coag_contact.dart';
-import '../../data/repositories/contacts.dart';
+import '../../data/models/circle.dart';
+import '../../data/services/storage/base.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
 
 class CirclesListCubit extends Cubit<CirclesListState> {
-  CirclesListCubit(this.contactsRepository)
+  CirclesListCubit(this.circleStorage)
     : super(const CirclesListState(CirclesListStatus.initial)) {
-    _circlesSuscription = contactsRepository.getCirclesStream().listen((_) {
-      if (!isClosed) {
-        emit(
-          state.copyWith(
-            circleMemberships: contactsRepository.getCircleMemberships(),
-            circles: contactsRepository.getCircles(),
-          ),
-        );
-      }
-    });
-
-    emit(
-      CirclesListState(
-        CirclesListStatus.success,
-        circles: contactsRepository.getCircles(),
-        circleMemberships: contactsRepository.getCircleMemberships(),
-      ),
+    // Start listening to circle changes
+    _circleSubscription = circleStorage.changeEvents.listen(
+      (circle) => _fetchData(),
     );
+    // Initialize circle data
+    unawaited(_fetchData());
   }
 
-  final ContactsRepository contactsRepository;
-  late final StreamSubscription<void> _circlesSuscription;
+  final Storage<Circle> circleStorage;
+  late final StreamSubscription<StorageEvent<Circle>> _circleSubscription;
+
+  Future<void> _fetchData() async {
+    if (!isClosed) {
+      final circles = await circleStorage.getAll();
+      emit(
+        state.copyWith(
+          circleMemberships: circlesByContactIds(circles.values),
+          circles: circles.map((id, c) => MapEntry(id, c.name)),
+        ),
+      );
+    }
+  }
 
   Future<String> addCircle(String circleName) async {
     final circleId = Uuid().v4();
-    await contactsRepository.addCircle(circleId, circleName);
+    await circleStorage.set(
+      circleId,
+      Circle(id: circleId, name: circleName, memberIds: []),
+    );
     return circleId;
   }
 
   @override
   Future<void> close() {
-    _circlesSuscription.cancel();
+    _circleSubscription.cancel();
     return super.close();
   }
 }

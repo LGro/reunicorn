@@ -7,11 +7,13 @@ part of 'cubit.dart';
 // **************************************************************************
 
 UpdatesState _$UpdatesStateFromJson(Map<String, dynamic> json) => UpdatesState(
-      $enumDecode(_$UpdatesStatusEnumMap, json['status']),
-      updates: (json['updates'] as List<dynamic>?)
-              ?.map((e) => ContactUpdate.fromJson(e as Map<String, dynamic>)) ??
-          const [],
-    );
+  $enumDecode(_$UpdatesStatusEnumMap, json['status']),
+  updates:
+      (json['updates'] as List<dynamic>?)?.map(
+        (e) => ContactUpdate.fromJson(e as Map<String, dynamic>),
+      ) ??
+      const [],
+);
 
 Map<String, dynamic> _$UpdatesStateToJson(UpdatesState instance) =>
     <String, dynamic>{

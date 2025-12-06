@@ -7,17 +7,18 @@ part of 'cubit.dart';
 final class LocationsState extends Equatable {
   const LocationsState({
     this.temporaryLocations = const {},
-    this.circleMembersips = const {},
+    this.circleMemberships = const {},
   });
 
   factory LocationsState.fromJson(Map<String, dynamic> json) =>
       _$LocationsStateFromJson(json);
 
   final Map<String, ContactTemporaryLocation> temporaryLocations;
-  final Map<String, List<String>> circleMembersips;
+  final Map<String, List<String>> circleMemberships;
 
   Map<String, dynamic> toJson() => _$LocationsStateToJson(this);
 
+  // TODO: Are we intentionally missing circleMemberships?
   @override
   List<Object?> get props => [temporaryLocations];
 }

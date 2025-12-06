@@ -4,7 +4,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../data/repositories/contacts.dart';
+import '../../data/models/coag_contact.dart';
+import '../../data/models/community.dart';
+import '../../data/models/profile_info.dart';
+import '../../data/services/storage/base.dart';
 import '../circle_details/page.dart';
 import '../contact_details/page.dart';
 import '../widgets/scan_qr_code.dart';
@@ -88,9 +91,7 @@ class _ReceivedBatchInviteWidgetState extends State<ReceivedBatchInviteWidget> {
               child: FilledButton(
                 onPressed: (_selectedNameId == null)
                     ? null
-                    : () async => context
-                          .read<ReceiveRequestCubit>()
-                          .handleBatchInvite(myNameId: _selectedNameId!),
+                    : context.read<ReceiveRequestCubit>().handleBatchInvite,
                 child: const Text('Accept'),
               ),
             ),
@@ -111,7 +112,9 @@ class ReceiveRequestPage extends StatelessWidget {
   @override
   Widget build(BuildContext _) => BlocProvider(
     create: (context) => ReceiveRequestCubit(
-      context.read<ContactsRepository>(),
+      context.read<Storage<CoagContact>>(),
+      context.read<Storage<ProfileInfo>>(),
+      context.read<Storage<Community>>(),
       initialState: initialState,
     ),
     child: BlocConsumer<ReceiveRequestCubit, ReceiveRequestState>(
@@ -153,18 +156,7 @@ class ReceiveRequestPage extends StatelessWidget {
             );
 
           case ReceiveRequestStatus.handleBatchInvite:
-            return ReceivedBatchInviteWidget(
-              names:
-                  context
-                      .read<ReceiveRequestCubit>()
-                      .contactsRepository
-                      .getProfileInfo()
-                      ?.details
-                      .names ??
-                  {},
-              // TODO: Allow ~ in name, by dropping the last couple splits and rejoining with ~
-              batchName: state.fragment?.split('~').first ?? '???',
-            );
+            return const ReceivedBatchInviteWidget(names: {}, batchName: '???');
 
           case ReceiveRequestStatus.qrcode:
             return Scaffold(

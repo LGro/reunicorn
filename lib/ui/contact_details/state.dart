@@ -20,6 +20,7 @@ final class ContactDetailsState extends Equatable {
     this.contact,
     this.circles = const {},
     this.knownContacts = const {},
+    this.allContacts = const {},
   });
 
   factory ContactDetailsState.fromJson(Map<String, dynamic> json) =>
@@ -29,6 +30,7 @@ final class ContactDetailsState extends Equatable {
   final ContactDetailsStatus status;
   final Map<String, String> circles;
   final Map<String, String> knownContacts;
+  final Map<String, CoagContact> allContacts;
 
   Map<String, dynamic> toJson() => _$ContactDetailsStateToJson(this);
 
@@ -37,13 +39,21 @@ final class ContactDetailsState extends Equatable {
     CoagContact? contact,
     Map<String, String>? circles,
     Map<String, String>? knownContacts,
+    Map<String, CoagContact>? allContacts,
   }) => ContactDetailsState(
     status ?? this.status,
     contact: (contact ?? this.contact)?.copyWith(),
     circles: {...circles ?? this.circles},
     knownContacts: {...knownContacts ?? this.knownContacts},
+    allContacts: {...allContacts ?? this.allContacts},
   );
 
   @override
-  List<Object?> get props => [contact, status, circles, knownContacts];
+  List<Object?> get props => [
+    contact,
+    status,
+    circles,
+    knownContacts,
+    allContacts,
+  ];
 }

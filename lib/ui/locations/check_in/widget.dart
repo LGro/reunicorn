@@ -7,7 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
 
-import '../../../data/repositories/contacts.dart';
+import '../../../data/models/circle.dart';
+import '../../../data/models/profile_info.dart';
+import '../../../data/services/storage/base.dart';
 import '../../utils.dart';
 import 'cubit.dart';
 
@@ -25,7 +27,8 @@ class MyForm extends StatefulWidget {
     required String details,
     required List<String> circles,
     required DateTime end,
-  }) callback;
+  })
+  callback;
 
   final Map<String, String> circles;
   final Map<String, List<String>> circleMemberships;
@@ -186,133 +189,133 @@ class _MyFormState extends State<MyForm> {
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
-        child: Form(
-          key: _key,
-          child: buildEditOrAddWidgetSkeleton(
-            context,
-            title: 'Share current location',
-            onSaveWidget: (_state.status.isInProgress)
-                ? const CircularProgressIndicator()
-                : IconButton.filled(
-                    key: const Key('checkInForm_submit'),
-                    onPressed:
-                        (_state.circles.firstWhereOrNull((c) => c.$3) != null &&
-                                (_state.hours > 0 || _state.minutes > 0) &&
-                                _state.title.isNotEmpty)
-                            ? _onSubmit
-                            : null,
-                    icon: const Icon(Icons.check),
-                  ),
+    child: Form(
+      key: _key,
+      child: buildEditOrAddWidgetSkeleton(
+        context,
+        title: 'Share current location',
+        onSaveWidget: (_state.status.isInProgress)
+            ? const CircularProgressIndicator()
+            : IconButton.filled(
+                key: const Key('checkInForm_submit'),
+                onPressed:
+                    (_state.circles.firstWhereOrNull((c) => c.$3) != null &&
+                        (_state.hours > 0 || _state.minutes > 0) &&
+                        _state.title.isNotEmpty)
+                    ? _onSubmit
+                    : null,
+                icon: const Icon(Icons.check),
+              ),
+        children: [
+          TextFormField(
+            key: const Key('checkInForm_titleInput'),
+            controller: _titleController,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              helperMaxLines: 2,
+              labelText: 'Title',
+              errorMaxLines: 2,
+              isDense: true,
+            ),
+            textInputAction: TextInputAction.done,
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            key: const Key('checkInForm_detailsInput'),
+            controller: _detailsController,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              helperMaxLines: 2,
+              labelText: 'Description',
+              errorMaxLines: 2,
+              isDense: true,
+            ),
+            textInputAction: TextInputAction.done,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 16),
+          const Row(
             children: [
-              TextFormField(
-                key: const Key('checkInForm_titleInput'),
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  helperMaxLines: 2,
-                  labelText: 'Title',
-                  errorMaxLines: 2,
-                  isDense: true,
-                ),
-                textInputAction: TextInputAction.done,
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                key: const Key('checkInForm_detailsInput'),
-                controller: _detailsController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  helperMaxLines: 2,
-                  labelText: 'Description',
-                  errorMaxLines: 2,
-                  isDense: true,
-                ),
-                textInputAction: TextInputAction.done,
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-              const Row(
-                children: [
-                  Text(
-                    'with circles',
-                    textScaler: TextScaler.linear(1.2),
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: _state.circles
-                    .asMap()
-                    .map(
-                      (i, c) => MapEntry(
-                        i,
-                        GestureDetector(
-                          onTap: () => _updateCircleSelection(i, !c.$3),
-                          behavior: HitTestBehavior.opaque,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Checkbox(
-                                value: c.$3,
-                                onChanged: (value) => (value == null)
-                                    ? null
-                                    : _updateCircleSelection(i, value),
-                              ),
-                              Text('${c.$2} (${c.$4})'),
-                              const SizedBox(width: 4),
-                            ],
-                          ),
-                        ),
-                      ),
-                    )
-                    .values
-                    .toList(),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'for duration',
+              Text(
+                'with circles',
                 textScaler: TextScaler.linear(1.2),
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      key: const Key('checkInForm_hours'),
-                      controller: _hoursController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        isDense: true,
-                        labelText: 'Hours',
-                        border: OutlineInputBorder(),
+            ],
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: _state.circles
+                .asMap()
+                .map(
+                  (i, c) => MapEntry(
+                    i,
+                    GestureDetector(
+                      onTap: () => _updateCircleSelection(i, !c.$3),
+                      behavior: HitTestBehavior.opaque,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Checkbox(
+                            value: c.$3,
+                            onChanged: (value) => (value == null)
+                                ? null
+                                : _updateCircleSelection(i, value),
+                          ),
+                          Text('${c.$2} (${c.$4})'),
+                          const SizedBox(width: 4),
+                        ],
                       ),
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(':'),
+                )
+                .values
+                .toList(),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'for duration',
+            textScaler: TextScaler.linear(1.2),
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  key: const Key('checkInForm_hours'),
+                  controller: _hoursController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    labelText: 'Hours',
+                    border: OutlineInputBorder(),
                   ),
-                  Expanded(
-                    child: TextFormField(
-                      key: const Key('checkInForm_minutes'),
-                      controller: _minutesController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        isDense: true,
-                        labelText: 'Minutes',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4),
+                child: Text(':'),
+              ),
+              Expanded(
+                child: TextFormField(
+                  key: const Key('checkInForm_minutes'),
+                  controller: _minutesController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    labelText: 'Minutes',
+                    border: OutlineInputBorder(),
                   ),
-                ],
+                ),
               ),
             ],
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }
 
 class MyFormState with FormzMixin {
@@ -339,15 +342,14 @@ class MyFormState with FormzMixin {
     String? details,
     List<(String, String, bool, int)>? circles,
     FormzSubmissionStatus? status,
-  }) =>
-      MyFormState(
-        hours: hours ?? this.hours,
-        minutes: minutes ?? this.minutes,
-        title: title ?? this.title,
-        details: details ?? this.details,
-        circles: circles ?? this.circles,
-        status: status ?? this.status,
-      );
+  }) => MyFormState(
+    hours: hours ?? this.hours,
+    minutes: minutes ?? this.minutes,
+    title: title ?? this.title,
+    details: details ?? this.details,
+    circles: circles ?? this.circles,
+    status: status ?? this.status,
+  );
 
   @override
   List<FormzInput<dynamic, dynamic>> get inputs => [];
@@ -358,64 +360,64 @@ class CheckInWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-        create: (context) => CheckInCubit(context.read<ContactsRepository>()),
-        child: BlocConsumer<CheckInCubit, CheckInState>(
-          listener: (context, state) async {},
-          builder: (context, state) {
-            if (state.status.isInitial) {
-              return SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: 100,
-                child: const Center(child: CircularProgressIndicator()),
-              );
-            }
+    create: (context) => CheckInCubit(
+      context.read<Storage<Circle>>(),
+      context.read<Storage<ProfileInfo>>(),
+    ),
+    child: BlocConsumer<CheckInCubit, CheckInState>(
+      listener: (context, state) {},
+      builder: (context, state) {
+        if (state.status.isInitial) {
+          return SizedBox(
+            width: MediaQuery.of(context).size.width,
+            height: 100,
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        }
 
-            // TODO: Instead of these two error cases, just show manual location picker in form
-            if (state.status.isLocationDenied ||
-                state.status.isLocationDeniedPermanent) {
-              return SizedBox(
-                width: MediaQuery.of(context).size.width,
-                child: const Padding(
-                  padding:
-                      EdgeInsets.only(left: 16, right: 16, bottom: 32, top: 8),
-                  child: Text(
-                    'Location permission denied. Please grant Reunicorn location access.',
-                  ),
-                ),
-              );
-            }
-            if (state.status.isLocationDisabled) {
-              return SizedBox(
-                width: MediaQuery.of(context).size.width,
-                child: const Padding(
-                  padding:
-                      EdgeInsets.only(left: 16, right: 16, bottom: 32, top: 8),
-                  child: Text(
-                    'Location services seem to be disabled, GPS based check-in is not possible.',
-                  ),
-                ),
-              );
-            }
-            if (state.status.isLocationTimeout) {
-              // TODO: Display error and leave filled out form in place
-              // optionally, switch form to manual location choice
-              return SizedBox(
-                width: MediaQuery.of(context).size.width,
-                child: const Padding(
-                  padding:
-                      EdgeInsets.only(left: 16, right: 16, bottom: 32, top: 8),
-                  child: Text(
-                    'Could not determine GPS location, please try again.',
-                  ),
-                ),
-              );
-            }
-            return MyForm(
-              circles: state.circles,
-              circleMemberships: state.circleMemberships,
-              callback: context.read<CheckInCubit>().checkIn,
-            );
-          },
-        ),
-      );
+        // TODO: Instead of these two error cases, just show manual location picker in form
+        if (state.status.isLocationDenied ||
+            state.status.isLocationDeniedPermanent) {
+          return SizedBox(
+            width: MediaQuery.of(context).size.width,
+            child: const Padding(
+              padding: EdgeInsets.only(left: 16, right: 16, bottom: 32, top: 8),
+              child: Text(
+                'Location permission denied. Please grant Reunicorn location access.',
+              ),
+            ),
+          );
+        }
+        if (state.status.isLocationDisabled) {
+          return SizedBox(
+            width: MediaQuery.of(context).size.width,
+            child: const Padding(
+              padding: EdgeInsets.only(left: 16, right: 16, bottom: 32, top: 8),
+              child: Text(
+                'Location services seem to be disabled, GPS based check-in is not possible.',
+              ),
+            ),
+          );
+        }
+        if (state.status.isLocationTimeout) {
+          // TODO: Display error and leave filled out form in place
+          // optionally, switch form to manual location choice
+          return SizedBox(
+            width: MediaQuery.of(context).size.width,
+            child: const Padding(
+              padding: EdgeInsets.only(left: 16, right: 16, bottom: 32, top: 8),
+              child: Text(
+                'Could not determine GPS location, please try again.',
+              ),
+            ),
+          );
+        }
+        return MyForm(
+          circles: state.circles,
+          circleMemberships: state.circleMemberships,
+          callback: context.read<CheckInCubit>().checkIn,
+        );
+      },
+    ),
+  );
 }

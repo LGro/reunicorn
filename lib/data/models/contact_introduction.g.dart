@@ -11,21 +11,22 @@ ContactIntroduction _$ContactIntroductionFromJson(Map<String, dynamic> json) =>
       otherName: json['other_name'] as String,
       otherPublicKey: Typed<BarePublicKey>.fromJson(json['other_public_key']),
       publicKey: Typed<BarePublicKey>.fromJson(json['public_key']),
-      dhtRecordKeyReceiving:
-          RecordKey.fromJson(json['dht_record_key_receiving']),
+      dhtRecordKeyReceiving: RecordKey.fromJson(
+        json['dht_record_key_receiving'],
+      ),
       dhtRecordKeySharing: RecordKey.fromJson(json['dht_record_key_sharing']),
       dhtWriterSharing: KeyPair.fromJson(json['dht_writer_sharing']),
       message: json['message'] as String?,
     );
 
 Map<String, dynamic> _$ContactIntroductionToJson(
-        ContactIntroduction instance) =>
-    <String, dynamic>{
-      'other_name': instance.otherName,
-      'other_public_key': instance.otherPublicKey.toJson(),
-      'public_key': instance.publicKey.toJson(),
-      'message': instance.message,
-      'dht_record_key_receiving': instance.dhtRecordKeyReceiving.toJson(),
-      'dht_record_key_sharing': instance.dhtRecordKeySharing.toJson(),
-      'dht_writer_sharing': instance.dhtWriterSharing.toJson(),
-    };
+  ContactIntroduction instance,
+) => <String, dynamic>{
+  'other_name': instance.otherName,
+  'other_public_key': instance.otherPublicKey.toJson(),
+  'public_key': instance.publicKey.toJson(),
+  'message': instance.message,
+  'dht_record_key_receiving': instance.dhtRecordKeyReceiving.toJson(),
+  'dht_record_key_sharing': instance.dhtRecordKeySharing.toJson(),
+  'dht_writer_sharing': instance.dhtWriterSharing.toJson(),
+};

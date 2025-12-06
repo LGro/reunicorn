@@ -10,66 +10,56 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../data/models/circle.dart';
 import '../../data/models/coag_contact.dart';
 import '../../data/models/contact_location.dart';
-import '../../data/repositories/contacts.dart';
+import '../../data/models/profile_info.dart';
+import '../../data/services/storage/base.dart';
+import '../../data/utils.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
 
 class ProfileCubit extends Cubit<ProfileState> {
-  ProfileCubit(this.contactsRepository)
-    : super(ProfileState(profileInfo: contactsRepository.getProfileInfo())) {
-    _circlesSubscription = contactsRepository.getCirclesStream().listen((_) {
-      emit(
-        state.copyWith(
-          circles: contactsRepository.getCircles(),
-          circleMemberships: contactsRepository.getCircleMemberships(),
-        ),
-      );
-    });
-    _profileInfoSubscription = contactsRepository.getProfileInfoStream().listen(
-      (profileInfo) {
-        emit(
-          state.copyWith(
-            status: ProfileStatus.success,
-            profileInfo: profileInfo,
-            circles: contactsRepository.getCircles(),
-            circleMemberships: contactsRepository.getCircleMemberships(),
-          ),
-        );
-      },
+  ProfileCubit(this._profileStorage, this._circleStorage)
+    : super(const ProfileState()) {
+    _circlesSubscription = _circleStorage.changeEvents.listen(
+      (_) => fetchData(),
     );
-    final profileInfo = contactsRepository.getProfileInfo();
+    _profileInfoSubscription = _profileStorage.changeEvents.listen(
+      (_) => fetchData(),
+    );
+    unawaited(fetchData());
+  }
+
+  final Storage<ProfileInfo> _profileStorage;
+  final Storage<Circle> _circleStorage;
+  late final StreamSubscription<StorageEvent<ProfileInfo>>
+  _profileInfoSubscription;
+  late final StreamSubscription<StorageEvent<Circle>> _circlesSubscription;
+
+  Future<void> fetchData() async {
+    final profileInfo = await getProfileInfo(_profileStorage);
+    final circles = await _circleStorage.getAll();
+
     emit(
       state.copyWith(
         status: ProfileStatus.success,
         profileInfo: profileInfo,
-        circles: contactsRepository.getCircles(),
-        circleMemberships: contactsRepository.getCircleMemberships(),
+        circles: circles.map((id, c) => MapEntry(id, c.name)),
+        circleMemberships: circlesByContactIds(circles.values),
       ),
     );
-
-    // TODO: Check current state of permissions here in addition to listening to stream update
-    _permissionsSubscription = contactsRepository
-        .isSystemContactAccessGranted()
-        .listen(
-          (isGranted) => emit(state.copyWith(permissionsGranted: isGranted)),
-        );
   }
-
-  final ContactsRepository contactsRepository;
-  late final StreamSubscription<ProfileInfo> _profileInfoSubscription;
-  late final StreamSubscription<bool> _permissionsSubscription;
-  late final StreamSubscription<void> _circlesSubscription;
 
   /// For circle ID and label pairs, add the new ones to the contacts repository
   Future<void> createCirclesIfNotExist(List<(String, String)> circles) async {
-    final storedCircles = contactsRepository.getCircles();
+    final storedCircles = await _circleStorage.getAll();
     for (final (id, label) in circles) {
       if (!storedCircles.containsKey(id)) {
-        storedCircles[id] = label;
-        await contactsRepository.addCircle(id, label);
+        final newCircle = Circle(id: id, name: label, memberIds: []);
+        storedCircles[id] = newCircle;
+        await _circleStorage.set(id, newCircle);
       }
     }
   }
@@ -77,7 +67,8 @@ class ProfileCubit extends Cubit<ProfileState> {
   Future<void> updateDetails(ContactDetails details) async =>
       (state.profileInfo == null)
       ? null
-      : contactsRepository.setProfileInfo(
+      : _profileStorage.set(
+          state.profileInfo!.id,
           state.profileInfo!.copyWith(details: details),
         );
 
@@ -85,7 +76,8 @@ class ProfileCubit extends Cubit<ProfileState> {
     Map<String, ContactAddressLocation> addressLocations,
   ) async => (state.profileInfo == null)
       ? null
-      : contactsRepository.setProfileInfo(
+      : _profileStorage.set(
+          state.profileInfo!.id,
           state.profileInfo!.copyWith(addressLocations: addressLocations),
         );
 
@@ -97,7 +89,8 @@ class ProfileCubit extends Cubit<ProfileState> {
     final pictures = {...state.profileInfo!.pictures};
     pictures[circleId] = picture;
 
-    await contactsRepository.setProfileInfo(
+    await _profileStorage.set(
+      state.profileInfo!.id,
       state.profileInfo!.copyWith(pictures: pictures),
     );
   }
@@ -108,7 +101,8 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
 
     final pictures = {...state.profileInfo!.pictures}..remove(circleId);
-    await contactsRepository.setProfileInfo(
+    await _profileStorage.set(
+      state.profileInfo!.id,
       state.profileInfo!.copyWith(pictures: pictures),
     );
   }
@@ -144,7 +138,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (!isClosed) {
       emit(state.copyWith(profileInfo: updatedProfile));
     }
-    await contactsRepository.setProfileInfo(updatedProfile);
+    await _profileStorage.set(updatedProfile.id, updatedProfile);
   }
 
   Future<void> updatePhone(
@@ -181,7 +175,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (!isClosed) {
       emit(state.copyWith(profileInfo: updatedProfile));
     }
-    await contactsRepository.setProfileInfo(updatedProfile);
+    await _profileStorage.set(updatedProfile.id, updatedProfile);
   }
 
   Future<void> updateEmail(
@@ -218,7 +212,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (!isClosed) {
       emit(state.copyWith(profileInfo: updatedProfile));
     }
-    await contactsRepository.setProfileInfo(updatedProfile);
+    await _profileStorage.set(updatedProfile.id, updatedProfile);
   }
 
   Future<void> updateSocialMedia(
@@ -257,7 +251,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (!isClosed) {
       emit(state.copyWith(profileInfo: updatedProfile));
     }
-    await contactsRepository.setProfileInfo(updatedProfile);
+    await _profileStorage.set(updatedProfile.id, updatedProfile);
   }
 
   Future<void> updateWebsite(
@@ -293,7 +287,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (!isClosed) {
       emit(state.copyWith(profileInfo: updatedProfile));
     }
-    await contactsRepository.setProfileInfo(updatedProfile);
+    await _profileStorage.set(updatedProfile.id, updatedProfile);
   }
 
   Future<void> updateOrganization(
@@ -332,7 +326,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (!isClosed) {
       emit(state.copyWith(profileInfo: updatedProfile));
     }
-    await contactsRepository.setProfileInfo(updatedProfile);
+    await _profileStorage.set(updatedProfile.id, updatedProfile);
   }
 
   Future<void> updateEvent(
@@ -368,7 +362,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (!isClosed) {
       emit(state.copyWith(profileInfo: updatedProfile));
     }
-    await contactsRepository.setProfileInfo(updatedProfile);
+    await _profileStorage.set(updatedProfile.id, updatedProfile);
   }
 
   Future<void> updateAddressLocation(
@@ -405,14 +399,13 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (!isClosed) {
       emit(state.copyWith(profileInfo: updatedProfile));
     }
-    await contactsRepository.setProfileInfo(updatedProfile);
+    await _profileStorage.set(updatedProfile.id, updatedProfile);
   }
 
   @override
   Future<void> close() {
-    _profileInfoSubscription.cancel();
-    _circlesSubscription.cancel();
-    _permissionsSubscription.cancel();
+    unawaited(_profileInfoSubscription.cancel());
+    unawaited(_circlesSubscription.cancel());
     return super.close();
   }
 }

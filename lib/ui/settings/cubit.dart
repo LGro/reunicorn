@@ -13,7 +13,6 @@ import 'package:uuid/uuid.dart';
 
 import '../../data/models/coag_contact.dart';
 import '../../data/models/contact_location.dart';
-import '../../data/repositories/contacts.dart';
 import '../../data/repositories/settings.dart';
 import '../../data/utils.dart';
 
@@ -46,17 +45,16 @@ Uint8List generateRandomImage(int width, int height) {
 }
 
 class SettingsCubit extends Cubit<SettingsState> {
-  SettingsCubit(this.contactsRepository, this.settingsRepository)
-      : super(
-          SettingsState(
-            message: '',
-            status: SettingsStatus.initial,
-            darkMode: settingsRepository.darkMode,
-            autoAddressResolution: true,
-          ),
-        );
+  SettingsCubit(this.settingsRepository)
+    : super(
+        SettingsState(
+          message: '',
+          status: SettingsStatus.initial,
+          darkMode: settingsRepository.darkMode,
+          autoAddressResolution: true,
+        ),
+      );
 
-  ContactsRepository contactsRepository;
   SettingsRepository settingsRepository;
 
   Future<void> setDarkMode(bool v) async {
@@ -64,6 +62,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     await settingsRepository.setDarkMode(v);
   }
 
+  // TODO: Move to demo / dev storage with initial set of contacts
   Future<void> addDummyContact() async {
     final faker = Faker();
     final coagContactId = Uuid().v4();
@@ -93,7 +92,9 @@ class SettingsCubit extends Cubit<SettingsState> {
       temporaryLocations: Map.fromEntries(
         [Uuid().v4(), Uuid().v4(), Uuid().v4()].map((id) {
           final start = faker.date.dateTime(
-              minYear: DateTime.now().year, maxYear: DateTime.now().year + 1);
+            minYear: DateTime.now().year,
+            maxYear: DateTime.now().year + 1,
+          );
           return MapEntry(
             id,
             ContactTemporaryLocation(
@@ -109,12 +110,12 @@ class SettingsCubit extends Cubit<SettingsState> {
       ),
       dhtSettings: const DhtSettings(),
     );
-    await contactsRepository.saveContact(c1);
-    await contactsRepository.updateCirclesForContact(
-        c1.coagContactId,
-        [
-          defaultInitialCircleId,
-        ],
-        triggerDhtUpdate: false);
+    // await contactsRepository.saveContact(c1);
+    // await contactsRepository.updateCirclesForContact(
+    //     c1.coagContactId,
+    //     [
+    //       defaultInitialCircleId,
+    //     ],
+    //     triggerDhtUpdate: false);
   }
 }

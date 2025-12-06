@@ -7,14 +7,13 @@ part of 'cubit.dart';
 // **************************************************************************
 
 RestoreState _$RestoreStateFromJson(Map<String, dynamic> json) => RestoreState(
-      status: $enumDecodeNullable(_$RestoreStatusEnumMap, json['status']) ??
-          RestoreStatus.initial,
-    );
+  status:
+      $enumDecodeNullable(_$RestoreStatusEnumMap, json['status']) ??
+      RestoreStatus.initial,
+);
 
 Map<String, dynamic> _$RestoreStateToJson(RestoreState instance) =>
-    <String, dynamic>{
-      'status': _$RestoreStatusEnumMap[instance.status]!,
-    };
+    <String, dynamic>{'status': _$RestoreStatusEnumMap[instance.status]!};
 
 const _$RestoreStatusEnumMap = {
   RestoreStatus.initial: 'initial',

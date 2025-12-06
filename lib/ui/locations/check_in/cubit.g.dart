@@ -7,14 +7,13 @@ part of 'cubit.dart';
 // **************************************************************************
 
 CheckInState _$CheckInStateFromJson(Map<String, dynamic> json) => CheckInState(
-      status: $enumDecode(_$CheckInStatusEnumMap, json['status']),
-      circles: Map<String, String>.from(json['circles'] as Map),
-      circleMemberships:
-          (json['circle_memberships'] as Map<String, dynamic>).map(
-        (k, e) =>
-            MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
-      ),
-    );
+  status: $enumDecode(_$CheckInStatusEnumMap, json['status']),
+  circles: Map<String, String>.from(json['circles'] as Map),
+  circleMemberships: (json['circle_memberships'] as Map<String, dynamic>).map(
+    (k, e) =>
+        MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
+  ),
+);
 
 Map<String, dynamic> _$CheckInStateToJson(CheckInState instance) =>
     <String, dynamic>{

@@ -4,7 +4,7 @@ publish_to: 'none'
 version: "0.2.3+47"
 
 environment:
-  sdk: '>=3.2.0 <4.0.0'
+  sdk: '>=3.8.0 <4.0.0'
   flutter: ">=3.32.0"
 
 dependencies:
@@ -67,6 +67,7 @@ dependencies:
     git: https://github.com/bardram/device_calendar
   file_picker: ^10.3.3
   maplibre_gl: ^0.24.0
+  multiple_result: ^5.2.0
 
 dev_dependencies:
   bloc_test: ^10.0.0

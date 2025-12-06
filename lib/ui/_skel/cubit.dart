@@ -8,34 +8,34 @@ import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import '../../data/models/coag_contact.dart';
-import '../../data/repositories/contacts.dart';
+import '../../data/services/storage/base.dart';
 
 part 'state.dart';
 part 'cubit.g.dart';
 
 class SkelCubit extends Cubit<SkelState> {
-  SkelCubit(this.contactsRepository)
-      : super(const SkelState(SkelStatus.initial)) {
-    _contactsSubscription =
-        contactsRepository.getContactStream().listen((_) => emit(
-              SkelState(
-                SkelStatus.success,
-                contacts: contactsRepository.getContacts(),
-              ),
-            ));
+  SkelCubit(this._contactStorage) : super(const SkelState(SkelStatus.initial)) {
+    _contactSubscription = _contactStorage.changeEvents.listen(
+      (_) => fetchData(),
+    );
 
-    emit(SkelState(
-      SkelStatus.success,
-      contacts: contactsRepository.getContacts(),
-    ));
+    unawaited(fetchData());
   }
 
-  final ContactsRepository contactsRepository;
-  late final StreamSubscription<String> _contactsSubscription;
+  Future<void> fetchData() async {
+    if (!isClosed) {
+      emit(
+        SkelState(SkelStatus.success, contacts: await _contactStorage.getAll()),
+      );
+    }
+  }
+
+  final Storage<CoagContact> _contactStorage;
+  late final StreamSubscription<StorageEvent<CoagContact>> _contactSubscription;
 
   @override
   Future<void> close() {
-    _contactsSubscription.cancel();
+    unawaited(_contactSubscription.cancel());
     return super.close();
   }
 }

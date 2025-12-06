@@ -4,51 +4,56 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
-import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-import '../../data/models/coag_contact.dart';
+import '../../data/models/circle.dart';
 import '../../data/models/contact_location.dart';
-import '../../data/repositories/contacts.dart';
+import '../../data/models/profile_info.dart';
+import '../../data/services/storage/base.dart';
+import '../../data/utils.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
 
 class LocationsCubit extends Cubit<LocationsState> {
-  LocationsCubit(this.contactsRepository) : super(const LocationsState()) {
-    _profileInfoSubscription = contactsRepository.getProfileInfoStream().listen(
-      (profileInfo) async {
-        emit(
-          LocationsState(
-            temporaryLocations: profileInfo.temporaryLocations,
-            circleMembersips: contactsRepository.getCircleMemberships(),
-          ),
-        );
-      },
+  LocationsCubit(this._profileStorage, this._circleStorage)
+    : super(const LocationsState()) {
+    _profileSubscription = _profileStorage.changeEvents.listen(
+      (e) => fetchData(),
     );
-    emit(
-      LocationsState(
-        circleMembersips: contactsRepository.getCircleMemberships(),
-        temporaryLocations:
-            contactsRepository.getProfileInfo()?.temporaryLocations ?? {},
-      ),
-    );
+    unawaited(fetchData());
   }
 
-  final ContactsRepository contactsRepository;
-  late final StreamSubscription<ProfileInfo> _profileInfoSubscription;
+  final Storage<ProfileInfo> _profileStorage;
+  final Storage<Circle> _circleStorage;
+  late final StreamSubscription<StorageEvent<ProfileInfo>> _profileSubscription;
 
-  List<ContactTemporaryLocation> _sort(
-    List<ContactTemporaryLocation> locations,
-  ) => locations.sortedBy((l) => l.start);
+  Future<void> fetchData() async {
+    final circleMemberships = await _circleStorage.getAll().then(
+      (circles) => circlesByContactIds(circles.values),
+    );
+    final temporaryLocations = await getProfileInfo(
+      _profileStorage,
+    ).then((p) => p?.temporaryLocations);
+
+    if (!isClosed) {
+      emit(
+        LocationsState(
+          temporaryLocations: temporaryLocations ?? {},
+          circleMemberships: circleMemberships,
+        ),
+      );
+    }
+  }
 
   Future<void> removeLocation(String locationId) async {
-    final profileInfo = contactsRepository.getProfileInfo();
+    final profileInfo = await getProfileInfo(_profileStorage);
     if (profileInfo == null) {
       return;
     }
-    await contactsRepository.setProfileInfo(
+    await _profileStorage.set(
+      profileInfo.id,
       profileInfo.copyWith(
         temporaryLocations: {...profileInfo.temporaryLocations}
           ..remove(locationId),
@@ -56,19 +61,14 @@ class LocationsCubit extends Cubit<LocationsState> {
     );
   }
 
-  @override
-  Future<void> close() {
-    _profileInfoSubscription.cancel();
-    return super.close();
-  }
-
   Future<void> toggleCheckInExisting(String locationId) async {
-    final profileInfo = contactsRepository.getProfileInfo();
+    final profileInfo = await getProfileInfo(_profileStorage);
     if (profileInfo == null) {
       return;
     }
     // TODO: Test that this is responsive also when location is shared with many contacts
-    await contactsRepository.setProfileInfo(
+    await _profileStorage.set(
+      profileInfo.id,
       profileInfo.copyWith(
         temporaryLocations: Map.fromEntries(
           profileInfo.temporaryLocations.entries.map(
@@ -82,5 +82,11 @@ class LocationsCubit extends Cubit<LocationsState> {
         ),
       ),
     );
+  }
+
+  @override
+  Future<void> close() {
+    unawaited(_profileSubscription.cancel());
+    return super.close();
   }
 }

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../data/models/coag_contact.dart';
-import '../../data/repositories/contacts.dart';
+import '../../data/services/storage/base.dart';
 import '../../data/shared_contact_discovery.dart';
 import '../utils.dart';
 import 'cubit.dart';
@@ -32,7 +32,7 @@ class _IntroduceContactsPageState extends State<IntroduceContactsPage> {
     appBar: AppBar(title: const Text('Make an introduction')),
     body: BlocProvider(
       create: (context) =>
-          IntroduceContactsCubit(context.read<ContactsRepository>()),
+          IntroduceContactsCubit(context.read<Storage<CoagContact>>()),
       child: BlocConsumer<IntroduceContactsCubit, IntroduceContactsState>(
         listener: (context, state) => {},
         builder: (context, state) => SingleChildScrollView(

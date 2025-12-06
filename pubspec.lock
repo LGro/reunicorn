@@ -1053,6 +1053,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.4"
+  multiple_result:
+    dependency: "direct main"
+    description:
+      name: multiple_result
+      sha256: "7a1f3c2ee7de44a545fffbad0eefa3f3ac64641932316cd5663bb3cdcf53399b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.2.0"
   nested:
     dependency: transitive
     description:
@@ -1817,7 +1825,7 @@ packages:
       path: "../veilid/veilid-flutter"
       relative: true
     source: path
-    version: "0.4.8"
+    version: "0.5.0"
   veilid_support:
     dependency: "direct main"
     description:

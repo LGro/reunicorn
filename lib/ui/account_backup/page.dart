@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../data/repositories/contacts.dart';
+import '../../data/repositories/backup_dht.dart';
 import 'cubit.dart';
 
 class BackupPage extends StatelessWidget {
@@ -15,7 +15,7 @@ class BackupPage extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Backup')),
     body: BlocProvider(
-      create: (context) => BackupCubit(context.read<ContactsRepository>()),
+      create: (context) => BackupCubit(context.read<BackupRepository>()),
       child: BlocConsumer<BackupCubit, BackupState>(
         listener: (context, state) => {},
         builder: (blocContext, state) => SingleChildScrollView(
@@ -54,7 +54,7 @@ class BackupPage extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      onPressed: () async => SharePlus.instance.share(
+                      onPressed: () => SharePlus.instance.share(
                         ShareParams(
                           text: '${state.dhtRecordKey}~${state.secret}',
                         ),

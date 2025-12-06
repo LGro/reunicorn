@@ -6,14 +6,10 @@ part of 'cubit.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-CreateNewcontactState _$CreateNewcontactStateFromJson(
-        Map<String, dynamic> json) =>
-    CreateNewcontactState(
-      name: json['name'] as String? ?? '',
-    );
+CreateNewContactState _$CreateNewContactStateFromJson(
+  Map<String, dynamic> json,
+) => CreateNewContactState(name: json['name'] as String? ?? '');
 
-Map<String, dynamic> _$CreateNewcontactStateToJson(
-        CreateNewcontactState instance) =>
-    <String, dynamic>{
-      'name': instance.name,
-    };
+Map<String, dynamic> _$CreateNewContactStateToJson(
+  CreateNewContactState instance,
+) => <String, dynamic>{'name': instance.name};

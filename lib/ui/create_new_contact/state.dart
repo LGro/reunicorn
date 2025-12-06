@@ -4,18 +4,18 @@
 part of 'cubit.dart';
 
 @JsonSerializable()
-final class CreateNewcontactState extends Equatable {
-  const CreateNewcontactState({this.name = ''});
+final class CreateNewContactState extends Equatable {
+  const CreateNewContactState({this.name = ''});
 
-  factory CreateNewcontactState.fromJson(Map<String, dynamic> json) =>
-      _$CreateNewcontactStateFromJson(json);
+  factory CreateNewContactState.fromJson(Map<String, dynamic> json) =>
+      _$CreateNewContactStateFromJson(json);
 
   final String name;
 
-  Map<String, dynamic> toJson() => _$CreateNewcontactStateToJson(this);
+  Map<String, dynamic> toJson() => _$CreateNewContactStateToJson(this);
 
-  CreateNewcontactState copyWith({String? name}) =>
-      CreateNewcontactState(name: name ?? this.name);
+  CreateNewContactState copyWith({String? name}) =>
+      CreateNewContactState(name: name ?? this.name);
 
   @override
   List<Object?> get props => [name];

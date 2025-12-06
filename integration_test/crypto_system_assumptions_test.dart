@@ -2,21 +2,26 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reunicorn/config.dart';
 import 'package:reunicorn/veilid_init.dart';
 import 'package:veilid_support/veilid_support.dart';
 
+import 'utils.dart';
+
 void main() {
   setUp(() async {
-    await AppGlobalInit.initialize();
+    await AppGlobalInit.initialize(veilidBootstrapUrl);
   });
 
   test(
     'DH derived symmetric key is consistent across derivations and parties',
     () async {
-      final cryptoSystem =
-          await DHTRecordPool.instance.veilid.getCryptoSystem(cryptoKindVLD0);
+      final cryptoSystem = await DHTRecordPool.instance.veilid.getCryptoSystem(
+        cryptoKindVLD0,
+      );
       final kpA = await cryptoSystem.generateKeyPair();
       final kpB = await cryptoSystem.generateKeyPair();
 
@@ -41,8 +46,9 @@ void main() {
   );
 
   test('DH key exchange', () async {
-    final cryptoSystem =
-        await DHTRecordPool.instance.veilid.getCryptoSystem(cryptoKindVLD0);
+    final cryptoSystem = await DHTRecordPool.instance.veilid.getCryptoSystem(
+      cryptoKindVLD0,
+    );
     final kpA = await cryptoSystem.generateKeyPair();
     final kpB = await cryptoSystem.generateKeyPair();
 
@@ -70,5 +76,21 @@ void main() {
     );
     final dec = await cd.decrypt(encForB);
     expect(dec, payload);
+  });
+
+  test('Crypto member string lengths', () async {
+    final cryptoSystem = await DHTRecordPool.instance.veilid.getCryptoSystem(
+      cryptoKindVLD0,
+    );
+    final hash = await cryptoSystem.generateHash(Uint8List.fromList([1, 2, 3]));
+    final keyPair = await cryptoSystem.generateKeyPair();
+    final sharedSecret = await cryptoSystem.generateSharedSecret(
+      keyPair.key,
+      keyPair.secret,
+      utf8.encode('domain'),
+    );
+
+    expect(hash.toString().length, veilidHashStringLength);
+    expect(sharedSecret.toString().length, veilidSharedSecretStringLength);
   });
 }

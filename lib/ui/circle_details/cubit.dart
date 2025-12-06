@@ -8,38 +8,52 @@ import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../data/models/circle.dart';
 import '../../data/models/coag_contact.dart';
-import '../../data/repositories/contacts.dart';
+import '../../data/models/profile_info.dart';
+import '../../data/services/storage/base.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
 
 class CircleDetailsCubit extends Cubit<CircleDetailsState> {
-  CircleDetailsCubit(this.contactsRepository, [String? circleId])
-    : super(const CircleDetailsState(CircleDetailsStatus.initial)) {
+  CircleDetailsCubit(
+    this._circleStorage,
+    this._contactStorage,
+    this._profileStorage, [
+    String? circleId,
+  ]) : super(const CircleDetailsState(CircleDetailsStatus.initial)) {
     unawaited(_updateState(circleId));
-    _circlesSubscription = contactsRepository.getCirclesStream().listen(
-      (_) => unawaited(_updateState(circleId)),
+    _circleSubscription = _circleStorage.changeEvents.listen(
+      (_) => _updateState(circleId),
     );
-    _profileInfoSubscription = contactsRepository.getProfileInfoStream().listen(
-      (profileInfo) => unawaited(_updateState(circleId)),
+    _profileSubscription = _profileStorage.changeEvents.listen(
+      (_) => _updateState(circleId),
     );
   }
 
-  final ContactsRepository contactsRepository;
-  late final StreamSubscription<void> _circlesSubscription;
-  late final StreamSubscription<ProfileInfo> _profileInfoSubscription;
+  final Storage<Circle> _circleStorage;
+  final Storage<ProfileInfo> _profileStorage;
+  final Storage<CoagContact> _contactStorage;
+  late final StreamSubscription<StorageEvent<Circle>> _circleSubscription;
+  late final StreamSubscription<StorageEvent<ProfileInfo>> _profileSubscription;
 
   Future<void> _updateState(String? circleId) async {
-    final circleMemberships = contactsRepository.getCircleMemberships();
-    final contacts = contactsRepository.getContacts().values.toList()
-      ..sortBy((c) => c.name.toLowerCase());
+    final circles = await _circleStorage.getAll();
+    final circleMemberships = circlesByContactIds(circles.values);
+    final contacts = await _contactStorage.getAll().then(
+      (contacts) =>
+          contacts.values.toList()..sortBy((c) => c.name.toLowerCase()),
+    );
+    final profileInfo = await _profileStorage.getAll().then(
+      (profiles) => profiles.values.firstOrNull,
+    );
     emit(
       CircleDetailsState(
         CircleDetailsStatus.success,
         circleId: circleId,
-        profileInfo: contactsRepository.getProfileInfo(),
-        circles: contactsRepository.getCircles(),
+        profileInfo: profileInfo,
+        circles: circles.map((id, c) => MapEntry(id, c.name)),
         circleMemberships: circleMemberships,
         contacts: [
           // Circle members
@@ -58,21 +72,27 @@ class CircleDetailsCubit extends Cubit<CircleDetailsState> {
     );
   }
 
-  Future<void> updateCircleMembership(
-    String coagContactId,
-    bool member,
-  ) async => (state.circleId == null)
-      ? null
-      : contactsRepository.updateCirclesForContact(
-          coagContactId,
-          member
-              ? [
-                  ...(state.circleMemberships[coagContactId] ?? []),
-                  state.circleId!,
-                ]
-              : ([...(state.circleMemberships[coagContactId] ?? [])]
-                  ..remove(state.circleId)),
-        );
+  Future<void> updateCircleMembership(String contactId, bool member) async {
+    if (state.circleId == null) {
+      return;
+    }
+    final circle = await _circleStorage.get(state.circleId!);
+    if (circle == null) {
+      return;
+    }
+    if (member && !circle.memberIds.contains(contactId)) {
+      await _circleStorage.set(
+        circle.id,
+        circle.copyWith(memberIds: [contactId, ...circle.memberIds]),
+      );
+    }
+    if (!member && circle.memberIds.contains(contactId)) {
+      await _circleStorage.set(
+        circle.id,
+        circle.copyWith(memberIds: [...circle.memberIds]..remove(contactId)),
+      );
+    }
+  }
 
   Future<void> updateCirclePicture(List<int>? picture) async {
     if (state.profileInfo == null || state.circleId == null) {
@@ -86,7 +106,9 @@ class CircleDetailsCubit extends Cubit<CircleDetailsState> {
       pictures[state.circleId!] = picture;
     }
 
-    await contactsRepository.setProfileInfo(
+    // TODO: Update shared profiles, via use case?
+    await _profileStorage.set(
+      state.profileInfo!.id,
       state.profileInfo!.copyWith(pictures: pictures),
     );
   }
@@ -113,38 +135,23 @@ class CircleDetailsCubit extends Cubit<CircleDetailsState> {
       );
     }
 
-    await contactsRepository.setProfileInfo(
+    // TODO: Update shared profiles, via use case?
+    await _profileStorage.set(
+      state.profileInfo!.id,
       state.profileInfo!.copyWith(temporaryLocations: temporaryLocations),
     );
   }
 
-  Future<void> removeCircle({bool awaitDhtUpdates = false}) async {
-    if (state.circleId == null) {
-      return;
-    }
-
-    final affectedContactIds = ({
-      ...state.circleMemberships,
-    }..removeWhere((k, v) => !v.contains(state.circleId))).keys;
-
-    await contactsRepository.removeCircle(state.circleId!);
-
-    final dhtUpdates = Future.wait(
-      affectedContactIds.map(
-        (id) => contactsRepository
-            .updateContactSharedProfile(id)
-            .then((_) => contactsRepository.tryShareWithContactDHT(id)),
-      ),
-    );
-    if (awaitDhtUpdates) {
-      await dhtUpdates;
+  Future<void> removeCircle() async {
+    if (state.circleId != null) {
+      await _circleStorage.delete(state.circleId!);
     }
   }
 
   @override
   Future<void> close() {
-    _circlesSubscription.cancel();
-    _profileInfoSubscription.cancel();
+    unawaited(_circleSubscription.cancel());
+    unawaited(_profileSubscription.cancel());
     return super.close();
   }
 }

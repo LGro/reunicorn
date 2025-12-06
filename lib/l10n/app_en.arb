@@ -27,7 +27,7 @@
     "description": "App title for welcome screen."
   },
   "welcomeHeadline": "Welcome!\nWhat's your name?",
-  "welcomeText": "This is the first bit of personal information that you can selectively share with others in a moment.",
+  "welcomeText": "This is the first bit of personal information that you can soon share with others.",
   "welcomeCallToActionButton": "Let's connect",
   "welcomeErrorNameMissing": "Please enter your name.",
   "profileHeadline": "Profile information",

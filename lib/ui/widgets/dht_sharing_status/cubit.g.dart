@@ -7,13 +7,9 @@ part of 'cubit.dart';
 // **************************************************************************
 
 DhtSharingStatusState _$DhtSharingStatusStateFromJson(
-        Map<String, dynamic> json) =>
-    DhtSharingStatusState(
-      json['status'] as String,
-    );
+  Map<String, dynamic> json,
+) => DhtSharingStatusState(json['status'] as String);
 
 Map<String, dynamic> _$DhtSharingStatusStateToJson(
-        DhtSharingStatusState instance) =>
-    <String, dynamic>{
-      'status': instance.status,
-    };
+  DhtSharingStatusState instance,
+) => <String, dynamic>{'status': instance.status};

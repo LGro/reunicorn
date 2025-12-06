@@ -7,11 +7,7 @@ part of 'cubit.dart';
 // **************************************************************************
 
 VeilidStatusState _$VeilidStatusStateFromJson(Map<String, dynamic> json) =>
-    VeilidStatusState(
-      json['status'] as String,
-    );
+    VeilidStatusState(json['status'] as String);
 
 Map<String, dynamic> _$VeilidStatusStateToJson(VeilidStatusState instance) =>
-    <String, dynamic>{
-      'status': instance.status,
-    };
+    <String, dynamic>{'status': instance.status};
