@@ -173,8 +173,8 @@ class _DashboardPageState extends State<DashboardPage> {
                         bottom: 8,
                       ),
                       child: Text(
-                        'Nobody has introduced you to any of their '
-                        'contacts yet.',
+                        'When someone introduces you to one of their contacts, '
+                        'it shows up here.',
                       ),
                     ),
 
@@ -228,7 +228,8 @@ class _DashboardPageState extends State<DashboardPage> {
                         bottom: 8,
                       ),
                       child: Text(
-                        'No recent updates from any of your contacts.',
+                        'When contacts update the information they share with '
+                        'you, it shows up here.',
                       ),
                     ),
                 ],

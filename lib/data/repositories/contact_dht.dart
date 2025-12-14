@@ -867,8 +867,16 @@ class ContactDhtRepository {
       'rncrn-dht-on-update | ${contact.coagContactId.substring(0, 5)} | '
       'profile-write',
     );
-    // TODO: only if relevant settings avail? already the case make args explicit
-    await updateRecord(contact.sharedProfile, contact.dhtSettings);
+    try {
+      // TODO: only if relevant settings avail? already the case make args explicit
+      await updateRecord(contact.sharedProfile, contact.dhtSettings);
+    } on DHTExceptionNotAvailable {
+      // TODO: When do we try next time? Can this cause outdated shared info?
+      debugPrint(
+        'rncrn-dht-on-update | ${contact.coagContactId.substring(0, 5)} | '
+        'dht-unavailable',
+      );
+    }
   }
 
   /// Watch for updates the contact shares via the DHT
