@@ -78,29 +78,49 @@ extension DeprecatedNonceToDart on proto_deprecated.Nonce {
 }
 
 extension DeprecatedTypedKeyToDart on proto_deprecated.TypedKey {
-  veilid.PublicKey toDartPublicKey() =>
-      veilid.PublicKey(kind: kind, value: value.toDartBarePublicKey());
-  veilid.Signature toDartSignature() =>
-      veilid.Signature(kind: kind, value: value.toDartBareSignature());
-  veilid.SecretKey toDartSecretKey() =>
-      veilid.SecretKey(kind: kind, value: value.toDartBareSecretKey());
-  veilid.HashDigest toDartHashDigest() =>
-      veilid.HashDigest(kind: kind, value: value.toDartBareHashDigest());
-  veilid.SharedSecret toDartSharedSecret() =>
-      veilid.SharedSecret(kind: kind, value: value.toDartBareSharedSecret());
-  veilid.RouteId toDartRouteId() =>
-      veilid.RouteId(kind: kind, value: value.toDartBareRouteId());
-  veilid.NodeId toDartNodeId() =>
-      veilid.NodeId(kind: kind, value: value.toDartBareNodeId());
-  veilid.MemberId toDartMemberId() =>
-      veilid.MemberId(kind: kind, value: value.toDartBareMemberId());
+  veilid.PublicKey toDartPublicKey() => veilid.PublicKey(
+    kind: veilid.CryptoKind.fromInt(kind),
+    value: value.toDartBarePublicKey(),
+  );
+  veilid.Signature toDartSignature() => veilid.Signature(
+    kind: veilid.CryptoKind.fromInt(kind),
+    value: value.toDartBareSignature(),
+  );
+  veilid.SecretKey toDartSecretKey() => veilid.SecretKey(
+    kind: veilid.CryptoKind.fromInt(kind),
+    value: value.toDartBareSecretKey(),
+  );
+  veilid.HashDigest toDartHashDigest() => veilid.HashDigest(
+    kind: veilid.CryptoKind.fromInt(kind),
+    value: value.toDartBareHashDigest(),
+  );
+  veilid.SharedSecret toDartSharedSecret() => veilid.SharedSecret(
+    kind: veilid.CryptoKind.fromInt(kind),
+    value: value.toDartBareSharedSecret(),
+  );
+  veilid.RouteId toDartRouteId() => veilid.RouteId(
+    kind: veilid.CryptoKind.fromInt(kind),
+    value: value.toDartBareRouteId(),
+  );
+  veilid.NodeId toDartNodeId() => veilid.NodeId(
+    kind: veilid.CryptoKind.fromInt(kind),
+    value: value.toDartBareNodeId(),
+  );
+  veilid.MemberId toDartMemberId() => veilid.MemberId(
+    kind: veilid.CryptoKind.fromInt(kind),
+    value: value.toDartBareMemberId(),
+  );
   veilid.OpaqueRecordKey toDartOpaqueRecordKey() => veilid.OpaqueRecordKey(
-      kind: kind, value: value.toDartBareOpaqueRecordKey());
+    kind: veilid.CryptoKind.fromInt(kind),
+    value: value.toDartBareOpaqueRecordKey(),
+  );
 }
 
 extension DeprecatedBareKeyPairToDart on proto_deprecated.KeyPair {
   veilid.BareKeyPair toDart() => veilid.BareKeyPair(
-      key: key.toDartBarePublicKey(), secret: secret.toDartBareSecretKey());
+    key: key.toDartBarePublicKey(),
+    secret: secret.toDartBareSecretKey(),
+  );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

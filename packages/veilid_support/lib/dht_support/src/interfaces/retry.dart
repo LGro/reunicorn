@@ -23,11 +23,11 @@ Future<T> dhtRetryLoop<T>(Future<T> Function() closure) async {
       if (retryTryAgain == 0) {
         throw const DHTExceptionNotAvailable();
       }
-    } on VeilidAPIExceptionKeyNotFound {
+    } on VeilidAPIExceptionKeyNotFound catch (e) {
       await asyncSleep();
       retryKeyNotFound--;
       if (retryKeyNotFound == 0) {
-        throw const DHTExceptionNoRecord();
+        throw DHTExceptionNoRecord(cause: e.toString());
       }
     }
   }

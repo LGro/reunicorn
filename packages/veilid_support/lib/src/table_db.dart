@@ -29,12 +29,12 @@ Future<T> transactionScope<T>(
   final tdbt = tdb.transact();
   try {
     final ret = await callback(tdbt);
-    if (!tdbt.isDone()) {
+    if (!tdbt.isDone) {
       await tdbt.commit();
     }
     return ret;
   } finally {
-    if (!tdbt.isDone()) {
+    if (!tdbt.isDone) {
       await tdbt.rollback();
     }
   }

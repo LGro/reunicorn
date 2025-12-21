@@ -46,7 +46,7 @@ Future<Map<String, dynamic>> getDefaultVeilidPlatformConfig(
               ? VeilidConfigLogLevel.debug
               : VeilidConfigLogLevel.info,
           logsInTimings: true,
-          logsInConsole: false,
+          logsInConsole: VeilidWASMConfigLoggingLogsInConsole.off,
           ignoreLogTargets: ignoreLogTargets,
         ),
         api: VeilidWASMConfigLoggingApi(
@@ -134,7 +134,7 @@ Future<VeilidConfig> getVeilidConfig(bool isWeb, String programName) async {
         // XXX: Remove after https://gitlab.com/veilid/veilid/-/issues/492
         const VeilidConfigCapabilities(disable: ['DHTV']),
     protectedStore:
-        // XXX: Linux often does not have a secret storage mechanism installed
+        // Linux often does not have a secret storage mechanism installed
         config.protectedStore.copyWith(
           allowInsecureFallback: !isWeb && Platform.isLinux,
         ),

@@ -131,7 +131,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   static DHTRecordPool get instance => _singleton!;
 
   static Future<void> init({
-    required int defaultKind,
+    required CryptoKind defaultKind,
     DHTRecordPoolLogger? logger,
   }) async {
     final routingContext = await Veilid.instance.routingContext();

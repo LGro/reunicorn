@@ -144,12 +144,12 @@ extension NonceToDart on proto.Nonce {
 // PublicKey
 extension PublicKeyToProto on veilid.PublicKey {
   proto.PublicKey toProto() =>
-      proto.PublicKey(kind: kind, data: value.toBytes());
+      proto.PublicKey(kind: kind.toInt(), data: value.toBytes());
 }
 
 extension PublicKeyToDart on proto.PublicKey {
   veilid.PublicKey toDart() => veilid.PublicKey(
-    kind: kind,
+    kind: veilid.CryptoKind.fromInt(kind),
     value: veilid.BarePublicKey.fromBytes(Uint8List.fromList(data)),
   );
 }
@@ -157,12 +157,12 @@ extension PublicKeyToDart on proto.PublicKey {
 // Signature
 extension SignatureToProto on veilid.Signature {
   proto.Signature toProto() =>
-      proto.Signature(kind: kind, data: value.toBytes());
+      proto.Signature(kind: kind.toInt(), data: value.toBytes());
 }
 
 extension SignatureToDart on proto.Signature {
   veilid.Signature toDart() => veilid.Signature(
-    kind: kind,
+    kind: veilid.CryptoKind.fromInt(kind),
     value: veilid.BareSignature.fromBytes(Uint8List.fromList(data)),
   );
 }
@@ -170,12 +170,12 @@ extension SignatureToDart on proto.Signature {
 // SecretKey
 extension SecretKeyToProto on veilid.SecretKey {
   proto.SecretKey toProto() =>
-      proto.SecretKey(kind: kind, data: value.toBytes());
+      proto.SecretKey(kind: kind.toInt(), data: value.toBytes());
 }
 
 extension SecretKeyToDart on proto.SecretKey {
   veilid.SecretKey toDart() => veilid.SecretKey(
-    kind: kind,
+    kind: veilid.CryptoKind.fromInt(kind),
     value: veilid.BareSecretKey.fromBytes(Uint8List.fromList(data)),
   );
 }
@@ -183,12 +183,12 @@ extension SecretKeyToDart on proto.SecretKey {
 // HashDigest
 extension HashDigestToProto on veilid.HashDigest {
   proto.HashDigest toProto() =>
-      proto.HashDigest(kind: kind, data: value.toBytes());
+      proto.HashDigest(kind: kind.toInt(), data: value.toBytes());
 }
 
 extension HashDigestToDart on proto.HashDigest {
   veilid.HashDigest toDart() => veilid.HashDigest(
-    kind: kind,
+    kind: veilid.CryptoKind.fromInt(kind),
     value: veilid.BareHashDigest.fromBytes(Uint8List.fromList(data)),
   );
 }
@@ -196,12 +196,12 @@ extension HashDigestToDart on proto.HashDigest {
 // OpaqueRecordKey
 extension OpaqueRecordKeyToProto on veilid.OpaqueRecordKey {
   proto.OpaqueRecordKey toProto() =>
-      proto.OpaqueRecordKey(kind: kind, data: value.toBytes());
+      proto.OpaqueRecordKey(kind: kind.toInt(), data: value.toBytes());
 }
 
 extension OpaqueRecordKeyToDart on proto.OpaqueRecordKey {
   veilid.OpaqueRecordKey toDart() => veilid.OpaqueRecordKey(
-    kind: kind,
+    kind: veilid.CryptoKind.fromInt(kind),
     value: veilid.BareOpaqueRecordKey.fromBytes(Uint8List.fromList(data)),
   );
 }
@@ -209,48 +209,51 @@ extension OpaqueRecordKeyToDart on proto.OpaqueRecordKey {
 // SharedSecret
 extension SharedSecretToProto on veilid.SharedSecret {
   proto.SharedSecret toProto() =>
-      proto.SharedSecret(kind: kind, data: value.toBytes());
+      proto.SharedSecret(kind: kind.toInt(), data: value.toBytes());
 }
 
 extension SharedSecretToDart on proto.SharedSecret {
   veilid.SharedSecret toDart() => veilid.SharedSecret(
-    kind: kind,
+    kind: veilid.CryptoKind.fromInt(kind),
     value: veilid.BareSharedSecret.fromBytes(Uint8List.fromList(data)),
   );
 }
 
 // RouteId
 extension RouteIdToProto on veilid.RouteId {
-  proto.RouteId toProto() => proto.RouteId(kind: kind, data: value.toBytes());
+  proto.RouteId toProto() =>
+      proto.RouteId(kind: kind.toInt(), data: value.toBytes());
 }
 
 extension RouteIdToDart on proto.RouteId {
   veilid.RouteId toDart() => veilid.RouteId(
-    kind: kind,
+    kind: veilid.CryptoKind.fromInt(kind),
     value: veilid.BareRouteId.fromBytes(Uint8List.fromList(data)),
   );
 }
 
 // NodeId
 extension NodeIdToProto on veilid.NodeId {
-  proto.NodeId toProto() => proto.NodeId(kind: kind, data: value.toBytes());
+  proto.NodeId toProto() =>
+      proto.NodeId(kind: kind.toInt(), data: value.toBytes());
 }
 
 extension NodeIdToDart on proto.NodeId {
   veilid.NodeId toDart() => veilid.NodeId(
-    kind: kind,
+    kind: veilid.CryptoKind.fromInt(kind),
     value: veilid.BareNodeId.fromBytes(Uint8List.fromList(data)),
   );
 }
 
 // MemberId
 extension MemberIdToProto on veilid.MemberId {
-  proto.MemberId toProto() => proto.MemberId(kind: kind, data: value.toBytes());
+  proto.MemberId toProto() =>
+      proto.MemberId(kind: kind.toInt(), data: value.toBytes());
 }
 
 extension MemberIdToDart on proto.MemberId {
   veilid.MemberId toDart() => veilid.MemberId(
-    kind: kind,
+    kind: veilid.CryptoKind.fromInt(kind),
     value: veilid.BareMemberId.fromBytes(Uint8List.fromList(data)),
   );
 }
@@ -273,7 +276,7 @@ extension BareKeyPairToDart on proto.BareKeyPair {
 // KeyPair
 extension KeyPairToProto on veilid.KeyPair {
   proto.KeyPair toProto() => proto.KeyPair(
-    kind: kind,
+    kind: kind.toInt(),
     key: key.value.toBytes(),
     secret: secret.value.toBytes(),
   );
@@ -282,11 +285,11 @@ extension KeyPairToProto on veilid.KeyPair {
 extension KeyPairToDart on proto.KeyPair {
   veilid.KeyPair toDart() => veilid.KeyPair(
     key: veilid.PublicKey(
-      kind: kind,
+      kind: veilid.CryptoKind.fromInt(kind),
       value: veilid.BarePublicKey.fromBytes(Uint8List.fromList(key)),
     ),
     secret: veilid.SecretKey(
-      kind: kind,
+      kind: veilid.CryptoKind.fromInt(kind),
       value: veilid.BareSecretKey.fromBytes(Uint8List.fromList(secret)),
     ),
   );
@@ -312,7 +315,7 @@ extension BareRecordKeyToDart on proto.BareRecordKey {
 // RecordKey
 extension RecordKeyToProto on veilid.RecordKey {
   proto.RecordKey toProto() => proto.RecordKey(
-    kind: kind,
+    kind: kind.toInt(),
     key: opaque.value.toBytes(),
     encryptionKey: encryptionKey?.value.toBytes(),
   );
@@ -321,12 +324,12 @@ extension RecordKeyToProto on veilid.RecordKey {
 extension RecordKeyToDart on proto.RecordKey {
   veilid.RecordKey toDart() => veilid.RecordKey(
     opaque: veilid.OpaqueRecordKey(
-      kind: kind,
+      kind: veilid.CryptoKind.fromInt(kind),
       value: veilid.BareOpaqueRecordKey.fromBytes(Uint8List.fromList(key)),
     ),
     encryptionKey: hasEncryptionKey()
         ? veilid.SharedSecret(
-            kind: kind,
+            kind: veilid.CryptoKind.fromInt(kind),
             value: veilid.BareSharedSecret.fromBytes(
               Uint8List.fromList(encryptionKey),
             ),

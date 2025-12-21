@@ -50,24 +50,34 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
         emit(AsyncValue.error(e, st));
         return;
       }
-      await _init(initialStateFunction, stateFunction, watchFunction);
+      await _init(cancel, initialStateFunction, stateFunction, watchFunction);
     });
   }
 
   Future<void> _init(
+    Completer<bool> cancel,
     InitialStateFunction<T> initialStateFunction,
     StateFunction<T> stateFunction,
     WatchFunction watchFunction,
   ) async {
     // Make initial state update
     try {
-      final initialState = await initialStateFunction(record!);
-      if (initialState != null) {
-        emit(AsyncValue.data(initialState));
+      while (!cancel.isCompleted) {
+        try {
+          final initialState = await initialStateFunction(record!);
+          if (initialState != null) {
+            emit(AsyncValue.data(initialState));
+          }
+          break;
+        } on DHTExceptionNotAvailable {
+          // Wait for a bit
+          await asyncSleep();
+        }
       }
     } on Exception catch (e, st) {
       addError(e, st);
       emit(AsyncValue.error(e, st));
+      return;
     }
 
     _subscription = await record!.listen((record, data, subkeys) async {
