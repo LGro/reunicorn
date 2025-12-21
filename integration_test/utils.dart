@@ -2,4 +2,4 @@
 // SPDX-License-Identifier: MPL-2.0
 
 /// Veilid bootstrap URL for integration tests
-const veilidBootstrapUrl = 'bootstrap-v1.staging.veilid.net';
+const veilidBootstrapUrl = 'bootstrap-v1.veilid.net';

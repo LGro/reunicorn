@@ -15,14 +15,15 @@ import '../widgets/dht_batch_invite_status/widget.dart';
 import '../widgets/dht_status/widget.dart';
 import 'cubit.dart';
 
-class BatchInvitesPage extends StatefulWidget {
-  const BatchInvitesPage({super.key});
+class CommunityManagementPage extends StatefulWidget {
+  const CommunityManagementPage({super.key});
 
   @override
-  _BatchInvitesPageState createState() => _BatchInvitesPageState();
+  _CommunityManagementPageState createState() =>
+      _CommunityManagementPageState();
 }
 
-class _BatchInvitesPageState extends State<BatchInvitesPage> {
+class _CommunityManagementPageState extends State<CommunityManagementPage> {
   final _formKey = GlobalKey<FormState>();
   final _labelFieldKey = GlobalKey<FormFieldState>();
   final _amountFieldKey = GlobalKey<FormFieldState>();

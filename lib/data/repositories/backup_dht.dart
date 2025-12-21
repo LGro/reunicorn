@@ -98,6 +98,7 @@ Future<String?> readBackupRecord(
   }
 }
 
+// TODO: Add community backup
 class BackupRepository {
   final Storage<ProfileInfo> _profileStorage;
   final Storage<CoagContact> _contactStorage;

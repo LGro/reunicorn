@@ -490,7 +490,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     initialData: null,
     create: (context) =>
         // TODO: Pass initially specified boostrap url
-        AppGlobalInit.initialize('bootstrap-v1.staging.veilid.net'),
+        AppGlobalInit.initialize('bootstrap-v1.veilid.net'),
     // AppGlobalInit.initialize can throw Already attached VeilidAPIException which is fine
     catchError: (context, error) => null,
     builder: (context, child) {

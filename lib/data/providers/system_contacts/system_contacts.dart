@@ -7,6 +7,7 @@ import 'base.dart';
 
 class MissingSystemContactsPermissionError implements Exception {}
 
+// TODO: Use or remove
 class SystemContacts extends SystemContactsBase {
   @override
   Future<List<Contact>> getContacts() async {

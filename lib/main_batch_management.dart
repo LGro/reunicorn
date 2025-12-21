@@ -6,12 +6,12 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'batch_management/app.dart';
 import 'bloc_observer.dart';
-import 'notification_service.dart';
 import 'tools/loggy.dart';
-import 'ui/app.dart';
+import 'ui/community_management/page.dart';
+import 'veilid_init.dart';
 
 void main() async {
   Future<void> mainFunc() async {
@@ -24,7 +24,7 @@ void main() async {
     // Observer for logging Bloc related things
     Bloc.observer = const AppBlocObserver();
 
-    runApp(const BatchManagementApp());
+    runApp(const CommunityManagementApp());
   }
 
   if (kDebugMode) {
@@ -36,4 +36,23 @@ void main() async {
       log.error('Dart Runtime: {$error}\n{$stackTrace}');
     });
   }
+}
+
+class CommunityManagementApp extends StatelessWidget {
+  const CommunityManagementApp({super.key});
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+    title: 'Reunicorn Community Management',
+    home: FutureProvider<AppGlobalInit?>(
+      initialData: null,
+      create: (context) => AppGlobalInit.initialize('bootstrap-v1.veilid.net'),
+      // AppGlobalInit.initialize can throw Already attached VeilidAPIException
+      // which is fine
+      catchError: (context, error) => null,
+      builder: (context, child) => (context.watch<AppGlobalInit?>() == null)
+          ? const Center(child: CircularProgressIndicator())
+          : const CommunityManagementPage(),
+    ),
+  );
 }

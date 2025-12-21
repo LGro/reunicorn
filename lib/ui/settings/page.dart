@@ -7,7 +7,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../data/repositories/settings.dart';
 import '../../notification_service.dart';
-import '../batch_invite_management/page.dart';
 import '../privacy_policy.dart';
 import '../terms_and_conditions.dart';
 import '../widgets/veilid_status/widget.dart';
@@ -46,19 +45,6 @@ class SettingsPage extends StatelessWidget {
             // const ListTile(title: Text('Set custom map server url')),
             // TODO: Move async things to cubit
             // if (Platform.isIOS) _backgroundPermissionStatus(),
-            if (kDebugMode)
-              ListTile(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<BatchInvitesPage>(
-                    builder: (_) => const BatchInvitesPage(),
-                  ),
-                ),
-                title: const Text('Invitation batches'),
-                trailing: const Padding(
-                  padding: EdgeInsets.only(right: 20),
-                  child: Icon(Icons.arrow_right),
-                ),
-              ),
             ListTile(
               title: const Text('Show open source licenses'),
               trailing: const Padding(
