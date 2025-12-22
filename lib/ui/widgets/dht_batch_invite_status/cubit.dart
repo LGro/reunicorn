@@ -11,7 +11,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../../data/models/batch_invites.dart';
-import '../../batch_invite_management/cubit.dart';
+import '../../community_management/cubit.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';

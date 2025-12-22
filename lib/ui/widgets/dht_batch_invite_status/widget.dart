@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../batch_invite_management/cubit.dart';
+import '../../community_management/cubit.dart';
 import 'cubit.dart';
 
 class DhtBatchInviteStatusWidget extends StatelessWidget {
