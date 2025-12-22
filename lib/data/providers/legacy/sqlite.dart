@@ -43,6 +43,11 @@ Map<String, dynamic> migrateToAllTypedTypes(Map<String, dynamic> contactJson) {
   }
   contactJson['details'] = details;
 
+  // Drop introductions instead of migrating them because they weren't used much
+  contactJson['my_previous_introduction_key_pairs'] = <String>[];
+  contactJson['introductions_for_them'] = <String>[];
+  contactJson['introductions_by_them'] = <String>[];
+
   return contactJson;
 }
 
