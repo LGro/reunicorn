@@ -8,27 +8,30 @@ import '../models/models.dart';
 
 class ProcessorRepository {
   ProcessorRepository._()
-      : startedUp = false,
-        _controllerConnectionState = StreamController.broadcast(sync: true),
-        processorConnectionState = ProcessorConnectionState(
-            attachment: VeilidStateAttachment(
-                state: AttachmentState.detached,
-                publicInternetReady: false,
-                localNetworkReady: false,
-                uptime: TimestampDuration(value: BigInt.zero),
-                attachedUptime: null),
-            network: VeilidStateNetwork(
-                started: false,
-                bpsDown: BigInt.zero,
-                bpsUp: BigInt.zero,
-                peers: []));
+    : startedUp = false,
+      _controllerConnectionState = StreamController.broadcast(sync: true),
+      processorConnectionState = ProcessorConnectionState(
+        attachment: VeilidStateAttachment(
+          state: AttachmentState.detached,
+          publicInternetReady: false,
+          localNetworkReady: false,
+          uptime: TimestampDuration(value: BigInt.zero),
+          attachedUptime: null,
+        ),
+        network: VeilidStateNetwork(
+          started: false,
+          bpsDown: BigInt.zero,
+          bpsUp: BigInt.zero,
+          peers: [],
+        ),
+      );
 
   //////////////////////////////////////////////////////////////
   /// Singleton initialization
 
   static ProcessorRepository instance = ProcessorRepository._();
 
-  Future<void> startup(String bootstrapUrl) async {
+  Future<void> startup(String bootstrapUrl, {bool deleteStores = false}) async {
     if (startedUp) {
       return;
     }
@@ -49,20 +52,38 @@ class ProcessorRepository {
     } on Exception {
       // Do nothing on failure here
     }
-    final veilidConfig = await getVeilidConfig(kIsWeb, 'Reunicorn').then((c) =>
-        kIsWeb
-            ? c
-            : c.copyWith(
-                network: c.network.copyWith(
-                    routingTable: c.network.routingTable
-                        .copyWith(bootstrap: [bootstrapUrl]))));
+    var veilidConfig = await getVeilidConfig(kIsWeb, 'Reunicorn').then(
+      (c) => kIsWeb
+          ? c
+          : c.copyWith(
+              network: c.network.copyWith(
+                routingTable: c.network.routingTable.copyWith(
+                  bootstrap: [bootstrapUrl],
+                ),
+              ),
+            ),
+    );
+
+    if (deleteStores) {
+      veilidConfig = veilidConfig.copyWith(
+        tableStore: veilidConfig.tableStore.copyWith(delete: true),
+      );
+      veilidConfig = veilidConfig.copyWith(
+        protectedStore: veilidConfig.protectedStore.copyWith(delete: true),
+      );
+      veilidConfig = veilidConfig.copyWith(
+        blockStore: veilidConfig.blockStore.copyWith(delete: true),
+      );
+    }
+
     Stream<VeilidUpdate> updateStream;
     try {
       log.debug('Starting VeilidCore');
       updateStream = await Veilid.instance.startupVeilidCore(veilidConfig);
     } on VeilidAPIExceptionAlreadyInitialized catch (_) {
       log.debug(
-          'VeilidCore is already started, shutting down and restarting...');
+        'VeilidCore is already started, shutting down and restarting...',
+      );
       startedUp = true;
       await shutdown();
       updateStream = await Veilid.instance.startupVeilidCore(veilidConfig);
@@ -109,12 +130,14 @@ class ProcessorRepository {
   void processUpdateAttachment(VeilidUpdateAttachment updateAttachment) {
     // Set connection meter and ui state for connection state
     processorConnectionState = processorConnectionState.copyWith(
-        attachment: VeilidStateAttachment(
-            state: updateAttachment.state,
-            publicInternetReady: updateAttachment.publicInternetReady,
-            localNetworkReady: updateAttachment.localNetworkReady,
-            uptime: updateAttachment.uptime,
-            attachedUptime: updateAttachment.attachedUptime));
+      attachment: VeilidStateAttachment(
+        state: updateAttachment.state,
+        publicInternetReady: updateAttachment.publicInternetReady,
+        localNetworkReady: updateAttachment.localNetworkReady,
+        uptime: updateAttachment.uptime,
+        attachedUptime: updateAttachment.attachedUptime,
+      ),
+    );
   }
 
   void processUpdateConfig(VeilidUpdateConfig updateConfig) {
@@ -124,11 +147,13 @@ class ProcessorRepository {
   void processUpdateNetwork(VeilidUpdateNetwork updateNetwork) {
     // Set connection meter and ui state for connection state
     processorConnectionState = processorConnectionState.copyWith(
-        network: VeilidStateNetwork(
-            started: updateNetwork.started,
-            bpsDown: updateNetwork.bpsDown,
-            bpsUp: updateNetwork.bpsUp,
-            peers: updateNetwork.peers));
+      network: VeilidStateNetwork(
+        started: updateNetwork.started,
+        bpsDown: updateNetwork.bpsDown,
+        bpsUp: updateNetwork.bpsUp,
+        peers: updateNetwork.peers,
+      ),
+    );
     _controllerConnectionState.add(processorConnectionState);
   }
 
