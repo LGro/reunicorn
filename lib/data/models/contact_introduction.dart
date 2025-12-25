@@ -4,10 +4,12 @@
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:veilid/veilid.dart';
+
+import 'utils.dart';
 part 'contact_introduction.g.dart';
 
 @JsonSerializable()
-class ContactIntroduction extends Equatable {
+class ContactIntroduction extends Equatable implements JsonEncodable {
   const ContactIntroduction({
     required this.otherName,
     required this.otherPublicKey,
@@ -56,12 +58,12 @@ class ContactIntroduction extends Equatable {
 
   @override
   List<Object?> get props => [
-        otherName,
-        otherPublicKey,
-        publicKey,
-        message,
-        dhtRecordKeyReceiving,
-        dhtRecordKeySharing,
-        dhtWriterSharing,
-      ];
+    otherName,
+    otherPublicKey,
+    publicKey,
+    message,
+    dhtRecordKeyReceiving,
+    dhtRecordKeySharing,
+    dhtWriterSharing,
+  ];
 }

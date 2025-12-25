@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,9 +10,7 @@ import 'package:reunicorn/data/models/contact_location.dart';
 import 'package:reunicorn/data/providers/legacy/sqlite.dart';
 
 import '../../mocked_providers.dart';
-import '../utils.dart';
-
-const jsonAssetDirectory = 'test/assets/models/coag_contact';
+import 'utils.dart';
 
 void main() {
   test('details equatable', () {
@@ -172,16 +169,14 @@ void main() {
     );
   });
 
-  test('save current json schema version', () async {
-    final version = await readCurrentVersionFromPubspec();
-    final file = File('$jsonAssetDirectory/$version.json');
-
-    final contact = CoagContact.explicit(
+  test('00 save current json schema version', () async {
+    final contactMinimal = CoagContact.explicit(
       coagContactId: 'coag-contact-id',
       name: 'Display Name',
       dhtSettings: const DhtSettings(),
       myIdentity: fakeKeyPair(),
       myIntroductionKeyPair: fakeKeyPair(),
+      theirIntroductionKey: fakeKeyPair().key,
       details: null,
       theirIdentity: null,
       connectionAttestations: const [],
@@ -190,27 +185,38 @@ void main() {
       temporaryLocations: const {},
       comment: '',
       sharedProfile: null,
-      theirIntroductionKey: fakeKeyPair().key,
       myPreviousIntroductionKeyPairs: const [],
       introductionsForThem: const [],
       introductionsByThem: const [],
       origin: null,
       verified: false,
     );
-
-    final jsonString = json.encode(contact.toJson());
-
-    if (!loadAllPreviousSchemaVersionJsons(
-      jsonAssetDirectory,
-    ).values.toSet().contains(jsonString)) {
-      await file.writeAsString(jsonString);
-    }
+    // TODO: Add more to full contact
+    final contactFull = contactMinimal.copyWith(
+      dhtSettings: DhtSettings(
+        myNextKeyPair: fakeKeyPair(),
+        myKeyPair: fakeKeyPair(),
+        theirNextPublicKey: fakeKeyPair().key,
+        theirPublicKey: fakeKeyPair().key,
+        recordKeyMeSharing: fakeDhtRecordKey(0),
+        writerMeSharing: fakeKeyPair(),
+        recordKeyThemSharing: fakeDhtRecordKey(1),
+        writerThemSharing: fakeKeyPair(),
+        initialSecret: fakePsk(0),
+        theyAckHandshakeComplete: true,
+      ),
+      details: const ContactDetails(
+        names: {'n1': 'Awesome Name'},
+        emails: {'em1': 'mail@mailmail'},
+      ),
+    );
+    await saveJsonModelAsset(contactMinimal, versionSuffix: 'minimal');
+    await saveJsonModelAsset(contactFull, versionSuffix: 'full');
   });
 
   test('test loading previous json schema versions', () async {
-    for (final jsonEntry in loadAllPreviousSchemaVersionJsons(
-      jsonAssetDirectory,
-    ).entries) {
+    for (final jsonEntry
+        in loadAllPreviousSchemaVersionJsonFiles<CoagContact>().entries) {
       try {
         final jsonData =
             await jsonDecode(jsonEntry.value) as Map<String, dynamic>;

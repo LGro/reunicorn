@@ -2,21 +2,15 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reunicorn/data/models/contact_introduction.dart';
 
 import '../../mocked_providers.dart';
-import '../utils.dart';
-
-const jsonAssetDirectory = 'test/assets/models/contact_introduction';
+import 'utils.dart';
 
 void main() {
-  test('save current json schema version', () async {
-    final version = await readCurrentVersionFromPubspec();
-    final file = File('$jsonAssetDirectory/$version.json');
-
+  test('00 save current json schema version', () async {
     final contactIntro = ContactIntroduction(
       otherName: 'other name',
       otherPublicKey: fakeKeyPair(1).key,
@@ -26,19 +20,13 @@ void main() {
       dhtWriterSharing: fakeKeyPair(5, 6),
     );
 
-    final jsonString = json.encode(contactIntro.toJson());
-
-    if (!loadAllPreviousSchemaVersionJsons(
-      jsonAssetDirectory,
-    ).values.toSet().contains(jsonString)) {
-      await file.writeAsString(jsonString);
-    }
+    await saveJsonModelAsset(contactIntro);
   });
 
   test('test loading previous json schema versions', () async {
-    for (final jsonEntry in loadAllPreviousSchemaVersionJsons(
-      jsonAssetDirectory,
-    ).entries) {
+    for (final jsonEntry
+        in loadAllPreviousSchemaVersionJsonFiles<ContactIntroduction>()
+            .entries) {
       try {
         final jsonData =
             await jsonDecode(jsonEntry.value) as Map<String, dynamic>;
