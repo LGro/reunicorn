@@ -4,7 +4,7 @@
 import 'dart:async';
 import 'dart:io';
 
-// import 'package:background_fetch/background_fetch.dart';
+import 'package:background_fetch/background_fetch.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -348,70 +348,72 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     unawaited(_checkFirstLaunch());
 
     // Configure background fetch
-    // unawaited(
-    //   BackgroundFetch.configure(
-    //         BackgroundFetchConfig(
-    //           minimumFetchInterval: 15,
-    //           stopOnTerminate: false,
-    //           enableHeadless: true,
-    //           requiredNetworkType: NetworkType.ANY,
-    //           requiresBatteryNotLow: true,
-    //         ),
-    //         (String taskId) async {
-    //           // This is the callback function that will be called periodically
-    //           logDebug('[BackgroundFetch] Event received: $taskId');
+    unawaited(
+      BackgroundFetch.configure(
+            BackgroundFetchConfig(
+              minimumFetchInterval: 15,
+              stopOnTerminate: false,
+              enableHeadless: true,
+              requiredNetworkType: NetworkType.ANY,
+              requiresBatteryNotLow: true,
+            ),
+            (String taskId) async {
+              // This is the callback function that will be called periodically
+              logDebug('[BackgroundFetch] Event received: $taskId');
 
-    //           final log = <String>[];
-    //           final startTime = DateTime.now();
-    //           log.add('Start update to and from DHT at $startTime');
+              final log = <String>[];
+              final startTime = DateTime.now();
+              log.add('Start update to and from DHT at $startTime');
 
-    //           final contactStorage = SqliteStorage<CoagContact>(
-    //             'contact',
-    //             contactMigrateFromJson,
-    //           );
-    //           final contactRepo = ContactDhtRepository(
-    //             contactStorage,
-    //             SqliteStorage<Circle>('circle', circleMigrateFromJson),
-    //             SqliteStorage<ProfileInfo>('profile', profileMigrateFromJson),
-    //           );
-    //           final updateRepo = UpdateRepository(
-    //             contactStorage,
-    //             SqliteStorage<ContactUpdate>(
-    //               'update',
-    //               contactUpdateMigrateFromJson,
-    //             ),
-    //             notificationCallback: NotificationService().showNotification,
-    //           );
+              final contactStorage = SqliteStorage<CoagContact>(
+                'contact',
+                contactMigrateFromJson,
+              );
+              // ignore: unused_local_variable we just need init and listen
+              final contactRepo = ContactDhtRepository(
+                contactStorage,
+                SqliteStorage<Circle>('circle', circleMigrateFromJson),
+                SqliteStorage<ProfileInfo>('profile', profileMigrateFromJson),
+              );
+              // ignore: unused_local_variable we just need init and listen
+              final updateRepo = UpdateRepository(
+                contactStorage,
+                SqliteStorage<ContactUpdate>(
+                  'update',
+                  contactUpdateMigrateFromJson,
+                ),
+                notificationCallback: NotificationService().showNotification,
+              );
 
-    //           // Await initialization with potential initial DHT updates unless it
-    //           // exceeds 25s to respect the background task limit of 30s on iOS
-    //           await Future<void>.delayed(const Duration(seconds: 25));
+              // Await initialization with potential initial DHT updates unless
+              // it exceeds 25s to respect the 30s background task limit on iOS
+              await Future<void>.delayed(const Duration(seconds: 25));
 
-    //           log.add('Initialization finished at at ${DateTime.now()}');
+              log.add('Initialization finished at at ${DateTime.now()}');
 
-    //           await Future<void>.delayed(
-    //             const Duration(seconds: 25) -
-    //                 DateTime.now().difference(startTime),
-    //           );
+              await Future<void>.delayed(
+                const Duration(seconds: 25) -
+                    DateTime.now().difference(startTime),
+              );
 
-    //           log.add(
-    //             'Returning successfully after waiting until ${DateTime.now()}',
-    //           );
+              log.add(
+                'Returning successfully after waiting until ${DateTime.now()}',
+              );
 
-    //           logDebug('[BackgroundFetch] $log');
+              logDebug('[BackgroundFetch] $log');
 
-    //           // Signal completion of your task
-    //           await BackgroundFetch.finish(taskId);
-    //           return;
-    //         },
-    //       )
-    //       .then((status) {
-    //         logDebug('[BackgroundFetch] configure success: $status');
-    //       })
-    //       .catchError((e) {
-    //         logDebug('[BackgroundFetch] configure ERROR: $e');
-    //       }),
-    // );
+              // Signal completion of your task
+              await BackgroundFetch.finish(taskId);
+              return;
+            },
+          )
+          .then((status) {
+            logDebug('[BackgroundFetch] configure success: $status');
+          })
+          .catchError((e) {
+            logDebug('[BackgroundFetch] configure ERROR: $e');
+          }),
+    );
 
     // BackgroundFetch.scheduleTask(TaskConfig(
     //     taskId: 'com.foo.customtask',

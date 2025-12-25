@@ -1,7 +1,7 @@
 name: reunicorn
 description: Where & how to get in contact, shared securely and privately.
 publish_to: 'none'
-version: "0.2.4+63"
+version: "0.2.4+64"
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
@@ -9,7 +9,7 @@ environment:
 
 dependencies:
   ansicolor: ^2.0.3
-  # background_fetch: ^1.5.0
+  background_fetch: ^1.5.0
   bloc: ^9.0.1
   bloc_advanced_tools: ^0.1.13
   charcode: ^1.4.0
