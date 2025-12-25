@@ -3,13 +3,14 @@
 
 import 'dart:typed_data';
 
-import 'package:reunicorn/data/models/coag_contact.dart';
-import 'package:reunicorn/data/models/contact_location.dart';
-import 'package:reunicorn/data/models/profile_sharing_settings.dart';
-import 'package:reunicorn/data/providers/system_contacts/base.dart';
-import 'package:reunicorn/data/repositories/contacts.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reunicorn/data/models/coag_contact.dart';
+import 'package:reunicorn/data/models/contact_location.dart';
+import 'package:reunicorn/data/models/profile_info.dart';
+import 'package:reunicorn/data/models/profile_sharing_settings.dart';
+import 'package:reunicorn/data/providers/system_contacts/base.dart';
+import 'package:reunicorn/data/repositories/contact_dht.dart';
 
 import '../../mocked_providers.dart';
 
@@ -121,7 +122,7 @@ void main() {
     final filtered = filterAccordingToSharingProfile(
       profile: profile,
       activeCirclesWithMemberCount: {'Circle': 2},
-      dhtSettings: DhtSettings(myNextKeyPair: dummyKeyPair()),
+      dhtSettings: DhtSettings(myNextKeyPair: fakeKeyPair()),
       identityKey: null,
       introductionKey: null,
       introductions: [],
@@ -188,26 +189,5 @@ void main() {
       ['circle1', 'circle2'],
     );
     expect(filteredNames, {'nick': 'dudi'});
-  });
-
-  test('remove circle', () async {
-    final repo = ContactsRepository(
-      DummyPersistentStorage({}),
-      DummyDistributedStorage(transparent: false),
-      DummySystemContacts([]),
-      'UserA',
-      initialize: false,
-    );
-    await repo.addCircle('c1', 'c1');
-    await repo.addCircle('c2', 'c2');
-    await repo.updateCircleMemberships({
-      'p1': ['c1', 'c2'],
-      'p2': ['c2'],
-    });
-
-    await repo.removeCircle('c1');
-
-    expect(repo.getCircleMemberships()['p1'], ['c2']);
-    expect(repo.getCircleMemberships()['p2'], ['c2']);
   });
 }

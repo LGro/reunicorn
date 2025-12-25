@@ -2,13 +2,10 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
 
 import 'bloc_observer.dart';
 import 'data/models/circle.dart';
@@ -63,12 +60,6 @@ Future<void> _migratePre023(
       await profileStorage.delete(existingProfile.keys.first);
     }
     await profileStorage.set(legacyProfile.id, legacyProfile);
-  }
-
-  final file = File(join(await getDatabasesPath(), 'contacts.db'));
-  if (file.existsSync()) {
-    await file.delete();
-    print('Database deleted');
   }
 }
 

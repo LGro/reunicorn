@@ -4,11 +4,12 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:reunicorn/data/models/coag_contact.dart';
-import 'package:reunicorn/data/models/contact_location.dart';
-import 'package:reunicorn/data/providers/persistent_storage/sqlite.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reunicorn/data/models/coag_contact.dart';
+import 'package:reunicorn/data/models/contact_location.dart';
+import 'package:reunicorn/data/models/profile_info.dart';
+import 'package:reunicorn/data/providers/legacy/sqlite.dart';
 
 import '../../mocked_providers.dart';
 
@@ -129,9 +130,9 @@ void main() {
         ],
         'events': [],
       },
-      'share_back_d_h_t_key': dummyDhtRecordKey().toString(),
-      'share_back_pub_key': dummyKeyPair().key.toString(),
-      'share_back_d_h_t_writer': dummyKeyPair().toKeyPair().toString(),
+      'share_back_d_h_t_key': fakeDhtRecordKey().toString(),
+      'share_back_pub_key': fakeKeyPair().key.toString(),
+      'share_back_d_h_t_writer': fakeKeyPair().toBareKeyPair().toString(),
       'personal_unique_id': 'unicorn',
       'address_locations': {'0': addressLocationJson},
       'temporary_locations': {'0t': temporaryLocation.toJson()},
@@ -159,7 +160,7 @@ void main() {
     final contactJson = (json.decode(contents) as List<dynamic>).first;
     final migratedJson = await migrateContactAddIdentityAndIntroductionKeyPairs(
       contactJson as Map<String, dynamic>,
-      generateKeyPair: () async => dummyKeyPair(),
+      generateKeyPair: () async => fakeKeyPair(),
     );
     final contact = CoagContact.fromJson(migratedJson);
     expect(contact.name, 'Display Name');

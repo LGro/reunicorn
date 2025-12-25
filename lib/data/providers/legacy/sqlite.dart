@@ -16,37 +16,68 @@ import '../../models/contact_update.dart';
 import '../../models/profile_info.dart';
 import '../../utils.dart';
 
-Map<String, dynamic> migrateToAllTypedTypes(Map<String, dynamic> contactJson) {
+Future<Map<String, dynamic>> migrateProfileJson(
+  Map<String, dynamic> profileJson,
+) async {
+  if (profileJson['main_key_pair'] != null &&
+      !profileJson['main_key_pair'].toString().startsWith('VLD0')) {
+    profileJson['main_key_pair'] = 'VLD0:${profileJson["main_key_pair"]}';
+  }
+  return profileJson;
+}
+
+Future<Map<String, dynamic>> migrateToAllTypedTypes(
+  Map<String, dynamic> contactJson,
+) async {
   final dhtSettings = contactJson['dht_settings'] as Map<String, dynamic>;
-  if (!dhtSettings['theirPublicKey'].toString().startsWith('VLD0')) {
-    dhtSettings['theirPublicKey'] = 'VLD0:${dhtSettings["theirPublicKey"]}';
+  if (dhtSettings['their_public_key'] != null &&
+      !dhtSettings['their_public_key'].toString().startsWith('VLD0')) {
+    dhtSettings['their_public_key'] = 'VLD0:${dhtSettings["their_public_key"]}';
   }
-  if (!dhtSettings['theirNextPublicKey'].toString().startsWith('VLD0')) {
-    dhtSettings['theirNextPublicKey'] =
-        'VLD0:${dhtSettings["theirNextPublicKey"]}';
+  if (dhtSettings['their_next_public_key'] != null &&
+      !dhtSettings['their_next_public_key'].toString().startsWith('VLD0')) {
+    dhtSettings['their_next_public_key'] =
+        'VLD0:${dhtSettings["their_next_public_key"]}';
   }
-  if (!dhtSettings['writerMeSharing'].toString().startsWith('VLD0')) {
-    dhtSettings['writerMeSharing'] = 'VLD0:${dhtSettings["writerMeSharing"]}';
+  if (dhtSettings['writer_me_sharing'] != null &&
+      !dhtSettings['writer_me_sharing'].toString().startsWith('VLD0')) {
+    dhtSettings['writer_me_sharing'] =
+        'VLD0:${dhtSettings["writer_me_sharing"]}';
   }
-  if (!dhtSettings['writerThemSharing'].toString().startsWith('VLD0')) {
-    dhtSettings['writerThemSharing'] =
-        'VLD0:${dhtSettings["writerThemSharing"]}';
+  if (dhtSettings['writer_them_sharing'] != null &&
+      !dhtSettings['writer_them_sharing'].toString().startsWith('VLD0')) {
+    dhtSettings['writer_them_sharing'] =
+        'VLD0:${dhtSettings["writer_them_sharing"]}';
   }
-  if (!dhtSettings['initialSecret'].toString().startsWith('VLD0')) {
-    dhtSettings['initialSecret'] = 'VLD0:${dhtSettings["initialSecret"]}';
+  if (dhtSettings['initial_secret'] != null &&
+      !dhtSettings['initial_secret'].toString().startsWith('VLD0')) {
+    dhtSettings['initial_secret'] = 'VLD0:${dhtSettings["initial_secret"]}';
   }
   contactJson['dht_settings'] = dhtSettings;
 
-  final details = contactJson['details'] as Map<String, dynamic>;
-  if (!details['publicKey'].toString().startsWith('VLD0')) {
-    details['publicKey'] = 'VLD0:${details["publicKey"]}';
+  contactJson['shared_profile'] = null;
+
+  if (contactJson['details'] != null) {
+    final details = contactJson['details'] as Map<String, dynamic>;
+    if (details['public_key'] != null &&
+        !details['public_key'].toString().startsWith('VLD0')) {
+      details['public_key'] = 'VLD0:${details["public_key"]}';
+    }
+    contactJson['details'] = details;
   }
-  contactJson['details'] = details;
 
   // Drop introductions instead of migrating them because they weren't used much
   contactJson['my_previous_introduction_key_pairs'] = <String>[];
   contactJson['introductions_for_them'] = <String>[];
   contactJson['introductions_by_them'] = <String>[];
+
+  contactJson['my_identity'] ??= await generateKeyPairBest().then(
+    (v) => v.toString(),
+  );
+
+  contactJson['my_introduction_key_pair'] ??= await generateKeyPairBest().then(
+    (v) => v.toString(),
+  );
 
   return contactJson;
 }
@@ -157,12 +188,15 @@ class SqliteStorage extends PersistentStorage {
         jsonString = r['contactJson']! as String;
         final contactJson = json.decode(jsonString) as Map<String, dynamic>;
         contacts[id] = CoagContact.fromJson(
-          migrateToAllTypedTypes(
+          await migrateToAllTypedTypes(
             await migrateContactAddIdentityAndIntroductionKeyPairs(contactJson),
           ),
         );
       } catch (e) {
-        DebugLogger().log('Error deserializing contact $id: $e\n$jsonString');
+        DebugLogger().log(
+          'Error deserializing contact $id: $e\n'
+          '${replacePictureWithEmptyInJson(jsonString)}',
+        );
         return {};
       }
     }
@@ -196,13 +230,12 @@ class SqliteStorage extends PersistentStorage {
 
   @override
   Future<void> addUpdate(ContactUpdate update) async => getDatabase().then(
-    (db) async =>
-        db.insert('updates', {'updateJson': json.encode(update.toJson())}),
+    (db) => db.insert('updates', {'updateJson': json.encode(update.toJson())}),
   );
 
   @override
   Future<List<ContactUpdate>> getUpdates() async => getDatabase()
-      .then((db) async => db.query('updates', columns: ['updateJson']))
+      .then((db) => db.query('updates', columns: ['updateJson']))
       .then(
         (results) => results
             .map((r) {
@@ -222,36 +255,33 @@ class SqliteStorage extends PersistentStorage {
       );
 
   @override
-  Future<Map<String, List<String>>> getCircleMemberships() async =>
-      getDatabase()
-          .then(
-            (db) async => db.query(
-              'settings',
-              columns: ['settingsJson'],
-              where: 'id = ?',
-              whereArgs: ['circleMemberships'],
-              limit: 1,
-            ),
-          )
-          .then(
-            (results) => (results.isEmpty)
-                ? {}
-                : (json.decode(results.first['settingsJson']! as String)
-                          as Map<String, dynamic>)
-                      .map(
-                        (key, value) => MapEntry(
-                          key,
-                          (value is List)
-                              ? List<String>.from(value)
-                              : <String>[],
-                        ),
-                      ),
-          );
+  Future<Map<String, List<String>>> getCircleMemberships() => getDatabase()
+      .then(
+        (db) => db.query(
+          'settings',
+          columns: ['settingsJson'],
+          where: 'id = ?',
+          whereArgs: ['circleMemberships'],
+          limit: 1,
+        ),
+      )
+      .then(
+        (results) => (results.isEmpty)
+            ? {}
+            : (json.decode(results.first['settingsJson']! as String)
+                      as Map<String, dynamic>)
+                  .map(
+                    (key, value) => MapEntry(
+                      key,
+                      (value is List) ? List<String>.from(value) : <String>[],
+                    ),
+                  ),
+      );
 
   @override
-  Future<Map<String, String>> getCircles() async => getDatabase()
+  Future<Map<String, String>> getCircles() => getDatabase()
       .then(
-        (db) async => db.query(
+        (db) => db.query(
           'settings',
           columns: ['settingsJson'],
           where: 'id = ?',
@@ -271,9 +301,9 @@ class SqliteStorage extends PersistentStorage {
       );
 
   @override
-  Future<ProfileInfo?> getProfileInfo() async => getDatabase()
+  Future<ProfileInfo?> getProfileInfo() => getDatabase()
       .then(
-        (db) async => db.query(
+        (db) => db.query(
           'settings',
           columns: ['settingsJson'],
           where: 'id = ?',
@@ -282,36 +312,37 @@ class SqliteStorage extends PersistentStorage {
         ),
       )
       .then(
-        (results) => (results.isEmpty)
+        (results) async => (results.isEmpty)
             ? null
             : ProfileInfo.fromJson(
-                json.decode(results.first['settingsJson']! as String)
-                    as Map<String, dynamic>,
+                await migrateProfileJson(
+                  json.decode(results.first['settingsJson']! as String)
+                      as Map<String, dynamic>,
+                ),
               ),
       );
 
   @override
   Future<void> updateCircleMemberships(
     Map<String, List<String>> circleMemberships,
-  ) async => getDatabase().then(
-    (db) async => db.insert('settings', {
+  ) => getDatabase().then(
+    (db) => db.insert('settings', {
       'id': 'circleMemberships',
       'settingsJson': json.encode(circleMemberships),
     }, conflictAlgorithm: ConflictAlgorithm.replace),
   );
 
   @override
-  Future<void> updateCircles(Map<String, String> circles) async =>
-      getDatabase().then(
-        (db) async => db.insert('settings', {
-          'id': 'circles',
-          'settingsJson': json.encode(circles),
-        }, conflictAlgorithm: ConflictAlgorithm.replace),
-      );
+  Future<void> updateCircles(Map<String, String> circles) => getDatabase().then(
+    (db) => db.insert('settings', {
+      'id': 'circles',
+      'settingsJson': json.encode(circles),
+    }, conflictAlgorithm: ConflictAlgorithm.replace),
+  );
 
   @override
-  Future<void> updateProfileInfo(ProfileInfo info) async => getDatabase().then(
-    (db) async => db.insert('settings', {
+  Future<void> updateProfileInfo(ProfileInfo info) => getDatabase().then(
+    (db) => db.insert('settings', {
       'id': 'profileInfo',
       'settingsJson': json.encode(info.toJson()),
     }, conflictAlgorithm: ConflictAlgorithm.replace),

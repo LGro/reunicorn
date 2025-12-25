@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:loggy/loggy.dart';
 
-import '../debug_log.dart';
+import '../veilid_processor/views/developer.dart';
 import 'state_logger.dart';
 
 const LogLevel traceLevel = LogLevel('Trace', 1);
@@ -117,6 +117,7 @@ class CallbackPrinter extends LoggyPrinter {
     } else {
       debugPrintSynchronously(out);
     }
+    globalDebugTerminal.write('$out\n'.replaceAll('\n', '\r\n'));
     // DebugLogger().log(out);
     callback?.call(record);
   }
@@ -130,10 +131,8 @@ class CallbackPrinter extends LoggyPrinter {
 
 CallbackPrinter globalTerminalPrinter = CallbackPrinter();
 
-LogOptions getLogOptions(LogLevel? level) => LogOptions(
-      level ?? LogLevel.all,
-      stackTraceLevel: LogLevel.error,
-    );
+LogOptions getLogOptions(LogLevel? level) =>
+    LogOptions(level ?? LogLevel.all, stackTraceLevel: LogLevel.error);
 
 class RootLoggy implements LoggyType {
   @override
@@ -154,7 +153,9 @@ void initLoggy() {
   if (isTrace) {
     logLevel = traceLevel;
   } else {
-    logLevel = kDebugMode ? LogLevel.debug : LogLevel.info;
+    // TODO: Revert?
+    //logLevel = kDebugMode ? LogLevel.debug : LogLevel.info;
+    logLevel = LogLevel.debug;
   }
 
   Loggy('').level = getLogOptions(logLevel);

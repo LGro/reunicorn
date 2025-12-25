@@ -4,10 +4,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:reunicorn/data/models/contact_introduction.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:veilid/veilid.dart';
+import 'package:reunicorn/data/models/contact_introduction.dart';
 
+import '../../mocked_providers.dart';
 import '../utils.dart';
 
 const jsonAssetDirectory = 'test/assets/models/contact_introduction';
@@ -19,20 +19,11 @@ void main() {
 
     final contactIntro = ContactIntroduction(
       otherName: 'other name',
-      otherPublicKey: dummyFixedEncodedString43(1),
-      publicKey: dummyFixedEncodedString43(2),
-      dhtRecordKeyReceiving: Typed<FixedEncodedString43>(
-        kind: 1447838768,
-        value: dummyFixedEncodedString43(3),
-      ),
-      dhtRecordKeySharing: Typed<FixedEncodedString43>(
-        kind: 1447838768,
-        value: dummyFixedEncodedString43(4),
-      ),
-      dhtWriterSharing: KeyPair(
-        key: dummyFixedEncodedString43(5),
-        secret: dummyFixedEncodedString43(6),
-      ),
+      otherPublicKey: fakeKeyPair(1).key,
+      publicKey: fakeKeyPair(2).key,
+      dhtRecordKeyReceiving: fakeDhtRecordKey(3),
+      dhtRecordKeySharing: fakeDhtRecordKey(4),
+      dhtWriterSharing: fakeKeyPair(5, 6),
     );
 
     final jsonString = json.encode(contactIntro.toJson());

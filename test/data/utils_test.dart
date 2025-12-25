@@ -27,4 +27,16 @@ void main() {
     });
     expect(known, {'3': 'c3'});
   });
+
+  test('replace picture in json', () {
+    expect(
+      replacePictureWithEmptyInJson(
+        '{"shared_profile":{"details":{"picture":[255,216,255,224,0,16]}}}',
+      ),
+      '{"shared_profile":{"details":{"picture":[]}}}',
+    );
+
+    const noPic = '{"no":"picture here"}';
+    expect(replacePictureWithEmptyInJson(noPic), noPic);
+  });
 }

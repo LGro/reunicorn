@@ -5,25 +5,21 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reunicorn/data/models/community.dart';
-import 'package:uuid/uuid.dart';
 import 'package:veilid/veilid.dart';
+
+import '../../mocked_providers.dart';
 
 void main() {
   test('test member record organizer info for me size limit', () {
     final info = CommunityInfo(
       name: 'A@' * (memberNameMaxLength ~/ 2),
-      id: const Uuid().v4(),
       expiresAt: DateTime(9000),
-      secret: SharedSecret.fromString(
-        'VLD0:gnUrDivmlpvzonJ0Wwu2PR3x1Y3m3MtocD0kPWZqSa0',
-      ),
+      secret: fakePsk(0),
       membersInfo: List.filled(
         communityMaxMembers,
         OrganizerProvidedMemberInfo(
           name: 'A' * memberNameMaxLength,
-          recordKey: RecordKey.fromString(
-            'VLD0:gnUrDivmlpvzonJ0Wwu2PR3x1Y3m3MtocD0kPWZqSa0',
-          ),
+          recordKey: fakeDhtRecordKey(),
           comment: 'A' * organizerCommentMaxLength,
         ),
       ),
@@ -44,15 +40,12 @@ void main() {
   });
 
   test('test member record my info for members size limit', () {
+    final recordKey = fakeDhtRecordKey().toString();
     final info = MemberInfo(
       publicKey: PublicKey.fromString('VLD0:'),
       sharingOffers: List.filled(communityMaxMembers - 1, (
-        HashDigest.fromString(
-          'VLD0:gnUrDivmlpvzonJ0Wwu2PR3x1Y3m3MtocD0kPWZqSa0',
-        ),
-        RecordKey.fromString(
-          'VLD0:gnUrDivmlpvzonJ0Wwu2PR3x1Y3m3MtocD0kPWZqSa0',
-        ),
+        HashDigest.fromString(recordKey),
+        RecordKey.fromString(recordKey),
       )),
     );
 

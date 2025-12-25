@@ -1,7 +1,7 @@
 name: reunicorn
 description: Where & how to get in contact, shared securely and privately.
 publish_to: 'none'
-version: "0.2.3+48"
+version: "0.2.4+63"
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
@@ -9,7 +9,7 @@ environment:
 
 dependencies:
   ansicolor: ^2.0.3
-  background_fetch: ^1.4.0
+  # background_fetch: ^1.5.0
   bloc: ^9.0.1
   bloc_advanced_tools: ^0.1.13
   charcode: ^1.4.0
@@ -68,11 +68,13 @@ dependencies:
   file_picker: ^10.3.3
   maplibre_gl: ^0.24.0
   multiple_result: ^5.2.0
+  xterm: ^4.0.0
+  animated_custom_dropdown: ^3.1.1
 
 dev_dependencies:
   bloc_test: ^10.0.0
   build_runner: ^2.4.6
-  flutter_oss_licenses: ^3.0.2
+  dart_pubspec_licenses: ^3.0.15
   flutter_test:
     sdk: flutter
   freezed: ^3.0.0

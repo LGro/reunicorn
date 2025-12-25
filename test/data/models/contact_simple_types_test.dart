@@ -1,9 +1,9 @@
 // Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'package:reunicorn/data/models/coag_contact.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reunicorn/data/models/coag_contact.dart';
 
 void main() {
   test('contact details from address book types to simple maps', () {

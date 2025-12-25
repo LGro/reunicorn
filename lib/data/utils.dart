@@ -43,3 +43,6 @@ Map<String, String> knownContacts(
 
 Future<ProfileInfo?> getProfileInfo(Storage<ProfileInfo> profileStorage) =>
     profileStorage.getAll().then((profiles) => profiles.values.firstOrNull);
+
+String replacePictureWithEmptyInJson(String json) =>
+    json.replaceAll(RegExp(r'"picture":\[[^\]]*\]'), '"picture":[]');

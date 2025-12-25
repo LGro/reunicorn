@@ -1,6 +1,4 @@
 PODS:
-  - background_fetch (1.4.0):
-    - Flutter
   - device_calendar (0.0.1):
     - Flutter
   - DKImagePickerController/Core (4.3.9):
@@ -50,7 +48,7 @@ PODS:
   - integration_test (0.0.1):
     - Flutter
   - MapLibre (6.19.1)
-  - maplibre_gl (0.24.0):
+  - maplibre_gl (0.24.1):
     - Flutter
     - MapLibre (= 6.19.1)
   - mobile_scanner (7.0.0):
@@ -65,9 +63,9 @@ PODS:
     - Flutter
   - receive_sharing_intent (1.8.1):
     - Flutter
-  - SDWebImage (5.21.2):
-    - SDWebImage/Core (= 5.21.2)
-  - SDWebImage/Core (5.21.2)
+  - SDWebImage (5.21.5):
+    - SDWebImage/Core (= 5.21.5)
+  - SDWebImage/Core (5.21.5)
   - share_plus (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
@@ -85,7 +83,6 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
-  - background_fetch (from `.symlinks/plugins/background_fetch/ios`)
   - device_calendar (from `.symlinks/plugins/device_calendar/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
@@ -116,8 +113,6 @@ SPEC REPOS:
     - SwiftyGif
 
 EXTERNAL SOURCES:
-  background_fetch:
-    :path: ".symlinks/plugins/background_fetch/ios"
   device_calendar:
     :path: ".symlinks/plugins/device_calendar/ios"
   file_picker:
@@ -160,7 +155,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/veilid/ios"
 
 SPEC CHECKSUMS:
-  background_fetch: 8277a70524cd49f9bf0fe0aa0c1981ce2dbba9d8
   device_calendar: 9cb33f88a02e19652ec7b8b122ca778f751b1f7b
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
@@ -169,24 +163,24 @@ SPEC CHECKSUMS:
   flutter_contacts: edb1c5ce76aa433e20e6cb14c615f4c0b66e0983
   flutter_local_notifications: ff50f8405aaa0ccdc7dcfb9022ca192e8ad9688f
   geolocator_apple: 66b711889fd333205763b83c9dcf0a57a28c7afd
-  image_picker_ios: c560581cceedb403a6ff17f2f816d7fea1421fc1
+  image_picker_ios: 4f2f91b01abdb52842a8e277617df877e40f905b
   integration_test: 252f60fa39af5e17c3aa9899d35d908a0721b573
   MapLibre: 7f24faba45439f80ccb0f83393c29fa32cb81952
-  maplibre_gl: 9bb2131dc8d65aa289fd062679c5b233f71a6343
+  maplibre_gl: 5144d1208ed5ee49dfb2023670180f9af5517cce
   mobile_scanner: 77265f3dc8d580810e91849d4a0811a90467ed5e
   package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
-  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
+  path_provider_foundation: 0b743cbb62d8e47eab856f09262bb8c1ddcfe6ba
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
   receive_sharing_intent: 79c848f5b045674ad60b9fea3bafea59962ad2c1
-  SDWebImage: 9f177d83116802728e122410fb25ad88f5c7608a
+  SDWebImage: e9c98383c7572d713c1a0d7dd2783b10599b9838
   share_plus: 8b6f8b3447e494cca5317c8c3073de39b3600d1f
-  shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
+  shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
   sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
   system_info_plus: 5393c8da281d899950d751713575fbf91c7709aa
-  url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
+  url_launcher_ios: bb13df5870e8c4234ca12609d04010a21be43dfa
   veilid: 780f35f0d9b15f94b2d126599edb80c8a0ca5320
 
-PODFILE CHECKSUM: 9db2b6547b0ae97fae69049b9590131b8e60db47
+PODFILE CHECKSUM: e214fbb3b95d761a29cde93ee64b8748703138b0
 
 COCOAPODS: 1.16.2

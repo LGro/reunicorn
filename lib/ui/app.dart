@@ -4,7 +4,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:background_fetch/background_fetch.dart';
+// import 'package:background_fetch/background_fetch.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -34,6 +34,7 @@ import '../l10n/app_localizations.dart';
 import '../notification_service.dart';
 import '../tick.dart';
 import '../veilid_init.dart';
+import '../veilid_processor/views/developer.dart';
 import 'circles_list/page.dart';
 import 'contact_details/page.dart';
 import 'contact_list/page.dart';
@@ -347,70 +348,70 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     unawaited(_checkFirstLaunch());
 
     // Configure background fetch
-    unawaited(
-      BackgroundFetch.configure(
-            BackgroundFetchConfig(
-              minimumFetchInterval: 15,
-              stopOnTerminate: false,
-              enableHeadless: true,
-              requiredNetworkType: NetworkType.ANY,
-              requiresBatteryNotLow: true,
-            ),
-            (String taskId) async {
-              // This is the callback function that will be called periodically
-              logDebug('[BackgroundFetch] Event received: $taskId');
+    // unawaited(
+    //   BackgroundFetch.configure(
+    //         BackgroundFetchConfig(
+    //           minimumFetchInterval: 15,
+    //           stopOnTerminate: false,
+    //           enableHeadless: true,
+    //           requiredNetworkType: NetworkType.ANY,
+    //           requiresBatteryNotLow: true,
+    //         ),
+    //         (String taskId) async {
+    //           // This is the callback function that will be called periodically
+    //           logDebug('[BackgroundFetch] Event received: $taskId');
 
-              final log = <String>[];
-              final startTime = DateTime.now();
-              log.add('Start update to and from DHT at $startTime');
+    //           final log = <String>[];
+    //           final startTime = DateTime.now();
+    //           log.add('Start update to and from DHT at $startTime');
 
-              final contactStorage = SqliteStorage<CoagContact>(
-                'contact',
-                contactMigrateFromJson,
-              );
-              final contactRepo = ContactDhtRepository(
-                contactStorage,
-                SqliteStorage<Circle>('circle', circleMigrateFromJson),
-                SqliteStorage<ProfileInfo>('profile', profileMigrateFromJson),
-              );
-              final updateRepo = UpdateRepository(
-                contactStorage,
-                SqliteStorage<ContactUpdate>(
-                  'update',
-                  contactUpdateMigrateFromJson,
-                ),
-                notificationCallback: NotificationService().showNotification,
-              );
+    //           final contactStorage = SqliteStorage<CoagContact>(
+    //             'contact',
+    //             contactMigrateFromJson,
+    //           );
+    //           final contactRepo = ContactDhtRepository(
+    //             contactStorage,
+    //             SqliteStorage<Circle>('circle', circleMigrateFromJson),
+    //             SqliteStorage<ProfileInfo>('profile', profileMigrateFromJson),
+    //           );
+    //           final updateRepo = UpdateRepository(
+    //             contactStorage,
+    //             SqliteStorage<ContactUpdate>(
+    //               'update',
+    //               contactUpdateMigrateFromJson,
+    //             ),
+    //             notificationCallback: NotificationService().showNotification,
+    //           );
 
-              // Await initialization with potential initial DHT updates unless it
-              // exceeds 25s to respect the background task limit of 30s on iOS
-              await Future<void>.delayed(const Duration(seconds: 25));
+    //           // Await initialization with potential initial DHT updates unless it
+    //           // exceeds 25s to respect the background task limit of 30s on iOS
+    //           await Future<void>.delayed(const Duration(seconds: 25));
 
-              log.add('Initialization finished at at ${DateTime.now()}');
+    //           log.add('Initialization finished at at ${DateTime.now()}');
 
-              await Future<void>.delayed(
-                const Duration(seconds: 25) -
-                    DateTime.now().difference(startTime),
-              );
+    //           await Future<void>.delayed(
+    //             const Duration(seconds: 25) -
+    //                 DateTime.now().difference(startTime),
+    //           );
 
-              log.add(
-                'Returning successfully after waiting until ${DateTime.now()}',
-              );
+    //           log.add(
+    //             'Returning successfully after waiting until ${DateTime.now()}',
+    //           );
 
-              logDebug('[BackgroundFetch] $log');
+    //           logDebug('[BackgroundFetch] $log');
 
-              // Signal completion of your task
-              await BackgroundFetch.finish(taskId);
-              return;
-            },
-          )
-          .then((status) {
-            logDebug('[BackgroundFetch] configure success: $status');
-          })
-          .catchError((e) {
-            logDebug('[BackgroundFetch] configure ERROR: $e');
-          }),
-    );
+    //           // Signal completion of your task
+    //           await BackgroundFetch.finish(taskId);
+    //           return;
+    //         },
+    //       )
+    //       .then((status) {
+    //         logDebug('[BackgroundFetch] configure success: $status');
+    //       })
+    //       .catchError((e) {
+    //         logDebug('[BackgroundFetch] configure ERROR: $e');
+    //       }),
+    // );
 
     // BackgroundFetch.scheduleTask(TaskConfig(
     //     taskId: 'com.foo.customtask',
@@ -445,32 +446,32 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      // App goes to background
-      unawaited(
-        BackgroundFetch.start()
-            .then((int status) {
-              logDebug('[BackgroundFetch] start success: $status');
-            })
-            .catchError((e) {
-              logDebug('[BackgroundFetch] start ERROR: $e');
-            }),
-      );
-    } else if (state == AppLifecycleState.resumed) {
-      // App comes to foreground
-      unawaited(
-        BackgroundFetch.stop()
-            .then((int status) {
-              logDebug('[BackgroundFetch] stop success: $status');
-            })
-            .catchError((e) {
-              logDebug('[BackgroundFetch] stop ERROR: $e');
-            }),
-      );
-    }
-  }
+  // @override
+  // void didChangeAppLifecycleState(AppLifecycleState state) {
+  //   if (state == AppLifecycleState.paused) {
+  //     // App goes to background
+  //     unawaited(
+  //       BackgroundFetch.start()
+  //           .then((int status) {
+  //             logDebug('[BackgroundFetch] start success: $status');
+  //           })
+  //           .catchError((e) {
+  //             logDebug('[BackgroundFetch] start ERROR: $e');
+  //           }),
+  //     );
+  //   } else if (state == AppLifecycleState.resumed) {
+  //     // App comes to foreground
+  //     unawaited(
+  //       BackgroundFetch.stop()
+  //           .then((int status) {
+  //             logDebug('[BackgroundFetch] stop success: $status');
+  //           })
+  //           .catchError((e) {
+  //             logDebug('[BackgroundFetch] stop ERROR: $e');
+  //           }),
+  //     );
+  //   }
+  // }
 
   Future<void> onDidReceiveNotificationResponse(
     NotificationResponse notificationResponse,
@@ -497,6 +498,25 @@ class _AppState extends State<App> with WidgetsBindingObserver {
       final globalInit = context.watch<AppGlobalInit?>();
       // Splash screen until we're done with init
       if (globalInit == null) {
+        return MaterialApp(
+          title: 'Reunicorn',
+          debugShowCheckedModeBanner: true,
+          themeMode: ThemeMode.system,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: _seedColor),
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: _seedColor,
+              brightness: Brightness.dark,
+            ),
+            useMaterial3: true,
+          ),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const DeveloperPage(),
+        );
         return const Center(child: CircularProgressIndicator());
       }
       if (_providedNameOnFirstLaunch == null ||

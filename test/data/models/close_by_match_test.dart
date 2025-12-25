@@ -107,7 +107,7 @@ void main() {
           start: DateTime(2000),
           end: DateTime(2001),
           details: '',
-        )
+        ),
       },
       timeThreshold: Duration.zero,
       distanceThresholdKm: 0.1,
@@ -118,16 +118,19 @@ void main() {
 
     expect(matches, hasLength(1));
     expect(
-        matches.first,
-        CloseByMatch(
-            myLocationLabel: 'myAddr1',
-            theirLocationLabel: 'theirAddr1Label',
-            coagContactId: '1',
-            coagContactName: 'contactName',
-            start: DateTime(2000),
-            end: DateTime(2001),
-            offset: Duration.zero,
-            theyKnow: false));
+      matches.first,
+      CloseByMatch(
+        myLocationLabel: 'myAddr1',
+        theirLocationLabel: 'theirAddr1Label',
+        theirLocationId: 'l1',
+        coagContactId: '1',
+        coagContactName: 'contactName',
+        start: DateTime(2000),
+        end: DateTime(2001),
+        offset: Duration.zero,
+        theyKnow: false,
+      ),
+    );
   });
   test('test closeByTemporaryWithTemporary', () {
     final matches = closeByTemporaryWithTemporary(
@@ -139,7 +142,7 @@ void main() {
           start: DateTime(2000),
           end: DateTime(2002),
           details: '',
-        )
+        ),
       },
       theirTemporaryLocations: {
         'theirAddr1': ContactTemporaryLocation(
@@ -149,7 +152,7 @@ void main() {
           start: DateTime(2001),
           end: DateTime(2003),
           details: '',
-        )
+        ),
       },
       timeThreshold: Duration.zero,
       distanceThresholdKm: 0.1,
@@ -160,16 +163,19 @@ void main() {
 
     expect(matches, hasLength(1));
     expect(
-        matches.first,
-        CloseByMatch(
-            myLocationLabel: 'myAddr1Label',
-            theirLocationLabel: 'theirAddr1Label',
-            coagContactId: '1',
-            coagContactName: 'contactName',
-            start: DateTime(2001),
-            end: DateTime(2002),
-            offset: Duration.zero,
-            theyKnow: false));
+      matches.first,
+      CloseByMatch(
+        myLocationLabel: 'myAddr1Label',
+        theirLocationLabel: 'theirAddr1Label',
+        theirLocationId: 'l1',
+        coagContactId: '1',
+        coagContactName: 'contactName',
+        start: DateTime(2001),
+        end: DateTime(2002),
+        offset: Duration.zero,
+        theyKnow: false,
+      ),
+    );
   });
 
   test('test closeByTemporaryWithAddress overlap unknown', () {
@@ -182,7 +188,7 @@ void main() {
           start: DateTime(2000),
           end: DateTime(2001),
           details: '',
-        )
+        ),
       },
       theirAddressLocations: {
         'theirAddr1': const ContactAddressLocation(latitude: 1, longitude: 1),
@@ -196,16 +202,19 @@ void main() {
 
     expect(matches, hasLength(1));
     expect(
-        matches.first,
-        CloseByMatch(
-            myLocationLabel: 'myAddr1Label',
-            theirLocationLabel: 'theirAddr1',
-            coagContactId: '1',
-            coagContactName: 'contactName',
-            start: DateTime(2000),
-            end: DateTime(2001),
-            offset: Duration.zero,
-            theyKnow: false));
+      matches.first,
+      CloseByMatch(
+        myLocationLabel: 'myAddr1Label',
+        theirLocationLabel: 'theirAddr1',
+        theirLocationId: 'l1',
+        coagContactId: '1',
+        coagContactName: 'contactName',
+        start: DateTime(2000),
+        end: DateTime(2001),
+        offset: Duration.zero,
+        theyKnow: false,
+      ),
+    );
   });
 
   test('test closeByTemporaryWithAddress overlap known', () {
@@ -218,7 +227,7 @@ void main() {
           start: DateTime(2000),
           end: DateTime(2001),
           details: '',
-        )
+        ),
       },
       theirAddressLocations: {
         'theirAddr1': const ContactAddressLocation(latitude: 1, longitude: 1),
@@ -232,15 +241,18 @@ void main() {
 
     expect(matches, hasLength(1));
     expect(
-        matches.first,
-        CloseByMatch(
-            myLocationLabel: 'myAddr1Label',
-            theirLocationLabel: 'theirAddr1',
-            coagContactId: '1',
-            coagContactName: 'contactName',
-            start: DateTime(2000),
-            end: DateTime(2001),
-            offset: Duration.zero,
-            theyKnow: true));
+      matches.first,
+      CloseByMatch(
+        myLocationLabel: 'myAddr1Label',
+        theirLocationLabel: 'theirAddr1',
+        theirLocationId: 'l1',
+        coagContactId: '1',
+        coagContactName: 'contactName',
+        start: DateTime(2000),
+        end: DateTime(2001),
+        offset: Duration.zero,
+        theyKnow: true,
+      ),
+    );
   });
 }

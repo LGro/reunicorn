@@ -26,8 +26,10 @@ void main() {
     await recordW.tryWriteBytes(utf8.encode('Hi World!'));
     await recordW.close();
 
-    final recordR = await DHTRecordPool.instance.openRecordRead(recordW.key,
-        debugName: 'reunicorn integration test read');
+    final recordR = await DHTRecordPool.instance.openRecordRead(
+      recordW.key,
+      debugName: 'reunicorn integration test read',
+    );
     final raw = await recordR.get();
     expect(utf8.decode(raw!), 'Hi World!');
   });

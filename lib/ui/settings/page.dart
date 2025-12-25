@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../data/repositories/settings.dart';
 import '../../notification_service.dart';
+import '../../veilid_processor/views/developer.dart';
 import '../privacy_policy.dart';
 import '../terms_and_conditions.dart';
 import '../widgets/veilid_status/widget.dart';
@@ -54,12 +55,24 @@ class SettingsPage extends StatelessWidget {
               onTap: () => Navigator.of(context).push(LicensesPage.route()),
             ),
             ListTile(
-              title: const Text('Show developer debug info'),
+              title: const Text('Show Reunicorn debug info'),
               trailing: const Padding(
                 padding: EdgeInsets.only(right: 20),
                 child: Icon(Icons.arrow_right),
               ),
               onTap: () => Navigator.of(context).push(DebugInfoPage.route()),
+            ),
+            ListTile(
+              title: const Text('Show Veilid debug info'),
+              trailing: const Padding(
+                padding: EdgeInsets.only(right: 20),
+                child: Icon(Icons.arrow_right),
+              ),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<DeveloperPage>(
+                  builder: (_) => const DeveloperPage(),
+                ),
+              ),
             ),
             if (kDebugMode)
               ListTile(

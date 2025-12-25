@@ -9,7 +9,8 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../../debug_log.dart';
 import '../../models/utils.dart';
-import 'memory.dart';
+import '../../utils.dart';
+import 'base.dart';
 
 Future<Database> _getDatabase(String name) async => openDatabase(
   // TODO: Escape name?
@@ -20,17 +21,28 @@ Future<Database> _getDatabase(String name) async => openDatabase(
   version: 1,
 );
 
-class SqliteStorage<T extends JsonEncodable> extends MemoryStorage<T> {
+// TODO: Add in-memory caching
+class SqliteStorage<T extends JsonEncodable> extends Storage<T> {
   final String _name;
   final Future<T> Function(Map<String, dynamic>) _fromJson;
+  final _changeEventStreamController =
+      StreamController<StorageEvent<T>>.broadcast();
+  final _getEventStreamController = StreamController<T>.broadcast();
 
   SqliteStorage(this._name, this._fromJson);
 
   Future<Database> _getDb() => _getDatabase(_name);
 
   @override
+  Stream<StorageEvent<T>> get changeEvents =>
+      _changeEventStreamController.stream.asBroadcastStream();
+
+  @override
+  Stream<T> get getEvents =>
+      _getEventStreamController.stream.asBroadcastStream();
+
+  @override
   Future<void> set(String key, T value) async {
-    await super.set(key, value);
     final json = jsonEncode(value.toJson());
     final db = await _getDb();
     final existing = await get(key);
@@ -44,15 +56,13 @@ class SqliteStorage<T extends JsonEncodable> extends MemoryStorage<T> {
         whereArgs: [key],
       );
     }
+    if (existing != value) {
+      _changeEventStreamController.add(StorageEvent.set(existing, value));
+    }
   }
 
   @override
   Future<T?> get(String key) async {
-    final cached = await super.get(key);
-    if (cached != null) {
-      return cached;
-    }
-
     final db = await _getDb();
     final result = await db.query(
       'data',
@@ -69,7 +79,7 @@ class SqliteStorage<T extends JsonEncodable> extends MemoryStorage<T> {
               jsonDecode(result[0]['json']! as String) as Map<String, dynamic>,
             );
       if (value != null) {
-        super.addToMemory(key, value);
+        _getEventStreamController.add(value);
       }
       return value;
     } catch (e) {
@@ -79,10 +89,6 @@ class SqliteStorage<T extends JsonEncodable> extends MemoryStorage<T> {
 
   @override
   Future<Map<String, T>> getAll() async {
-    if (super.allAvailable) {
-      return super.getAll();
-    }
-
     final db = await _getDb();
     final resultsRaw = await db.query('data', columns: ['id', 'json']);
 
@@ -95,25 +101,30 @@ class SqliteStorage<T extends JsonEncodable> extends MemoryStorage<T> {
         json = r['json']! as String;
         results[id] = await _fromJson(jsonDecode(json) as Map<String, dynamic>);
       } catch (e) {
-        DebugLogger().log('Error getting $_name with $id: $e\n$json');
+        DebugLogger().log(
+          'Error getting $_name with $id: $e\n'
+          '${replacePictureWithEmptyInJson(json)}',
+        );
         // Return empty result to make sure we notice in the UI
         return {};
       }
     }
 
-    super.addAllToMemory(results);
+    for (final value in results.values) {
+      _getEventStreamController.add(value);
+    }
 
     return results;
   }
 
   @override
   Future<void> delete(String key) async {
-    // NOTE: There is a case where if a value for the given key was never
-    //       retrieved before, the stream event won't fire in super.
-    //       One workaround would be to add it to memory before deleting.
-    await super.delete(key);
-    await _getDb().then(
-      (db) => db.delete('data', where: '"id" = ?', whereArgs: [key]),
-    );
+    final removed = await get(key);
+    if (removed != null) {
+      await _getDb().then(
+        (db) => db.delete('data', where: '"id" = ?', whereArgs: [key]),
+      );
+      _changeEventStreamController.add(StorageEvent.delete(removed));
+    }
   }
 }

@@ -3,8 +3,8 @@
 
 import 'dart:typed_data';
 
-import 'package:reunicorn/data/providers/distributed_storage/dht.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reunicorn/data/services/dht.dart';
 
 void main() {
   test('chop payload chunks for payload smaller than chunk size', () {

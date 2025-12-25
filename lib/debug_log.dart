@@ -5,7 +5,7 @@ class DebugLogger {
   factory DebugLogger() => _instance;
   DebugLogger._privateConstructor();
 
-  static final DebugLogger _instance = DebugLogger._privateConstructor();
+  static final _instance = DebugLogger._privateConstructor();
 
   final List<String> _logLines = [];
 

@@ -3,24 +3,17 @@
 
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
-import 'package:reunicorn/data/models/coag_contact.dart';
-import 'package:reunicorn/data/models/contact_location.dart';
-import 'package:reunicorn/data/providers/persistent_storage/sqlite.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:veilid/veilid.dart';
+import 'package:reunicorn/data/models/coag_contact.dart';
+import 'package:reunicorn/data/models/contact_location.dart';
+import 'package:reunicorn/data/providers/legacy/sqlite.dart';
 
+import '../../mocked_providers.dart';
 import '../utils.dart';
 
 const jsonAssetDirectory = 'test/assets/models/coag_contact';
-
-final dummyKeyPair = KeyPair(
-  kind: 0,
-  key: FixedEncodedString43.fromBytes(Uint8List(32)),
-  secret: FixedEncodedString43.fromBytes(Uint8List(32)),
-);
 
 void main() {
   test('details equatable', () {
@@ -46,9 +39,9 @@ void main() {
     final contact = CoagContact(
       coagContactId: '',
       name: 'name',
-      myIdentity: dummyKeyPair,
-      myIntroductionKeyPair: dummyKeyPair,
-      dhtSettings: DhtSettings(myNextKeyPair: dummyKeyPair),
+      myIdentity: fakeKeyPair(),
+      myIntroductionKeyPair: fakeKeyPair(),
+      dhtSettings: DhtSettings(myNextKeyPair: fakeKeyPair()),
       details: const ContactDetails(picture: [1, 2, 3]),
       temporaryLocations: {
         '0': ContactTemporaryLocation(
@@ -76,9 +69,9 @@ void main() {
     final contact = CoagContact(
       coagContactId: '',
       name: 'name',
-      myIdentity: dummyKeyPair,
-      myIntroductionKeyPair: dummyKeyPair,
-      dhtSettings: DhtSettings(myNextKeyPair: dummyKeyPair),
+      myIdentity: fakeKeyPair(),
+      myIntroductionKeyPair: fakeKeyPair(),
+      dhtSettings: DhtSettings(myNextKeyPair: fakeKeyPair()),
       details: const ContactDetails(picture: [1, 2, 3]),
       temporaryLocations: {
         '0': ContactTemporaryLocation(
@@ -130,15 +123,13 @@ void main() {
     expect(
       merged.phones.length,
       2,
-      reason: 'old mansion should be removed and mansion added '
+      reason:
+          'old mansion should be removed and mansion added '
           'alongside existing system phone',
     );
     expect(merged.phones[0].number, '1234-sys');
     expect(merged.phones[1].number, '54321-coag');
-    expect(
-      merged.phones[1].customLabel,
-      'mansion $appManagedLabelSuffix',
-    );
+    expect(merged.phones[1].customLabel, 'mansion $appManagedLabelSuffix');
   });
 
   test('coveredByReunicorn Email with mismatched label still covers', () {
@@ -189,8 +180,8 @@ void main() {
       coagContactId: 'coag-contact-id',
       name: 'Display Name',
       dhtSettings: const DhtSettings(),
-      myIdentity: dummyKeyPair,
-      myIntroductionKeyPair: dummyKeyPair,
+      myIdentity: fakeKeyPair(),
+      myIntroductionKeyPair: fakeKeyPair(),
       details: null,
       theirIdentity: null,
       connectionAttestations: const [],
@@ -199,16 +190,11 @@ void main() {
       temporaryLocations: const {},
       comment: '',
       sharedProfile: null,
-      theirIntroductionKey: PublicKey(
-        kind: 1447838768,
-        value: dummyFixedEncodedString43(2),
-      ),
+      theirIntroductionKey: fakeKeyPair().key,
       myPreviousIntroductionKeyPairs: const [],
       introductionsForThem: const [],
       introductionsByThem: const [],
       origin: null,
-      mostRecentUpdate: null,
-      mostRecentChange: null,
       verified: false,
     );
 
@@ -230,7 +216,7 @@ void main() {
             await jsonDecode(jsonEntry.value) as Map<String, dynamic>;
         final migrated = await migrateContactAddIdentityAndIntroductionKeyPairs(
           jsonData,
-          generateKeyPair: () async => dummyKeyPair,
+          generateKeyPair: () async => fakeKeyPair(),
         );
         CoagContact.fromJson(migrated);
       } catch (e, stackTrace) {
