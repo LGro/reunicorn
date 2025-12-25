@@ -733,7 +733,7 @@ class ContactDhtRepository {
     _contactStorage.changeEvents.listen(
       (e) => e.when(
         set: (oldContact, newContact) =>
-            (oldContact != newContact) ? _updateContact(newContact) : null,
+            (oldContact != newContact) ? updateContact(newContact) : null,
         delete: _onDeleteContact,
       ),
     );
@@ -762,7 +762,7 @@ class ContactDhtRepository {
       veilidNetworkAvailable = true;
       unawaited(
         _contactStorage.getAll().then(
-          (contacts) => contacts.values.map(_updateContact),
+          (contacts) => contacts.values.map(updateContact),
         ),
       );
     }
@@ -773,7 +773,7 @@ class ContactDhtRepository {
   }
 
   /// Update shared profile for contact to DHT, fetch update from them and watch
-  Future<void> _updateContact(CoagContact contact) async {
+  Future<void> updateContact(CoagContact contact) async {
     // First get their updates since this helps with earlier feedback in the app
     if (contact.dhtSettings.recordKeyThemSharing != null) {
       debugPrint(
@@ -785,7 +785,7 @@ class ContactDhtRepository {
         await _watchContact(contact);
 
         // If we've had changes here, save and return; Set will trigger this
-        // _updateContact callback again
+        // updateContact callback again
         if (updatedContact != null &&
             updatedContact.hashCode != contact.hashCode) {
           debugPrint(
@@ -832,7 +832,7 @@ class ContactDhtRepository {
       );
 
       // Since we've had changes here, save and return; Set will trigger this
-      // _updateContact callback again
+      // updateContact callback again
       await _contactStorage.set(contact.coagContactId, contact);
       return;
     }
@@ -857,7 +857,7 @@ class ContactDhtRepository {
         'profile-update',
       );
       // If we've had changes here, save and return; Set will trigger this
-      // _updateContact callback again
+      // updateContact callback again
       await _contactStorage.set(contact.coagContactId, updatedContact);
       return;
     }
@@ -1003,7 +1003,7 @@ class ContactDhtRepository {
     for (final contact in contacts) {
       // Check for incoming updates
       if (contact.dhtSettings.recordKeyThemSharing != null) {
-        await _updateContact(contact);
+        await updateContact(contact);
       }
     }
 

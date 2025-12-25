@@ -32,8 +32,8 @@ class ContactListCubit extends Cubit<ContactListState> {
   _contactsSubscription;
 
   Future<void> fetchData() async {
+    final circles = await circleStorage.getAll();
     if (!isClosed) {
-      final circles = await circleStorage.getAll();
       emit(
         ContactListState(
           ContactListStatus.success,

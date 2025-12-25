@@ -9,6 +9,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 import '../../data/models/circle.dart';
 import '../../data/models/coag_contact.dart';
+import '../../data/repositories/contact_dht.dart';
 import '../../data/repositories/contact_system.dart';
 import '../../data/services/storage/base.dart';
 import '../../data/utils.dart';
@@ -29,6 +30,7 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
   ContactDetailsCubit(
     this._contactStorage,
     this._circleStorage,
+    this._contactDhtRepository,
     String coagContactId,
   ) : super(const ContactDetailsState(ContactDetailsStatus.initial)) {
     _circleSubscription = _circleStorage.changeEvents.listen((_) async {
@@ -74,13 +76,22 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
 
   final Storage<CoagContact> _contactStorage;
   final Storage<Circle> _circleStorage;
+  final ContactDhtRepository _contactDhtRepository;
   late final StreamSubscription<StorageEvent<CoagContact>> _contactSubscription;
   late final StreamSubscription<StorageEvent<Circle>> _circleSubscription;
 
   Future<void> loadContact(String contactId) async {
     final contact = await _contactStorage.get(contactId);
+    final circles = await _circleStorage.getAll();
     if (!isClosed) {
-      emit(state.copyWith(contact: contact));
+      emit(
+        state.copyWith(
+          contact: contact,
+          circles: (contact == null)
+              ? null
+              : circlesForContact(circles.values, contact.coagContactId),
+        ),
+      );
     }
   }
 
@@ -112,14 +123,13 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
     await _contactStorage.set(updatedContact.coagContactId, updatedContact);
   }
 
-  // TODO: This takes looong, can we speed it up?
-  Future<(bool, bool)> refresh() async {
-    // if (state.contact == null) {
-    return (false, false);
-    // }
-    // TODO: Is this still necessary?
-    // _contactDhtRepository.updateContact();
-    // return (results[0], results[1]);
+  // TODO: Is this still necessary?
+  Future<bool> refresh() async {
+    if (!_contactDhtRepository.veilidNetworkAvailable) {
+      return false;
+    }
+    await _contactDhtRepository.updateContact(state.contact!);
+    return true;
   }
 
   bool wasNotIntroduced(CoagContact contact) => state.allContacts.values

@@ -13,6 +13,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/models/circle.dart';
 import '../../data/models/coag_contact.dart';
 import '../../data/models/profile_info.dart';
+import '../../data/repositories/contact_dht.dart';
 import '../../data/services/storage/base.dart';
 import '../../ui/profile/cubit.dart';
 import '../introductions/page.dart';
@@ -152,6 +153,7 @@ class _ContactPageState extends State<ContactPage> {
         create: (context) => ContactDetailsCubit(
           context.read<Storage<CoagContact>>(),
           context.read<Storage<Circle>>(),
+          context.read<ContactDhtRepository>(),
           widget.coagContactId,
         ),
       ),
@@ -198,26 +200,20 @@ class _ContactPageState extends State<ContactPage> {
                 ),
               )
             : RefreshIndicator(
-                onRefresh: () => context.read<ContactDetailsCubit>().refresh().then(
-                  (success) => context.mounted
-                      ? ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              [
-                                if (success.$1)
-                                  'Updated contact successfully.'
-                                else
-                                  'Updating contact failed, try again later.',
-                                if (success.$2)
-                                  'Updated shared information successfully.'
-                                else
-                                  'Updating shared information failed, try again later.',
-                              ].join('\n'),
-                            ),
-                          ),
-                        )
-                      : null,
-                ),
+                onRefresh: () =>
+                    context.read<ContactDetailsCubit>().refresh().then(
+                      (success) => context.mounted
+                          ? ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  success
+                                      ? 'Updated successfully.'
+                                      : 'Update failed, try again later.',
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
                 child: _body(
                   context,
                   state.contact!,
