@@ -28,9 +28,6 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  # added :linkage => :static because of
-  # https://github.com/flutter/flutter/issues/58584#issuecomment-1127418646
-  # for issue with reunicorn/ios/Pods/TSBackgroundFetch/TSBackgroundFetch.xcframework
   use_frameworks!
   use_modular_headers!
 
