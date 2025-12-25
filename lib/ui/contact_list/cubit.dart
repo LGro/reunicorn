@@ -33,14 +33,15 @@ class ContactListCubit extends Cubit<ContactListState> {
 
   Future<void> fetchData() async {
     final circles = await circleStorage.getAll();
+    final contacts = await contactStorage.getAll().then(
+      (contacts) =>
+          contacts.values.toList()..sortBy((c) => c.name.toLowerCase()),
+    );
     if (!isClosed) {
       emit(
         ContactListState(
           ContactListStatus.success,
-          contacts: await contactStorage.getAll().then(
-            (contacts) =>
-                contacts.values.toList()..sortBy((c) => c.name.toLowerCase()),
-          ),
+          contacts: contacts,
           circles: circles,
           circleMemberships: circlesByContactIds(circles.values),
         ),

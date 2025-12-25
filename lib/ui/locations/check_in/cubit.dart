@@ -69,12 +69,13 @@ class CheckInCubit extends Cubit<CheckInState> {
 
   Future<void> initialPermissionsCheck() async {
     final circles = await _circleStorage.getAll();
+    final status = await checkLocationAccess();
     if (!isClosed) {
       emit(
         state.copyWith(
           circles: circles.map((id, c) => MapEntry(id, c.name)),
           circleMemberships: circlesByContactIds(circles.values),
-          status: await checkLocationAccess(),
+          status: status,
         ),
       );
     }

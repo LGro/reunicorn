@@ -23,10 +23,9 @@ class SkelCubit extends Cubit<SkelState> {
   }
 
   Future<void> fetchData() async {
+    final contacts = await _contactStorage.getAll();
     if (!isClosed) {
-      emit(
-        SkelState(SkelStatus.success, contacts: await _contactStorage.getAll()),
-      );
+      emit(SkelState(SkelStatus.success, contacts: contacts));
     }
   }
 

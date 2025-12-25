@@ -36,9 +36,13 @@ Future<Batch> createBatch(
     cryptoKindVLD0,
     DHTSchema.smpl(
       oCnt: 1,
-      members: await Future.wait(subkeyWriters
-          .map((w) => DHTSchemaMember.fromPublicKey(Veilid.instance, w.key, 1))
-          .toList()),
+      members: await Future.wait(
+        subkeyWriters
+            .map(
+              (w) => DHTSchemaMember.fromPublicKey(Veilid.instance, w.key, 1),
+            )
+            .toList(),
+      ),
     ),
     owner: ownerWriter,
   );
@@ -124,9 +128,9 @@ class BatchInvitesCubit extends Cubit<BatchInvitesState> {
 
     // TODO: Persist batch
 
+    final updatedBatches = {...state.batches};
+    updatedBatches[Uuid().v4()] = newBatch;
     if (!isClosed) {
-      final updatedBatches = {...state.batches};
-      updatedBatches[Uuid().v4()] = newBatch;
       emit(state.copyWith(batches: updatedBatches));
     }
   }
@@ -149,8 +153,8 @@ class BatchInvitesCubit extends Cubit<BatchInvitesState> {
   }
 
   Future<void> importBatch(Batch batch) async => emit(
-        state.copyWith(
-          batches: {batch.dhtRecordKey.toString(): batch, ...state.batches},
-        ),
-      );
+    state.copyWith(
+      batches: {batch.dhtRecordKey.toString(): batch, ...state.batches},
+    ),
+  );
 }

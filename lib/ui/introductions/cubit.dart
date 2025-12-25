@@ -28,8 +28,9 @@ class IntroductionsCubit extends Cubit<IntroductionsState> {
   late final StreamSubscription<StorageEvent<CoagContact>> _contactSubscription;
 
   Future<void> fetchData() async {
+    final contacts = await _contactStorage.getAll();
     if (!isClosed) {
-      emit(IntroductionsState(contacts: await _contactStorage.getAll()));
+      emit(IntroductionsState(contacts: contacts));
     }
   }
 

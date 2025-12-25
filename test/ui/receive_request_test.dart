@@ -5,7 +5,6 @@ import 'dart:typed_data';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:reunicorn/data/models/coag_contact.dart';
-import 'package:reunicorn/data/repositories/contacts.dart';
 import 'package:reunicorn/ui/receive_request/cubit.dart';
 import 'package:reunicorn/ui/utils.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,41 +15,37 @@ import '../mocked_providers.dart';
 
 const appUserName = 'App User Name';
 
-FixedEncodedString43 _dummyPsk(int i) =>
-    FixedEncodedString43.fromBytes(Uint8List.fromList(List.filled(32, i)));
-
 ContactsRepository _contactsRepositoryFromContacts(
   List<CoagContact> contacts,
-) =>
-    ContactsRepository(
-      DummyPersistentStorage(
-        Map.fromEntries(contacts.map((c) => MapEntry(c.coagContactId, c))),
+) => ContactsRepository(
+  DummyPersistentStorage(
+    Map.fromEntries(contacts.map((c) => MapEntry(c.coagContactId, c))),
+  ),
+  DummyDistributedStorage(
+    initialDht: {
+      dummyDhtRecordKey(0): CoagContactDHTSchema(
+        details: const ContactDetails(names: {'0': 'DHT 0'}),
+        shareBackDHTKey: dummyDhtRecordKey(9).toString(),
+        shareBackPubKey: dummyKeyPair(9, 9).key.toString(),
       ),
-      DummyDistributedStorage(
-        initialDht: {
-          dummyDhtRecordKey(0): CoagContactDHTSchema(
-            details: const ContactDetails(names: {'0': 'DHT 0'}),
-            shareBackDHTKey: dummyDhtRecordKey(9).toString(),
-            shareBackPubKey: dummyKeyPair(9, 9).key.toString(),
-          ),
-          dummyDhtRecordKey(1): CoagContactDHTSchema(
-            details: const ContactDetails(names: {'1': 'DHT 1'}),
-            shareBackDHTKey: dummyDhtRecordKey(8).toString(),
-            shareBackPubKey: dummyKeyPair(8, 8).key.toString(),
-          ),
-          dummyDhtRecordKey(2): CoagContactDHTSchema(
-            details: const ContactDetails(names: {'2': 'DHT 2'}),
-            shareBackDHTKey: dummyDhtRecordKey(8).toString(),
-            shareBackPubKey: dummyKeyPair(8, 8).key.toString(),
-          ),
-        },
+      dummyDhtRecordKey(1): CoagContactDHTSchema(
+        details: const ContactDetails(names: {'1': 'DHT 1'}),
+        shareBackDHTKey: dummyDhtRecordKey(8).toString(),
+        shareBackPubKey: dummyKeyPair(8, 8).key.toString(),
       ),
-      DummySystemContacts([]),
-      appUserName,
-      initialize: false,
-      generateKeyPair: () async => dummyKeyPair(),
-      generateSharedSecret: () async => dummyPsk(42),
-    );
+      dummyDhtRecordKey(2): CoagContactDHTSchema(
+        details: const ContactDetails(names: {'2': 'DHT 2'}),
+        shareBackDHTKey: dummyDhtRecordKey(8).toString(),
+        shareBackPubKey: dummyKeyPair(8, 8).key.toString(),
+      ),
+    },
+  ),
+  DummySystemContacts([]),
+  appUserName,
+  initialize: false,
+  generateKeyPair: () async => dummyKeyPair(),
+  generateSharedSecret: () async => dummyPsk(42),
+);
 
 void main() {
   group('Test Cubit State Transitions', () {
@@ -92,14 +87,14 @@ void main() {
     blocTest<ReceiveRequestCubit, ReceiveRequestState>(
       'scan qr code',
       build: () => ReceiveRequestCubit(contactsRepository!),
-      act: (c) async => c.scanQrCode(),
+      act: (c) => c.scanQrCode(),
       expect: () => const [ReceiveRequestState(ReceiveRequestStatus.qrcode)],
     );
 
     blocTest<ReceiveRequestCubit, ReceiveRequestState>(
       'emits qrcode state when non-reunicorn code is scanned',
       build: () => ReceiveRequestCubit(contactsRepository!),
-      act: (c) async => c.qrCodeCaptured(
+      act: (c) => c.qrCodeCaptured(
         const mobile_scanner.BarcodeCapture(
           barcodes: [mobile_scanner.Barcode(rawValue: 'not.coag.social')],
         ),
@@ -113,7 +108,7 @@ void main() {
     blocTest<ReceiveRequestCubit, ReceiveRequestState>(
       'emits qrcode state when reunicorn link is scanned but fragment missing',
       build: () => ReceiveRequestCubit(contactsRepository!),
-      act: (c) async => c.qrCodeCaptured(
+      act: (c) => c.qrCodeCaptured(
         const mobile_scanner.BarcodeCapture(
           barcodes: [
             mobile_scanner.Barcode(rawValue: 'https://reunicorn.app/c/'),

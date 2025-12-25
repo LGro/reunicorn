@@ -73,13 +73,13 @@ class LinkToSystemContactCubit extends Cubit<LinkToSystemContactState> {
         withThumbnail: true,
         withAccounts: true,
       ).then((contacts) {
+        final uniqueAccounts = Map.fromEntries(
+          contacts
+              .map((c) => c.accounts)
+              .expand((a) => a)
+              .map((a) => MapEntry(a.name, a)),
+        ).values.toSet();
         if (!isClosed) {
-          final uniqueAccounts = Map.fromEntries(
-            contacts
-                .map((c) => c.accounts)
-                .expand((a) => a)
-                .map((a) => MapEntry(a.name, a)),
-          ).values.toSet();
           emit(
             state.copyWith(
               contacts: contacts,

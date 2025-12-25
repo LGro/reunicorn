@@ -205,6 +205,7 @@ void main() {
       'Alice Sharing',
       reason: 'Name from invite URL',
     );
+    // null
     expect(
       contactAliceFromBobsRepo.details?.names.values.firstOrNull,
       'UserA',

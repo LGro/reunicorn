@@ -29,8 +29,8 @@ class CirclesListCubit extends Cubit<CirclesListState> {
   late final StreamSubscription<StorageEvent<Circle>> _circleSubscription;
 
   Future<void> _fetchData() async {
+    final circles = await circleStorage.getAll();
     if (!isClosed) {
-      final circles = await circleStorage.getAll();
       emit(
         state.copyWith(
           circleMemberships: circlesByContactIds(circles.values),
