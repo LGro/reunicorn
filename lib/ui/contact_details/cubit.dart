@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:veilid/veilid.dart';
 
 import '../../data/models/circle.dart';
 import '../../data/models/coag_contact.dart';
@@ -128,7 +129,11 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
     if (!_contactDhtRepository.veilidNetworkAvailable) {
       return false;
     }
-    await _contactDhtRepository.updateContact(state.contact!);
+    try {
+      await _contactDhtRepository.updateContact(state.contact!);
+    } on VeilidAPIException catch (e) {
+      return false;
+    }
     return true;
   }
 

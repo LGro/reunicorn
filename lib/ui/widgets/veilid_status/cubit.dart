@@ -17,7 +17,7 @@ class VeilidStatusCubit extends Cubit<VeilidStatusState> {
   VeilidStatusCubit() : super(const VeilidStatusState('initial')) {
     timerPersistentStorageRefresh = Timer.periodic(
       const Duration(seconds: 5),
-      (_) async => updateStatus(),
+      (_) => updateStatus(),
     );
 
     unawaited(updateStatus());

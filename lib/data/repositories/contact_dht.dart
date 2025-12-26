@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:loggy/loggy.dart';
 import 'package:veilid_support/veilid_support.dart';
 
+import '../../tools/tools.dart';
 import '../../veilid_processor/models/processor_connection_state.dart';
 import '../../veilid_processor/repository/processor_repository.dart';
 import '../models/circle.dart';
@@ -177,6 +178,7 @@ Future<(PublicKey?, KeyPair?, String?, Uint8List?)> readRecord({
   int maxRetries = 3,
   DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.network,
 }) async {
+  log.debug('RCRN-D READ $recordKey');
   // Derive all available DH secrets to try in addition to the pre shared key
   final domain = utf8.encode('dht');
   final secrets = <(PublicKey?, KeyPair?, SharedSecret)>[
@@ -425,6 +427,7 @@ Future<void> updateRecord(
     return;
   }
   final _recordKey = settings.recordKeyMeSharing!;
+  log.debug('RCRN-D UPDT $_recordKey');
 
   final content = sharedProfile?.toJsonStringWithoutPicture() ?? '';
   final picture = (sharedProfile?.details.picture == null)
@@ -899,8 +902,10 @@ class ContactDhtRepository {
 
       await record.listen(
         // TODO: If we want to make use of data here, we also likely need to pass crypto to decrypt it
-        (record, data, subkeys) =>
-            _watchContactCallback(contact.coagContactId, record.key),
+        (record, data, subkeys) async {
+          log.debug('RCRN-D WTCH ${record.key}');
+          await _watchContactCallback(contact.coagContactId, record.key);
+        },
         localChanges: false,
       );
     } catch (e) {
@@ -947,7 +952,14 @@ class ContactDhtRepository {
 
   Future<void> _onDeleteContact(CoagContact contact) async {
     _watchedRecords.remove(contact.dhtSettings.recordKeyThemSharing);
-    await updateRecord(null, contact.dhtSettings);
+    try {
+      await updateRecord(null, contact.dhtSettings);
+    } on VeilidAPIException catch (e) {
+      debugPrint(
+        'rncrn-dht-on-delete | ${contact.coagContactId.substring(0, 5)} | '
+        'dht-unavailable | $e',
+      );
+    }
   }
 
   // TODO: Can there be race conditions where before all contact updates are

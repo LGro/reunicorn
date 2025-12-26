@@ -8,6 +8,7 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../debug_log.dart';
+import '../../../tools/tools.dart';
 import '../../models/utils.dart';
 import '../../utils.dart';
 import 'base.dart';
@@ -28,10 +29,15 @@ class SqliteStorage<T extends JsonEncodable> extends Storage<T> {
   final _changeEventStreamController =
       StreamController<StorageEvent<T>>.broadcast();
   final _getEventStreamController = StreamController<T>.broadcast();
+  Database? _db;
 
   SqliteStorage(this._name, this._fromJson);
 
-  Future<Database> _getDb() => _getDatabase(_name);
+  Future<Database> _getDb() async {
+    // Only open the database if it isn't already open
+    _db ??= await _getDatabase(_name);
+    return _db!;
+  }
 
   @override
   Stream<StorageEvent<T>> get changeEvents =>
@@ -43,6 +49,7 @@ class SqliteStorage<T extends JsonEncodable> extends Storage<T> {
 
   @override
   Future<void> set(String key, T value) async {
+    log.debug('RCRN-S SET $T $key');
     final json = jsonEncode(value.toJson());
     final db = await _getDb();
     final existing = await get(key);
@@ -63,6 +70,7 @@ class SqliteStorage<T extends JsonEncodable> extends Storage<T> {
 
   @override
   Future<T?> get(String key) async {
+    log.debug('RCRN-S GET $T $key');
     final db = await _getDb();
     final result = await db.query(
       'data',
@@ -89,6 +97,7 @@ class SqliteStorage<T extends JsonEncodable> extends Storage<T> {
 
   @override
   Future<Map<String, T>> getAll() async {
+    log.debug('RCRN-S GET $T ALL');
     final db = await _getDb();
     final resultsRaw = await db.query('data', columns: ['id', 'json']);
 
@@ -119,6 +128,7 @@ class SqliteStorage<T extends JsonEncodable> extends Storage<T> {
 
   @override
   Future<void> delete(String key) async {
+    log.debug('RCRN-S DEL $T $key');
     final removed = await get(key);
     if (removed != null) {
       await _getDb().then(
