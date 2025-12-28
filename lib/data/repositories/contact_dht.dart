@@ -887,9 +887,10 @@ class ContactDhtRepository {
     // TODO: What happens with watch if we're offline? does it watch as soon as we go online or fail?
     // TODO: Do we need to build up a watch queue when offline to then start watch when online?
     final theirRecordKey = contact.dhtSettings.recordKeyThemSharing;
-    if (theirRecordKey == null) {
+    if (theirRecordKey == null || _watchedRecords.contains(theirRecordKey)) {
       return;
     }
+    log.debug('RCRN-D WTCH $theirRecordKey | ATTEMPT');
     _watchedRecords.add(theirRecordKey);
 
     try {
@@ -903,12 +904,13 @@ class ContactDhtRepository {
       await record.listen(
         // TODO: If we want to make use of data here, we also likely need to pass crypto to decrypt it
         (record, data, subkeys) async {
-          log.debug('RCRN-D WTCH ${record.key}');
+          log.debug('RCRN-D WTCH ${record.key} | CALLBACK');
           await _watchContactCallback(contact.coagContactId, record.key);
         },
         localChanges: false,
       );
     } catch (e) {
+      log.debug('RCRN-D WTCH $theirRecordKey | ERROR $e');
       _watchedRecords.remove(theirRecordKey);
     }
   }
