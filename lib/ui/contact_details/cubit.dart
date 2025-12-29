@@ -126,6 +126,7 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
     }
 
     // TODO: Return false faster if DHT unavailable
+    // TODO: Also wait until DHT update successful?
     final isSuccess = await runUntilTimeoutOrSuccess(
       8,
       () => _contactStorage

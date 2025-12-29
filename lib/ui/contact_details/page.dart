@@ -135,7 +135,7 @@ class _ContactPageState extends State<ContactPage> {
                             dialogContext.pop();
                           }
                           if (context.mounted) {
-                            context.goNamed('contacts');
+                            context.pop();
                           }
                         },
                         child: const Text('Delete'),
