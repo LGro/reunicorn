@@ -22,6 +22,7 @@ import 'utils/profile_based.dart';
 part 'cubit.g.dart';
 part 'state.dart';
 
+// TODO: Split out community requests and potentially other request types
 class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
   ReceiveRequestCubit(
     this._contactStorage,
@@ -91,10 +92,7 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
   void scanQrCode() =>
       emit(const ReceiveRequestState(ReceiveRequestStatus.qrcode));
 
-  Future<void> qrCodeCaptured(
-    BarcodeCapture capture, {
-    bool awaitDhtOperations = false,
-  }) async {
+  Future<void> qrCodeCaptured(BarcodeCapture capture) async {
     // Avoid duplicate calls, which apparently happen from the qr detect
     // callback and cause creation of multiple (e.g. 2) contacts
     if (state.status.isProcessing) {
@@ -121,22 +119,13 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
           continue;
         }
         if (path.first == 'c') {
-          return handleDirectSharing(
-            url.fragment,
-            awaitDhtOperations: awaitDhtOperations,
-          );
+          return handleDirectSharing(url.fragment);
         }
         if (path.first == 'p') {
-          return handleProfileLink(
-            url.fragment,
-            awaitDhtOperations: awaitDhtOperations,
-          );
+          return handleProfileLink(url.fragment);
         }
         if (path.first == 'o') {
-          return handleSharingOffer(
-            url.fragment,
-            awaitDhtOperations: awaitDhtOperations,
-          );
+          return handleSharingOffer(url.fragment);
         }
         if (path.first == 'b') {
           return emit(
@@ -153,10 +142,7 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
   }
 
-  Future<void> handleDirectSharing(
-    String fragment, {
-    bool awaitDhtOperations = false,
-  }) async {
+  Future<void> handleDirectSharing(String fragment) async {
     if (!isClosed) {
       emit(const ReceiveRequestState(ReceiveRequestStatus.processing));
     }
@@ -181,10 +167,7 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
   // TODO: Does it make sense to check first if we already know this pubkey?
   // TODO: Allow option to match with existing contact?
   // name~publicKey
-  Future<void> handleProfileLink(
-    String fragment, {
-    bool awaitDhtOperations = false,
-  }) async {
+  Future<void> handleProfileLink(String fragment) async {
     if (!isClosed) {
       emit(const ReceiveRequestState(ReceiveRequestStatus.processing));
     }
@@ -222,10 +205,7 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
   }
 
-  Future<void> handleSharingOffer(
-    String fragment, {
-    bool awaitDhtOperations = false,
-  }) async {
+  Future<void> handleSharingOffer(String fragment) async {
     if (!isClosed) {
       emit(const ReceiveRequestState(ReceiveRequestStatus.processing));
     }

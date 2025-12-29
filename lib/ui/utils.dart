@@ -444,3 +444,18 @@ String colorToHex(Color color, {bool leadingHashSign = true}) =>
     '${(color.r * 255).round().toRadixString(16).padLeft(2, '0')}'
     '${(color.g * 255).round().toRadixString(16).padLeft(2, '0')}'
     '${(color.b * 255).round().toRadixString(16).padLeft(2, '0')}';
+
+Future<bool> runUntilTimeoutOrSuccess(
+  int timeoutSeconds,
+  Future<bool> Function() condition,
+) async {
+  final end = DateTime.now().add(Duration(seconds: timeoutSeconds));
+  while (DateTime.now().isBefore(end)) {
+    final fulfilled = await condition();
+    if (fulfilled) {
+      return true;
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+  }
+  return false;
+}

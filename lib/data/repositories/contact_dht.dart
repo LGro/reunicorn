@@ -716,6 +716,7 @@ Future<CoagContact> updateSharedProfile(
 }
 
 class ContactDhtRepository {
+  final bool _watchLocalChanges;
   final _watchedRecords = <RecordKey>{};
   final Storage<CoagContact> _contactStorage;
   final Storage<Circle> _circleStorage;
@@ -727,8 +728,9 @@ class ContactDhtRepository {
   ContactDhtRepository(
     this._contactStorage,
     this._circleStorage,
-    this._profileStorage,
-  ) {
+    this._profileStorage, [
+    this._watchLocalChanges = false,
+  ]) {
     unawaited(_initVeilidNetworkAvailable());
     ProcessorRepository.instance.streamProcessorConnectionState().listen(
       _veilidConnectionStateChangeCallback,
@@ -907,7 +909,7 @@ class ContactDhtRepository {
           log.debug('RCRN-D WTCH ${record.key} | CALLBACK');
           await _watchContactCallback(contact.coagContactId, record.key);
         },
-        localChanges: false,
+        localChanges: _watchLocalChanges,
       );
     } catch (e) {
       log.debug('RCRN-D WTCH $theirRecordKey | ERROR $e');
@@ -927,11 +929,6 @@ class ContactDhtRepository {
       return null;
     }
     final updatedContact = await getContact(contact, useLocalCache: true);
-
-    //     // Ensure shared profile contains all the updated share and share back
-    //     await updateContactSharedProfile(contact.coagContactId);
-
-    //     unawaited(updateSystemContact(contact.coagContactId));
 
     //     // When it's the first time they acknowledge a completed handshake
     //     // from symmetric to asymmetric encryption, trigger an update of the

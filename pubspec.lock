@@ -66,7 +66,7 @@ packages:
     source: hosted
     version: "2.13.0"
   async_tools:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: async_tools
       sha256: "9611c1efeae7e6d342721d0c2caf2e4783d91fba6a9637d7badfa2dccf8de2a2"
@@ -1833,6 +1833,13 @@ packages:
       relative: true
     source: path
     version: "1.0.2+0"
+  veilid_test:
+    dependency: "direct dev"
+    description:
+      path: "../veilid/veilid-flutter/packages/veilid_test"
+      relative: true
+    source: path
+    version: "0.1.0"
   vm_service:
     dependency: transitive
     description:

@@ -14,6 +14,7 @@ import '../../data/repositories/contact_dht.dart';
 import '../../data/repositories/contact_system.dart';
 import '../../data/services/storage/base.dart';
 import '../../data/utils.dart';
+import '../utils.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
@@ -112,8 +113,31 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
   }
 
   Future<bool> delete(String coagContactId) async {
-    await _contactStorage.delete(coagContactId);
-    return false;
+    final circles = await _circleStorage.getAll();
+    for (final circle in circles.values) {
+      if (circle.memberIds.contains(coagContactId)) {
+        await _circleStorage.set(
+          circle.id,
+          circle.copyWith(
+            memberIds: [...circle.memberIds]..remove(coagContactId),
+          ),
+        );
+      }
+    }
+
+    // TODO: Return false faster if DHT unavailable
+    final isSuccess = await runUntilTimeoutOrSuccess(
+      8,
+      () => _contactStorage
+          .get(coagContactId)
+          .then((c) => c?.sharedProfile?.isEmpty ?? true),
+    );
+
+    if (isSuccess) {
+      await _contactStorage.delete(coagContactId);
+    }
+
+    return isSuccess;
   }
 
   Future<void> unlinkFromSystemContact() async {

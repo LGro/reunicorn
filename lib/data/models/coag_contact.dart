@@ -686,6 +686,22 @@ class CoagContactDHTSchemaV2 extends Equatable {
     introductions,
     ackHandshakeComplete,
   ];
+
+  bool get isEmpty {
+    if (details.emails.isNotEmpty ||
+        details.phones.isNotEmpty ||
+        details.names.isNotEmpty ||
+        details.events.isNotEmpty ||
+        details.websites.isNotEmpty ||
+        details.socialMedias.isNotEmpty ||
+        details.organizations.isNotEmpty) {
+      return false;
+    }
+    if (temporaryLocations.isNotEmpty || addressLocations.isNotEmpty) {
+      return false;
+    }
+    return true;
+  }
 }
 
 CoagContactDHTSchemaV2 schemaV1toV2(CoagContactDHTSchemaV1 old) =>
