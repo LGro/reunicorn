@@ -5,8 +5,8 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'privacy_policy.dart';
-import 'terms_and_conditions.dart';
+import 'legal/privacy_policy.dart';
+import 'legal/terms_and_conditions.dart';
 import 'utils.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -76,6 +76,62 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  RichText(
+                    text: TextSpan(
+                      text:
+                          'By clicking on '
+                          '"${context.loc.welcomeCallToActionButton}" you '
+                          'agree to our ',
+                      style: DefaultTextStyle.of(context).style,
+                      children: [
+                        TextSpan(
+                          text: 'terms and conditions',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            decoration: TextDecoration.underline,
+                          ),
+                          recognizer:
+                              TapGestureRecognizer(
+                                  preAcceptSlopTolerance: 4,
+                                  postAcceptSlopTolerance: 4,
+                                )
+                                ..onTap = () => Navigator.of(context).push(
+                                  MaterialPageRoute<TermsAndConditions>(
+                                    fullscreenDialog: true,
+                                    builder: (context) =>
+                                        const TermsAndConditions(),
+                                  ),
+                                ),
+                        ),
+                        const TextSpan(
+                          text:
+                              ' that govern the use of Reunicorn. You can find '
+                              'information on how we process your personal '
+                              'data in our ',
+                        ),
+                        TextSpan(
+                          text: 'privacy policy',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            decoration: TextDecoration.underline,
+                          ),
+                          recognizer:
+                              TapGestureRecognizer(
+                                  preAcceptSlopTolerance: 4,
+                                  postAcceptSlopTolerance: 4,
+                                )
+                                ..onTap = () => Navigator.of(context).push(
+                                  MaterialPageRoute<PrivacyPolicy>(
+                                    fullscreenDialog: true,
+                                    builder: (context) => const PrivacyPolicy(),
+                                  ),
+                                ),
+                        ),
+                        const TextSpan(text: '.'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   Align(
                     alignment: Alignment.centerRight,
                     child: FilledButton(
@@ -94,46 +150,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     softWrap: true,
                   ),
                   const Expanded(child: SizedBox()),
-                  RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      text: 'These ',
-                      style: DefaultTextStyle.of(context).style,
-                      children: [
-                        TextSpan(
-                          text: 'terms and conditions',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            decoration: TextDecoration.underline,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () => Navigator.of(context).push(
-                              MaterialPageRoute<TermsAndConditions>(
-                                fullscreenDialog: true,
-                                builder: (context) =>
-                                    const TermsAndConditions(),
-                              ),
-                            ),
-                        ),
-                        const TextSpan(text: ' and '),
-                        TextSpan(
-                          text: 'privacy policy',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            decoration: TextDecoration.underline,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () => Navigator.of(context).push(
-                              MaterialPageRoute<PrivacyPolicy>(
-                                fullscreenDialog: true,
-                                builder: (context) => const PrivacyPolicy(),
-                              ),
-                            ),
-                        ),
-                        const TextSpan(text: ' apply.'),
-                      ],
-                    ),
-                  ),
                   // TextField(
                   //   controller: _bootstrapServerController,
                   //   decoration: const InputDecoration(

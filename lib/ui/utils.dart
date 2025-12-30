@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart' as urlLauncher;
 import 'package:veilid/veilid.dart';
 
 import '../data/models/coag_contact.dart';
@@ -458,4 +459,14 @@ Future<bool> runUntilTimeoutOrSuccess(
     await Future<void>.delayed(const Duration(milliseconds: 100));
   }
   return false;
+}
+
+Future<bool> launchUrl(String url) async {
+  final uri = Uri.parse(url);
+  try {
+    return await urlLauncher.launchUrl(uri);
+  } on PlatformException {
+    // TODO: Give feedback?
+    return false;
+  }
 }
