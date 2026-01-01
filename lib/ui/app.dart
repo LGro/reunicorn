@@ -304,7 +304,7 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> with WidgetsBindingObserver {
-  static const platform = MethodChannel('apns_token');
+  static const _apnsChannel = MethodChannel('apns_token');
 
   String? _apnsToken;
 
@@ -316,26 +316,35 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     if (!Platform.isIOS) {
       return;
     }
-    platform.setMethodCallHandler((call) async {
+    _apnsChannel.setMethodCallHandler((call) async {
       if (call.method == 'onApnsToken') {
-        final raw = call.arguments;
+        switch (call.method) {
+          case 'onApnsToken':
+            final raw = call.arguments;
 
-        // Only accept clean String token.
-        if (raw is! String || raw.isEmpty) {
-          debugPrint('Invalid APNs token received: $raw');
-          return;
+            // Only accept clean String token.
+            if (raw is! String || raw.isEmpty) {
+              debugPrint('Invalid APNs token received: $raw');
+              return;
+            }
+
+            if (mounted) {
+              setState(() => _apnsToken = raw);
+            }
+
+            debugPrint('APNs token: $raw');
+          case 'onTokenError':
+            debugPrint('APNs Error: ${call.arguments}');
         }
-
-        if (mounted) {
-          setState(() => _apnsToken = raw);
-        }
-
-        debugPrint('APNs token: $raw');
       }
     });
 
     // Request permission and register for notifications
-    await platform.invokeMethod('register');
+    try {
+      await _apnsChannel.invokeMethod('register');
+    } on PlatformException catch (e) {
+      print("Failed to invoke register: ${e.message}");
+    }
   }
 
   @override
