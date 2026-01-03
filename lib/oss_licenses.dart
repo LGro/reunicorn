@@ -21,6 +21,7 @@ const allDependencies = <Package>[
   _args,
   _async,
   _async_tools,
+  _background_fetch,
   _badges,
   _bloc,
   _bloc_advanced_tools,
@@ -240,6 +241,7 @@ const allDependencies = <Package>[
   _vector_math,
   _veilid,
   _veilid_support,
+  _veilid_test,
   _vm_service,
   _watcher,
   _web,
@@ -258,6 +260,7 @@ const allDependencies = <Package>[
 /// Direct `dependencies`.
 const dependencies = <Package>[
   _ansicolor,
+  _background_fetch,
   _bloc,
   _bloc_advanced_tools,
   _charcode,
@@ -320,7 +323,9 @@ const devDependencies = <Package>[
   _json_serializable,
   _lint_hard,
   _test,
-  _yaml
+  _yaml,
+  _veilid_test,
+  _async_tools
 ];
 
 /// Package license definition.
@@ -1256,6 +1261,41 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.''',
+  );
+
+/// background_fetch 1.5.0
+const _background_fetch = Package(
+    name: 'background_fetch',
+    description: 'Periodic callbacks in the background for both iOS and Android.  Includes Android Headless implementation.',
+    homepage: 'https://github.com/transistorsoft/flutter_background_fetch',
+    authors: [],
+    version: '1.5.0',
+    spdxIdentifiers: ['MIT'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('flutter')],
+    devDependencies: [],
+    license: '''The MIT License (MIT)
+
+Copyright (c) 2018 Transistor Software
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.''',
   );
 
 /// badges 3.1.2
@@ -15466,13 +15506,13 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.''',
   );
 
-/// veilid 0.5.0
+/// veilid 0.5.1
 const _veilid = Package(
     name: 'veilid',
     description: 'Veilid Framework',
     homepage: 'https://veilid.com',
     authors: [],
-    version: '0.5.0',
+    version: '0.5.1',
     spdxIdentifiers: ['MPL-2.0'],
     isMarkdown: true,
     isSdk: true,
@@ -15846,6 +15886,19 @@ const _veilid_support = Package(
     isSdk: true,
     dependencies: [PackageRef('async_tools'), PackageRef('bloc'), PackageRef('bloc_advanced_tools'), PackageRef('buffer'), PackageRef('charcode'), PackageRef('collection'), PackageRef('convert'), PackageRef('equatable'), PackageRef('fast_immutable_collections'), PackageRef('freezed_annotation'), PackageRef('indent'), PackageRef('json_annotation'), PackageRef('loggy'), PackageRef('meta'), PackageRef('path'), PackageRef('path_provider'), PackageRef('protobuf'), PackageRef('veilid')],
     devDependencies: [PackageRef('build_runner'), PackageRef('freezed'), PackageRef('json_serializable'), PackageRef('lint_hard'), PackageRef('test')],
+  );
+
+/// veilid_test 0.1.0
+const _veilid_test = Package(
+    name: 'veilid_test',
+    description: 'A library for testing Veilid applications',
+    authors: [],
+    version: '0.1.0',
+    spdxIdentifiers: [],
+    isMarkdown: false,
+    isSdk: true,
+    dependencies: [PackageRef('async_tools'), PackageRef('veilid')],
+    devDependencies: [PackageRef('lint_hard'), PackageRef('test')],
   );
 
 /// vm_service 15.0.2
@@ -16533,17 +16586,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// reunicorn 0.2.4+58
+/// reunicorn 0.2.4+64
 const _reunicorn = Package(
     name: 'reunicorn',
     description: 'Where & how to get in contact, shared securely and privately.',
     authors: [],
-    version: '0.2.4+58',
+    version: '0.2.4+64',
     spdxIdentifiers: ['MPL-2.0'],
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('ansicolor'), PackageRef('bloc'), PackageRef('bloc_advanced_tools'), PackageRef('charcode'), PackageRef('collection'), PackageRef('equatable'), PackageRef('fast_immutable_collections'), PackageRef('flutter'), PackageRef('flutter_bloc'), PackageRef('flutter_contacts'), PackageRef('flutter_svg'), PackageRef('formz'), PackageRef('freezed_annotation'), PackageRef('geolocator'), PackageRef('go_router'), PackageRef('image_picker'), PackageRef('intl'), PackageRef('image'), PackageRef('json_annotation'), PackageRef('latlong2'), PackageRef('loggy'), PackageRef('mobile_scanner'), PackageRef('path'), PackageRef('path_provider'), PackageRef('permission_handler'), PackageRef('provider'), PackageRef('qr_flutter'), PackageRef('quickalert'), PackageRef('rxdart'), PackageRef('share_plus'), PackageRef('shared_preferences'), PackageRef('sqflite'), PackageRef('url_launcher'), PackageRef('uuid'), PackageRef('veilid'), PackageRef('veilid_support'), PackageRef('flutter_staggered_grid_view'), PackageRef('http'), PackageRef('faker'), PackageRef('flutter_local_notifications'), PackageRef('phone_numbers_parser'), PackageRef('badges'), PackageRef('http_cache_file_store'), PackageRef('receive_sharing_intent'), PackageRef('device_calendar'), PackageRef('file_picker'), PackageRef('maplibre_gl'), PackageRef('multiple_result'), PackageRef('xterm'), PackageRef('animated_custom_dropdown')],
-    devDependencies: [PackageRef('bloc_test'), PackageRef('build_runner'), PackageRef('dart_pubspec_licenses'), PackageRef('freezed'), PackageRef('icons_launcher'), PackageRef('integration_test'), PackageRef('json_serializable'), PackageRef('lint_hard'), PackageRef('test'), PackageRef('yaml')],
+    dependencies: [PackageRef('ansicolor'), PackageRef('background_fetch'), PackageRef('bloc'), PackageRef('bloc_advanced_tools'), PackageRef('charcode'), PackageRef('collection'), PackageRef('equatable'), PackageRef('fast_immutable_collections'), PackageRef('flutter'), PackageRef('flutter_bloc'), PackageRef('flutter_contacts'), PackageRef('flutter_svg'), PackageRef('formz'), PackageRef('freezed_annotation'), PackageRef('geolocator'), PackageRef('go_router'), PackageRef('image_picker'), PackageRef('intl'), PackageRef('image'), PackageRef('json_annotation'), PackageRef('latlong2'), PackageRef('loggy'), PackageRef('mobile_scanner'), PackageRef('path'), PackageRef('path_provider'), PackageRef('permission_handler'), PackageRef('provider'), PackageRef('qr_flutter'), PackageRef('quickalert'), PackageRef('rxdart'), PackageRef('share_plus'), PackageRef('shared_preferences'), PackageRef('sqflite'), PackageRef('url_launcher'), PackageRef('uuid'), PackageRef('veilid'), PackageRef('veilid_support'), PackageRef('flutter_staggered_grid_view'), PackageRef('http'), PackageRef('faker'), PackageRef('flutter_local_notifications'), PackageRef('phone_numbers_parser'), PackageRef('badges'), PackageRef('http_cache_file_store'), PackageRef('receive_sharing_intent'), PackageRef('device_calendar'), PackageRef('file_picker'), PackageRef('maplibre_gl'), PackageRef('multiple_result'), PackageRef('xterm'), PackageRef('animated_custom_dropdown')],
+    devDependencies: [PackageRef('bloc_test'), PackageRef('build_runner'), PackageRef('dart_pubspec_licenses'), PackageRef('freezed'), PackageRef('icons_launcher'), PackageRef('integration_test'), PackageRef('json_serializable'), PackageRef('lint_hard'), PackageRef('test'), PackageRef('yaml'), PackageRef('veilid_test'), PackageRef('async_tools')],
     license: '''Mozilla Public License Version 2.0
 ==================================
 
