@@ -365,6 +365,76 @@ class ProfileCubit extends Cubit<ProfileState> {
     await _profileStorage.set(updatedProfile.id, updatedProfile);
   }
 
+  Future<void> updateMisc(
+    String? oldLabel,
+    String label,
+    String value,
+    List<(String, String, bool)> circlesWithSelection,
+  ) async {
+    if (state.profileInfo == null) {
+      return;
+    }
+
+    final details = {...state.profileInfo!.details.misc}..remove(oldLabel);
+    details[label] = value;
+
+    await createCirclesIfNotExist(
+      circlesWithSelection.map((e) => (e.$1, e.$2)).toList(),
+    );
+
+    final _sharingSettings = {...state.profileInfo!.sharingSettings.misc}
+      ..remove(oldLabel);
+    _sharingSettings[label] = circlesWithSelection
+        .where((e) => e.$3)
+        .map((c) => c.$1)
+        .toList();
+
+    final updatedProfile = state.profileInfo!.copyWith(
+      details: state.profileInfo!.details.copyWith(misc: details),
+      sharingSettings: state.profileInfo!.sharingSettings.copyWith(
+        misc: _sharingSettings,
+      ),
+    );
+    if (!isClosed) {
+      emit(state.copyWith(profileInfo: updatedProfile));
+    }
+    await _profileStorage.set(updatedProfile.id, updatedProfile);
+  }
+
+  Future<void> updateTag(
+    String id,
+    String tag,
+    List<(String, String, bool)> circlesWithSelection,
+  ) async {
+    if (state.profileInfo == null) {
+      return;
+    }
+
+    final tags = {...state.profileInfo!.details.tags};
+    tags[id] = tag.startsWith('#') ? tag : '#$tag';
+
+    await createCirclesIfNotExist(
+      circlesWithSelection.map((e) => (e.$1, e.$2)).toList(),
+    );
+
+    final _sharingSettings = {...state.profileInfo!.sharingSettings.tags};
+    _sharingSettings[id] = circlesWithSelection
+        .where((e) => e.$3)
+        .map((c) => c.$1)
+        .toList();
+
+    final updatedProfile = state.profileInfo!.copyWith(
+      details: state.profileInfo!.details.copyWith(tags: tags),
+      sharingSettings: state.profileInfo!.sharingSettings.copyWith(
+        tags: _sharingSettings,
+      ),
+    );
+    if (!isClosed) {
+      emit(state.copyWith(profileInfo: updatedProfile));
+    }
+    await _profileStorage.set(updatedProfile.id, updatedProfile);
+  }
+
   Future<void> updateAddressLocation(
     String? oldLabel,
     String label,

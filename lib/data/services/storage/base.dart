@@ -1,10 +1,9 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../models/utils.dart';
 
 part 'base.freezed.dart';
 
@@ -14,7 +13,7 @@ sealed class StorageEvent<T> with _$StorageEvent<T> {
   const factory StorageEvent.delete(T value) = DeleteEvent;
 }
 
-abstract class Storage<T extends JsonEncodable> {
+abstract class Storage<T> {
   Future<void> set(String key, T value);
   Future<T?> get(String key);
   Future<Map<String, T>> getAll();

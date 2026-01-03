@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:convert';
@@ -65,19 +65,18 @@ class _LinkToSystemContactPageState extends State<LinkToSystemContactPage> {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 8),
           child: Text(
-            'You can synchronize contacts from Reunicorn to your '
-            "phone's address book. The contact details from Reunicorn "
-            'then get a suffix like "phone [reunicorn]" and will be '
-            'automatically kept up to date. You can still add or change '
-            'all other details of that contact in your address book as '
-            'usual.',
+            "You can synchronize contacts from Reunicorn to your phone's "
+            'address book. The contact details from Reunicorn then get a '
+            'suffix like "phone $appManagedLabelSuffix" and will be '
+            'automatically kept up to date. You can still add or change all '
+            'all other details of that contact in your address book as usual.',
           ),
         ),
         if (!state.permissionGranted)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
             child: ElevatedButton(
-              onPressed: () async =>
+              onPressed: () =>
                   context.read<LinkToSystemContactCubit>().requestPermission(),
               child: const Text('Grant address book access'),
             ),
@@ -110,7 +109,7 @@ class _LinkToSystemContactPageState extends State<LinkToSystemContactPage> {
                   ),
                 const SizedBox(width: 8),
                 FilledButton(
-                  onPressed: () async => context
+                  onPressed: () => context
                       .read<LinkToSystemContactCubit>()
                       .createNewSystemContact(
                         state.contact!.name,
@@ -175,7 +174,7 @@ class _LinkToSystemContactPageState extends State<LinkToSystemContactPage> {
                               child: const Text('Cancel'),
                             ),
                             FilledButton(
-                              onPressed: () async => context
+                              onPressed: () => context
                                   .read<LinkToSystemContactCubit>()
                                   .linkExistingSystemContact(contact.id)
                                   .then(

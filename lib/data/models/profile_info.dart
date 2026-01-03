@@ -1,5 +1,7 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
+
+import 'dart:convert';
 
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -14,13 +16,13 @@ part 'profile_info.g.dart';
 
 @JsonSerializable()
 class ProfileInfo extends Equatable implements JsonEncodable {
-  const ProfileInfo(
+  ProfileInfo(
     this.id, {
     this.details = const ContactDetails(),
     this.pictures = const {},
     this.addressLocations = const {},
     this.temporaryLocations = const {},
-    this.sharingSettings = const ProfileSharingSettings(),
+    this.sharingSettings = ProfileSharingSettings(),
     this.mainKeyPair,
   });
 
@@ -72,7 +74,9 @@ class ProfileInfo extends Equatable implements JsonEncodable {
   ];
 }
 
-Future<ProfileInfo> profileMigrateFromJson(Map<String, dynamic> json) async =>
+Future<ProfileInfo> profileMigrateFromJson(String json) async =>
     ProfileInfo.fromJson(
-      migrateContactAddressLocationFromIntToLabelIndexing(json),
+      migrateContactAddressLocationFromIntToLabelIndexing(
+        jsonDecode(json) as Map<String, dynamic>,
+      ),
     );

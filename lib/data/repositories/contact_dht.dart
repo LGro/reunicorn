@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -500,23 +500,6 @@ Future<void> updateRecord(
   debugPrint('wrote ${_recordKey.toString().substring(5, 10)}');
 }
 
-Map<String, String> filterNames(
-  Map<String, String> names,
-  Map<String, List<String>> settings,
-  Iterable<String> activeCircles,
-) {
-  if (activeCircles.isEmpty) {
-    return {};
-  }
-  final updatedValues = {...names}
-    ..removeWhere(
-      (i, n) =>
-          !(settings[i]?.asSet().intersectsWith(activeCircles.asSet()) ??
-              false),
-    );
-  return updatedValues;
-}
-
 Map<String, T> filterContactDetailsList<T>(
   Map<String, T> values,
   Map<String, List<String>> settings,
@@ -545,6 +528,10 @@ List<int>? selectPicture(
     .firstOrNull
     ?.value;
 
+// TODO(LGro): Replace IDs for names and tags by random new IDs to prevent
+//             shared contact discovery leaks; Alternatively, use List instead
+//             of Map for shared names and other fields that just have IDs for
+//             profile editing purposes; Does the same apply for locations?
 ContactDetails filterDetails(
   Map<String, List<int>> pictures,
   ContactDetails details,
@@ -553,7 +540,7 @@ ContactDetails filterDetails(
 ) => ContactDetails(
   picture: selectPicture(pictures, activeCirclesWithMemberCount),
   publicKey: details.publicKey,
-  names: filterNames(
+  names: filterContactDetailsList(
     details.names,
     settings.names,
     activeCirclesWithMemberCount.keys,
@@ -586,6 +573,16 @@ ContactDetails filterDetails(
   organizations: filterContactDetailsList(
     details.organizations,
     settings.organizations,
+    activeCirclesWithMemberCount.keys,
+  ),
+  misc: filterContactDetailsList(
+    details.misc,
+    settings.misc,
+    activeCirclesWithMemberCount.keys,
+  ),
+  tags: filterContactDetailsList(
+    details.tags,
+    settings.tags,
     activeCirclesWithMemberCount.keys,
   ),
 );

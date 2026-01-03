@@ -1,84 +1,46 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'package:equatable/equatable.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
+part 'profile_sharing_settings.freezed.dart';
 part 'profile_sharing_settings.g.dart';
 
-@JsonSerializable()
-class ProfileSharingSettings extends Equatable {
-  const ProfileSharingSettings({
-    this.names = const {},
-    this.phones = const {},
-    this.emails = const {},
-    this.addresses = const {},
-    this.organizations = const {},
-    this.websites = const {},
-    this.socialMedias = const {},
-    this.events = const {},
-  });
+@freezed
+sealed class ProfileSharingSettings with _$ProfileSharingSettings {
+  const factory ProfileSharingSettings({
+    /// Map of name ID to circle IDs that have access to names
+    @Default({}) Map<String, List<String>> names,
+
+    /// Map of phone label to circle IDs that have access to phones
+    @Default({}) Map<String, List<String>> phones,
+
+    /// Map of email label to circle IDs that have access to emails
+    @Default({}) Map<String, List<String>> emails,
+
+    /// Map of address label to circle IDs that have access to addresses
+    @Default({}) Map<String, List<String>> addresses,
+
+    /// Map of ??? to circle IDs that have access to organizations
+    // TODO: Do organizations even have labels?
+    @Default({}) Map<String, List<String>> organizations,
+
+    /// Map of website label to circle IDs that have access to websites
+    @Default({}) Map<String, List<String>> websites,
+
+    /// Map of social media label to circle IDs that have access to socialMedias
+    @Default({}) Map<String, List<String>> socialMedias,
+
+    /// Map of event label to circle IDs that have access to events
+    @Default({}) Map<String, List<String>> events,
+
+    /// Map of misc ID to circle IDs that have access to misc field
+    @Default({}) Map<String, List<String>> misc,
+
+    /// Map of tag ID to circle IDs that have access to tag
+    @Default({}) Map<String, List<String>> tags,
+  }) = _ProfileSharingSettings;
 
   factory ProfileSharingSettings.fromJson(Map<String, dynamic> json) =>
       _$ProfileSharingSettingsFromJson(json);
-
-  /// Map of name ID to circle IDs that have access to names
-  final Map<String, List<String>> names;
-
-  /// Map of phone label to circle IDs that have access to phones
-  final Map<String, List<String>> phones;
-
-  /// Map of email label to circle IDs that have access to emails
-  final Map<String, List<String>> emails;
-
-  /// Map of address label to circle IDs that have access to addresses
-  final Map<String, List<String>> addresses;
-
-  /// Map of ??? to circle IDs that have access to organizations
-  // TODO: Do organizations even have labels?
-  final Map<String, List<String>> organizations;
-
-  /// Map of website label to circle IDs that have access to websites
-  final Map<String, List<String>> websites;
-
-  /// Map of social media label to circle IDs that have access to socialMedias
-  final Map<String, List<String>> socialMedias;
-
-  /// Map of ??? to circle IDs that have access to events
-  // TODO: Do events even have labels?
-  final Map<String, List<String>> events;
-
-  Map<String, dynamic> toJson() => _$ProfileSharingSettingsToJson(this);
-
-  ProfileSharingSettings copyWith({
-    Map<String, List<String>>? names,
-    Map<String, List<String>>? phones,
-    Map<String, List<String>>? emails,
-    Map<String, List<String>>? addresses,
-    Map<String, List<String>>? organizations,
-    Map<String, List<String>>? websites,
-    Map<String, List<String>>? socialMedias,
-    Map<String, List<String>>? events,
-  }) => ProfileSharingSettings(
-    names: names ?? {...this.names},
-    phones: phones ?? {...this.phones},
-    emails: emails ?? {...this.emails},
-    addresses: addresses ?? {...this.addresses},
-    organizations: organizations ?? {...this.organizations},
-    websites: websites ?? {...this.websites},
-    socialMedias: socialMedias ?? {...this.socialMedias},
-    events: events ?? {...this.events},
-  );
-
-  @override
-  List<Object?> get props => [
-    names,
-    phones,
-    emails,
-    addresses,
-    organizations,
-    websites,
-    socialMedias,
-    events,
-  ];
 }

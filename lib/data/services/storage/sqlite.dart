@@ -1,15 +1,13 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../debug_log.dart';
 import '../../../tools/tools.dart';
-import '../../models/utils.dart';
 import '../../utils.dart';
 import 'base.dart';
 
@@ -23,15 +21,16 @@ Future<Database> _getDatabase(String name) async => openDatabase(
 );
 
 // TODO: Add in-memory caching
-class SqliteStorage<T extends JsonEncodable> extends Storage<T> {
+class SqliteStorage<T> extends Storage<T> {
   final String _name;
-  final Future<T> Function(Map<String, dynamic>) _fromJson;
+  final String Function(T) _toJson;
+  final Future<T> Function(String) _fromJson;
   final _changeEventStreamController =
       StreamController<StorageEvent<T>>.broadcast();
   final _getEventStreamController = StreamController<T>.broadcast();
   Database? _db;
 
-  SqliteStorage(this._name, this._fromJson);
+  SqliteStorage(this._name, this._toJson, this._fromJson);
 
   Future<Database> _getDb() async {
     // Only open the database if it isn't already open
@@ -50,7 +49,7 @@ class SqliteStorage<T extends JsonEncodable> extends Storage<T> {
   @override
   Future<void> set(String key, T value) async {
     log.debug('RCRN-S SET $T $key');
-    final json = jsonEncode(value.toJson());
+    final json = _toJson(value);
     final db = await _getDb();
     final existing = await get(key);
     if (existing == null) {
@@ -83,9 +82,7 @@ class SqliteStorage<T extends JsonEncodable> extends Storage<T> {
     try {
       final value = result.isEmpty
           ? null
-          : await _fromJson(
-              jsonDecode(result[0]['json']! as String) as Map<String, dynamic>,
-            );
+          : await _fromJson(result[0]['json']! as String);
       if (value != null) {
         _getEventStreamController.add(value);
       }
@@ -108,7 +105,7 @@ class SqliteStorage<T extends JsonEncodable> extends Storage<T> {
       try {
         id = r['id']! as String;
         json = r['json']! as String;
-        results[id] = await _fromJson(jsonDecode(json) as Map<String, dynamic>);
+        results[id] = await _fromJson(json);
       } catch (e) {
         DebugLogger().log(
           'Error getting $_name with $id: $e\n'

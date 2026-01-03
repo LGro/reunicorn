@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -933,8 +933,7 @@ List<Widget> detailsList(
                             Text(
                               textScaler: const TextScaler.linear(1.1),
                               style: Theme.of(context).textTheme.bodySmall,
-                              'Circle${(circleNames!.length != 1) ? 's' : ''}: '
-                              '${circleNames.join(', ')}',
+                              'Circles: ${circleNames!.join(', ')}',
                             ),
                         ],
                       ),
@@ -1001,7 +1000,7 @@ Future<void> onAddDetail({
   String? valueHintText,
   String? labelHelperText,
   List<String> existingLabels = const [],
-}) async => showModalBottomSheet<void>(
+}) => showModalBottomSheet<void>(
   context: context,
   isDismissible: true,
   isScrollControlled: true,
@@ -1215,7 +1214,7 @@ class ProfileViewState extends State<ProfileView> {
                     )
                     .values
                     .toList(),
-                onAddOrSave: (label, name, circles) async => context
+                onAddOrSave: (label, name, circles) => context
                     .read<ProfileCubit>()
                     .updateName(label, name, circles)
                     .then(
@@ -1243,11 +1242,10 @@ class ProfileViewState extends State<ProfileView> {
         getDetailSharingSettings: (l) => profileSharingSettings.phones[l],
         circles: circles,
         circleMemberships: circleMemberships,
-        deleteCallback: (label) async =>
-            context.read<ProfileCubit>().updateDetails(
-              contact.copyWith(phones: {...contact.phones}..remove(label)),
-            ),
-        editCallback: (label) async => onEditDetail(
+        deleteCallback: (label) => context.read<ProfileCubit>().updateDetails(
+          contact.copyWith(phones: {...contact.phones}..remove(label)),
+        ),
+        editCallback: (label) => onEditDetail(
           context: context,
           headlineSuffix: context.loc.phoneNumber,
           labelHelperText: 'e.g. home, mobile or work',
@@ -1258,11 +1256,11 @@ class ProfileViewState extends State<ProfileView> {
           circleMemberships: circleMemberships,
           detailSharingSettings: profileSharingSettings.phones,
           onSave: context.read<ProfileCubit>().updatePhone,
-          onDelete: () async => context.read<ProfileCubit>().updateDetails(
+          onDelete: () => context.read<ProfileCubit>().updateDetails(
             contact.copyWith(phones: {...contact.phones}..remove(label)),
           ),
         ),
-        addCallback: () async => onAddDetail(
+        addCallback: () => onAddDetail(
           context: context,
           headlineSuffix: context.loc.phoneNumber,
           labelHelperText: 'e.g. home, mobile or work',
@@ -1270,7 +1268,7 @@ class ProfileViewState extends State<ProfileView> {
           existingLabels: contact.phones.keys.toList(),
           circles: circles,
           circleMemberships: circleMemberships,
-          onAdd: (label, value, circlesWithSelection) async => context
+          onAdd: (label, value, circlesWithSelection) => context
               .read<ProfileCubit>()
               .updatePhone(null, label, value, circlesWithSelection),
         ),
@@ -1290,11 +1288,10 @@ class ProfileViewState extends State<ProfileView> {
         getDetailSharingSettings: (l) => profileSharingSettings.emails[l],
         circles: circles,
         circleMemberships: circleMemberships,
-        deleteCallback: (label) async =>
-            context.read<ProfileCubit>().updateDetails(
-              contact.copyWith(emails: {...contact.emails}..remove(label)),
-            ),
-        editCallback: (label) async => onEditDetail(
+        deleteCallback: (label) => context.read<ProfileCubit>().updateDetails(
+          contact.copyWith(emails: {...contact.emails}..remove(label)),
+        ),
+        editCallback: (label) => onEditDetail(
           context: context,
           headlineSuffix: context.loc.emailAddress,
           labelHelperText: 'e.g. private or work',
@@ -1305,11 +1302,11 @@ class ProfileViewState extends State<ProfileView> {
           circleMemberships: circleMemberships,
           detailSharingSettings: profileSharingSettings.emails,
           onSave: context.read<ProfileCubit>().updateEmail,
-          onDelete: () async => context.read<ProfileCubit>().updateDetails(
+          onDelete: () => context.read<ProfileCubit>().updateDetails(
             contact.copyWith(emails: {...contact.emails}..remove(label)),
           ),
         ),
-        addCallback: () async => onAddDetail(
+        addCallback: () => onAddDetail(
           context: context,
           headlineSuffix: context.loc.emailAddress,
           labelHelperText: 'e.g. private or work',
@@ -1317,7 +1314,7 @@ class ProfileViewState extends State<ProfileView> {
           existingLabels: contact.emails.keys.toList(),
           circles: circles,
           circleMemberships: circleMemberships,
-          onAdd: (label, value, circlesWithSelection) async => context
+          onAdd: (label, value, circlesWithSelection) => context
               .read<ProfileCubit>()
               .updateEmail(null, label, value, circlesWithSelection),
         ),
@@ -1399,7 +1396,7 @@ class ProfileViewState extends State<ProfileView> {
             ),
           ),
         ),
-        addCallback: () async => showModalBottomSheet<void>(
+        addCallback: () => showModalBottomSheet<void>(
           context: context,
           isDismissible: true,
           isScrollControlled: true,
@@ -1461,13 +1458,12 @@ class ProfileViewState extends State<ProfileView> {
         getDetailSharingSettings: (l) => profileSharingSettings.socialMedias[l],
         circles: circles,
         circleMemberships: circleMemberships,
-        deleteCallback: (label) async =>
-            context.read<ProfileCubit>().updateDetails(
-              contact.copyWith(
-                socialMedias: {...contact.socialMedias}..remove(label),
-              ),
-            ),
-        editCallback: (label) async => onEditDetail(
+        deleteCallback: (label) => context.read<ProfileCubit>().updateDetails(
+          contact.copyWith(
+            socialMedias: {...contact.socialMedias}..remove(label),
+          ),
+        ),
+        editCallback: (label) => onEditDetail(
           context: context,
           headlineSuffix: 'social media profile',
           labelHelperText: 'e.g. Signal or Instagram',
@@ -1478,13 +1474,13 @@ class ProfileViewState extends State<ProfileView> {
           circleMemberships: circleMemberships,
           detailSharingSettings: profileSharingSettings.socialMedias,
           onSave: context.read<ProfileCubit>().updateSocialMedia,
-          onDelete: () async => context.read<ProfileCubit>().updateDetails(
+          onDelete: () => context.read<ProfileCubit>().updateDetails(
             contact.copyWith(
               socialMedias: {...contact.socialMedias}..remove(label),
             ),
           ),
         ),
-        addCallback: () async => onAddDetail(
+        addCallback: () => onAddDetail(
           context: context,
           headlineSuffix: 'social media profile',
           valueHintText: '@profileName',
@@ -1492,7 +1488,7 @@ class ProfileViewState extends State<ProfileView> {
           existingLabels: contact.socialMedias.keys.toList(),
           circles: circles,
           circleMemberships: circleMemberships,
-          onAdd: (label, value, circlesWithSelection) async => context
+          onAdd: (label, value, circlesWithSelection) => context
               .read<ProfileCubit>()
               .updateSocialMedia(null, label, value, circlesWithSelection),
         ),
@@ -1512,11 +1508,10 @@ class ProfileViewState extends State<ProfileView> {
         getDetailSharingSettings: (l) => profileSharingSettings.websites[l],
         circles: circles,
         circleMemberships: circleMemberships,
-        deleteCallback: (label) async =>
-            context.read<ProfileCubit>().updateDetails(
-              contact.copyWith(websites: {...contact.websites}..remove(label)),
-            ),
-        editCallback: (label) async => onEditDetail(
+        deleteCallback: (label) => context.read<ProfileCubit>().updateDetails(
+          contact.copyWith(websites: {...contact.websites}..remove(label)),
+        ),
+        editCallback: (label) => onEditDetail(
           context: context,
           headlineSuffix: context.loc.website,
           labelHelperText: 'e.g. blog or portfolio',
@@ -1527,11 +1522,11 @@ class ProfileViewState extends State<ProfileView> {
           circleMemberships: circleMemberships,
           detailSharingSettings: profileSharingSettings.websites,
           onSave: context.read<ProfileCubit>().updateWebsite,
-          onDelete: () async => context.read<ProfileCubit>().updateDetails(
+          onDelete: () => context.read<ProfileCubit>().updateDetails(
             contact.copyWith(websites: {...contact.websites}..remove(label)),
           ),
         ),
-        addCallback: () async => onAddDetail(
+        addCallback: () => onAddDetail(
           context: context,
           headlineSuffix: context.loc.website,
           defaultLabel: (contact.websites.isEmpty) ? 'website' : null,
@@ -1540,7 +1535,7 @@ class ProfileViewState extends State<ProfileView> {
           existingLabels: contact.websites.keys.toList(),
           circles: circles,
           circleMemberships: circleMemberships,
-          onAdd: (label, value, circlesWithSelection) async => context
+          onAdd: (label, value, circlesWithSelection) => context
               .read<ProfileCubit>()
               .updateWebsite(null, label, value, circlesWithSelection),
         ),
@@ -1571,13 +1566,12 @@ class ProfileViewState extends State<ProfileView> {
         circles: circles,
         circleMemberships: circleMemberships,
         hideLabel: true,
-        deleteCallback: (id) async =>
-            context.read<ProfileCubit>().updateDetails(
-              contact.copyWith(
-                organizations: {...contact.organizations}..remove(id),
-              ),
-            ),
-        editCallback: (id) async => showModalBottomSheet<void>(
+        deleteCallback: (id) => context.read<ProfileCubit>().updateDetails(
+          contact.copyWith(
+            organizations: {...contact.organizations}..remove(id),
+          ),
+        ),
+        editCallback: (id) => showModalBottomSheet<void>(
           context: context,
           isScrollControlled: true,
           builder: (buildContext) => DraggableScrollableSheet(
@@ -1633,7 +1627,7 @@ class ProfileViewState extends State<ProfileView> {
             ),
           ),
         ),
-        addCallback: () async => showModalBottomSheet<void>(
+        addCallback: () => showModalBottomSheet<void>(
           context: context,
           isDismissible: true,
           isScrollControlled: true,
@@ -1698,11 +1692,10 @@ class ProfileViewState extends State<ProfileView> {
         getDetailSharingSettings: (l) => profileSharingSettings.events[l],
         circles: circles,
         circleMemberships: circleMemberships,
-        deleteCallback: (label) async =>
-            context.read<ProfileCubit>().updateDetails(
-              contact.copyWith(events: {...contact.events}..remove(label)),
-            ),
-        editCallback: (label) async => showModalBottomSheet<void>(
+        deleteCallback: (label) => context.read<ProfileCubit>().updateDetails(
+          contact.copyWith(events: {...contact.events}..remove(label)),
+        ),
+        editCallback: (label) => showModalBottomSheet<void>(
           context: context,
           isScrollControlled: true,
           builder: (buildContext) => DraggableScrollableSheet(
@@ -1759,7 +1752,7 @@ class ProfileViewState extends State<ProfileView> {
             ),
           ),
         ),
-        addCallback: () async => showModalBottomSheet<void>(
+        addCallback: () => showModalBottomSheet<void>(
           context: context,
           isDismissible: true,
           isScrollControlled: true,
@@ -1805,6 +1798,130 @@ class ProfileViewState extends State<ProfileView> {
           ),
         ),
       ),
+      // MISC / CUSTOM FIELDS
+      ...detailsList(
+        context,
+        contact.misc,
+        title: Text(
+          'Miscellaneous',
+          textScaler: const TextScaler.linear(1.4),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+        getDetailSharingSettings: (l) => profileSharingSettings.misc[l],
+        circles: circles,
+        circleMemberships: circleMemberships,
+        deleteCallback: (label) => context.read<ProfileCubit>().updateDetails(
+          contact.copyWith(misc: {...contact.misc}..remove(label)),
+        ),
+        editCallback: (label) => onEditDetail(
+          context: context,
+          headlineSuffix: 'miscellaneous',
+          labelHelperText: 'e.g. private or work',
+          label: label,
+          existingLabels: contact.misc.keys.toList(),
+          value: contact.misc[label] ?? '',
+          circles: circles,
+          circleMemberships: circleMemberships,
+          detailSharingSettings: profileSharingSettings.misc,
+          onSave: context.read<ProfileCubit>().updateMisc,
+          onDelete: () => context.read<ProfileCubit>().updateDetails(
+            contact.copyWith(misc: {...contact.misc}..remove(label)),
+          ),
+        ),
+        addCallback: () => onAddDetail(
+          context: context,
+          headlineSuffix: 'miscellaneous',
+          labelHelperText: 'e.g. private or work',
+          defaultLabel: (contact.misc.isEmpty) ? 'private' : null,
+          existingLabels: contact.misc.keys.toList(),
+          circles: circles,
+          circleMemberships: circleMemberships,
+          onAdd: (label, value, circlesWithSelection) => context
+              .read<ProfileCubit>()
+              .updateMisc(null, label, value, circlesWithSelection),
+        ),
+      ),
+      // TAGS
+      ...detailsList(
+        context,
+        contact.tags,
+        title: Text(
+          'Tags',
+          textScaler: const TextScaler.linear(1.4),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+        hideLabel: true,
+        getDetailSharingSettings: (l) => profileSharingSettings.tags[l],
+        circles: circles,
+        circleMemberships: circleMemberships,
+        deleteCallback: (label) => context.read<ProfileCubit>().updateDetails(
+          contact.copyWith(tags: {...contact.tags}..remove(label)),
+        ),
+        editCallback: (label) => onEditDetail(
+          context: context,
+          headlineSuffix: 'tag',
+          hideLabel: true,
+          label: label,
+          value: contact.tags[label] ?? '',
+          circles: circles,
+          circleMemberships: circleMemberships,
+          detailSharingSettings: profileSharingSettings.tags,
+          // We don't need to handle label changes here because the id
+          // i.e. label is not exposed for the user to change it
+          onSave: (_, id, value, circlesWithSelection) => context
+              .read<ProfileCubit>()
+              .updateTag(id, value, circlesWithSelection),
+          onDelete: () => context.read<ProfileCubit>().updateDetails(
+            contact.copyWith(tags: {...contact.tags}..remove(label)),
+          ),
+        ),
+        // TODO: Can this also be unified, using the same as other details?
+        addCallback: () => showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          builder: (buildContext) => DraggableScrollableSheet(
+            expand: false,
+            maxChildSize: 0.9,
+            initialChildSize: 0.9,
+            builder: (_, scrollController) => SingleChildScrollView(
+              controller: scrollController,
+              child: EditOrAddWidget(
+                isEditing: false,
+                hideLabel: true,
+                headlineSuffix: 'tag',
+                valueHintText: 'Tag',
+                circles: circles
+                    .map(
+                      (cId, cLabel) => MapEntry(cId, (
+                        cId,
+                        cLabel,
+                        false,
+                        circleMemberships.values
+                            .where((circles) => circles.contains(cId))
+                            .length,
+                      )),
+                    )
+                    .values
+                    .toList(),
+                onAddOrSave: (label, tag, circles) => context
+                    .read<ProfileCubit>()
+                    .updateTag(label, tag, circles)
+                    .then(
+                      (_) => (buildContext.mounted)
+                          ? Navigator.of(buildContext).pop()
+                          : null,
+                    ),
+              ),
+            ),
+          ),
+        ),
+      ),
       // PICTURES / AVATARS
       CirclesWithAvatarWidget(
         pictures: pictures,
@@ -1829,7 +1946,7 @@ class ProfileViewState extends State<ProfileView> {
             ),
           ),
         ),
-        editCallback: (circleId, picture) async =>
+        editCallback: (circleId, picture) =>
             context.read<ProfileCubit>().updateAvatar(circleId, picture),
         deleteCallback: context.read<ProfileCubit>().removeAvatar,
       ),

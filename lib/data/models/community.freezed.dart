@@ -209,7 +209,7 @@ return $default(_that.recordKey,_that.name,_that.comment);case _:
 @JsonSerializable()
 
 class _OrganizerProvidedMemberInfo implements OrganizerProvidedMemberInfo {
-   _OrganizerProvidedMemberInfo({required this.recordKey, required this.name, this.comment});
+  const _OrganizerProvidedMemberInfo({required this.recordKey, required this.name, this.comment});
   factory _OrganizerProvidedMemberInfo.fromJson(Map<String, dynamic> json) => _$OrganizerProvidedMemberInfoFromJson(json);
 
 /// The DHT record where others can find connection and sharing info
@@ -482,7 +482,7 @@ return $default(_that.name,_that.secret,_that.membersInfo,_that.expiresAt);case 
 @JsonSerializable()
 
 class _CommunityInfo implements CommunityInfo {
-   _CommunityInfo({required this.name, required this.secret, required final  List<OrganizerProvidedMemberInfo> membersInfo, this.expiresAt}): _membersInfo = membersInfo;
+  const _CommunityInfo({required this.name, required this.secret, required final  List<OrganizerProvidedMemberInfo> membersInfo, this.expiresAt}): _membersInfo = membersInfo;
   factory _CommunityInfo.fromJson(Map<String, dynamic> json) => _$CommunityInfoFromJson(json);
 
 /// Name of the community
@@ -769,7 +769,7 @@ return $default(_that.publicKey,_that.sharingOffers);case _:
 @JsonSerializable()
 
 class _MemberInfo implements MemberInfo {
-   _MemberInfo({required this.publicKey, required final  List<(HashDigest, RecordKey)> sharingOffers}): _sharingOffers = sharingOffers;
+  const _MemberInfo({required this.publicKey, required final  List<(HashDigest, RecordKey)> sharingOffers}): _sharingOffers = sharingOffers;
   factory _MemberInfo.fromJson(Map<String, dynamic> json) => _$MemberInfoFromJson(json);
 
 /// The public key other community members are supposed to use for
@@ -1063,7 +1063,7 @@ return $default(_that.name,_that.communityUuid,_that.communitySecret,_that.expir
 @JsonSerializable()
 
 class _ManagedCommunity implements ManagedCommunity {
-   _ManagedCommunity({required this.name, required this.communityUuid, required this.communitySecret, this.expiresAt, final  List<(OrganizerProvidedMemberInfo, KeyPair)> membersWithWriters = const []}): _membersWithWriters = membersWithWriters;
+  const _ManagedCommunity({required this.name, required this.communityUuid, required this.communitySecret, this.expiresAt, final  List<(OrganizerProvidedMemberInfo, KeyPair)> membersWithWriters = const []}): _membersWithWriters = membersWithWriters;
   factory _ManagedCommunity.fromJson(Map<String, dynamic> json) => _$ManagedCommunityFromJson(json);
 
 /// Name of the community
@@ -1355,7 +1355,7 @@ return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.co
 @JsonSerializable()
 
 class _Member implements Member {
-   _Member({required this.communityRecordKey, required this.infoRecordKey, required this.name, this.comment, this.mostRecentCommentUpdate, this.publicKey, this.sharingRecordKey, this.mySharingRecordKey});
+  const _Member({required this.communityRecordKey, required this.infoRecordKey, required this.name, this.comment, this.mostRecentCommentUpdate, this.publicKey, this.sharingRecordKey, this.mySharingRecordKey});
   factory _Member.fromJson(Map<String, dynamic> json) => _$MemberFromJson(json);
 
 @override final  RecordKey communityRecordKey;
@@ -1654,7 +1654,7 @@ return $default(_that.recordKey,_that.recordWriter,_that.members,_that.mostRecen
 @JsonSerializable()
 
 class _Community implements Community {
-   _Community({required this.recordKey, required this.recordWriter, required final  List<Member> members, required this.mostRecentUpdate, this.info}): _members = members;
+  const _Community({required this.recordKey, required this.recordWriter, required final  List<Member> members, required this.mostRecentUpdate, this.info}): _members = members;
   factory _Community.fromJson(Map<String, dynamic> json) => _$CommunityFromJson(json);
 
 /// Key of my community member DHT record

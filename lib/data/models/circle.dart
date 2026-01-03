@@ -1,5 +1,7 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
+
+import 'dart:convert';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -24,8 +26,8 @@ sealed class Circle with _$Circle implements JsonEncodable {
   factory Circle.fromJson(Map<String, dynamic> json) => _$CircleFromJson(json);
 }
 
-Future<Circle> circleMigrateFromJson(Map<String, dynamic> json) async =>
-    Circle.fromJson(json);
+Future<Circle> circleMigrateFromJson(String json) async =>
+    Circle.fromJson(jsonDecode(json) as Map<String, dynamic>);
 
 Map<String, List<String>> circlesByContactIds(Iterable<Circle> circles) {
   final result = <String, List<String>>{};

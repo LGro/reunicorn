@@ -1,7 +1,8 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:background_fetch/background_fetch.dart';
@@ -23,9 +24,11 @@ import '../data/models/contact_location.dart';
 import '../data/models/contact_update.dart';
 import '../data/models/profile_info.dart';
 import '../data/models/profile_sharing_settings.dart';
+import '../data/models/setting.dart';
 import '../data/repositories/contact_dht.dart';
 import '../data/repositories/contact_system.dart';
 import '../data/repositories/contact_update.dart';
+import '../data/repositories/notifications.dart';
 import '../data/repositories/settings.dart';
 import '../data/services/storage/base.dart';
 import '../data/services/storage/sqlite.dart';
@@ -286,6 +289,7 @@ class App extends StatefulWidget {
     this.circleStorage,
     this.updateStorage,
     this.communityStorage,
+    this.settingStorage,
     this.contactDhtRepository,
     this.systemContactRepository, {
     super.key,
@@ -296,6 +300,7 @@ class App extends StatefulWidget {
   final Storage<Circle> circleStorage;
   final Storage<ContactUpdate> updateStorage;
   final Storage<Community> communityStorage;
+  final Storage<Setting> settingStorage;
   final ContactDhtRepository contactDhtRepository;
   final SystemContactRepository systemContactRepository;
 
@@ -306,12 +311,11 @@ class App extends StatefulWidget {
 class _AppState extends State<App> with WidgetsBindingObserver {
   static const _apnsChannel = MethodChannel('apns_token');
 
-  String? _apnsToken;
-
   String? _providedNameOnFirstLaunch;
 
   final _seedColor = Colors.indigo;
 
+  // TODO: Move to service or repository
   Future<void> _initAPNs() async {
     if (!Platform.isIOS) {
       return;
@@ -324,13 +328,17 @@ class _AppState extends State<App> with WidgetsBindingObserver {
 
             // Only accept clean String token.
             if (raw is! String || raw.isEmpty) {
-              debugPrint('Invalid APNs token received: $raw');
+              debugPrint('APNs invalid token received: $raw');
               return;
             }
 
-            if (mounted) {
-              setState(() => _apnsToken = raw);
-            }
+            await widget.settingStorage.set(
+              apnsSettingKey,
+              Setting({
+                'token': raw,
+                'timestamp': DateTime.now().toUtc().toIso8601String(),
+              }),
+            );
 
             debugPrint('APNs token: $raw');
           case 'onTokenError':
@@ -343,7 +351,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     try {
       await _apnsChannel.invokeMethod('register');
     } on PlatformException catch (e) {
-      print("Failed to invoke register: ${e.message}");
+      debugPrint('APNs failed to invoke register: ${e.message}');
     }
   }
 
@@ -376,19 +384,29 @@ class _AppState extends State<App> with WidgetsBindingObserver {
 
               final contactStorage = SqliteStorage<CoagContact>(
                 'contact',
+                (v) => jsonEncode(v.toJson()),
                 contactMigrateFromJson,
               );
               // ignore: unused_local_variable we just need init and listen
               final contactRepo = ContactDhtRepository(
                 contactStorage,
-                SqliteStorage<Circle>('circle', circleMigrateFromJson),
-                SqliteStorage<ProfileInfo>('profile', profileMigrateFromJson),
+                SqliteStorage<Circle>(
+                  'circle',
+                  (v) => jsonEncode(v.toJson()),
+                  circleMigrateFromJson,
+                ),
+                SqliteStorage<ProfileInfo>(
+                  'profile',
+                  (v) => jsonEncode(v.toJson()),
+                  profileMigrateFromJson,
+                ),
               );
               // ignore: unused_local_variable we just need init and listen
               final updateRepo = UpdateRepository(
                 contactStorage,
                 SqliteStorage<ContactUpdate>(
                   'update',
+                  (v) => jsonEncode(v.toJson()),
                   contactUpdateMigrateFromJson,
                 ),
                 notificationCallback: NotificationService().showNotification,

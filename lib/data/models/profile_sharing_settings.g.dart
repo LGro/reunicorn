@@ -6,9 +6,9 @@ part of 'profile_sharing_settings.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-ProfileSharingSettings _$ProfileSharingSettingsFromJson(
+_ProfileSharingSettings _$ProfileSharingSettingsFromJson(
   Map<String, dynamic> json,
-) => ProfileSharingSettings(
+) => _ProfileSharingSettings(
   names:
       (json['names'] as Map<String, dynamic>?)?.map(
         (k, e) =>
@@ -57,10 +57,22 @@ ProfileSharingSettings _$ProfileSharingSettingsFromJson(
             MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
       ) ??
       const {},
+  misc:
+      (json['misc'] as Map<String, dynamic>?)?.map(
+        (k, e) =>
+            MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
+      ) ??
+      const {},
+  tags:
+      (json['tags'] as Map<String, dynamic>?)?.map(
+        (k, e) =>
+            MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
+      ) ??
+      const {},
 );
 
 Map<String, dynamic> _$ProfileSharingSettingsToJson(
-  ProfileSharingSettings instance,
+  _ProfileSharingSettings instance,
 ) => <String, dynamic>{
   'names': instance.names,
   'phones': instance.phones,
@@ -70,4 +82,6 @@ Map<String, dynamic> _$ProfileSharingSettingsToJson(
   'websites': instance.websites,
   'social_medias': instance.socialMedias,
   'events': instance.events,
+  'misc': instance.misc,
+  'tags': instance.tags,
 };

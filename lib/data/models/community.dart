@@ -1,5 +1,7 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
+
+import 'dart:convert';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:veilid_support/veilid_support.dart';
@@ -31,7 +33,7 @@ const communityNameMaxLength = 50;
 
 @freezed
 sealed class OrganizerProvidedMemberInfo with _$OrganizerProvidedMemberInfo {
-  factory OrganizerProvidedMemberInfo({
+  const factory OrganizerProvidedMemberInfo({
     /// The DHT record where others can find connection and sharing info
     required RecordKey recordKey,
 
@@ -49,7 +51,7 @@ sealed class OrganizerProvidedMemberInfo with _$OrganizerProvidedMemberInfo {
 
 @freezed
 sealed class CommunityInfo with _$CommunityInfo {
-  factory CommunityInfo({
+  const factory CommunityInfo({
     /// Name of the community
     required String name,
 
@@ -69,7 +71,7 @@ sealed class CommunityInfo with _$CommunityInfo {
 
 @freezed
 sealed class MemberInfo with _$MemberInfo {
-  factory MemberInfo({
+  const factory MemberInfo({
     /// The public key other community members are supposed to use for
     /// encrypting the initial data sharing exchange, after which this key is
     /// supposed to be and keep being rotated to a contact specific key.
@@ -91,7 +93,7 @@ sealed class MemberInfo with _$MemberInfo {
 
 @freezed
 sealed class ManagedCommunity with _$ManagedCommunity {
-  factory ManagedCommunity({
+  const factory ManagedCommunity({
     /// Name of the community
     required String name,
 
@@ -121,7 +123,7 @@ sealed class ManagedCommunity with _$ManagedCommunity {
 // origin an all relevant info. So just including the sharing record is enough.
 @freezed
 sealed class Member with _$Member {
-  factory Member({
+  const factory Member({
     required RecordKey communityRecordKey,
     required RecordKey infoRecordKey,
 
@@ -150,7 +152,7 @@ sealed class Member with _$Member {
 
 @freezed
 sealed class Community with _$Community implements JsonEncodable {
-  factory Community({
+  const factory Community({
     /// Key of my community member DHT record
     required RecordKey recordKey,
 
@@ -171,8 +173,8 @@ sealed class Community with _$Community implements JsonEncodable {
       _$CommunityFromJson(json);
 }
 
-Future<Community> communityMigrateFromJson(Map<String, dynamic> json) async =>
-    Community.fromJson(json);
+Future<Community> communityMigrateFromJson(String json) async =>
+    Community.fromJson(jsonDecode(json) as Map<String, dynamic>);
 
 // }
 // Update community info

@@ -9,12 +9,15 @@ import '../../../data/models/contact_location.dart';
 import '../../profile/page.dart';
 import '../../utils.dart';
 
-Iterable<Widget> sharedProfile(
-  BuildContext context,
-  ContactDetails details,
-  Map<String, ContactAddressLocation> addressLocations,
-) =>
-    [
+class SharedProfile extends StatelessWidget {
+  const SharedProfile(this._details, this._addressLocations, {super.key});
+
+  final ContactDetails _details;
+  final Map<String, ContactAddressLocation> _addressLocations;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
       const Padding(
         padding: EdgeInsets.only(top: 8, left: 12, right: 12, bottom: 8),
         child: Row(
@@ -25,34 +28,34 @@ Iterable<Widget> sharedProfile(
           ],
         ),
       ),
-      if (details.picture != null)
+      if (_details.picture != null)
         Center(
           child: Padding(
             padding: const EdgeInsets.only(left: 12, top: 4, right: 12),
-            child: roundPictureOrPlaceholder(details.picture, radius: 48),
+            child: roundPictureOrPlaceholder(_details.picture, radius: 48),
           ),
         ),
-      if (details.names.isNotEmpty)
-        ...detailsList(context, details.names, hideLabel: true),
-      if (details.phones.isNotEmpty) ...detailsList(context, details.phones),
-      if (details.emails.isNotEmpty) ...detailsList(context, details.emails),
-      if (addressLocations.isNotEmpty)
+      if (_details.names.isNotEmpty)
+        ...detailsList(context, _details.names, hideLabel: true),
+      if (_details.phones.isNotEmpty) ...detailsList(context, _details.phones),
+      if (_details.emails.isNotEmpty) ...detailsList(context, _details.emails),
+      if (_addressLocations.isNotEmpty)
         ...detailsList(
           context,
-          addressLocations.map(
+          _addressLocations.map(
             (label, address) =>
                 MapEntry(label, commasToNewlines(address.address ?? '')),
           ),
         ),
-      if (details.socialMedias.isNotEmpty)
-        ...detailsList(context, details.socialMedias),
-      if (details.websites.isNotEmpty)
-        ...detailsList(context, details.websites),
-      if (details.organizations.isNotEmpty)
+      if (_details.socialMedias.isNotEmpty)
+        ...detailsList(context, _details.socialMedias),
+      if (_details.websites.isNotEmpty)
+        ...detailsList(context, _details.websites),
+      if (_details.organizations.isNotEmpty)
         ...detailsList(
           context,
           hideLabel: true,
-          details.organizations.map(
+          _details.organizations.map(
             (id, org) => MapEntry(
               id,
               [
@@ -63,10 +66,10 @@ Iterable<Widget> sharedProfile(
             ),
           ),
         ),
-      if (details.events.isNotEmpty)
+      if (_details.events.isNotEmpty)
         ...detailsList(
           context,
-          details.events.map(
+          _details.events.map(
             (label, date) => MapEntry(
               label,
               DateFormat.yMd(
@@ -75,6 +78,10 @@ Iterable<Widget> sharedProfile(
             ),
           ),
         ),
+      if (_details.misc.isNotEmpty) ...detailsList(context, _details.misc),
+      if (_details.tags.isNotEmpty)
+        ...detailsList(context, _details.tags, hideLabel: true),
+
       const Padding(
         padding: EdgeInsets.only(left: 12, right: 12, bottom: 8, top: 4),
         child: Text(
@@ -82,7 +89,7 @@ Iterable<Widget> sharedProfile(
           'circles you added them to.',
         ),
       ),
-      // TODO: Check if opted out
+      // TODO(LGro): Check if opted out
       const Padding(
         padding: EdgeInsets.only(left: 12, right: 12, bottom: 8, top: 4),
         child: Text(
@@ -92,4 +99,6 @@ Iterable<Widget> sharedProfile(
           'contact shared with them.',
         ),
       ),
-    ];
+    ],
+  );
+}

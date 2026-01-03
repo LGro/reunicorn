@@ -246,13 +246,13 @@ class _ContactPageState extends State<ContactPage> {
           ),
 
         // Contact details
-        ...contactDetailsAndLocations(context, contact),
+        ContactDetailsAndLocations(contact),
 
         // Sharing circle settings and shared profile
         Padding(
           padding: const EdgeInsets.only(left: 12, top: 16, right: 12),
           child: Text(
-            'Connection settings',
+            'Sharing settings',
             textScaler: const TextScaler.linear(1.4),
             style: TextStyle(
               fontWeight: FontWeight.w600,
@@ -262,7 +262,7 @@ class _ContactPageState extends State<ContactPage> {
         ),
         Padding(
           padding: const EdgeInsets.only(left: 4, top: 4, right: 4),
-          child: _sharingSettings(context, contact, circles),
+          child: SharingSettings(contact, circles),
         ),
 
         Padding(
@@ -341,7 +341,7 @@ class _ContactPageState extends State<ContactPage> {
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: FilledButton.tonal(
-                          onPressed: () async => Navigator.of(context).push(
+                          onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute<IntroductionsPage>(
                               builder: (context) => const IntroductionsPage(),
                             ),
@@ -380,7 +380,7 @@ class _ContactPageState extends State<ContactPage> {
               ),
               child: TextFormField(
                 key: const Key('contactDetailsNoteInput'),
-                onTapOutside: (event) async => context
+                onTapOutside: (event) => context
                     .read<ContactDetailsCubit>()
                     .updateComment(_contactCommentController.text),
                 controller: _contactCommentController..text = contact.comment,
@@ -407,7 +407,7 @@ class _ContactPageState extends State<ContactPage> {
           padding: const EdgeInsets.only(left: 16, top: 12, right: 16),
           child: (contact.systemContactId == null)
               ? FilledButton.tonal(
-                  onPressed: () async => Navigator.of(context).push(
+                  onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<LinkToSystemContactPage>(
                       builder: (_) => LinkToSystemContactPage(
                         coagContactId: contact.coagContactId,
@@ -508,50 +508,53 @@ Widget _paddedDivider() => const Padding(
   child: Divider(),
 );
 
-Widget _sharingSettings(
-  BuildContext context,
-  CoagContact contact,
-  Map<String, String> circles,
-) => Card(
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      CirclesCard(contact.coagContactId, circles.values.toList()),
-      if ((contact.dhtSettings.recordKeyMeSharing == null ||
-              contact.details == null) &&
-          context.read<ContactDetailsCubit>().wasNotIntroduced(contact)) ...[
-        _paddedDivider(),
-        ConnectingCard(context, contact, circles),
-      ],
-      if (circles.isNotEmpty && contact.sharedProfile != null) ...[
-        _paddedDivider(),
-        ...sharedProfile(
-          context,
-          contact.sharedProfile!.details,
-          contact.sharedProfile!.addressLocations,
-        ),
-      ],
-      if (contact.sharedProfile?.temporaryLocations.isNotEmpty ?? false) ...[
-        _paddedDivider(),
-        TemporaryLocationsCard(
-          const Row(
-            children: [
-              Icon(Icons.share_location),
-              SizedBox(width: 8),
-              Text('Shared locations', textScaler: TextScaler.linear(1.2)),
-            ],
+class SharingSettings extends StatelessWidget {
+  const SharingSettings(this._contact, this._circles, {super.key});
+
+  final CoagContact _contact;
+  final Map<String, String> _circles;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CirclesCard(_contact.coagContactId, _circles.values.toList()),
+        if ((_contact.dhtSettings.recordKeyMeSharing == null ||
+                _contact.details == null) &&
+            context.read<ContactDetailsCubit>().wasNotIntroduced(_contact)) ...[
+          _paddedDivider(),
+          ConnectingCard(context, _contact, _circles),
+        ],
+        if (_circles.isNotEmpty && _contact.sharedProfile != null) ...[
+          _paddedDivider(),
+          SharedProfile(
+            _contact.sharedProfile!.details,
+            _contact.sharedProfile!.addressLocations,
           ),
-          contact.sharedProfile!.temporaryLocations,
-        ),
-        Padding(
-          padding: const EdgeInsets.only(left: 12, right: 12, bottom: 8),
-          child: Text(
-            'These current and future locations are available to '
-            '${contact.name} based on the circles you shared the '
-            'locations with.',
+        ],
+        if (_contact.sharedProfile?.temporaryLocations.isNotEmpty ?? false) ...[
+          _paddedDivider(),
+          TemporaryLocationsCard(
+            const Row(
+              children: [
+                Icon(Icons.share_location),
+                SizedBox(width: 8),
+                Text('Shared locations', textScaler: TextScaler.linear(1.2)),
+              ],
+            ),
+            _contact.sharedProfile!.temporaryLocations,
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.only(left: 12, right: 12, bottom: 8),
+            child: Text(
+              'These current and future locations are available to '
+              '${_contact.name} based on the circles you shared the '
+              'locations with.',
+            ),
+          ),
+        ],
       ],
-    ],
-  ),
-);
+    ),
+  );
+}

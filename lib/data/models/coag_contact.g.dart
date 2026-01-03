@@ -114,6 +114,16 @@ ContactDetails _$ContactDetailsFromJson(Map<String, dynamic> json) =>
                 MapEntry(k, Organization.fromJson(e as Map<String, dynamic>)),
           ) ??
           const {},
+      misc:
+          (json['misc'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(k, e as String),
+          ) ??
+          const {},
+      tags:
+          (json['tags'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(k, e as String),
+          ) ??
+          const {},
     );
 
 Map<String, dynamic> _$ContactDetailsToJson(ContactDetails instance) =>
@@ -129,6 +139,8 @@ Map<String, dynamic> _$ContactDetailsToJson(ContactDetails instance) =>
       'organizations': instance.organizations.map(
         (k, e) => MapEntry(k, e.toJson()),
       ),
+      'misc': instance.misc,
+      'tags': instance.tags,
     };
 
 CoagContact _$CoagContactFromJson(Map<String, dynamic> json) => CoagContact(
@@ -310,6 +322,7 @@ CoagContactDHTSchemaV2 _$CoagContactDHTSchemaV2FromJson(
           ?.map((e) => ContactIntroduction.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
+  pushNotificationTopic: json['push_notification_topic'] as String?,
   ackHandshakeComplete: json['ack_handshake_complete'] as bool? ?? false,
   mostRecentUpdate: json['most_recent_update'] == null
       ? null
@@ -334,6 +347,7 @@ Map<String, dynamic> _$CoagContactDHTSchemaV2ToJson(
   'identity_key': instance.identityKey?.toJson(),
   'connection_attestations': instance.connectionAttestations,
   'introduction_key': instance.introductionKey?.toJson(),
+  'push_notification_topic': instance.pushNotificationTopic,
   'introductions': instance.introductions.map((e) => e.toJson()).toList(),
   'most_recent_update': instance.mostRecentUpdate?.toIso8601String(),
 };

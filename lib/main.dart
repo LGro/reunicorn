@@ -1,7 +1,8 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
@@ -13,9 +14,11 @@ import 'data/models/coag_contact.dart';
 import 'data/models/community.dart';
 import 'data/models/contact_update.dart';
 import 'data/models/profile_info.dart';
+import 'data/models/setting.dart';
 import 'data/providers/legacy/sqlite.dart' as legacy;
 import 'data/repositories/contact_dht.dart';
 import 'data/repositories/contact_system.dart';
+import 'data/repositories/notifications.dart';
 import 'data/services/storage/sqlite.dart';
 import 'notification_service.dart';
 import 'tools/loggy.dart';
@@ -78,23 +81,38 @@ void main() async {
 
     final profileStorage = SqliteStorage<ProfileInfo>(
       'profile',
+      (v) => jsonEncode(v.toJson()),
       profileMigrateFromJson,
     );
     final contactStorage = SqliteStorage<CoagContact>(
       'contact',
+      (v) => jsonEncode(v.toJson()),
       contactMigrateFromJson,
     );
     final circleStorage = SqliteStorage<Circle>(
       'circle',
+      (v) => jsonEncode(v.toJson()),
       circleMigrateFromJson,
     );
     final updateStorage = SqliteStorage<ContactUpdate>(
       'update',
+      (v) => jsonEncode(v.toJson()),
       contactUpdateMigrateFromJson,
     );
     final communityStorage = SqliteStorage<Community>(
       'community',
+      (v) => jsonEncode(v.toJson()),
       communityMigrateFromJson,
+    );
+    final settingStorage = SqliteStorage<Setting>(
+      'setting',
+      (v) => jsonEncode(v.toJson()),
+      (v) async => Setting(jsonDecode(v) as Map<String, dynamic>),
+    );
+    final notificationStorage = SqliteStorage<String>(
+      'setting',
+      (v) => v,
+      (v) async => v,
     );
 
     unawaited(
@@ -113,6 +131,12 @@ void main() async {
       profileStorage,
     );
     final systemContactRepository = SystemContactRepository(contactStorage);
+    // ignore: unused_local_variable we just need it to listen
+    final pushNotificationRepository = PushNotificationRepository(
+      contactStorage,
+      notificationStorage,
+      settingStorage,
+    );
 
     runApp(
       App(
@@ -121,6 +145,7 @@ void main() async {
         circleStorage,
         updateStorage,
         communityStorage,
+        settingStorage,
         contactDhtRepository,
         systemContactRepository,
       ),

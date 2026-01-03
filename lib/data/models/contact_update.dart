@@ -1,5 +1,7 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
+
+import 'dart:convert';
 
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -44,6 +46,5 @@ class ContactUpdate extends Equatable implements JsonEncodable {
   List<Object?> get props => [coagContactId, oldContact, newContact, timestamp];
 }
 
-Future<ContactUpdate> contactUpdateMigrateFromJson(
-  Map<String, dynamic> json,
-) async => ContactUpdate.fromJson(json);
+Future<ContactUpdate> contactUpdateMigrateFromJson(String json) async =>
+    ContactUpdate.fromJson(jsonDecode(json) as Map<String, dynamic>);

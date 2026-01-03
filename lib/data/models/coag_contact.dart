@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:convert';
@@ -171,6 +171,8 @@ class ContactDetails extends Equatable {
     this.socialMedias = const {},
     this.events = const {},
     this.organizations = const {},
+    this.misc = const {},
+    this.tags = const {},
   });
 
   factory ContactDetails.fromJson(Map<String, dynamic> json) =>
@@ -241,23 +243,29 @@ class ContactDetails extends Equatable {
   /// Names with unique key
   final Map<String, String> names;
 
-  /// Phone numbers.
+  /// Phone numbers
   final Map<String, String> phones;
 
-  /// Email addresses.
+  /// E-mail addresses
   final Map<String, String> emails;
 
-  /// Websites.
+  /// Websites
   final Map<String, String> websites;
 
-  /// Social media / instant messaging profiles.
+  /// Social media / instant messaging profiles
   final Map<String, String> socialMedias;
 
-  /// Events / birthdays.
+  /// Events / birthdays
   final Map<String, DateTime> events;
 
-  // Organizations like companies with role info.
+  /// Organizations like companies with role info
   final Map<String, Organization> organizations;
+
+  /// Miscellaneous fields
+  final Map<String, String> misc;
+
+  /// Tags to indicate topics, preferences with unique key
+  final Map<String, String> tags;
 
   Map<String, dynamic> toJson() => _$ContactDetailsToJson(this);
 
@@ -271,6 +279,8 @@ class ContactDetails extends Equatable {
     Map<String, String>? socialMedias,
     Map<String, DateTime>? events,
     Map<String, Organization>? organizations,
+    Map<String, String>? misc,
+    Map<String, String>? tags,
   }) => ContactDetails(
     picture: picture ?? ((this.picture == null) ? null : [...this.picture!]),
     publicKey: publicKey ?? this.publicKey,
@@ -281,6 +291,8 @@ class ContactDetails extends Equatable {
     socialMedias: {...socialMedias ?? this.socialMedias},
     events: {...events ?? this.events},
     organizations: {...organizations ?? this.organizations},
+    misc: {...misc ?? this.misc},
+    tags: {...tags ?? this.tags},
   );
 
   @override
@@ -294,6 +306,8 @@ class ContactDetails extends Equatable {
     socialMedias,
     events,
     organizations,
+    misc,
+    tags,
   ];
 }
 
@@ -575,6 +589,7 @@ class CoagContactDHTSchemaV2 extends Equatable {
     this.connectionAttestations = const [],
     this.introductionKey,
     this.introductions = const [],
+    this.pushNotificationTopic,
     this.ackHandshakeComplete = false,
     DateTime? mostRecentUpdate,
   }) {
@@ -633,6 +648,10 @@ class CoagContactDHTSchemaV2 extends Equatable {
   /// others
   final PublicKey? introductionKey;
 
+  /// Recipient specific push notification topic the recipient can use to
+  /// trigger notifications for the author via the Reunicorn Veilid Push Bridge
+  final String? pushNotificationTopic;
+
   /// Introduction proposals by the author for the recipient
   final List<ContactIntroduction> introductions;
   late final DateTime? mostRecentUpdate;
@@ -653,6 +672,7 @@ class CoagContactDHTSchemaV2 extends Equatable {
     List<String>? connectionAttestations,
     PublicKey? introductionKey,
     List<ContactIntroduction>? introductions,
+    String? pushNotificationTopic,
     bool? ackHandshakeComplete,
   }) => CoagContactDHTSchemaV2(
     details: (details ?? this.details).copyWith(),
@@ -667,6 +687,7 @@ class CoagContactDHTSchemaV2 extends Equatable {
     ],
     introductionKey: introductionKey ?? this.introductionKey,
     introductions: [...introductions ?? this.introductions],
+    pushNotificationTopic: pushNotificationTopic ?? this.pushNotificationTopic,
     ackHandshakeComplete: ackHandshakeComplete ?? this.ackHandshakeComplete,
   );
 
@@ -684,6 +705,7 @@ class CoagContactDHTSchemaV2 extends Equatable {
     connectionAttestations,
     introductionKey,
     introductions,
+    pushNotificationTopic,
     ackHandshakeComplete,
   ];
 
@@ -1055,8 +1077,8 @@ Map<String, dynamic> migrateContactAddressLocationFromIntToLabelIndexing(
   return _json;
 }
 
-Future<CoagContact> contactMigrateFromJson(Map<String, dynamic> json) async =>
-    CoagContact.fromJson(json);
+Future<CoagContact> contactMigrateFromJson(String json) async =>
+    CoagContact.fromJson(jsonDecode(json) as Map<String, dynamic>);
 
 /// Creating contact from just a name or from a profile link, i.e. with name
 /// and public key
