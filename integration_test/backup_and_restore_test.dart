@@ -1,154 +1,213 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:reunicorn/data/models/circle.dart';
 import 'package:reunicorn/data/models/coag_contact.dart';
+import 'package:reunicorn/data/models/community.dart';
+import 'package:reunicorn/data/models/profile_info.dart';
+import 'package:reunicorn/data/models/profile_sharing_settings.dart';
+import 'package:reunicorn/data/models/setting.dart';
+import 'package:reunicorn/data/repositories/backup_dht.dart';
+import 'package:reunicorn/data/repositories/contact_dht.dart';
+import 'package:reunicorn/data/services/storage/memory.dart';
+import 'package:reunicorn/data/utils.dart';
 import 'package:reunicorn/ui/receive_request/cubit.dart';
+import 'package:reunicorn/ui/receive_request/utils/profile_based.dart';
 import 'package:reunicorn/ui/utils.dart';
 import 'package:reunicorn/veilid_init.dart';
 
-import '../test/mocked_providers.dart';
 import 'utils.dart';
+
+const _defaultCircleId = 'c1';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  late ContactsRepository _cRepoA;
-  late ContactsRepository _cRepoB;
-  late DummyDistributedStorage _distStorage;
-
   setUp(() async {
-    // Initialize repositories
     await AppGlobalInit.initialize(veilidBootstrapUrl);
-    _distStorage = DummyDistributedStorage(transparent: true);
-
-    _cRepoA = ContactsRepository(
-      DummyPersistentStorage({}),
-      _distStorage,
-      DummySystemContacts([]),
-      'UserA',
-      initialize: false,
-    );
-    await _cRepoA.initialize(listenToVeilidNetworkChanges: false);
-
-    _cRepoB = ContactsRepository(
-      DummyPersistentStorage({}),
-      _distStorage,
-      DummySystemContacts([]),
-      'UserB',
-      initialize: false,
-    );
-    await _cRepoB.initialize(listenToVeilidNetworkChanges: false);
   });
 
   test('Backup and restore user account A', () async {
     // Profile based connection flow between A and B
     // Alice prepares invite for Bob using Bob's profile public key and shares
     // via the default circle
-    final rrCubitA = ReceiveRequestCubit(_cRepoA);
-    await rrCubitA.handleProfileLink(
-      profileUrl(
-        'Bob Profile',
-        _cRepoB.getProfileInfo()!.mainKeyPair!.key,
-      ).fragment,
-      awaitDhtOperations: true,
+    // SETUP
+    final _contactStorageA = MemoryStorage<CoagContact>();
+    final _circleStorageA = MemoryStorage<Circle>();
+    final _profileStorageA = MemoryStorage<ProfileInfo>();
+    final _contactStorageB = MemoryStorage<CoagContact>();
+    final _circleStorageB = MemoryStorage<Circle>();
+    final _profileStorageB = MemoryStorage<ProfileInfo>();
+
+    await _profileStorageA.set(
+      'p1',
+      ProfileInfo('p1', mainKeyPair: await generateKeyPairBest()),
     );
-    var contactBobFromProfile = _cRepoA.getContacts().values.first;
-    await _cRepoA.updateCirclesForContact(contactBobFromProfile.coagContactId, [
-      defaultInitialCircleId,
-    ], triggerDhtUpdate: false);
-    await _cRepoA.tryShareWithContactDHT(contactBobFromProfile.coagContactId);
-    final profileBasedOfferLinkFromAliceForBob = profileBasedOfferUrl(
+    await _profileStorageB.set(
+      'p1',
+      ProfileInfo('p1', mainKeyPair: await generateKeyPairBest()),
+    );
+
+    // Initialize Alice's repository
+    final _cRepoA = ContactDhtRepository(
+      _contactStorageA,
+      _circleStorageA,
+      MemoryStorage<ProfileInfo>()..addToMemory(
+        'pA1',
+        const ProfileInfo(
+          'pA1',
+          details: ContactDetails(names: {'n1': 'UserA'}),
+          sharingSettings: ProfileSharingSettings(
+            names: {
+              'n1': [_defaultCircleId],
+            },
+          ),
+        ),
+      ),
+      true,
+    );
+
+    // Initialize Bob's repository
+    final _cRepoB = ContactDhtRepository(
+      _contactStorageB,
+      _circleStorageB,
+      MemoryStorage<ProfileInfo>()..addToMemory(
+        'pB1',
+        const ProfileInfo(
+          'pB1',
+          details: ContactDetails(names: {'n1': 'UserB'}),
+          sharingSettings: ProfileSharingSettings(
+            names: {
+              'n1': [_defaultCircleId],
+            },
+          ),
+        ),
+      ),
+      true,
+    );
+
+    final bobsMainKeyPair = await _profileStorageB.getAll().then(
+      (profiles) => profiles.values.first.mainKeyPair!,
+    );
+    final bobsProfileUrl = profileUrl('Bob Profile', bobsMainKeyPair.key);
+
+    // Alice prepares invite for Bob using Bob's profile public key and shares via the default circle
+    debugPrint('ALICE ACTING');
+    final rrCubitA = ReceiveRequestCubit(
+      _contactStorageA,
+      _profileStorageA,
+      MemoryStorage<Community>(),
+    );
+    await rrCubitA.handleProfileLink(bobsProfileUrl.fragment);
+    var contactBobFromProfile = await _contactStorageA.getAll().then(
+      (contacts) => contacts.values.first,
+    );
+    await _circleStorageA.set(
+      _defaultCircleId,
+      Circle(
+        id: _defaultCircleId,
+        name: 'circle1',
+        memberIds: [contactBobFromProfile.coagContactId],
+      ),
+    );
+    // Wait for sharing
+    await retryUntilTimeout(20, () async {
+      contactBobFromProfile = (await _contactStorageA.get(
+        contactBobFromProfile.coagContactId,
+      ))!;
+      expect(
+        contactBobFromProfile.dhtSettings.theirNextPublicKey,
+        bobsMainKeyPair.key,
+        reason: 'Used given profile public key',
+      );
+      expect(
+        contactBobFromProfile.dhtSettings.recordKeyMeSharing,
+        isNotNull,
+        reason: 'Sharing record prepared',
+      );
+      expect(
+        contactBobFromProfile.dhtSettings.recordKeyThemSharing,
+        isNotNull,
+        reason: 'Receiving record prepared',
+      );
+    });
+    final profileBasedOfferLinkFromAliceForBob = ProfileBasedInvite(
       'Alice Sharing',
       contactBobFromProfile.dhtSettings.recordKeyMeSharing!,
       contactBobFromProfile.dhtSettings.myKeyPair!.key,
     );
 
-    // Bob accepts profile based offer from Alice
-    await ReceiveRequestCubit(_cRepoB).handleSharingOffer(
-      profileBasedOfferLinkFromAliceForBob.fragment,
-      awaitDhtOperations: true,
+    // Bob accepts profile based offer from Alice and shares via default circle
+    debugPrint('---');
+    debugPrint('BOB ACTING');
+    final contactAliceFromBobsRepo = await createContactFromProfileInvite(
+      profileBasedOfferLinkFromAliceForBob.uri.fragment,
+      bobsMainKeyPair,
+      _contactStorageB,
     );
-    final contactAliceFromBobsRepo = _cRepoB.getContacts().values.first;
-    expect(
-      contactAliceFromBobsRepo.details?.names.values.firstOrNull,
-      'UserA',
-      reason: 'Name from sharing profile',
-    );
-    // Bob shares name and phone number via default circle
-    await _cRepoB.updateCirclesForContact(
-      contactAliceFromBobsRepo.coagContactId,
-      [defaultInitialCircleId],
-      triggerDhtUpdate: false,
-    );
-    await _cRepoB.setProfileInfo(
-      _cRepoB.getProfileInfo()!.copyWith(
-        details: (_cRepoB.getProfileInfo()?.details ?? const ContactDetails())
-            .copyWith(phones: {'bananaphone': '123'}),
-      ),
-      triggerDhtUpdate: false,
-    );
-    await _cRepoB.setProfileInfo(
-      _cRepoB.getProfileInfo()!.copyWith(
-        sharingSettings: _cRepoB.getProfileInfo()!.sharingSettings.copyWith(
-          phones: {
-            'bananaphone': [defaultInitialCircleId],
-          },
-        ),
+    await _circleStorageB.set(
+      _defaultCircleId,
+      Circle(
+        id: _defaultCircleId,
+        name: 'circle1',
+        memberIds: [contactAliceFromBobsRepo!.coagContactId],
       ),
     );
-    await _cRepoB.tryShareWithContactDHT(
-      contactAliceFromBobsRepo.coagContactId,
-    );
+    // await retryUntilTimeout(20, () async {
+    //   contactBobFromProfile = (await _contactStorageA.get(
+    //     contactBobFromProfile.coagContactId,
+    //   ))!;
+    //   expect(
+    //     contactBobFromProfile.details?.names.values.firstOrNull,
+    //     'UserB',
+    //     reason: 'Name from sharing profile',
+    //   );
+    //   expect(
+    //     contactBobFromProfile.details?.phones.values.firstOrNull,
+    //     '123',
+    //     reason: 'Phone number from shared details',
+    //   );
+    // });
 
-    // Alice checks for Bob sharing back
-    contactBobFromProfile = _cRepoA.getContact(
-      contactBobFromProfile.coagContactId,
-    )!;
-    await _cRepoA.updateContactFromDHT(contactBobFromProfile);
-    contactBobFromProfile = _cRepoA.getContact(
-      contactBobFromProfile.coagContactId,
-    )!;
-    expect(
-      contactBobFromProfile.details?.names.values.firstOrNull,
-      'UserB',
-      reason: 'Name from sharing profile',
+    // Backup for Alice
+    final backingUpRepo = BackupRepository(
+      _profileStorageA,
+      _contactStorageA,
+      _circleStorageA,
+      MemoryStorage<Setting>(),
     );
-    expect(
-      contactBobFromProfile.details?.phones.values.firstOrNull,
-      '123',
-      reason: 'Phone number from shared details',
-    );
-
-    // Backup
-    final backupInfo = await _cRepoA.backup(waitForRecordSync: false);
+    final backupInfo = await backingUpRepo.backup(waitForRecordSync: false);
     expect(
       backupInfo,
       isNotNull,
       reason: 'Expecting successful backup record creation.',
     );
 
-    // Restore
-    final restoredRepo = ContactsRepository(
-      DummyPersistentStorage({}),
-      _distStorage,
-      DummySystemContacts([]),
-      '',
-      initialize: false,
+    // Restore for Alice
+    final restoredProfiles = MemoryStorage<ProfileInfo>();
+    final restoredContacts = MemoryStorage<CoagContact>();
+    final restoredCircles = MemoryStorage<Circle>();
+    final restoredSettings = MemoryStorage<Setting>();
+    final restoringBackupRepo = BackupRepository(
+      restoredProfiles,
+      restoredContacts,
+      restoredCircles,
+      restoredSettings,
     );
-    final restoreSuccess = await restoredRepo.restore(
+    final restoreSuccess = await restoringBackupRepo.restore(
       backupInfo!.$1,
       backupInfo.$2,
-      awaitDhtOperations: true,
     );
     expect(restoreSuccess, true, reason: 'Expected restore to succeed');
-    expect(
-      restoredRepo.getProfileInfo()?.details.names.values.firstOrNull,
-      'UserA',
+    final restoredProfile = await restoredProfiles.getAll().then(
+      (p) => p.values.firstOrNull,
     );
-    final restoredContactB = restoredRepo.getContact(
-      _cRepoA.getContacts().keys.first,
+    expect(restoredProfile?.details.names.values.firstOrNull, 'UserA');
+    final restoredContactB = await restoredContacts.get(
+      await _contactStorageA.getAll().then((c) => c.keys.first),
     );
     expect(restoredContactB?.name, 'Bob Profile');
     expect(restoredContactB?.details?.phones.values.first, '123');

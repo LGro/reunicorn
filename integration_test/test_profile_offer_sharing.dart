@@ -15,6 +15,8 @@ import 'package:reunicorn/ui/receive_request/cubit.dart';
 import 'package:reunicorn/ui/receive_request/utils/profile_based.dart';
 import 'package:reunicorn/ui/utils.dart';
 
+import 'utils.dart';
+
 const _defaultCircleId = 'c1';
 
 Future<void> testProfileOfferBasedSharing() async {
@@ -98,33 +100,29 @@ Future<void> testProfileOfferBasedSharing() async {
     ),
   );
   // Wait for sharing
-  await runUntilTimeoutOrSuccess(
-    20,
-    () => _contactStorageA
-        .get(contactBobFromProfile.coagContactId)
-        .then((c) => c?.dhtSettings.recordKeyMeSharing != null),
-  );
-  contactBobFromProfile = (await _contactStorageA.get(
-    contactBobFromProfile.coagContactId,
-  ))!;
-  expect(
-    contactBobFromProfile.dhtSettings.theirNextPublicKey,
-    bobsMainKeyPair.key,
-    reason: 'Used given profile public key',
-  );
-  expect(
-    contactBobFromProfile.dhtSettings.recordKeyMeSharing,
-    isNotNull,
-    reason: 'Sharing record prepared',
-  );
-  expect(
-    contactBobFromProfile.dhtSettings.recordKeyThemSharing,
-    isNotNull,
-    reason: 'Receiving record prepared',
-  );
-  expect(showSharingInitializing(contactBobFromProfile), false);
-  expect(showSharingOffer(contactBobFromProfile), true);
-  expect(showDirectSharing(contactBobFromProfile), false);
+  await retryUntilTimeout(20, () async {
+    contactBobFromProfile = (await _contactStorageA.get(
+      contactBobFromProfile.coagContactId,
+    ))!;
+    expect(
+      contactBobFromProfile.dhtSettings.theirNextPublicKey,
+      bobsMainKeyPair.key,
+      reason: 'Used given profile public key',
+    );
+    expect(
+      contactBobFromProfile.dhtSettings.recordKeyMeSharing,
+      isNotNull,
+      reason: 'Sharing record prepared',
+    );
+    expect(
+      contactBobFromProfile.dhtSettings.recordKeyThemSharing,
+      isNotNull,
+      reason: 'Receiving record prepared',
+    );
+    expect(showSharingInitializing(contactBobFromProfile), false);
+    expect(showSharingOffer(contactBobFromProfile), true);
+    expect(showDirectSharing(contactBobFromProfile), false);
+  });
   final profileBasedOfferLinkFromAliceForBob = ProfileBasedInvite(
     'Alice Sharing',
     contactBobFromProfile.dhtSettings.recordKeyMeSharing!,
@@ -148,64 +146,52 @@ Future<void> testProfileOfferBasedSharing() async {
     ),
   );
   // Wait for sharing
-  await runUntilTimeoutOrSuccess(
-    20,
-    () => _contactStorageB
-        .get(contactAliceFromBobsRepo!.coagContactId)
-        .then(
-          (c) =>
-              c?.details?.names.values.firstOrNull != null &&
-              c?.dhtSettings.myKeyPair != null,
-        ),
-  );
-  contactAliceFromBobsRepo = (await _contactStorageB.get(
-    contactAliceFromBobsRepo.coagContactId,
-  ))!;
-  expect(
-    contactAliceFromBobsRepo.dhtSettings.myKeyPair,
-    bobsMainKeyPair,
-    reason: 'Used correct profile key pair',
-  );
-  expect(
-    contactAliceFromBobsRepo.name,
-    'Alice Sharing',
-    reason: 'Name from invite URL',
-  );
-  expect(
-    contactAliceFromBobsRepo.details?.names.values.firstOrNull,
-    'UserA',
-    reason: 'Name from sharing profile',
-  );
-  expect(
-    contactAliceFromBobsRepo.dhtSettings.theyAckHandshakeComplete,
-    true,
-    reason: 'Handshake accepted as complete by Alice',
-  );
-  expect(showSharingInitializing(contactAliceFromBobsRepo), false);
-  expect(showSharingOffer(contactAliceFromBobsRepo), false);
-  expect(showDirectSharing(contactAliceFromBobsRepo), false);
+  await retryUntilTimeout(20, () async {
+    contactAliceFromBobsRepo = await _contactStorageB.get(
+      contactAliceFromBobsRepo!.coagContactId,
+    );
+    expect(
+      contactAliceFromBobsRepo!.dhtSettings.myKeyPair,
+      bobsMainKeyPair,
+      reason: 'Used correct profile key pair',
+    );
+    expect(
+      contactAliceFromBobsRepo!.name,
+      'Alice Sharing',
+      reason: 'Name from invite URL',
+    );
+    expect(
+      contactAliceFromBobsRepo!.details?.names.values.firstOrNull,
+      'UserA',
+      reason: 'Name from sharing profile',
+    );
+    expect(
+      contactAliceFromBobsRepo!.dhtSettings.theyAckHandshakeComplete,
+      true,
+      reason: 'Handshake accepted as complete by Alice',
+    );
+    expect(showSharingInitializing(contactAliceFromBobsRepo!), false);
+    expect(showSharingOffer(contactAliceFromBobsRepo!), false);
+    expect(showDirectSharing(contactAliceFromBobsRepo!), false);
+  });
 
   // Alice checks for Bob sharing back
   debugPrint('---');
   debugPrint('ALICE ACTING');
   // Wait for sharing
-  await runUntilTimeoutOrSuccess(
-    20,
-    () => _contactStorageA
-        .get(contactBobFromProfile.coagContactId)
-        .then((c) => c?.details?.names.values.firstOrNull != null),
-  );
-  contactBobFromProfile = (await _contactStorageA.get(
-    contactBobFromProfile.coagContactId,
-  ))!;
-  expect(
-    contactBobFromProfile.details?.names.values.firstOrNull,
-    'UserB',
-    reason: 'Name from sharing profile',
-  );
-  expect(
-    contactBobFromProfile.dhtSettings.theyAckHandshakeComplete,
-    true,
-    reason: 'Bob indicated handshake complete',
-  );
+  await retryUntilTimeout(20, () async {
+    contactBobFromProfile = (await _contactStorageA.get(
+      contactBobFromProfile.coagContactId,
+    ))!;
+    expect(
+      contactBobFromProfile.details?.names.values.firstOrNull,
+      'UserB',
+      reason: 'Name from sharing profile',
+    );
+    expect(
+      contactBobFromProfile.dhtSettings.theyAckHandshakeComplete,
+      true,
+      reason: 'Bob indicated handshake complete',
+    );
+  });
 }
