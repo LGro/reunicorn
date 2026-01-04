@@ -5,9 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../data/repositories/backup_dht.dart';
 import '../../data/repositories/settings.dart';
 import '../../notification_service.dart';
 import '../../veilid_processor/views/developer.dart';
+import '../account_backup/page.dart';
 import '../legal/privacy_policy.dart';
 import '../legal/terms_and_conditions.dart';
 import '../widgets/veilid_status/widget.dart';
@@ -46,6 +48,22 @@ class SettingsPage extends StatelessWidget {
             // const ListTile(title: Text('Set custom map server url')),
             // TODO: Move async things to cubit
             // if (Platform.isIOS) _backgroundPermissionStatus(),
+            ListTile(
+              // TODO: Prettier format
+              title: Text(
+                'Backup ${context.read<BackupRepository>().mostRecentBackupTime?.toIso8601String() ?? ''}',
+              ),
+              trailing: const Padding(
+                padding: EdgeInsets.only(right: 20),
+                child: Icon(Icons.arrow_right),
+              ),
+              // TODO: navigate via go router
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<ManageBackupPage>(
+                  builder: (_) => const ManageBackupPage(),
+                ),
+              ),
+            ),
             ListTile(
               title: const Text('Show open source licenses'),
               trailing: const Padding(

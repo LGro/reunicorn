@@ -97,6 +97,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get welcomeCallToActionButton => 'Los geht\'s';
 
   @override
+  String get welcomeRestoreBackupButton => 'Sicherung laden';
+
+  @override
   String get welcomeErrorNameMissing => 'Bitte gib deinen Namen ein.';
 
   @override

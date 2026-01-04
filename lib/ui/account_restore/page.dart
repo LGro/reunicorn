@@ -1,17 +1,20 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:veilid/veilid.dart';
 
 import '../../data/repositories/backup_dht.dart';
 import 'cubit.dart';
 
-class BackupPage extends StatelessWidget {
-  BackupPage({super.key});
+class RestoreBackupPage extends StatelessWidget {
+  RestoreBackupPage({super.key});
 
-  final _textFieldKey = GlobalKey<FormFieldState>();
+  final _textFieldKey = GlobalKey<FormFieldState<String>>();
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -19,37 +22,53 @@ class BackupPage extends StatelessWidget {
     body: BlocProvider(
       create: (context) => RestoreCubit(context.read<BackupRepository>()),
       child: BlocConsumer<RestoreCubit, RestoreState>(
-        listener: (context, state) => {},
-        builder: (blocContext, state) => SingleChildScrollView(
-          child: Column(
-            children: [
-              const Text(
-                'Did you already use Reunicorn before and have a backup '
-                'secret restore your profile and contacts?',
-              ),
-              TextFormField(
-                key: _textFieldKey,
-                onChanged: (v) {
-                  if (_textFieldKey.currentState?.validate() ?? false) {}
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return null;
-                  }
-                  final splits = value.split('~');
-                  if (splits.length != 2) {
-                    return 'Invalid backup secret.';
-                  }
-                  try {
-                    RecordKey.fromString(splits.first);
-                    SharedSecret.fromString(splits.last);
-                  } on Exception {
-                    return 'Invalid backup secret.';
-                  }
-                },
-              ),
-            ],
-          ),
+        listener: (context, state) => {
+          if (state.status.isSuccess) {context.pushReplacementNamed('profile')},
+        },
+        builder: (context, state) => SingleChildScrollView(
+          child: (state.status.isCreate)
+              ? const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [CircularProgressIndicator()],
+                )
+              : Column(
+                  children: [
+                    if (state.status.isFailure)
+                      const Text('Backup restoration failed.'),
+                    const Text(
+                      'Did you already use Reunicorn before and have a backup '
+                      'secret to restore your profile and contacts?',
+                    ),
+                    TextFormField(
+                      key: _textFieldKey,
+                      onChanged: (v) {
+                        if (_textFieldKey.currentState?.validate() ?? false) {}
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return null;
+                        }
+                        final splits = value.split('~');
+                        if (splits.length != 2) {
+                          return 'Invalid backup secret.';
+                        }
+                        try {
+                          final recordKey = RecordKey.fromString(splits.first);
+                          final secret = SharedSecret.fromString(splits.last);
+                          unawaited(
+                            context.read<RestoreCubit>().restore(
+                              recordKey,
+                              secret,
+                            ),
+                          );
+                        } on Exception {
+                          return 'Invalid backup secret.';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
         ),
       ),
     ),

@@ -1,4 +1,4 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:convert';
@@ -10,9 +10,11 @@ import '../models/backup.dart';
 import '../models/circle.dart';
 import '../models/coag_contact.dart';
 import '../models/profile_info.dart';
+import '../models/setting.dart';
 import '../services/dht.dart';
 import '../services/storage/base.dart';
 import '../utils.dart';
+import 'base_dht.dart';
 import 'contact_dht.dart';
 
 @override
@@ -30,7 +32,7 @@ Future<void> updateBackupRecord(
     recordKey,
     writer,
     crypto: crypto,
-    debugName: 'coag::backup',
+    debugName: 'rncrn::backup',
   );
   await Future.wait(
     chopPayloadChunks(
@@ -62,7 +64,7 @@ Future<String?> readBackupRecord(
       final content = await DHTRecordPool.instance
           .openRecordRead(
             recordKey,
-            debugName: 'coag::backup::read',
+            debugName: 'rncrn::backup::read',
             crypto: pskCrypto,
           )
           .then((record) async {
@@ -99,23 +101,46 @@ Future<String?> readBackupRecord(
 }
 
 // TODO: Add community backup
-class BackupRepository {
+// TODO: Add settings backup but exclude backup settings to avoid accidentally overriding them
+// TODO: on storage update, backup
+// TODO: Share backup record key with contacts so that they can cache it
+class BackupRepository extends BaseDhtRepository {
   final Storage<ProfileInfo> _profileStorage;
   final Storage<CoagContact> _contactStorage;
   final Storage<Circle> _circleStorage;
+  final Storage<Setting> _settingStorage;
+
+  DateTime? _mostRecentBackupTime;
+  // TODO(LGro): change into event stream
+  var _isBackingUp = false;
 
   BackupRepository(
     this._profileStorage,
     this._contactStorage,
     this._circleStorage,
+    this._settingStorage,
   );
+
+  DateTime? get mostRecentBackupTime => _mostRecentBackupTime;
+
+  @override
+  Future<void> dhtBecameAvailableCallback() async =>
+      (!_isBackingUp &&
+          (_mostRecentBackupTime
+                  ?.add(const Duration(minutes: 10))
+                  .isBefore(DateTime.now()) ??
+              true))
+      ? backup()
+      : null;
 
   /// Backup everything that is needed to restore an app "account"
   Future<(RecordKey, SharedSecret)?> backup({
     bool waitForRecordSync = false,
   }) async {
+    _isBackingUp = true;
     final profile = await getProfileInfo(_profileStorage);
     if (profile == null) {
+      _isBackingUp = false;
       return null;
     }
     final contacts = await _contactStorage.getAll();
@@ -143,15 +168,15 @@ class BackupRepository {
               origin: c.origin,
               comment: c.comment,
               verified: c.verified,
+              systemContactId: c.systemContactId,
+              introductionsForThem: c.introductionsForThem,
               details: null,
               theirIdentity: null,
               connectionAttestations: const [],
-              systemContactId: null,
               addressLocations: const {},
               temporaryLocations: const {},
               sharedProfile: null,
               theirIntroductionKey: null,
-              introductionsForThem: const [],
               introductionsByThem: const [],
             ),
           )
@@ -159,19 +184,38 @@ class BackupRepository {
       circles.map((id, circle) => MapEntry(id, circle.name)),
       circlesByContactIds(circles.values),
     );
-    final backupSecretKey = await generateRandomSharedSecretBest();
-    final (backupDhtKey, dhtWriter) = await createRecord();
+
+    // Try picking up existing backup settings or create new ones
+    final backupSetting = await _settingStorage.get('backup');
+    late final SharedSecret backupSecretKey;
+    late final RecordKey backupDhtKey;
+    late final KeyPair dhtWriter;
     try {
-      // await distributedStorage.updateRecord(
-      //     CoagContactDHTSchema(
-      //         details: const ContactDetails(),
-      //         shareBackDHTKey: null,
-      //         shareBackPubKey: null),
-      //     DhtSettings(
-      //         myKeyPair: await generateKeyPair(),
-      //         recordKeyMeSharing: backupDhtKey,
-      //         writerMeSharing:dhtWriter ,
-      //         initialSecret: backupSecretKey));
+      backupDhtKey = RecordKey.fromString(
+        backupSetting!.value['record'] as String,
+      );
+      dhtWriter = KeyPair.fromString(backupSetting.value['writer'] as String);
+      backupSecretKey = SharedSecret.fromString(
+        backupSetting.value['secret'] as String,
+      );
+    } catch (e) {
+      // Create new backup record and secret
+      (backupDhtKey, dhtWriter) = await createRecord();
+      backupSecretKey = await generateRandomSharedSecretBest();
+
+      // Save for future updates
+      await _settingStorage.set(
+        'backup',
+        Setting({
+          'record': backupDhtKey.toString(),
+          'writer': dhtWriter.toString(),
+          'secret': backupSecretKey.toString(),
+        }),
+      );
+    }
+
+    // Try updating backup
+    try {
       await updateBackupRecord(
         accountBackup,
         backupDhtKey,
@@ -179,7 +223,7 @@ class BackupRepository {
         backupSecretKey,
       );
 
-      // While subkeys marked offline, wait
+      // If instructed to, wait while subkeys marked offline
       while (waitForRecordSync) {
         final report = await DHTRecordPool.instance
             .openRecordRead(
@@ -200,19 +244,18 @@ class BackupRepository {
         await Future<void>.delayed(const Duration(seconds: 1));
       }
 
+      _mostRecentBackupTime = DateTime.now();
+      _isBackingUp = false;
+
       return (backupDhtKey, backupSecretKey);
     } on VeilidAPIException {
+      _isBackingUp = false;
       return null;
     }
   }
 
   /// Restore a previously backed up Reunicorn setup
-  Future<bool> restore(
-    RecordKey recordKey,
-    SharedSecret secret, {
-    bool awaitDhtOperations = false,
-  }) async {
-    // TODO: read record
+  Future<bool> restore(RecordKey recordKey, SharedSecret secret) async {
     try {
       final jsonString = await readBackupRecord(recordKey, secret);
       if (jsonString == null) {

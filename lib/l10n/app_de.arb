@@ -31,6 +31,7 @@
   "welcomeHeadline": "Willkommen!\nWie heißt du?",
   "welcomeText": "Das ist die erste Information über dich, die du gleich selektiv mit anderen teilen kannst.",
   "welcomeCallToActionButton": "Los geht's",
+  "welcomeRestoreBackupButton": "Sicherung laden",
   "welcomeErrorNameMissing": "Bitte gib deinen Namen ein.",
   "profileHeadline": "Profilinformationen",
   "profileAddHeadline": "{type} hinzufügen",

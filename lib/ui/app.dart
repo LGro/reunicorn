@@ -15,7 +15,6 @@ import 'package:go_router/go_router.dart';
 import 'package:loggy/loggy.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 
 import '../data/models/circle.dart';
 import '../data/models/coag_contact.dart';
@@ -23,8 +22,8 @@ import '../data/models/community.dart';
 import '../data/models/contact_location.dart';
 import '../data/models/contact_update.dart';
 import '../data/models/profile_info.dart';
-import '../data/models/profile_sharing_settings.dart';
 import '../data/models/setting.dart';
+import '../data/repositories/backup_dht.dart';
 import '../data/repositories/contact_dht.dart';
 import '../data/repositories/contact_system.dart';
 import '../data/repositories/contact_update.dart';
@@ -32,12 +31,12 @@ import '../data/repositories/notifications.dart';
 import '../data/repositories/settings.dart';
 import '../data/services/storage/base.dart';
 import '../data/services/storage/sqlite.dart';
-import '../data/utils.dart';
 import '../l10n/app_localizations.dart';
 import '../notification_service.dart';
 import '../tick.dart';
 import '../veilid_init.dart';
 import '../veilid_processor/views/developer.dart';
+import 'account_restore/page.dart';
 import 'circles_list/page.dart';
 import 'contact_details/page.dart';
 import 'contact_list/page.dart';
@@ -93,194 +92,180 @@ const navBarItems = [
   ),
 ];
 
-class AppRouter {
-  static final GoRouter _router = GoRouter(
-    routes: [
-      ShellRoute(
-        navigatorKey: GlobalKey<NavigatorState>(),
-        builder: (context, state, child) => Scaffold(
-          body: child,
-          bottomNavigationBar: BottomNavigationBar(
-            items: navBarItems.map((i) => i.$3).asList(),
-            type: BottomNavigationBarType.fixed,
-            selectedItemColor: Theme.of(context).colorScheme.primary,
-            selectedFontSize: 12,
-            // Use index of the first level path member (also for nested paths)
-            currentIndex: (state.topRoute?.name == null)
-                ? 0
-                : (navBarItems.indexWhere(
-                        (i) => i.$2.contains(state.topRoute?.name),
-                      ) ==
-                      -1)
-                ? 0
-                : navBarItems.indexWhere(
-                    (i) => i.$2.contains(state.topRoute?.name),
-                  ),
-            showUnselectedLabels: true,
-            onTap: (i) => context.go(navBarItems[i].$1),
+GoRouter buildAppRouter(
+  GlobalKey<NavigatorState> rootNavigatorKey,
+  bool isFirstTime,
+) => GoRouter(
+  navigatorKey: rootNavigatorKey,
+  initialLocation: isFirstTime ? '/welcome' : '/profile',
+  routes: [
+    GoRoute(
+      path: '/welcome',
+      name: 'welcome',
+      // Force fullscreen
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => const WelcomeScreen(),
+    ),
+    GoRoute(
+      path: '/restoreBackup',
+      name: 'restoreBackup',
+      // Force fullscreen
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => RestoreBackupPage(),
+    ),
+    ShellRoute(
+      navigatorKey: GlobalKey<NavigatorState>(),
+      builder: (context, state, child) => Scaffold(
+        body: child,
+        bottomNavigationBar: BottomNavigationBar(
+          items: navBarItems.map((i) => i.$3).asList(),
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: Theme.of(context).colorScheme.primary,
+          selectedFontSize: 12,
+          // Use index of the first level path member (also for nested paths)
+          currentIndex: (state.topRoute?.name == null)
+              ? 0
+              : (navBarItems.indexWhere(
+                      (i) => i.$2.contains(state.topRoute?.name),
+                    ) ==
+                    -1)
+              ? 0
+              : navBarItems.indexWhere(
+                  (i) => i.$2.contains(state.topRoute?.name),
+                ),
+          showUnselectedLabels: true,
+          onTap: (i) => context.go(navBarItems[i].$1),
+        ),
+      ),
+      routes: [
+        GoRoute(
+          path: '/',
+          name: 'dashboard',
+          builder: (context, state) => const DashboardPage(),
+        ),
+        GoRoute(
+          path: '/profile',
+          name: 'profile',
+          builder: (context, state) => const ProfilePage(),
+        ),
+        GoRoute(
+          path: '/circles',
+          name: 'circles',
+          builder: (context, state) => const CirclesListPage(),
+        ),
+        GoRoute(
+          path: '/contacts',
+          name: 'contacts',
+          builder: (context, state) => const ContactListPage(),
+          routes: [
+            GoRoute(
+              path: 'details/:coagContactId',
+              name: 'contactDetails',
+              builder: (_, state) => ContactPage(
+                coagContactId: state.pathParameters['coagContactId']!,
+              ),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/map',
+          name: 'map',
+          builder: (_, state) => const MapPage(),
+          routes: [
+            GoRoute(
+              path: 'atLocation/:latitude/:longitude',
+              name: 'mapAtLocation',
+              builder: (_, state) => MapPage(
+                latitude: double.tryParse(
+                  state.pathParameters['latitude'] ?? '',
+                ),
+                longitude: double.tryParse(
+                  state.pathParameters['longitude'] ?? '',
+                ),
+              ),
+            ),
+            GoRoute(
+              path: 'importIcs',
+              name: 'importIcs',
+              builder: (_, state) =>
+                  ImportIcsPage(icsData: state.extra.toString()),
+            ),
+            GoRoute(
+              path: 'scheduleLocation',
+              name: 'scheduleLocation',
+              // TODO: Handle if extra cannot be casted
+              builder: (_, state) => ScheduleWidget(
+                location: (state.extra == null)
+                    ? null
+                    : state.extra! as ContactTemporaryLocation,
+              ),
+            ),
+            GoRoute(
+              path: 'locationListPage',
+              name: 'locationListPage',
+              builder: (_, __) => const LocationListPage(),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/updates',
+          name: 'updates',
+          builder: (_, __) => const UpdatesPage(),
+        ),
+        GoRoute(
+          path: '/introductions',
+          name: 'introductions',
+          builder: (_, __) => const IntroductionsPage(),
+        ),
+        GoRoute(
+          path: '/settings',
+          name: 'settings',
+          builder: (_, __) => const SettingsPage(),
+        ),
+        GoRoute(
+          path: '/c',
+          name: 'handleDirectSharing',
+          builder: (_, state) => ReceiveRequestPage(
+            initialState: ReceiveRequestState(
+              ReceiveRequestStatus.handleDirectSharing,
+              fragment: state.uri.fragment,
+            ),
           ),
         ),
-        routes: [
-          GoRoute(
-            path: '/',
-            name: 'dashboard',
-            builder: (_, __) => DashboardPage(),
-          ),
-          GoRoute(
-            path: '/profile',
-            name: 'profile',
-            builder: (_, __) => const ProfilePage(),
-          ),
-          GoRoute(
-            path: '/circles',
-            name: 'circles',
-            builder: (_, __) => const CirclesListPage(),
-          ),
-          GoRoute(
-            path: '/contacts',
-            name: 'contacts',
-            builder: (_, __) => const ContactListPage(),
-            routes: [
-              GoRoute(
-                path: 'details/:coagContactId',
-                name: 'contactDetails',
-                builder: (_, state) => ContactPage(
-                  coagContactId: state.pathParameters['coagContactId']!,
-                ),
-              ),
-            ],
-          ),
-          GoRoute(
-            path: '/map',
-            name: 'map',
-            builder: (_, state) => const MapPage(),
-            routes: [
-              GoRoute(
-                path: 'atLocation/:latitude/:longitude',
-                name: 'mapAtLocation',
-                builder: (_, state) => MapPage(
-                  latitude: double.tryParse(
-                    state.pathParameters['latitude'] ?? '',
-                  ),
-                  longitude: double.tryParse(
-                    state.pathParameters['longitude'] ?? '',
-                  ),
-                ),
-              ),
-              GoRoute(
-                path: 'importIcs',
-                name: 'importIcs',
-                builder: (_, state) =>
-                    ImportIcsPage(icsData: state.extra.toString()),
-              ),
-              GoRoute(
-                path: 'scheduleLocation',
-                name: 'scheduleLocation',
-                // TODO: Handle if extra cannot be casted
-                builder: (_, state) => ScheduleWidget(
-                  location: (state.extra == null)
-                      ? null
-                      : state.extra! as ContactTemporaryLocation,
-                ),
-              ),
-              GoRoute(
-                path: 'locationListPage',
-                name: 'locationListPage',
-                builder: (_, __) => const LocationListPage(),
-              ),
-            ],
-          ),
-          GoRoute(
-            path: '/updates',
-            name: 'updates',
-            builder: (_, __) => const UpdatesPage(),
-          ),
-          GoRoute(
-            path: '/introductions',
-            name: 'introductions',
-            builder: (_, __) => const IntroductionsPage(),
-          ),
-          GoRoute(
-            path: '/settings',
-            name: 'settings',
-            builder: (_, __) => const SettingsPage(),
-          ),
-          GoRoute(
-            path: '/c',
-            name: 'handleDirectSharing',
-            builder: (_, state) => ReceiveRequestPage(
-              initialState: ReceiveRequestState(
-                ReceiveRequestStatus.handleDirectSharing,
-                fragment: state.uri.fragment,
-              ),
+        GoRoute(
+          path: '/p',
+          name: 'handleProfileLink',
+          builder: (_, state) => ReceiveRequestPage(
+            initialState: ReceiveRequestState(
+              ReceiveRequestStatus.handleProfileLink,
+              fragment: state.uri.fragment,
             ),
           ),
-          GoRoute(
-            path: '/p',
-            name: 'handleProfileLink',
-            builder: (_, state) => ReceiveRequestPage(
-              initialState: ReceiveRequestState(
-                ReceiveRequestStatus.handleProfileLink,
-                fragment: state.uri.fragment,
-              ),
+        ),
+        GoRoute(
+          path: '/o',
+          name: 'handleSharingOffer',
+          builder: (_, state) => ReceiveRequestPage(
+            initialState: ReceiveRequestState(
+              ReceiveRequestStatus.handleSharingOffer,
+              fragment: state.uri.fragment,
             ),
           ),
-          GoRoute(
-            path: '/o',
-            name: 'handleSharingOffer',
-            builder: (_, state) => ReceiveRequestPage(
-              initialState: ReceiveRequestState(
-                ReceiveRequestStatus.handleSharingOffer,
-                fragment: state.uri.fragment,
-              ),
+        ),
+        GoRoute(
+          path: '/b',
+          name: 'handleBatchInvite',
+          builder: (_, state) => ReceiveRequestPage(
+            initialState: ReceiveRequestState(
+              ReceiveRequestStatus.handleBatchInvite,
+              fragment: state.uri.fragment,
             ),
           ),
-          GoRoute(
-            path: '/b',
-            name: 'handleBatchInvite',
-            builder: (_, state) => ReceiveRequestPage(
-              initialState: ReceiveRequestState(
-                ReceiveRequestStatus.handleBatchInvite,
-                fragment: state.uri.fragment,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ],
-  );
-
-  GoRouter get router => _router;
-}
-
-Future<void> initializeProfile(
-  Storage<ProfileInfo> profileStorage,
-  Storage<Circle> circleStorage,
-  String initialName,
-) async {
-  final existingProfile = await getProfileInfo(profileStorage);
-  if (existingProfile != null) {
-    return;
-  }
-
-  // Add initial circle
-  final initialCircle = Circle(id: Uuid().v4(), name: 'Friends', memberIds: []);
-  await circleStorage.set(initialCircle.id, initialCircle);
-
-  // Add basic profile
-  final nameId = Uuid().v4();
-  final profile = ProfileInfo(
-    Uuid().v4(),
-    details: ContactDetails(names: {nameId: initialName}),
-    sharingSettings: ProfileSharingSettings(
-      names: {
-        nameId: [initialCircle.id],
-      },
+        ),
+      ],
     ),
-    mainKeyPair: await generateKeyPairBest(),
-  );
-  await profileStorage.set(profile.id, profile);
-}
+  ],
+);
 
 class App extends StatefulWidget {
   const App(
@@ -291,7 +276,9 @@ class App extends StatefulWidget {
     this.communityStorage,
     this.settingStorage,
     this.contactDhtRepository,
-    this.systemContactRepository, {
+    this.systemContactRepository,
+    this.backupRepository, {
+    required this.isFirstRun,
     super.key,
   });
 
@@ -303,6 +290,8 @@ class App extends StatefulWidget {
   final Storage<Setting> settingStorage;
   final ContactDhtRepository contactDhtRepository;
   final SystemContactRepository systemContactRepository;
+  final BackupRepository backupRepository;
+  final bool isFirstRun;
 
   @override
   _AppState createState() => _AppState();
@@ -310,8 +299,6 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> with WidgetsBindingObserver {
   static const _apnsChannel = MethodChannel('apns_token');
-
-  String? _providedNameOnFirstLaunch;
 
   final _seedColor = Colors.indigo;
 
@@ -361,8 +348,6 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
 
     unawaited(_initAPNs());
-
-    unawaited(_checkFirstLaunch());
 
     // Configure background fetch
     unawaited(
@@ -448,27 +433,6 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     //     forceAlarmManager: true));
   }
 
-  Future<void> _checkFirstLaunch() async {
-    final sharedPreferences = await SharedPreferences.getInstance();
-    setState(() {
-      _providedNameOnFirstLaunch =
-          sharedPreferences.getString('providedNameOnFirstLaunch') ?? '';
-    });
-  }
-
-  Future<void> _setFirstLaunchComplete({
-    required String name,
-    required String bootstrapUrl,
-  }) async {
-    await SharedPreferences.getInstance().then((p) async {
-      await p.setString('providedNameOnFirstLaunch', name);
-      await p.setString('veilidBootstrapUrl', bootstrapUrl);
-    });
-    setState(() {
-      _providedNameOnFirstLaunch = name;
-    });
-  }
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -548,38 +512,10 @@ class _AppState extends State<App> with WidgetsBindingObserver {
         );
         return const Center(child: CircularProgressIndicator());
       }
-      if (_providedNameOnFirstLaunch == null ||
-          _providedNameOnFirstLaunch!.isEmpty) {
-        return MaterialApp(
-          title: 'Reunicorn',
-          debugShowCheckedModeBanner: true,
-          themeMode: ThemeMode.system,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: _seedColor),
-            useMaterial3: true,
-          ),
-          darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: _seedColor,
-              brightness: Brightness.dark,
-            ),
-            useMaterial3: true,
-          ),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: WelcomeScreen(_setFirstLaunchComplete),
-        );
-      }
 
-      if (_providedNameOnFirstLaunch != null) {
-        unawaited(
-          initializeProfile(
-            widget.profileStorage,
-            widget.circleStorage,
-            _providedNameOnFirstLaunch!,
-          ),
-        );
-      }
+      // TODO(LGro): Move this to attribute?
+      final rootNavigatorKey = GlobalKey<NavigatorState>();
+      final appRouter = buildAppRouter(rootNavigatorKey, widget.isFirstRun);
 
       // Once init is done, we proceed with the app
       return BackgroundTicker(
@@ -602,6 +538,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
             ),
             RepositoryProvider(create: (_) => widget.contactDhtRepository),
             RepositoryProvider(create: (_) => widget.systemContactRepository),
+            RepositoryProvider(create: (_) => widget.backupRepository),
             RepositoryProvider(
               create: (_) => SettingsRepository(
                 darkMode:
@@ -625,10 +562,9 @@ class _AppState extends State<App> with WidgetsBindingObserver {
               ),
               useMaterial3: true,
             ),
-            routerDelegate: AppRouter().router.routerDelegate,
-            routeInformationProvider:
-                AppRouter().router.routeInformationProvider,
-            routeInformationParser: AppRouter().router.routeInformationParser,
+            routerDelegate: appRouter.routerDelegate,
+            routeInformationProvider: appRouter.routeInformationProvider,
+            routeInformationParser: appRouter.routeInformationParser,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
           ),

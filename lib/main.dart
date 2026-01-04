@@ -16,10 +16,12 @@ import 'data/models/contact_update.dart';
 import 'data/models/profile_info.dart';
 import 'data/models/setting.dart';
 import 'data/providers/legacy/sqlite.dart' as legacy;
+import 'data/repositories/backup_dht.dart';
 import 'data/repositories/contact_dht.dart';
 import 'data/repositories/contact_system.dart';
 import 'data/repositories/notifications.dart';
 import 'data/services/storage/sqlite.dart';
+import 'data/utils.dart';
 import 'notification_service.dart';
 import 'tools/loggy.dart';
 import 'ui/app.dart';
@@ -137,6 +139,14 @@ void main() async {
       notificationStorage,
       settingStorage,
     );
+    final backupRepository = BackupRepository(
+      profileStorage,
+      contactStorage,
+      circleStorage,
+      settingStorage,
+    );
+
+    final profile = await getProfileInfo(profileStorage);
 
     runApp(
       App(
@@ -148,6 +158,8 @@ void main() async {
         settingStorage,
         contactDhtRepository,
         systemContactRepository,
+        backupRepository,
+        isFirstRun: profile == null,
       ),
     );
   }

@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
@@ -8,8 +8,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../data/repositories/backup_dht.dart';
 import 'cubit.dart';
 
-class BackupPage extends StatelessWidget {
-  const BackupPage({super.key});
+class ManageBackupPage extends StatelessWidget {
+  const ManageBackupPage({super.key});
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -18,7 +18,8 @@ class BackupPage extends StatelessWidget {
       create: (context) => BackupCubit(context.read<BackupRepository>()),
       child: BlocConsumer<BackupCubit, BackupState>(
         listener: (context, state) => {},
-        builder: (blocContext, state) => SingleChildScrollView(
+        builder: (context, state) => SingleChildScrollView(
+          padding: const EdgeInsets.only(left: 16, right: 16),
           child: Column(
             children: [
               // TODO: Persisted backup case: Already created backup -> still up to date, awesome; outdated and broken, omg!
@@ -26,7 +27,7 @@ class BackupPage extends StatelessWidget {
                 'Here, you can create a backup of your Reunicorn account. '
                 'This is helpful to avoid losing your contacts when your '
                 'phone breaks or is stolen. Also, it is a great way to '
-                'migrate your data when you upgrade to a new phone.',
+                'migrate your data when you switch to a different phone.',
               ),
               const SizedBox(height: 8),
               if (state.status.isInitial || state.status.isFailure)
@@ -42,8 +43,8 @@ class BackupPage extends StatelessWidget {
                 ),
               ] else if (state.status.isSuccess) ...[
                 const Text(
-                  'Store this somewhere safe, '
-                  'where only you can access it...',
+                  'Store this somewhere safe, separate from your phone, '
+                  'where only you can access it:',
                 ),
                 Row(
                   children: [

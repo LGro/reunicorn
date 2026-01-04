@@ -272,6 +272,12 @@ abstract class AppLocalizations {
   /// **'Let\'s connect'**
   String get welcomeCallToActionButton;
 
+  /// No description provided for @welcomeRestoreBackupButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore backup'**
+  String get welcomeRestoreBackupButton;
+
   /// No description provided for @welcomeErrorNameMissing.
   ///
   /// In en, this message translates to:
