@@ -1,22 +1,45 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:bloc/bloc.dart';
-import 'package:equatable/equatable.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:veilid/veilid.dart';
 import '../../data/repositories/backup_dht.dart';
+import '../../veilid_processor/veilid_processor.dart';
 
+part 'cubit.freezed.dart';
 part 'cubit.g.dart';
 part 'state.dart';
 
 class RestoreCubit extends Cubit<RestoreState> {
-  RestoreCubit(this._backupRepository) : super(const RestoreState());
-
   final BackupRepository _backupRepository;
 
+  RestoreCubit(this._backupRepository)
+    : super(const RestoreState(status: RestoreStatus.attaching)) {
+    ProcessorRepository.instance.streamProcessorConnectionState().listen(
+      _veilidConnectionStateChangeCallback,
+    );
+  }
+
+  void _veilidConnectionStateChangeCallback(ProcessorConnectionState event) {
+    if (state.status.isAttaching &&
+        event.isPublicInternetReady &&
+        event.isAttached) {
+      if (!isClosed) {
+        emit(state.copyWith(status: RestoreStatus.ready));
+      }
+    }
+    if (!state.status.isAttaching &&
+        !event.isPublicInternetReady &&
+        !event.isAttached) {
+      if (!isClosed) {
+        emit(state.copyWith(status: RestoreStatus.attaching));
+      }
+    }
+  }
+
   Future<void> restore(RecordKey recordKey, SharedSecret secret) async {
-    emit(const RestoreState(status: RestoreStatus.create));
+    emit(const RestoreState(status: RestoreStatus.restoring));
 
     final result = await _backupRepository.restore(recordKey, secret);
 

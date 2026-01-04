@@ -6,18 +6,16 @@ part of 'cubit.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-RestoreState _$RestoreStateFromJson(Map<String, dynamic> json) => RestoreState(
-  status:
-      $enumDecodeNullable(_$RestoreStatusEnumMap, json['status']) ??
-      RestoreStatus.initial,
-);
+_RestoreState _$RestoreStateFromJson(Map<String, dynamic> json) =>
+    _RestoreState(status: $enumDecode(_$RestoreStatusEnumMap, json['status']));
 
-Map<String, dynamic> _$RestoreStateToJson(RestoreState instance) =>
+Map<String, dynamic> _$RestoreStateToJson(_RestoreState instance) =>
     <String, dynamic>{'status': _$RestoreStatusEnumMap[instance.status]!};
 
 const _$RestoreStatusEnumMap = {
-  RestoreStatus.initial: 'initial',
+  RestoreStatus.ready: 'ready',
+  RestoreStatus.attaching: 'attaching',
   RestoreStatus.success: 'success',
-  RestoreStatus.create: 'create',
+  RestoreStatus.restoring: 'restoring',
   RestoreStatus.failure: 'failure',
 };

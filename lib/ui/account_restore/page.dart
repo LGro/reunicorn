@@ -26,49 +26,59 @@ class RestoreBackupPage extends StatelessWidget {
           if (state.status.isSuccess) {context.pushReplacementNamed('profile')},
         },
         builder: (context, state) => SingleChildScrollView(
-          child: (state.status.isCreate)
-              ? const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [CircularProgressIndicator()],
-                )
-              : Column(
-                  children: [
-                    if (state.status.isFailure)
-                      const Text('Backup restoration failed.'),
-                    const Text(
-                      'Did you already use Reunicorn before and have a backup '
-                      'secret to restore your profile and contacts?',
-                    ),
-                    TextFormField(
-                      key: _textFieldKey,
-                      onChanged: (v) {
-                        if (_textFieldKey.currentState?.validate() ?? false) {}
-                      },
-                      validator: (value) {
-                        if (value == null) {
-                          return null;
-                        }
-                        final splits = value.split('~');
-                        if (splits.length != 2) {
-                          return 'Invalid backup secret.';
-                        }
-                        try {
-                          final recordKey = RecordKey.fromString(splits.first);
-                          final secret = SharedSecret.fromString(splits.last);
-                          unawaited(
-                            context.read<RestoreCubit>().restore(
-                              recordKey,
-                              secret,
-                            ),
-                          );
-                        } on Exception {
-                          return 'Invalid backup secret.';
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
+          padding: const EdgeInsets.all(16),
+          child: switch (state.status) {
+            RestoreStatus.attaching => const Center(
+              child: Text(
+                'Connecting to the network, please wait.',
+                textScaler: TextScaler.linear(1.2),
+              ),
+            ),
+            RestoreStatus.restoring => const Center(
+              child: Text(
+                'Restoring backup, please wait.',
+                textScaler: TextScaler.linear(1.2),
+              ),
+            ),
+            RestoreStatus.ready || RestoreStatus.failure => Column(
+              children: [
+                if (state.status.isFailure)
+                  const Text('Backup restoration failed.'),
+                const Text(
+                  'Did you already use Reunicorn before and have a backup '
+                  'secret to restore your profile and contacts? Then paste it '
+                  'here:',
+                  textScaler: TextScaler.linear(1.2),
                 ),
+                TextFormField(
+                  key: _textFieldKey,
+                  onChanged: (v) {
+                    if (_textFieldKey.currentState?.validate() ?? false) {}
+                  },
+                  validator: (value) {
+                    if (value == null) {
+                      return null;
+                    }
+                    final splits = value.split('~');
+                    if (splits.length != 2) {
+                      return 'Invalid backup secret.';
+                    }
+                    try {
+                      final recordKey = RecordKey.fromString(splits.first);
+                      final secret = SharedSecret.fromString(splits.last);
+                      unawaited(
+                        context.read<RestoreCubit>().restore(recordKey, secret),
+                      );
+                    } on Exception {
+                      return 'Invalid backup secret.';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+            _ => const SizedBox(),
+          },
         ),
       ),
     ),
