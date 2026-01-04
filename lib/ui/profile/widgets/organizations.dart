@@ -8,8 +8,8 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import '../../../data/models/coag_contact.dart';
 import '../../../data/models/profile_sharing_settings.dart';
 import '../../utils.dart';
+import '../../widgets/details_list.dart';
 import '../cubit.dart';
-import 'details_list.dart';
 
 // TODO: Tackle redundancies with other details add or edit widget
 class _EditOrAddWidget extends StatefulWidget {
@@ -24,14 +24,11 @@ class _EditOrAddWidget extends StatefulWidget {
     this.title,
     this.onDelete,
     this.valueHintText,
-    this.labelHelperText,
     this.existingLabels = const [],
-    super.key,
   });
 
   final bool isEditing;
   final String headlineSuffix;
-  final String? labelHelperText;
   final String? valueHintText;
   final String? id;
   final String? company;

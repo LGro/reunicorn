@@ -16,6 +16,8 @@
   "website": "website",
   "organizations": "organizations",
   "organization": "organization",
+  "tag": "tag",
+  "tags": "tags",
   "pictures": "pictures",
   "newCircle": "new circle",
   "sharedWith": "shared with",

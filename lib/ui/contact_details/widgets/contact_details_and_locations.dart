@@ -1,12 +1,12 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/coag_contact.dart';
-import '../../profile/page.dart';
 import '../../utils.dart';
+import '../../widgets/details_list.dart';
 import 'temporary_locations.dart';
 
 class ContactDetailsAndLocations extends StatelessWidget {
@@ -54,35 +54,31 @@ class ContactDetailsAndLocations extends StatelessWidget {
 
       // Contact details
       if (_contact.details?.names.isNotEmpty ?? false)
-        ...detailsList(context, _contact.details!.names, hideLabel: true),
+        DetailsList(_contact.details!.names, hideLabel: true),
       if (_contact.details?.phones.isNotEmpty ?? false)
-        ...detailsList(
-          context,
+        DetailsList(
           _contact.details!.phones,
           hideEditButton: true,
           editCallback: (label) =>
               launchUrl('tel:${_contact.details!.phones[label]}'),
         ),
       if (_contact.details?.emails.isNotEmpty ?? false)
-        ...detailsList(
-          context,
+        DetailsList(
           _contact.details!.emails,
           hideEditButton: true,
           editCallback: (label) =>
               launchUrl('mailto:${_contact.details!.emails[label]}'),
         ),
       if (_contact.addressLocations.isNotEmpty)
-        ...detailsList(
-          context,
+        DetailsList(
           _contact.addressLocations.map(
             (label, a) => MapEntry(label, commasToNewlines(a.address ?? '')),
           ),
         ),
       if (_contact.details?.socialMedias.isNotEmpty ?? false)
-        ...detailsList(context, _contact.details!.socialMedias),
+        DetailsList(_contact.details!.socialMedias),
       if (_contact.details?.websites.isNotEmpty ?? false)
-        ...detailsList(
-          context,
+        DetailsList(
           _contact.details!.websites,
           hideEditButton: true,
           editCallback: (label) => launchUrl(
@@ -92,8 +88,7 @@ class ContactDetailsAndLocations extends StatelessWidget {
           ),
         ),
       if (_contact.details?.events.isNotEmpty ?? false)
-        ...detailsList(
-          context,
+        DetailsList(
           _contact.details!.events.map(
             (label, date) => MapEntry(
               label,
@@ -105,10 +100,9 @@ class ContactDetailsAndLocations extends StatelessWidget {
           hideEditButton: true,
         ),
       if (_contact.details?.misc.isNotEmpty ?? false)
-        ...detailsList(context, _contact.details!.misc, hideEditButton: true),
+        DetailsList(_contact.details!.misc, hideEditButton: true),
       if (_contact.details?.tags.isNotEmpty ?? false)
-        ...detailsList(
-          context,
+        DetailsList(
           _contact.details!.tags,
           hideEditButton: true,
           hideLabel: true,

@@ -6,7 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:veilid/veilid.dart';
 
 import '../../utils.dart';
-import '../widgets/details_list.dart';
+import '../../widgets/details_list.dart';
 
 class ProfileInviteLinkWidget extends StatelessWidget {
   const ProfileInviteLinkWidget({

@@ -12,7 +12,7 @@ import '../../data/models/profile_info.dart';
 import '../../data/repositories/contact_dht.dart';
 import '../../data/services/storage/base.dart';
 import '../contact_details/page.dart';
-import '../profile/page.dart';
+import '../profile/widgets/pictures.dart';
 import '../utils.dart';
 import '../widgets/searchable_list.dart';
 import 'cubit.dart';
@@ -170,7 +170,7 @@ Map<String, List<int>> filterCirclePictureDuplicates(
 Widget _pictureSelection(BuildContext context, CircleDetailsState state) => Row(
   children: [
     GestureDetector(
-      onTap: () async => pickCirclePicture(
+      onTap: () => pickCirclePicture(
         context,
         context.read<CircleDetailsCubit>().updateCirclePicture,
       ),

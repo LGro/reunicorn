@@ -16,13 +16,13 @@ part 'profile_info.g.dart';
 
 @JsonSerializable()
 class ProfileInfo extends Equatable implements JsonEncodable {
-  ProfileInfo(
+  const ProfileInfo(
     this.id, {
     this.details = const ContactDetails(),
     this.pictures = const {},
     this.addressLocations = const {},
     this.temporaryLocations = const {},
-    this.sharingSettings = ProfileSharingSettings(),
+    this.sharingSettings = const ProfileSharingSettings(),
     this.mainKeyPair,
   });
 

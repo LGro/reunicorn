@@ -6,8 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../data/models/coag_contact.dart';
 import '../../../data/models/profile_sharing_settings.dart';
+import '../../widgets/details_list.dart';
 import '../cubit.dart';
-import 'details_list.dart';
 import 'edit_or_add.dart';
 
 class ProfileSocialsWidget extends StatelessWidget {

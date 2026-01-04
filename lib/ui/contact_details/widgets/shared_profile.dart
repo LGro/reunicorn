@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
@@ -6,8 +6,8 @@ import 'package:intl/intl.dart';
 
 import '../../../data/models/coag_contact.dart';
 import '../../../data/models/contact_location.dart';
-import '../../profile/page.dart';
 import '../../utils.dart';
+import '../../widgets/details_list.dart';
 
 class SharedProfile extends StatelessWidget {
   const SharedProfile(this._details, this._addressLocations, {super.key});
@@ -36,24 +36,20 @@ class SharedProfile extends StatelessWidget {
           ),
         ),
       if (_details.names.isNotEmpty)
-        ...detailsList(context, _details.names, hideLabel: true),
-      if (_details.phones.isNotEmpty) ...detailsList(context, _details.phones),
-      if (_details.emails.isNotEmpty) ...detailsList(context, _details.emails),
+        DetailsList(_details.names, hideLabel: true),
+      if (_details.phones.isNotEmpty) DetailsList(_details.phones),
+      if (_details.emails.isNotEmpty) DetailsList(_details.emails),
       if (_addressLocations.isNotEmpty)
-        ...detailsList(
-          context,
+        DetailsList(
           _addressLocations.map(
             (label, address) =>
                 MapEntry(label, commasToNewlines(address.address ?? '')),
           ),
         ),
-      if (_details.socialMedias.isNotEmpty)
-        ...detailsList(context, _details.socialMedias),
-      if (_details.websites.isNotEmpty)
-        ...detailsList(context, _details.websites),
+      if (_details.socialMedias.isNotEmpty) DetailsList(_details.socialMedias),
+      if (_details.websites.isNotEmpty) DetailsList(_details.websites),
       if (_details.organizations.isNotEmpty)
-        ...detailsList(
-          context,
+        DetailsList(
           hideLabel: true,
           _details.organizations.map(
             (id, org) => MapEntry(
@@ -67,8 +63,7 @@ class SharedProfile extends StatelessWidget {
           ),
         ),
       if (_details.events.isNotEmpty)
-        ...detailsList(
-          context,
+        DetailsList(
           _details.events.map(
             (label, date) => MapEntry(
               label,
@@ -78,9 +73,8 @@ class SharedProfile extends StatelessWidget {
             ),
           ),
         ),
-      if (_details.misc.isNotEmpty) ...detailsList(context, _details.misc),
-      if (_details.tags.isNotEmpty)
-        ...detailsList(context, _details.tags, hideLabel: true),
+      if (_details.misc.isNotEmpty) DetailsList(_details.misc),
+      if (_details.tags.isNotEmpty) DetailsList(_details.tags, hideLabel: true),
 
       const Padding(
         padding: EdgeInsets.only(left: 12, right: 12, bottom: 8, top: 4),

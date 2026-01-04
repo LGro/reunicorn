@@ -200,6 +200,18 @@ abstract class AppLocalizations {
   /// **'organization'**
   String get organization;
 
+  /// No description provided for @tag.
+  ///
+  /// In en, this message translates to:
+  /// **'tag'**
+  String get tag;
+
+  /// No description provided for @tags.
+  ///
+  /// In en, this message translates to:
+  /// **'tags'**
+  String get tags;
+
   /// No description provided for @pictures.
   ///
   /// In en, this message translates to:

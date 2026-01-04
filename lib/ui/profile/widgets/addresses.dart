@@ -10,8 +10,8 @@ import '../../../data/models/profile_sharing_settings.dart';
 import '../../../data/providers/geocoding/maptiler.dart';
 import '../../locations/schedule/widget.dart';
 import '../../utils.dart';
+import '../../widgets/details_list.dart';
 import '../cubit.dart';
-import 'details_list.dart';
 
 // TODO: Tackle redundancies with other details add or edit widget
 class EditOrAddAddressWidget extends StatefulWidget {

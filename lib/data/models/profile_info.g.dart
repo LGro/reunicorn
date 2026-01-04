@@ -36,7 +36,7 @@ ProfileInfo _$ProfileInfoFromJson(Map<String, dynamic> json) => ProfileInfo(
       ) ??
       const {},
   sharingSettings: json['sharing_settings'] == null
-      ? ProfileSharingSettings()
+      ? const ProfileSharingSettings()
       : ProfileSharingSettings.fromJson(
           json['sharing_settings'] as Map<String, dynamic>,
         ),

@@ -4,7 +4,7 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 
-import '../../utils.dart';
+import '../utils.dart';
 
 class DetailsCard extends StatelessWidget {
   const DetailsCard({this.title, this.children = const [], super.key});

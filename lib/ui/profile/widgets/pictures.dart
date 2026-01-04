@@ -10,8 +10,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:loggy/loggy.dart';
 
 import '../../utils.dart';
+import '../../widgets/details_list.dart';
 import '../cubit.dart';
-import '../widgets/details_list.dart';
 
 Future<void> pickCirclePicture(
   BuildContext context,

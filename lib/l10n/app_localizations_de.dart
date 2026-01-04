@@ -60,6 +60,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get organization => 'Organisation';
 
   @override
+  String get tag => 'Schlagwort';
+
+  @override
+  String get tags => 'Schlagwörter';
+
+  @override
   String get pictures => 'Bild';
 
   @override
