@@ -1,75 +1,70 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
 
 import '../../../data/models/coag_contact.dart';
+import '../../../data/models/contact_location.dart';
 import '../../../data/models/profile_sharing_settings.dart';
+import '../../../data/providers/geocoding/maptiler.dart';
+import '../../locations/schedule/widget.dart';
 import '../../utils.dart';
 import '../cubit.dart';
 import 'details_list.dart';
 
 // TODO: Tackle redundancies with other details add or edit widget
-class _EditOrAddWidget extends StatefulWidget {
-  const _EditOrAddWidget({
+class EditOrAddAddressWidget extends StatefulWidget {
+  const EditOrAddAddressWidget({
+    super.key,
     required this.isEditing,
     required this.headlineSuffix,
     required this.onAddOrSave,
     required this.circles,
-    this.id,
-    this.company,
-    this.department,
-    this.title,
+    this.value,
+    this.label,
     this.onDelete,
     this.valueHintText,
     this.labelHelperText,
     this.existingLabels = const [],
-    super.key,
   });
 
   final bool isEditing;
   final String headlineSuffix;
   final String? labelHelperText;
   final String? valueHintText;
-  final String? id;
-  final String? company;
-  final String? title;
-  final String? department;
+  final String? label;
+  final ContactAddressLocation? value;
   final VoidCallback? onDelete;
   final void Function(
-    String? existingId,
-    Organization value,
+    String?,
+    String label,
+    ContactAddressLocation value,
     List<(String, String, bool)> selectedCircles,
   )
   onAddOrSave;
   final List<(String, String, bool, int)> circles;
   final List<String> existingLabels;
   @override
-  State<_EditOrAddWidget> createState() => __EditOrAddWidgetState();
+  State<EditOrAddAddressWidget> createState() => _EditOrAddAddressWidgetState();
 }
 
-class __EditOrAddWidgetState extends State<_EditOrAddWidget> {
+class _EditOrAddAddressWidgetState extends State<EditOrAddAddressWidget> {
   final _formKey = GlobalKey<FormState>();
-  final _companyFieldKey = GlobalKey<FormFieldState<String>>();
-  final _titleFieldKey = GlobalKey<FormFieldState<String>>();
-  final _departmentFieldKey = GlobalKey<FormFieldState<String>>();
+  final _labelFieldKey = GlobalKey<FormFieldState>();
   late List<(String, String, bool, int)> _circles;
   late final TextEditingController _newCircleNameController;
 
-  String? _company;
-  String? _title;
-  String? _department;
+  ContactAddressLocation? _value;
+  String? _label;
 
   @override
   void initState() {
     super.initState();
     _circles = [...widget.circles];
     _newCircleNameController = TextEditingController();
-    _company = widget.company;
-    _title = widget.title;
-    _department = widget.department;
+    _value = widget.value;
+    _label = widget.label;
   }
 
   @override
@@ -98,83 +93,71 @@ class __EditOrAddWidgetState extends State<_EditOrAddWidget> {
           ? context.loc.profileEditHeadline(widget.headlineSuffix)
           : context.loc.profileAddHeadline(widget.headlineSuffix),
       onSaveWidget: IconButton.filled(
-        onPressed: () => (_formKey.currentState!.validate() && _company != null)
+        onPressed: () => (_formKey.currentState!.validate() && _value != null)
             ? widget.onAddOrSave(
-                widget.id,
-                Organization(
-                  company: _company?.trim() ?? '',
-                  title: _title?.trim() ?? '',
-                  department: _department?.trim() ?? '',
-                ),
+                widget.label,
+                (_label ?? '').trim(),
+                _value!,
                 _circles.map((e) => (e.$1, e.$2, e.$3)).toList(),
               )
             : null,
         icon: const Icon(Icons.check),
       ),
       children: [
-        // Company
-        TextFormField(
-          key: _companyFieldKey,
-          initialValue: _company,
-          autocorrect: false,
-          decoration: InputDecoration(
-            isDense: true,
-            hintText: context.loc.organization,
-            border: const OutlineInputBorder(),
+        FractionallySizedBox(
+          widthFactor: 0.5,
+          child: TextFormField(
+            key: _labelFieldKey,
+            initialValue: _label,
+            decoration: InputDecoration(
+              labelText: 'label',
+              isDense: true,
+              helperText: widget.labelHelperText,
+              border: const OutlineInputBorder(),
+            ),
+            validator: (value) {
+              if (value?.isEmpty ?? true) {
+                return 'Please specify a label.';
+              }
+              if (widget.existingLabels
+                  .map((l) => l.toLowerCase())
+                  .contains(value?.toLowerCase())) {
+                return 'This label already exists.';
+              }
+              return null;
+            },
+            onChanged: (label) {
+              if (_labelFieldKey.currentState?.validate() ?? false) {
+                setState(() {
+                  _label = label;
+                });
+              }
+            },
           ),
-          validator: (value) {
-            if (value?.isEmpty ?? true) {
-              return 'Please enter a company name.';
-            }
-            return null;
-          },
-          onChanged: (value) {
-            if (_companyFieldKey.currentState?.validate() ?? false) {
-              setState(() {
-                _company = value;
-              });
-            }
-          },
         ),
         const SizedBox(height: 16),
-        // Title
-        TextFormField(
-          key: _titleFieldKey,
-          initialValue: _title,
-          autocorrect: false,
-          decoration: const InputDecoration(
-            isDense: true,
-            hintText: 'title',
-            border: OutlineInputBorder(),
-          ),
-          validator: (value) => null,
-          onChanged: (value) {
-            if (_titleFieldKey.currentState?.validate() ?? false) {
+        // TODO: Validate empty field with hint?
+        SizedBox(
+          height: 350,
+          child: MapWidget(
+            initialLocation: (_value == null)
+                ? null
+                : SearchResult(
+                    longitude: _value!.longitude,
+                    latitude: _value!.latitude,
+                    placeName: _value!.address ?? '',
+                    id: '',
+                  ),
+            onSelected: (l) {
               setState(() {
-                _title = value;
+                _value = ContactAddressLocation(
+                  longitude: l.longitude,
+                  latitude: l.latitude,
+                  address: l.placeName,
+                );
               });
-            }
-          },
-        ),
-        const SizedBox(height: 16),
-        // Department
-        TextFormField(
-          key: _departmentFieldKey,
-          initialValue: _department,
-          autocorrect: false,
-          decoration: const InputDecoration(
-            isDense: true,
-            hintText: 'department',
-            border: OutlineInputBorder(),
+            },
           ),
-          validator: (value) => null,
-          onChanged: (value) {
-            if (_departmentFieldKey.currentState?.validate() ?? false) {
-              setState(() {
-                _department = value;
-              });
-            }
-          },
         ),
         const SizedBox(height: 16),
         Text(
@@ -228,9 +211,10 @@ class __EditOrAddWidgetState extends State<_EditOrAddWidget> {
   );
 }
 
-class ProfileOrganizationsWidget extends StatelessWidget {
-  const ProfileOrganizationsWidget(
+class ProfileAddressesWidget extends StatelessWidget {
+  const ProfileAddressesWidget(
     this.contact,
+    this.addressLocations,
     this.profileSharingSettings,
     this.circles,
     this.circleMemberships, {
@@ -238,38 +222,32 @@ class ProfileOrganizationsWidget extends StatelessWidget {
   });
 
   final ContactDetails contact;
+  final Map<String, ContactAddressLocation> addressLocations;
   final ProfileSharingSettings profileSharingSettings;
   final Map<String, String> circles;
   final Map<String, List<String>> circleMemberships;
 
   @override
   Widget build(BuildContext context) => DetailsList(
-    contact.organizations.map(
-      (key, value) => MapEntry(
-        key,
-        [
-          value.company,
-          value.title,
-          value.department,
-        ].where((v) => v.isNotEmpty).join('\n'),
-      ),
+    addressLocations.map(
+      (label, address) =>
+          MapEntry(label, commasToNewlines(address.address ?? '')),
     ),
     title: Text(
-      context.loc.organizations.capitalize(),
+      context.loc.addresses.capitalize(),
       textScaler: const TextScaler.linear(1.4),
       style: TextStyle(
         fontWeight: FontWeight.bold,
         color: Theme.of(context).colorScheme.primary,
       ),
     ),
-    getDetailSharingSettings: (l) => profileSharingSettings.organizations[l],
+    getDetailSharingSettings: (l) => profileSharingSettings.addresses[l],
     circles: circles,
     circleMemberships: circleMemberships,
-    hideLabel: true,
-    deleteCallback: (id) => context.read<ProfileCubit>().updateDetails(
-      contact.copyWith(organizations: {...contact.organizations}..remove(id)),
-    ),
-    editCallback: (id) => showModalBottomSheet<void>(
+    deleteCallback: (label) => context
+        .read<ProfileCubit>()
+        .updateAddressLocations({...addressLocations}..remove(label)),
+    editCallback: (label) => showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (buildContext) => DraggableScrollableSheet(
@@ -278,14 +256,14 @@ class ProfileOrganizationsWidget extends StatelessWidget {
         initialChildSize: 0.9,
         builder: (_, scrollController) => SingleChildScrollView(
           controller: scrollController,
-          child: _EditOrAddWidget(
+          child: EditOrAddAddressWidget(
             isEditing: true,
             circles: circles
                 .map(
                   (cId, cLabel) => MapEntry(cId, (
                     cId,
                     cLabel,
-                    profileSharingSettings.organizations[id]?.contains(cId) ??
+                    profileSharingSettings.addresses[label]?.contains(cId) ??
                         false,
                     circleMemberships.values
                         .where((circles) => circles.contains(cId))
@@ -294,24 +272,23 @@ class ProfileOrganizationsWidget extends StatelessWidget {
                 )
                 .values
                 .toList(),
-            headlineSuffix: context.loc.organization,
-            id: id,
-            company: contact.organizations[id]?.company ?? '',
-            title: contact.organizations[id]?.title ?? '',
-            department: contact.organizations[id]?.department ?? '',
+            headlineSuffix: context.loc.address,
+            labelHelperText: 'e.g. home or cabin',
+            existingLabels: addressLocations.keys.toList()..remove(label),
+            label: label,
+            value: addressLocations[label],
             onDelete: () async {
-              await context.read<ProfileCubit>().updateDetails(
-                contact.copyWith(
-                  organizations: {...contact.organizations}..remove(id),
-                ),
+              await context.read<ProfileCubit>().updateAddressLocations(
+                {...addressLocations}..remove(label),
               );
               if (buildContext.mounted) {
                 Navigator.of(buildContext).pop();
               }
             },
-            onAddOrSave: (existingId, value, circlesWithSelection) async {
-              await context.read<ProfileCubit>().updateOrganization(
-                existingId,
+            onAddOrSave: (oldLabel, label, value, circlesWithSelection) async {
+              await context.read<ProfileCubit>().updateAddressLocation(
+                oldLabel,
+                label,
                 value,
                 circlesWithSelection,
               );
@@ -333,7 +310,7 @@ class ProfileOrganizationsWidget extends StatelessWidget {
         initialChildSize: 0.9,
         builder: (_, scrollController) => SingleChildScrollView(
           controller: scrollController,
-          child: _EditOrAddWidget(
+          child: EditOrAddAddressWidget(
             isEditing: false,
             circles: circles
                 .map(
@@ -348,12 +325,15 @@ class ProfileOrganizationsWidget extends StatelessWidget {
                 )
                 .values
                 .toList(),
-            headlineSuffix: context.loc.organization,
-            valueHintText: null,
-            existingLabels: contact.events.keys.toList(),
-            onAddOrSave: (id, value, circlesWithSelection) async {
-              await context.read<ProfileCubit>().updateOrganization(
-                id,
+            headlineSuffix: context.loc.address,
+            valueHintText: 'Street, City, Country',
+            labelHelperText: 'e.g. home or cabin',
+            label: (addressLocations.isEmpty) ? 'home' : null,
+            existingLabels: addressLocations.keys.toList(),
+            onAddOrSave: (oldLabel, label, value, circlesWithSelection) async {
+              await context.read<ProfileCubit>().updateAddressLocation(
+                oldLabel,
+                label,
                 value,
                 circlesWithSelection,
               );
