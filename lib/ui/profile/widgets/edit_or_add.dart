@@ -51,7 +51,7 @@ Future<void> onAddDetail({
         labelHelperText: labelHelperText,
         label: defaultLabel,
         existingLabels: existingLabels,
-        onAddOrSave: (label, number, circlesWithSelection) async =>
+        onAddOrSave: (label, number, circlesWithSelection) =>
             onAdd(label, number, circlesWithSelection).then(
               (_) => (buildContext.mounted)
                   ? Navigator.of(buildContext).pop()

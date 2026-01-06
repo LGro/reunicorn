@@ -53,7 +53,6 @@ class _EditOrAddAddressWidgetState extends State<EditOrAddAddressWidget> {
   final _formKey = GlobalKey<FormState>();
   final _labelFieldKey = GlobalKey<FormFieldState>();
   late List<(String, String, bool, int)> _circles;
-  late final TextEditingController _newCircleNameController;
 
   ContactAddressLocation? _value;
   String? _label;
@@ -62,14 +61,12 @@ class _EditOrAddAddressWidgetState extends State<EditOrAddAddressWidget> {
   void initState() {
     super.initState();
     _circles = [...widget.circles];
-    _newCircleNameController = TextEditingController();
     _value = widget.value;
     _label = widget.label;
   }
 
   @override
   void dispose() {
-    _newCircleNameController.dispose();
     super.dispose();
   }
 
@@ -211,6 +208,118 @@ class _EditOrAddAddressWidgetState extends State<EditOrAddAddressWidget> {
   );
 }
 
+Future<void> onAddDetail({
+  required BuildContext context,
+  required Map<String, ContactAddressLocation> addressLocations,
+  required Map<String, String> circles,
+  required Map<String, List<String>> circleMemberships,
+}) => showModalBottomSheet<void>(
+  context: context,
+  isDismissible: true,
+  isScrollControlled: true,
+  builder: (buildContext) => DraggableScrollableSheet(
+    expand: false,
+    maxChildSize: 0.9,
+    initialChildSize: 0.9,
+    builder: (_, scrollController) => SingleChildScrollView(
+      controller: scrollController,
+      child: EditOrAddAddressWidget(
+        isEditing: false,
+        circles: circles
+            .map(
+              (cId, cLabel) => MapEntry(cId, (
+                cId,
+                cLabel,
+                false,
+                circleMemberships.values
+                    .where((circles) => circles.contains(cId))
+                    .length,
+              )),
+            )
+            .values
+            .toList(),
+        headlineSuffix: buildContext.loc.address,
+        valueHintText: 'Street, City, Country',
+        labelHelperText: 'e.g. home or cabin',
+        label: (addressLocations.isEmpty) ? 'home' : null,
+        existingLabels: addressLocations.keys.toList(),
+        onAddOrSave: (oldLabel, label, value, circlesWithSelection) async {
+          await context.read<ProfileCubit>().updateAddressLocation(
+            oldLabel,
+            label,
+            value,
+            circlesWithSelection,
+          );
+          if (buildContext.mounted) {
+            Navigator.of(buildContext).pop();
+          }
+        },
+      ),
+    ),
+  ),
+);
+
+Future<void> onEditDetail({
+  required BuildContext context,
+  required Map<String, ContactAddressLocation> addressLocations,
+  required String label,
+  required Map<String, String> circles,
+  required Map<String, List<String>> circleMemberships,
+  required Map<String, List<String>> detailSharingSettings,
+  List<String> existingLabels = const [],
+}) => showModalBottomSheet<void>(
+  context: context,
+  isScrollControlled: true,
+  builder: (buildContext) => DraggableScrollableSheet(
+    expand: false,
+    maxChildSize: 0.9,
+    initialChildSize: 0.9,
+    builder: (_, scrollController) => SingleChildScrollView(
+      controller: scrollController,
+      child: EditOrAddAddressWidget(
+        isEditing: true,
+        circles: circles
+            .map(
+              (cId, cLabel) => MapEntry(cId, (
+                cId,
+                cLabel,
+                detailSharingSettings[label]?.contains(cId) ?? false,
+                circleMemberships.values
+                    .where((circles) => circles.contains(cId))
+                    .length,
+              )),
+            )
+            .values
+            .toList(),
+        headlineSuffix: buildContext.loc.address,
+        labelHelperText: 'e.g. home or cabin',
+        existingLabels: addressLocations.keys.toList()..remove(label),
+        label: label,
+        value: addressLocations[label],
+        onDelete: () async {
+          await context.read<ProfileCubit>().updateAddressLocations(
+            {...addressLocations}..remove(label),
+          );
+          if (buildContext.mounted) {
+            Navigator.of(buildContext).pop();
+          }
+        },
+        onAddOrSave: (oldLabel, label, value, circlesWithSelection) async {
+          await context.read<ProfileCubit>().updateAddressLocation(
+            oldLabel,
+            label,
+            value,
+            circlesWithSelection,
+          );
+          if (buildContext.mounted) {
+            Navigator.of(buildContext).pop();
+          }
+        },
+      ),
+    ),
+  ),
+);
+
 class ProfileAddressesWidget extends StatelessWidget {
   const ProfileAddressesWidget(
     this.contact,
@@ -247,103 +356,19 @@ class ProfileAddressesWidget extends StatelessWidget {
     deleteCallback: (label) => context
         .read<ProfileCubit>()
         .updateAddressLocations({...addressLocations}..remove(label)),
-    editCallback: (label) => showModalBottomSheet<void>(
+    editCallback: (label) => onEditDetail(
       context: context,
-      isScrollControlled: true,
-      builder: (buildContext) => DraggableScrollableSheet(
-        expand: false,
-        maxChildSize: 0.9,
-        initialChildSize: 0.9,
-        builder: (_, scrollController) => SingleChildScrollView(
-          controller: scrollController,
-          child: EditOrAddAddressWidget(
-            isEditing: true,
-            circles: circles
-                .map(
-                  (cId, cLabel) => MapEntry(cId, (
-                    cId,
-                    cLabel,
-                    profileSharingSettings.addresses[label]?.contains(cId) ??
-                        false,
-                    circleMemberships.values
-                        .where((circles) => circles.contains(cId))
-                        .length,
-                  )),
-                )
-                .values
-                .toList(),
-            headlineSuffix: context.loc.address,
-            labelHelperText: 'e.g. home or cabin',
-            existingLabels: addressLocations.keys.toList()..remove(label),
-            label: label,
-            value: addressLocations[label],
-            onDelete: () async {
-              await context.read<ProfileCubit>().updateAddressLocations(
-                {...addressLocations}..remove(label),
-              );
-              if (buildContext.mounted) {
-                Navigator.of(buildContext).pop();
-              }
-            },
-            onAddOrSave: (oldLabel, label, value, circlesWithSelection) async {
-              await context.read<ProfileCubit>().updateAddressLocation(
-                oldLabel,
-                label,
-                value,
-                circlesWithSelection,
-              );
-              if (buildContext.mounted) {
-                Navigator.of(buildContext).pop();
-              }
-            },
-          ),
-        ),
-      ),
+      addressLocations: addressLocations,
+      label: label,
+      circles: circles,
+      circleMemberships: circleMemberships,
+      detailSharingSettings: profileSharingSettings.addresses,
     ),
-    addCallback: () => showModalBottomSheet<void>(
+    addCallback: () => onAddDetail(
       context: context,
-      isDismissible: true,
-      isScrollControlled: true,
-      builder: (buildContext) => DraggableScrollableSheet(
-        expand: false,
-        maxChildSize: 0.9,
-        initialChildSize: 0.9,
-        builder: (_, scrollController) => SingleChildScrollView(
-          controller: scrollController,
-          child: EditOrAddAddressWidget(
-            isEditing: false,
-            circles: circles
-                .map(
-                  (cId, cLabel) => MapEntry(cId, (
-                    cId,
-                    cLabel,
-                    false,
-                    circleMemberships.values
-                        .where((circles) => circles.contains(cId))
-                        .length,
-                  )),
-                )
-                .values
-                .toList(),
-            headlineSuffix: context.loc.address,
-            valueHintText: 'Street, City, Country',
-            labelHelperText: 'e.g. home or cabin',
-            label: (addressLocations.isEmpty) ? 'home' : null,
-            existingLabels: addressLocations.keys.toList(),
-            onAddOrSave: (oldLabel, label, value, circlesWithSelection) async {
-              await context.read<ProfileCubit>().updateAddressLocation(
-                oldLabel,
-                label,
-                value,
-                circlesWithSelection,
-              );
-              if (buildContext.mounted) {
-                Navigator.of(buildContext).pop();
-              }
-            },
-          ),
-        ),
-      ),
+      addressLocations: addressLocations,
+      circles: circles,
+      circleMemberships: circleMemberships,
     ),
   );
 }

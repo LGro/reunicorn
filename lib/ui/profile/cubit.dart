@@ -42,14 +42,16 @@ class ProfileCubit extends Cubit<ProfileState> {
     final profileInfo = await getProfileInfo(_profileStorage);
     final circles = await _circleStorage.getAll();
 
-    emit(
-      state.copyWith(
-        status: ProfileStatus.success,
-        profileInfo: profileInfo,
-        circles: circles.map((id, c) => MapEntry(id, c.name)),
-        circleMemberships: circlesByContactIds(circles.values),
-      ),
-    );
+    if (!isClosed) {
+      emit(
+        state.copyWith(
+          status: ProfileStatus.success,
+          profileInfo: profileInfo,
+          circles: circles.map((id, c) => MapEntry(id, c.name)),
+          circleMemberships: circlesByContactIds(circles.values),
+        ),
+      );
+    }
   }
 
   /// For circle ID and label pairs, add the new ones to the contacts repository

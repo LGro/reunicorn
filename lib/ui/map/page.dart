@@ -830,7 +830,7 @@ class _MapPageState extends State<MapPage> {
                 Align(
                   alignment: AlignmentDirectional.topEnd,
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 24, right: 12),
+                    padding: const EdgeInsets.only(top: 32, right: 12),
                     child: IconButton.filledTonal(
                       onPressed: () => context.pushNamed('locationListPage'),
                       icon: const Icon(Icons.list),

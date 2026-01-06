@@ -1,4 +1,4 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:typed_data';
@@ -157,7 +157,7 @@ class LocationListPage extends StatelessWidget {
         ]..sort((l1, l2) => l1.$2.start.compareTo(l2.$2.start));
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Locations')),
+          appBar: AppBar(title: const Text('Future Shared Locations')),
           body: Expanded(child: SliverListWithMonthHeaders(data: locations)),
         );
       },

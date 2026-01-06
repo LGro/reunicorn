@@ -16,6 +16,7 @@ class ContactDetailsAndLocations extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Padding(
         padding: const EdgeInsets.only(left: 12, top: 8, right: 12, bottom: 8),

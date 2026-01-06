@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/foundation.dart';
@@ -109,6 +109,10 @@ class SettingsPage extends StatelessWidget {
 
             ListTile(
               title: const Text('Terms and conditions'),
+              trailing: const Padding(
+                padding: EdgeInsets.only(right: 20),
+                child: Icon(Icons.arrow_right),
+              ),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<TermsAndConditions>(
                   fullscreenDialog: true,
@@ -118,6 +122,10 @@ class SettingsPage extends StatelessWidget {
             ),
             ListTile(
               title: const Text('Privacy policy'),
+              trailing: const Padding(
+                padding: EdgeInsets.only(right: 20),
+                child: Icon(Icons.arrow_right),
+              ),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<PrivacyPolicy>(
                   fullscreenDialog: true,
