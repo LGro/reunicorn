@@ -159,7 +159,8 @@ class PrivacyPolicy extends StatelessWidget {
           const _TextWithLink(
             '• MapTiler AG, Switzerland. Zugerstrasse 22, 6314 Unterägeri, '
                 'Switzerland. Privacy policy: ',
-            'https://www.maptiler.com/privacy-policy/.',
+            'https://www.maptiler.com/privacy-policy/',
+            true,
           ),
           firstBoldThenNormal(
             'Legal Basis: ',
@@ -200,8 +201,33 @@ class PrivacyPolicy extends StatelessWidget {
             'We do not store any personal data.',
           ),
           headline('2.5', 'In-App Purchases'),
-          firstBoldThenNormal('', ''),
-          firstBoldThenNormal('', ''),
+          firstBoldThenNormal(
+            'Purposes: ',
+            'Payment processing may be carried out via app store operators in '
+                'order to activate additional functions.',
+          ),
+          firstBoldThenNormal(
+            'Categories of Data: ',
+            'Transaction and payment data, without us having access to payment '
+                'details.',
+          ),
+          firstBoldThenNormal('Recipients:', ''),
+          const _TextWithLink(
+            '• Apple Distribution International Ltd., Hollyhill Industrial '
+                'Estate, Hollyhill, Cork Ireland. Privacy policy: ',
+            'https://www.apple.com/de/legal/privacy/de-ww/',
+          ),
+          const _TextWithLink(
+            '• Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, '
+                'Ireland. Privacy policy: ',
+            'https://policies.google.com/privacy?hl=de&gl=de',
+            true,
+          ),
+          firstBoldThenNormal('Legal Basis: ', 'Art. 6 para. 1 lit. b GDPR.'),
+          firstBoldThenNormal(
+            'Storage Period: ',
+            'We do not store any personal data.',
+          ),
           headline('2.6', 'App Permissions'),
           firstBoldThenNormal(
             'Purposes: ',
