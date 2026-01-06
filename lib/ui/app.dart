@@ -298,6 +298,8 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> with WidgetsBindingObserver {
   static const _apnsChannel = MethodChannel('apns_token');
+  final _rootNavigatorKey = GlobalKey<NavigatorState>();
+  late final GoRouter _appRouter;
 
   final _seedColor = Colors.indigo;
 
@@ -345,6 +347,8 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    _appRouter = buildAppRouter(_rootNavigatorKey, widget.isFirstRun);
 
     unawaited(_initAPNs());
 
@@ -512,10 +516,6 @@ class _AppState extends State<App> with WidgetsBindingObserver {
         return const Center(child: CircularProgressIndicator());
       }
 
-      // TODO(LGro): Move this to attribute?
-      final rootNavigatorKey = GlobalKey<NavigatorState>();
-      final appRouter = buildAppRouter(rootNavigatorKey, widget.isFirstRun);
-
       // Once init is done, we proceed with the app
       return BackgroundTicker(
         child: MultiRepositoryProvider(
@@ -561,9 +561,9 @@ class _AppState extends State<App> with WidgetsBindingObserver {
               ),
               useMaterial3: true,
             ),
-            routerDelegate: appRouter.routerDelegate,
-            routeInformationProvider: appRouter.routeInformationProvider,
-            routeInformationParser: appRouter.routeInformationParser,
+            routerDelegate: _appRouter.routerDelegate,
+            routeInformationProvider: _appRouter.routeInformationProvider,
+            routeInformationParser: _appRouter.routeInformationParser,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
           ),
