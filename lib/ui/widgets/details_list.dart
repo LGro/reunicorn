@@ -38,6 +38,7 @@ class DetailsCard extends StatelessWidget {
   );
 }
 
+// TODO(LGro): Add diff variant, that displays diff status
 class DetailsList extends StatelessWidget {
   const DetailsList(
     this.details, {

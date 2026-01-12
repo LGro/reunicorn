@@ -1,9 +1,9 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
 
-import '../../../data/models/coag_contact.dart';
+import '../../../data/models/models.dart';
 import '../../utils.dart';
 import 'connecting/direct_sharing.dart';
 import 'connecting/profile_based.dart';
@@ -35,7 +35,8 @@ class ConnectingCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        if (showSharingInitializing(contact) &&
+
+        if (showSharingInitializing(contact.dhtConnection) &&
             circles.keys.where((cId) => cId.startsWith('VLD')).isNotEmpty) ...[
           Text(
             '${contact.name} was added automatically via a batch that '
@@ -44,7 +45,7 @@ class ConnectingCard extends StatelessWidget {
             'settings to decide what to share with ${contact.name} and '
             'others joining via that batch.',
           ),
-        ] else if (showSharingInitializing(contact)) ...[
+        ] else if (showSharingInitializing(contact.dhtConnection)) ...[
           const Text(
             'Please wait a moment until sharing options are initialized.',
           ),
@@ -52,8 +53,14 @@ class ConnectingCard extends StatelessWidget {
           const Center(child: CircularProgressIndicator()),
         ] else if (showSharingOffer(contact))
           ProfileBasedSharingWidget(contact)
-        else if (showDirectSharing(contact))
-          DirectSharingWidget(contact)
+        else if (showDirectSharing(contact) &&
+            contact.dhtConnection is DhtConnectionInitialized &&
+            contact.connectionCrypto is CryptoInitializedSymmetric)
+          DirectSharingWidget(
+            contact,
+            contact.dhtConnection as DhtConnectionInitialized,
+            contact.connectionCrypto as CryptoInitializedSymmetric,
+          )
         else
           const Text(
             'Something unexpected happened, please reach out to the '

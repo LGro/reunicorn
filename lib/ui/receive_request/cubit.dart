@@ -14,6 +14,7 @@ import 'package:veilid_support/veilid_support.dart';
 import '../../data/models/coag_contact.dart';
 import '../../data/models/community.dart';
 import '../../data/models/profile_info.dart';
+import '../../data/repositories/contact_dht.dart';
 import '../../data/services/storage/base.dart';
 import '../../data/utils.dart';
 import 'utils/direct_sharing.dart';
@@ -27,7 +28,8 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
   ReceiveRequestCubit(
     this._contactStorage,
     this._profileStorage,
-    this._communityStorage, {
+    this._communityStorage,
+    this._contactDhtRepository, {
     ReceiveRequestState? initialState,
   }) : super(
          initialState ?? const ReceiveRequestState(ReceiveRequestStatus.qrcode),
@@ -49,6 +51,7 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
   final Storage<CoagContact> _contactStorage;
   final Storage<ProfileInfo> _profileStorage;
   final Storage<Community> _communityStorage;
+  final ContactDhtRepository _contactDhtRepository;
 
   Future<void> pasteInvite() async {
     final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
@@ -195,8 +198,10 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     }
 
     // TODO: Check if contact already exists - key generation can take a moment and this can cause duplicate entries if people resubmit
-    final contact = await createContactForInvite(name, pubKey: publicKey);
-    await _contactStorage.set(contact.coagContactId, contact);
+    final contact = await _contactDhtRepository.createContactForInvite(
+      name,
+      pubKey: publicKey,
+    );
 
     if (!isClosed) {
       return emit(

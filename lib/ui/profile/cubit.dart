@@ -11,8 +11,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../data/models/circle.dart';
-import '../../data/models/coag_contact.dart';
-import '../../data/models/contact_location.dart';
+import '../../data/models/models.dart';
 import '../../data/models/profile_info.dart';
 import '../../data/services/storage/base.dart';
 import '../../data/utils.dart';

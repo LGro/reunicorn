@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:synchronized/synchronized.dart';
 
 part 'base.freezed.dart';
 
@@ -14,6 +15,8 @@ sealed class StorageEvent<T> with _$StorageEvent<T> {
 }
 
 abstract class Storage<T> {
+  final lock = Lock();
+
   Future<void> set(String key, T value);
   Future<T?> get(String key);
   Future<Map<String, T>> getAll();

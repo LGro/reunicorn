@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart' as urlLauncher;
 import 'package:veilid/veilid.dart';
 
-import '../data/models/coag_contact.dart';
+import '../../../data/models/models.dart';
 import '../data/models/contact_introduction.dart';
 import '../l10n/app_localizations.dart';
 
@@ -237,19 +237,16 @@ class CommunityInvite {
   );
 }
 
-bool showSharingInitializing(CoagContact contact) =>
-    contact.dhtSettings.recordKeyThemSharing == null ||
-    contact.dhtSettings.recordKeyMeSharing == null;
+bool showSharingInitializing(DhtConnectionState connectionState) =>
+    connectionState.recordKeyMeSharingOrNull == null;
 
 bool showSharingOffer(CoagContact contact) =>
-    contact.dhtSettings.recordKeyThemSharing != null &&
-    contact.dhtSettings.initialSecret == null &&
-    contact.dhtSettings.myKeyPair != null &&
+    contact.connectionCrypto.initialSharedSecretOrNull == null &&
+    contact.connectionCrypto.myKeyPairOrNull != null &&
     contact.details == null;
 
 bool showDirectSharing(CoagContact contact) =>
-    contact.dhtSettings.recordKeyThemSharing != null &&
-    contact.dhtSettings.initialSecret != null &&
+    contact.connectionCrypto.initialSharedSecretOrNull != null &&
     contact.details == null;
 
 /// Returns introducer and introduction for pending introductions
@@ -260,8 +257,7 @@ Iterable<(CoagContact, ContactIntroduction)> pendingIntroductions(
       (c) => c.introductionsByThem
           .where(
             (i) => !contacts
-                .map((c) => c.dhtSettings.recordKeyThemSharing)
-                .whereType<RecordKey>()
+                .map((c) => c.dhtConnection.recordKeyThemSharing)
                 .contains(i.dhtRecordKeyReceiving),
           )
           .map((i) => (c, i)),

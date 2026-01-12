@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/coag_contact.dart';
 import '../../data/models/community.dart';
 import '../../data/models/profile_info.dart';
+import '../../data/repositories/contact_dht.dart';
 import '../../data/services/storage/base.dart';
 import '../circle_details/page.dart';
 import '../contact_details/page.dart';
@@ -115,6 +116,7 @@ class ReceiveRequestPage extends StatelessWidget {
       context.read<Storage<CoagContact>>(),
       context.read<Storage<ProfileInfo>>(),
       context.read<Storage<Community>>(),
+      context.read<ContactDhtRepository>(),
       initialState: initialState,
     ),
     child: BlocConsumer<ReceiveRequestCubit, ReceiveRequestState>(

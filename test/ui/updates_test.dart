@@ -1,24 +1,23 @@
 // Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'package:reunicorn/data/models/coag_contact.dart';
-import 'package:reunicorn/data/models/contact_location.dart';
-import 'package:reunicorn/ui/utils.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reunicorn/data/models/models.dart';
+import 'package:reunicorn/ui/utils.dart';
 
-import '../utils.dart';
+import '../mocked_providers.dart';
 
 void main() {
   test('compare contact details no difference', () {
     final result = contactUpdateSummary(
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         details: const ContactDetails(
           names: {'0': 'a'},
           emails: {'private': 'e@1.de'},
         ),
       ),
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         details: const ContactDetails(
           names: {'0': 'a'},
           emails: {'private': 'e@1.de'},
@@ -30,13 +29,13 @@ void main() {
 
   test('compare contact details different emails', () {
     final result = contactUpdateSummary(
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         details: const ContactDetails(
           names: {'0': 'a'},
           emails: {'private': 'e@1.de'},
         ),
       ),
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         details: const ContactDetails(
           names: {'0': 'a'},
           emails: {'private': 'e@2.de'},
@@ -48,10 +47,10 @@ void main() {
 
   test('compare contact details different names', () {
     final result = contactUpdateSummary(
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         details: const ContactDetails(names: {'0': 'a'}),
       ),
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         details: const ContactDetails(names: {'0': 'b'}),
       ),
     );
@@ -60,13 +59,13 @@ void main() {
 
   test('compare contact details different names and phones', () {
     final result = contactUpdateSummary(
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         details: const ContactDetails(
           names: {'0': 'a'},
           phones: {'label1': '0123'},
         ),
       ),
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         details: const ContactDetails(
           names: {'0': 'b'},
           phones: {'label2': '4321'},
@@ -78,7 +77,7 @@ void main() {
 
   test('compare contact same locations', () {
     final result = contactUpdateSummary(
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         temporaryLocations: {
           '0': ContactTemporaryLocation(
             longitude: 0,
@@ -90,7 +89,7 @@ void main() {
           ),
         },
       ),
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         temporaryLocations: {
           '0': ContactTemporaryLocation(
             longitude: 0,
@@ -108,7 +107,7 @@ void main() {
 
   test('compare contact updated location', () {
     final result = contactUpdateSummary(
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         temporaryLocations: {
           '0': ContactTemporaryLocation(
             longitude: 0,
@@ -120,7 +119,7 @@ void main() {
           ),
         },
       ),
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         temporaryLocations: {
           '0': ContactTemporaryLocation(
             longitude: 4,
@@ -138,7 +137,7 @@ void main() {
 
   test('compare contact different locations', () {
     final result = contactUpdateSummary(
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         temporaryLocations: {
           '0': ContactTemporaryLocation(
             longitude: 0,
@@ -150,7 +149,7 @@ void main() {
           ),
         },
       ),
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         temporaryLocations: {
           '1': ContactTemporaryLocation(
             longitude: 4,
@@ -168,8 +167,8 @@ void main() {
 
   test('compare contact different but outdated locations', () {
     final result = contactUpdateSummary(
-      dummyBaseContact,
-      dummyBaseContact.copyWith(
+      minimalBaseContact,
+      minimalBaseContact.copyWith(
         temporaryLocations: {
           '0': ContactTemporaryLocation(
             longitude: 0,
@@ -187,10 +186,10 @@ void main() {
 
   test('compare contact details different pictures', () {
     final result = contactUpdateSummary(
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         details: const ContactDetails(picture: [1, 2, 3]),
       ),
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         details: const ContactDetails(picture: [3, 2, 1]),
       ),
     );
@@ -199,12 +198,12 @@ void main() {
 
   test('compare contact details different organizations', () {
     final result = contactUpdateSummary(
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         details: ContactDetails(
           organizations: {'o': Organization(company: 'LargeCorp A')},
         ),
       ),
-      dummyBaseContact.copyWith(
+      minimalBaseContact.copyWith(
         details: ContactDetails(
           organizations: {'o': Organization(company: 'LargeCorp B')},
         ),
@@ -214,7 +213,7 @@ void main() {
   });
 
   test('compare contacts with matching hash codes', () {
-    final c1 = dummyBaseContact.copyWith(
+    final c1 = minimalBaseContact.copyWith(
       name: 'name',
       details: const ContactDetails(picture: [1, 2, 3]),
       temporaryLocations: {
@@ -230,7 +229,7 @@ void main() {
     );
     expect(c1.hashCode, c1.copyWith().hashCode);
 
-    final c2 = dummyBaseContact.copyWith(
+    final c2 = minimalBaseContact.copyWith(
       name: 'name',
       details: const ContactDetails(picture: [1, 2, 3]),
       temporaryLocations: {
@@ -250,82 +249,82 @@ void main() {
   test('compare detail removal does not qualify', () {
     expect(
       contactUpdateSummary(
-        dummyBaseContact.copyWith(
+        minimalBaseContact.copyWith(
           details: const ContactDetails(picture: [1, 2, 3]),
         ),
-        dummyBaseContact,
+        minimalBaseContact,
       ),
       isEmpty,
     );
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact.copyWith(
+        minimalBaseContact.copyWith(
           details: const ContactDetails(names: {'0': 'a'}),
         ),
-        dummyBaseContact,
+        minimalBaseContact,
       ),
       isEmpty,
     );
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact.copyWith(
+        minimalBaseContact.copyWith(
           details: const ContactDetails(phones: {'landline': '123'}),
         ),
-        dummyBaseContact,
+        minimalBaseContact,
       ),
       isEmpty,
     );
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact.copyWith(
+        minimalBaseContact.copyWith(
           details: const ContactDetails(emails: {'work': 'hi@mail'}),
         ),
-        dummyBaseContact,
+        minimalBaseContact,
       ),
       isEmpty,
     );
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact.copyWith(
+        minimalBaseContact.copyWith(
           details: const ContactDetails(websites: {'web': 'www.tld'}),
         ),
-        dummyBaseContact,
+        minimalBaseContact,
       ),
       isEmpty,
     );
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact.copyWith(
+        minimalBaseContact.copyWith(
           details: const ContactDetails(socialMedias: {'mastodon': '@profile'}),
         ),
-        dummyBaseContact,
+        minimalBaseContact,
       ),
       isEmpty,
     );
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact.copyWith(
+        minimalBaseContact.copyWith(
           details: ContactDetails(events: {'birthday': DateTime(2000)}),
         ),
-        dummyBaseContact,
+        minimalBaseContact,
       ),
       isEmpty,
     );
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact.copyWith(
+        minimalBaseContact.copyWith(
           details: ContactDetails(
             organizations: {'job': Organization(company: 'corp')},
           ),
         ),
-        dummyBaseContact,
+        minimalBaseContact,
       ),
       isEmpty,
     );
@@ -334,12 +333,12 @@ void main() {
   test('compare location removal does not qualify', () {
     expect(
       contactUpdateSummary(
-        dummyBaseContact.copyWith(
+        minimalBaseContact.copyWith(
           addressLocations: {
             '': const ContactAddressLocation(longitude: 0, latitude: 0),
           },
         ),
-        dummyBaseContact,
+        minimalBaseContact,
       ),
       isEmpty,
       reason: 'Removing address location should not register as update',
@@ -347,7 +346,7 @@ void main() {
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact.copyWith(
+        minimalBaseContact.copyWith(
           temporaryLocations: {
             '': ContactTemporaryLocation(
               longitude: 0,
@@ -359,7 +358,7 @@ void main() {
             ),
           },
         ),
-        dummyBaseContact,
+        minimalBaseContact,
       ),
       isEmpty,
       reason: 'Removing temporary location should not register as update',
@@ -369,8 +368,8 @@ void main() {
   test('compare adding detail does qualify', () {
     expect(
       contactUpdateSummary(
-        dummyBaseContact,
-        dummyBaseContact.copyWith(
+        minimalBaseContact,
+        minimalBaseContact.copyWith(
           details: const ContactDetails(picture: [1, 2, 3]),
         ),
       ),
@@ -379,8 +378,8 @@ void main() {
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact,
-        dummyBaseContact.copyWith(
+        minimalBaseContact,
+        minimalBaseContact.copyWith(
           details: const ContactDetails(names: {'0': 'a'}),
         ),
       ),
@@ -389,8 +388,8 @@ void main() {
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact,
-        dummyBaseContact.copyWith(
+        minimalBaseContact,
+        minimalBaseContact.copyWith(
           details: const ContactDetails(phones: {'landline': '123'}),
         ),
       ),
@@ -399,8 +398,8 @@ void main() {
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact,
-        dummyBaseContact.copyWith(
+        minimalBaseContact,
+        minimalBaseContact.copyWith(
           details: const ContactDetails(emails: {'work': 'hi@mail'}),
         ),
       ),
@@ -409,8 +408,8 @@ void main() {
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact,
-        dummyBaseContact.copyWith(
+        minimalBaseContact,
+        minimalBaseContact.copyWith(
           details: const ContactDetails(websites: {'web': 'www.tld'}),
         ),
       ),
@@ -419,8 +418,8 @@ void main() {
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact,
-        dummyBaseContact.copyWith(
+        minimalBaseContact,
+        minimalBaseContact.copyWith(
           details: const ContactDetails(socialMedias: {'mastodon': '@profile'}),
         ),
       ),
@@ -429,8 +428,8 @@ void main() {
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact,
-        dummyBaseContact.copyWith(
+        minimalBaseContact,
+        minimalBaseContact.copyWith(
           details: ContactDetails(events: {'birthday': DateTime(2000)}),
         ),
       ),
@@ -439,8 +438,8 @@ void main() {
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact,
-        dummyBaseContact.copyWith(
+        minimalBaseContact,
+        minimalBaseContact.copyWith(
           details: ContactDetails(
             organizations: {'job': Organization(company: 'corp')},
           ),
@@ -453,8 +452,8 @@ void main() {
   test('compare add location does qualify', () {
     expect(
       contactUpdateSummary(
-        dummyBaseContact,
-        dummyBaseContact.copyWith(
+        minimalBaseContact,
+        minimalBaseContact.copyWith(
           addressLocations: {
             '': const ContactAddressLocation(longitude: 0, latitude: 0),
           },
@@ -465,8 +464,8 @@ void main() {
 
     expect(
       contactUpdateSummary(
-        dummyBaseContact,
-        dummyBaseContact.copyWith(
+        minimalBaseContact,
+        minimalBaseContact.copyWith(
           temporaryLocations: {
             '': ContactTemporaryLocation(
               longitude: 0,

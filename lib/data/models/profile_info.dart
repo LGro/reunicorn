@@ -8,8 +8,9 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:veilid/veilid.dart';
 
 import 'coag_contact.dart';
+import 'contact_details.dart';
 import 'contact_location.dart';
-import 'profile_sharing_settings.dart';
+import 'profile_sharing/settings.dart';
 import 'utils.dart';
 
 part 'profile_info.g.dart';

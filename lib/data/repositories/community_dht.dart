@@ -1,4 +1,4 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -13,7 +13,8 @@ import '../../veilid_processor/models/processor_connection_state.dart';
 import '../../veilid_processor/repository/processor_repository.dart';
 import '../models/coag_contact.dart';
 import '../models/community.dart';
-import '../services/dht.dart';
+import '../models/models.dart';
+import '../services/dht/veilid_dht.dart';
 import '../services/storage/base.dart';
 
 extension CommunityExtension on Community {
@@ -70,14 +71,14 @@ Future<CommunityInfo?> getCommunityInfo(
   try {
     final record = await DHTRecordPool.instance.openRecordRead(
       recordKey,
-      debugName: 'rncrn-community-info-read',
+      debugName: 'rcrn-community-info-read',
     );
 
     final communityInfo = await getChunkedPayload(
       record,
-      memberCrypto,
       DHTRecordRefreshMode.network,
       numChunks: communityInfoSubkeys,
+      crypto: memberCrypto,
     );
 
     return CommunityInfo.fromJson(
@@ -101,15 +102,15 @@ Future<Result<MemberInfo, Exception>> getMemberInfo(
   try {
     final record = await DHTRecordPool.instance.openRecordRead(
       recordKey,
-      debugName: 'rncrn-community-member-read',
+      debugName: 'rcrn-community-member-read',
     );
 
     final memberInfo = await getChunkedPayload(
       record,
-      communityCrypto,
       DHTRecordRefreshMode.network,
       chunkOffset: communityInfoSubkeys,
       numChunks: memberInfoSubkeys,
+      crypto: communityCrypto,
     );
 
     return Success(
@@ -137,7 +138,7 @@ Future<Result<MemberInfo, Exception>> setMemberInfo(
     final record = await DHTRecordPool.instance.openRecordWrite(
       recordKey,
       recordWriter,
-      debugName: 'rncrn-community-member-write',
+      debugName: 'rcrn-community-member-write',
     );
 
     // TODO: Make this transactional so that either all or nothing
@@ -362,7 +363,7 @@ class CommunityDhtRepository {
   }
 
   void _veilidConnectionStateChangeCallback(ProcessorConnectionState event) {
-    logDebug('rncrn-veilid-connection-state-changed: $event');
+    logDebug('rcrn-veilid-connection-state-changed: $event');
     if (event.isPublicInternetReady &&
         event.isAttached &&
         !veilidNetworkAvailable) {
@@ -438,7 +439,7 @@ class CommunityDhtRepository {
     }
 
     // Only if sharing settings are available, does it make sense to continue
-    if (contact.dhtSettings.recordKeyMeSharing == null) {
+    if (contact.dhtConnection is DhtConnectionInvited) {
       return;
     }
 
@@ -466,7 +467,9 @@ class CommunityDhtRepository {
           ..remove(member)
           ..add(
             member.copyWith(
-              mySharingRecordKey: contact.dhtSettings.recordKeyMeSharing,
+              mySharingRecordKey:
+                  (contact.dhtConnection as DhtConnectionEstablished)
+                      .recordKeyMeSharing,
             ),
           ),
       ),

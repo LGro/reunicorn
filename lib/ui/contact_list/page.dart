@@ -8,6 +8,7 @@ import 'package:veilid/veilid.dart';
 
 import '../../data/models/circle.dart';
 import '../../data/models/coag_contact.dart';
+import '../../data/models/models.dart';
 import '../../data/services/storage/base.dart';
 import '../contact_details/page.dart';
 import '../create_new_contact/page.dart';
@@ -158,7 +159,7 @@ class _ContactListPageState extends State<ContactListPage> {
             onPressed: () async {
               await Navigator.of(context).push(
                 MaterialPageRoute<ReceiveRequestPage>(
-                  builder: (_) => ReceiveRequestPage(),
+                  builder: (_) => const ReceiveRequestPage(),
                 ),
               );
             },
@@ -170,7 +171,7 @@ class _ContactListPageState extends State<ContactListPage> {
         children: [
           DhtSharingStatusWidget(
             recordKeys: state.contacts
-                .map((c) => c.dhtSettings.recordKeyMeSharing)
+                .map((c) => c.dhtConnection.recordKeyMeSharingOrNull)
                 .whereType<RecordKey>(),
           ),
         ],
@@ -280,14 +281,15 @@ Widget? contactSharingReceivingStatus(
   bool isMemberAnyCircle,
 ) {
   // Initial creation of DHT records
-  if (showSharingInitializing(contact)) {
+  if (showSharingInitializing(contact.dhtConnection)) {
     // This also happens for a potentially longer time when fetching contacts
     // from an invite batch
     return const Icon(Icons.hourglass_empty);
   }
   // They're sharing but I'm not sharing back
   // (with the default everyone circle, this likely doesn't happen)
-  if (contact.dhtSettings.theirPublicKey != null && !isMemberAnyCircle) {
+  if (contact.connectionCrypto.theirPublicKeyOrNull != null &&
+      !isMemberAnyCircle) {
     return const Icon(Icons.call_received);
   }
   // I still need to send them something
@@ -295,17 +297,18 @@ Widget? contactSharingReceivingStatus(
     return const Icon(Icons.call_made);
   }
   // Me and them are sharing
-  if (contact.details != null && contact.dhtSettings.theyAckHandshakeComplete) {
+  if (contact.details != null &&
+      (contact.connectionCrypto is CryptoInitializedAsymmetric ||
+          contact.connectionCrypto is CryptoEstablishedAsymmetric)) {
     return const Icon(Icons.done_all);
   }
   // We're both sharing, but haven't received the ack
-  if (contact.dhtSettings.recordKeyMeSharing != null &&
-      contact.dhtSettings.recordKeyThemSharing != null &&
+  if (contact.dhtConnection.recordKeyMeSharingOrNull != null &&
       contact.details != null) {
     // TODO: Does it confuse folks if we don't explain the difference between one and two checkmarks?
     return const Icon(Icons.done);
   }
-  if (contact.dhtSettings.theirPublicKey != null) {
+  if (contact.connectionCrypto.theirPublicKeyOrNull != null) {
     return const Icon(Icons.hourglass_empty);
   }
   return const Icon(Icons.question_mark);

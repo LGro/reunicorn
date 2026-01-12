@@ -20,6 +20,7 @@ import 'data/repositories/backup_dht.dart';
 import 'data/repositories/contact_dht.dart';
 import 'data/repositories/contact_system.dart';
 import 'data/repositories/notifications.dart';
+import 'data/services/dht/veilid_dht.dart';
 import 'data/services/storage/sqlite.dart';
 import 'data/utils.dart';
 import 'notification_service.dart';
@@ -131,6 +132,7 @@ void main() async {
       contactStorage,
       circleStorage,
       profileStorage,
+      VeilidDht(),
     );
     final systemContactRepository = SystemContactRepository(contactStorage);
     // ignore: unused_local_variable we just need it to listen

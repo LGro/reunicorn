@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -67,13 +67,6 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
     });
 
     unawaited(loadContact(coagContactId));
-    // TODO: Is this still needed?
-    // Attempt to share straight await, when a contact details page is visited
-    // if (state.contact != null) {
-    //   unawaited(
-    //     _contactDhtRepository.updateContact(state.contact!.coagContactId),
-    //   );
-    // }
   }
 
   final Storage<CoagContact> _contactStorage;
@@ -94,6 +87,9 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
               : circlesForContact(circles.values, contact.coagContactId),
         ),
       );
+    }
+    if (contact != null) {
+      await _contactDhtRepository.updateContact(contact.coagContactId);
     }
   }
 
@@ -131,7 +127,7 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
       8,
       () => _contactStorage
           .get(coagContactId)
-          .then((c) => c?.sharedProfile?.isEmpty ?? true),
+          .then((c) => c?.profileSharingStatus.sharedProfile?.isEmpty ?? true),
     );
 
     if (isSuccess) {
@@ -155,7 +151,7 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
       return false;
     }
     try {
-      await _contactDhtRepository.updateContact(state.contact!);
+      await _contactDhtRepository.updateContact(state.contact!.coagContactId);
     } on VeilidAPIException catch (e) {
       return false;
     }
@@ -166,7 +162,7 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
       .where(
         (c) => c.introductionsByThem
             .map((i) => i.dhtRecordKeyReceiving)
-            .contains(contact.dhtSettings.recordKeyThemSharing),
+            .contains(contact.dhtConnection.recordKeyThemSharing),
       )
       .isEmpty;
 

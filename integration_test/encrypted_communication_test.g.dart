@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'communication_test.dart';
+part of 'encrypted_communication_test.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator

@@ -4,9 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../data/models/coag_contact.dart';
-import '../../../data/models/contact_location.dart';
-import '../../../data/models/profile_sharing_settings.dart';
+import '../../../data/models/models.dart';
 import '../../../data/providers/geocoding/maptiler.dart';
 import '../../locations/schedule/widget.dart';
 import '../../utils.dart';

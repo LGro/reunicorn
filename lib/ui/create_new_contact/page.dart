@@ -4,8 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../data/models/coag_contact.dart';
-import '../../data/services/storage/base.dart';
+import '../../data/repositories/contact_dht.dart';
 import '../contact_details/page.dart';
 
 class CreateNewContactPage extends StatefulWidget {
@@ -58,11 +57,9 @@ class _CreateNewContactPageState extends State<CreateNewContactPage> {
             child: FilledButton(
               onPressed: () async {
                 // FIXME: Move this to the cubit?
-                final contactStorage = context.read<Storage<CoagContact>>();
-                final contact = await createContactForInvite(
-                  _nameController.text.trim(),
-                );
-                await contactStorage.set(contact.coagContactId, contact);
+                final contact = await context
+                    .read<ContactDhtRepository>()
+                    .createContactForInvite(_nameController.text.trim());
                 if (context.mounted) {
                   await Navigator.of(context).pushReplacement(
                     MaterialPageRoute<ContactPage>(

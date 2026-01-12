@@ -4,8 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../data/models/coag_contact.dart';
-import '../../../data/models/contact_location.dart';
+import '../../../data/models/models.dart';
 import '../../utils.dart';
 import '../../widgets/details_list.dart';
 

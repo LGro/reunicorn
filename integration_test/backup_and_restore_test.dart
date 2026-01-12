@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:reunicorn/data/models/circle.dart';
-import 'package:reunicorn/data/models/coag_contact.dart';
 import 'package:reunicorn/data/models/community.dart';
+import 'package:reunicorn/data/models/models.dart';
 import 'package:reunicorn/data/models/profile_info.dart';
 import 'package:reunicorn/data/models/profile_sharing_settings.dart';
 import 'package:reunicorn/data/models/setting.dart';
@@ -19,6 +19,7 @@ import 'package:reunicorn/ui/receive_request/utils/profile_based.dart';
 import 'package:reunicorn/ui/utils.dart';
 import 'package:reunicorn/veilid_init.dart';
 
+import 'encrypted_communication_test.dart';
 import 'utils.dart';
 
 const _defaultCircleId = 'c1';
@@ -41,6 +42,7 @@ void main() {
     final _contactStorageB = MemoryStorage<CoagContact>();
     final _circleStorageB = MemoryStorage<Circle>();
     final _profileStorageB = MemoryStorage<ProfileInfo>();
+    final dhtStorage = MockDht();
 
     await _profileStorageA.set(
       'p1',
@@ -67,7 +69,7 @@ void main() {
           ),
         ),
       ),
-      true,
+      dhtStorage,
     );
 
     // Initialize Bob's repository
@@ -86,7 +88,7 @@ void main() {
           ),
         ),
       ),
-      true,
+      dhtStorage,
     );
 
     final bobsMainKeyPair = await _profileStorageB.getAll().then(
@@ -100,6 +102,7 @@ void main() {
       _contactStorageA,
       _profileStorageA,
       MemoryStorage<Community>(),
+      _cRepoA,
     );
     await rrCubitA.handleProfileLink(bobsProfileUrl.fragment);
     var contactBobFromProfile = await _contactStorageA.getAll().then(

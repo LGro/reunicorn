@@ -1754,7 +1754,9 @@ $CommunityInfoCopyWith<$Res>? get info {
 /// @nodoc
 mixin _$CommunityIntroduction {
 
- String get communityName; String get theirName; String get organizerComment; KeyPair get myKeyPair; bool get deferred; DhtSettings? get theirSharingSettings; ContactDetails? get theirDetails; Map<String, ContactAddressLocation>? get addressLocations; Map<String, ContactTemporaryLocation>? get temporaryLocations;
+ String get communityName; String get theirName; String get organizerComment; KeyPair get myKeyPair; bool get deferred;// FIXME(LGro)
+// DhtSettings? theirSharingSettings,
+ ContactDetails? get theirDetails; Map<String, ContactAddressLocation>? get addressLocations; Map<String, ContactTemporaryLocation>? get temporaryLocations;
 /// Create a copy of CommunityIntroduction
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1765,16 +1767,16 @@ $CommunityIntroductionCopyWith<CommunityIntroduction> get copyWith => _$Communit
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CommunityIntroduction&&(identical(other.communityName, communityName) || other.communityName == communityName)&&(identical(other.theirName, theirName) || other.theirName == theirName)&&(identical(other.organizerComment, organizerComment) || other.organizerComment == organizerComment)&&(identical(other.myKeyPair, myKeyPair) || other.myKeyPair == myKeyPair)&&(identical(other.deferred, deferred) || other.deferred == deferred)&&(identical(other.theirSharingSettings, theirSharingSettings) || other.theirSharingSettings == theirSharingSettings)&&(identical(other.theirDetails, theirDetails) || other.theirDetails == theirDetails)&&const DeepCollectionEquality().equals(other.addressLocations, addressLocations)&&const DeepCollectionEquality().equals(other.temporaryLocations, temporaryLocations));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CommunityIntroduction&&(identical(other.communityName, communityName) || other.communityName == communityName)&&(identical(other.theirName, theirName) || other.theirName == theirName)&&(identical(other.organizerComment, organizerComment) || other.organizerComment == organizerComment)&&(identical(other.myKeyPair, myKeyPair) || other.myKeyPair == myKeyPair)&&(identical(other.deferred, deferred) || other.deferred == deferred)&&(identical(other.theirDetails, theirDetails) || other.theirDetails == theirDetails)&&const DeepCollectionEquality().equals(other.addressLocations, addressLocations)&&const DeepCollectionEquality().equals(other.temporaryLocations, temporaryLocations));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,communityName,theirName,organizerComment,myKeyPair,deferred,theirSharingSettings,theirDetails,const DeepCollectionEquality().hash(addressLocations),const DeepCollectionEquality().hash(temporaryLocations));
+int get hashCode => Object.hash(runtimeType,communityName,theirName,organizerComment,myKeyPair,deferred,theirDetails,const DeepCollectionEquality().hash(addressLocations),const DeepCollectionEquality().hash(temporaryLocations));
 
 @override
 String toString() {
-  return 'CommunityIntroduction(communityName: $communityName, theirName: $theirName, organizerComment: $organizerComment, myKeyPair: $myKeyPair, deferred: $deferred, theirSharingSettings: $theirSharingSettings, theirDetails: $theirDetails, addressLocations: $addressLocations, temporaryLocations: $temporaryLocations)';
+  return 'CommunityIntroduction(communityName: $communityName, theirName: $theirName, organizerComment: $organizerComment, myKeyPair: $myKeyPair, deferred: $deferred, theirDetails: $theirDetails, addressLocations: $addressLocations, temporaryLocations: $temporaryLocations)';
 }
 
 
@@ -1785,11 +1787,11 @@ abstract mixin class $CommunityIntroductionCopyWith<$Res>  {
   factory $CommunityIntroductionCopyWith(CommunityIntroduction value, $Res Function(CommunityIntroduction) _then) = _$CommunityIntroductionCopyWithImpl;
 @useResult
 $Res call({
- String communityName, String theirName, String organizerComment, KeyPair myKeyPair, bool deferred, DhtSettings? theirSharingSettings, ContactDetails? theirDetails, Map<String, ContactAddressLocation>? addressLocations, Map<String, ContactTemporaryLocation>? temporaryLocations
+ String communityName, String theirName, String organizerComment, KeyPair myKeyPair, bool deferred, ContactDetails? theirDetails, Map<String, ContactAddressLocation>? addressLocations, Map<String, ContactTemporaryLocation>? temporaryLocations
 });
 
 
-
+$ContactDetailsCopyWith<$Res>? get theirDetails;
 
 }
 /// @nodoc
@@ -1802,21 +1804,32 @@ class _$CommunityIntroductionCopyWithImpl<$Res>
 
 /// Create a copy of CommunityIntroduction
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? communityName = null,Object? theirName = null,Object? organizerComment = null,Object? myKeyPair = null,Object? deferred = null,Object? theirSharingSettings = freezed,Object? theirDetails = freezed,Object? addressLocations = freezed,Object? temporaryLocations = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? communityName = null,Object? theirName = null,Object? organizerComment = null,Object? myKeyPair = null,Object? deferred = null,Object? theirDetails = freezed,Object? addressLocations = freezed,Object? temporaryLocations = freezed,}) {
   return _then(_self.copyWith(
 communityName: null == communityName ? _self.communityName : communityName // ignore: cast_nullable_to_non_nullable
 as String,theirName: null == theirName ? _self.theirName : theirName // ignore: cast_nullable_to_non_nullable
 as String,organizerComment: null == organizerComment ? _self.organizerComment : organizerComment // ignore: cast_nullable_to_non_nullable
 as String,myKeyPair: null == myKeyPair ? _self.myKeyPair : myKeyPair // ignore: cast_nullable_to_non_nullable
 as KeyPair,deferred: null == deferred ? _self.deferred : deferred // ignore: cast_nullable_to_non_nullable
-as bool,theirSharingSettings: freezed == theirSharingSettings ? _self.theirSharingSettings : theirSharingSettings // ignore: cast_nullable_to_non_nullable
-as DhtSettings?,theirDetails: freezed == theirDetails ? _self.theirDetails : theirDetails // ignore: cast_nullable_to_non_nullable
+as bool,theirDetails: freezed == theirDetails ? _self.theirDetails : theirDetails // ignore: cast_nullable_to_non_nullable
 as ContactDetails?,addressLocations: freezed == addressLocations ? _self.addressLocations : addressLocations // ignore: cast_nullable_to_non_nullable
 as Map<String, ContactAddressLocation>?,temporaryLocations: freezed == temporaryLocations ? _self.temporaryLocations : temporaryLocations // ignore: cast_nullable_to_non_nullable
 as Map<String, ContactTemporaryLocation>?,
   ));
 }
+/// Create a copy of CommunityIntroduction
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ContactDetailsCopyWith<$Res>? get theirDetails {
+    if (_self.theirDetails == null) {
+    return null;
+  }
 
+  return $ContactDetailsCopyWith<$Res>(_self.theirDetails!, (value) {
+    return _then(_self.copyWith(theirDetails: value));
+  });
+}
 }
 
 
@@ -1895,10 +1908,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String communityName,  String theirName,  String organizerComment,  KeyPair myKeyPair,  bool deferred,  DhtSettings? theirSharingSettings,  ContactDetails? theirDetails,  Map<String, ContactAddressLocation>? addressLocations,  Map<String, ContactTemporaryLocation>? temporaryLocations)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String communityName,  String theirName,  String organizerComment,  KeyPair myKeyPair,  bool deferred,  ContactDetails? theirDetails,  Map<String, ContactAddressLocation>? addressLocations,  Map<String, ContactTemporaryLocation>? temporaryLocations)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CommunityIntroduction() when $default != null:
-return $default(_that.communityName,_that.theirName,_that.organizerComment,_that.myKeyPair,_that.deferred,_that.theirSharingSettings,_that.theirDetails,_that.addressLocations,_that.temporaryLocations);case _:
+return $default(_that.communityName,_that.theirName,_that.organizerComment,_that.myKeyPair,_that.deferred,_that.theirDetails,_that.addressLocations,_that.temporaryLocations);case _:
   return orElse();
 
 }
@@ -1916,10 +1929,10 @@ return $default(_that.communityName,_that.theirName,_that.organizerComment,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String communityName,  String theirName,  String organizerComment,  KeyPair myKeyPair,  bool deferred,  DhtSettings? theirSharingSettings,  ContactDetails? theirDetails,  Map<String, ContactAddressLocation>? addressLocations,  Map<String, ContactTemporaryLocation>? temporaryLocations)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String communityName,  String theirName,  String organizerComment,  KeyPair myKeyPair,  bool deferred,  ContactDetails? theirDetails,  Map<String, ContactAddressLocation>? addressLocations,  Map<String, ContactTemporaryLocation>? temporaryLocations)  $default,) {final _that = this;
 switch (_that) {
 case _CommunityIntroduction():
-return $default(_that.communityName,_that.theirName,_that.organizerComment,_that.myKeyPair,_that.deferred,_that.theirSharingSettings,_that.theirDetails,_that.addressLocations,_that.temporaryLocations);}
+return $default(_that.communityName,_that.theirName,_that.organizerComment,_that.myKeyPair,_that.deferred,_that.theirDetails,_that.addressLocations,_that.temporaryLocations);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -1933,10 +1946,10 @@ return $default(_that.communityName,_that.theirName,_that.organizerComment,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String communityName,  String theirName,  String organizerComment,  KeyPair myKeyPair,  bool deferred,  DhtSettings? theirSharingSettings,  ContactDetails? theirDetails,  Map<String, ContactAddressLocation>? addressLocations,  Map<String, ContactTemporaryLocation>? temporaryLocations)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String communityName,  String theirName,  String organizerComment,  KeyPair myKeyPair,  bool deferred,  ContactDetails? theirDetails,  Map<String, ContactAddressLocation>? addressLocations,  Map<String, ContactTemporaryLocation>? temporaryLocations)?  $default,) {final _that = this;
 switch (_that) {
 case _CommunityIntroduction() when $default != null:
-return $default(_that.communityName,_that.theirName,_that.organizerComment,_that.myKeyPair,_that.deferred,_that.theirSharingSettings,_that.theirDetails,_that.addressLocations,_that.temporaryLocations);case _:
+return $default(_that.communityName,_that.theirName,_that.organizerComment,_that.myKeyPair,_that.deferred,_that.theirDetails,_that.addressLocations,_that.temporaryLocations);case _:
   return null;
 
 }
@@ -1948,7 +1961,7 @@ return $default(_that.communityName,_that.theirName,_that.organizerComment,_that
 
 
 class _CommunityIntroduction implements CommunityIntroduction {
-   _CommunityIntroduction({required this.communityName, required this.theirName, required this.organizerComment, required this.myKeyPair, this.deferred = false, this.theirSharingSettings, this.theirDetails, final  Map<String, ContactAddressLocation>? addressLocations, final  Map<String, ContactTemporaryLocation>? temporaryLocations}): _addressLocations = addressLocations,_temporaryLocations = temporaryLocations;
+   _CommunityIntroduction({required this.communityName, required this.theirName, required this.organizerComment, required this.myKeyPair, this.deferred = false, this.theirDetails, final  Map<String, ContactAddressLocation>? addressLocations, final  Map<String, ContactTemporaryLocation>? temporaryLocations}): _addressLocations = addressLocations,_temporaryLocations = temporaryLocations;
   
 
 @override final  String communityName;
@@ -1956,7 +1969,8 @@ class _CommunityIntroduction implements CommunityIntroduction {
 @override final  String organizerComment;
 @override final  KeyPair myKeyPair;
 @override@JsonKey() final  bool deferred;
-@override final  DhtSettings? theirSharingSettings;
+// FIXME(LGro)
+// DhtSettings? theirSharingSettings,
 @override final  ContactDetails? theirDetails;
  final  Map<String, ContactAddressLocation>? _addressLocations;
 @override Map<String, ContactAddressLocation>? get addressLocations {
@@ -1987,16 +2001,16 @@ _$CommunityIntroductionCopyWith<_CommunityIntroduction> get copyWith => __$Commu
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CommunityIntroduction&&(identical(other.communityName, communityName) || other.communityName == communityName)&&(identical(other.theirName, theirName) || other.theirName == theirName)&&(identical(other.organizerComment, organizerComment) || other.organizerComment == organizerComment)&&(identical(other.myKeyPair, myKeyPair) || other.myKeyPair == myKeyPair)&&(identical(other.deferred, deferred) || other.deferred == deferred)&&(identical(other.theirSharingSettings, theirSharingSettings) || other.theirSharingSettings == theirSharingSettings)&&(identical(other.theirDetails, theirDetails) || other.theirDetails == theirDetails)&&const DeepCollectionEquality().equals(other._addressLocations, _addressLocations)&&const DeepCollectionEquality().equals(other._temporaryLocations, _temporaryLocations));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CommunityIntroduction&&(identical(other.communityName, communityName) || other.communityName == communityName)&&(identical(other.theirName, theirName) || other.theirName == theirName)&&(identical(other.organizerComment, organizerComment) || other.organizerComment == organizerComment)&&(identical(other.myKeyPair, myKeyPair) || other.myKeyPair == myKeyPair)&&(identical(other.deferred, deferred) || other.deferred == deferred)&&(identical(other.theirDetails, theirDetails) || other.theirDetails == theirDetails)&&const DeepCollectionEquality().equals(other._addressLocations, _addressLocations)&&const DeepCollectionEquality().equals(other._temporaryLocations, _temporaryLocations));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,communityName,theirName,organizerComment,myKeyPair,deferred,theirSharingSettings,theirDetails,const DeepCollectionEquality().hash(_addressLocations),const DeepCollectionEquality().hash(_temporaryLocations));
+int get hashCode => Object.hash(runtimeType,communityName,theirName,organizerComment,myKeyPair,deferred,theirDetails,const DeepCollectionEquality().hash(_addressLocations),const DeepCollectionEquality().hash(_temporaryLocations));
 
 @override
 String toString() {
-  return 'CommunityIntroduction(communityName: $communityName, theirName: $theirName, organizerComment: $organizerComment, myKeyPair: $myKeyPair, deferred: $deferred, theirSharingSettings: $theirSharingSettings, theirDetails: $theirDetails, addressLocations: $addressLocations, temporaryLocations: $temporaryLocations)';
+  return 'CommunityIntroduction(communityName: $communityName, theirName: $theirName, organizerComment: $organizerComment, myKeyPair: $myKeyPair, deferred: $deferred, theirDetails: $theirDetails, addressLocations: $addressLocations, temporaryLocations: $temporaryLocations)';
 }
 
 
@@ -2007,11 +2021,11 @@ abstract mixin class _$CommunityIntroductionCopyWith<$Res> implements $Community
   factory _$CommunityIntroductionCopyWith(_CommunityIntroduction value, $Res Function(_CommunityIntroduction) _then) = __$CommunityIntroductionCopyWithImpl;
 @override @useResult
 $Res call({
- String communityName, String theirName, String organizerComment, KeyPair myKeyPair, bool deferred, DhtSettings? theirSharingSettings, ContactDetails? theirDetails, Map<String, ContactAddressLocation>? addressLocations, Map<String, ContactTemporaryLocation>? temporaryLocations
+ String communityName, String theirName, String organizerComment, KeyPair myKeyPair, bool deferred, ContactDetails? theirDetails, Map<String, ContactAddressLocation>? addressLocations, Map<String, ContactTemporaryLocation>? temporaryLocations
 });
 
 
-
+@override $ContactDetailsCopyWith<$Res>? get theirDetails;
 
 }
 /// @nodoc
@@ -2024,22 +2038,33 @@ class __$CommunityIntroductionCopyWithImpl<$Res>
 
 /// Create a copy of CommunityIntroduction
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? communityName = null,Object? theirName = null,Object? organizerComment = null,Object? myKeyPair = null,Object? deferred = null,Object? theirSharingSettings = freezed,Object? theirDetails = freezed,Object? addressLocations = freezed,Object? temporaryLocations = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? communityName = null,Object? theirName = null,Object? organizerComment = null,Object? myKeyPair = null,Object? deferred = null,Object? theirDetails = freezed,Object? addressLocations = freezed,Object? temporaryLocations = freezed,}) {
   return _then(_CommunityIntroduction(
 communityName: null == communityName ? _self.communityName : communityName // ignore: cast_nullable_to_non_nullable
 as String,theirName: null == theirName ? _self.theirName : theirName // ignore: cast_nullable_to_non_nullable
 as String,organizerComment: null == organizerComment ? _self.organizerComment : organizerComment // ignore: cast_nullable_to_non_nullable
 as String,myKeyPair: null == myKeyPair ? _self.myKeyPair : myKeyPair // ignore: cast_nullable_to_non_nullable
 as KeyPair,deferred: null == deferred ? _self.deferred : deferred // ignore: cast_nullable_to_non_nullable
-as bool,theirSharingSettings: freezed == theirSharingSettings ? _self.theirSharingSettings : theirSharingSettings // ignore: cast_nullable_to_non_nullable
-as DhtSettings?,theirDetails: freezed == theirDetails ? _self.theirDetails : theirDetails // ignore: cast_nullable_to_non_nullable
+as bool,theirDetails: freezed == theirDetails ? _self.theirDetails : theirDetails // ignore: cast_nullable_to_non_nullable
 as ContactDetails?,addressLocations: freezed == addressLocations ? _self._addressLocations : addressLocations // ignore: cast_nullable_to_non_nullable
 as Map<String, ContactAddressLocation>?,temporaryLocations: freezed == temporaryLocations ? _self._temporaryLocations : temporaryLocations // ignore: cast_nullable_to_non_nullable
 as Map<String, ContactTemporaryLocation>?,
   ));
 }
 
+/// Create a copy of CommunityIntroduction
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ContactDetailsCopyWith<$Res>? get theirDetails {
+    if (_self.theirDetails == null) {
+    return null;
+  }
 
+  return $ContactDetailsCopyWith<$Res>(_self.theirDetails!, (value) {
+    return _then(_self.copyWith(theirDetails: value));
+  });
+}
 }
 
 // dart format on

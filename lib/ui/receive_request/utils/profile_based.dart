@@ -1,10 +1,10 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:uuid/uuid.dart';
 import 'package:veilid/veilid.dart';
 
-import '../../../data/models/coag_contact.dart';
+import '../../../data/models/models.dart';
 import '../../../data/services/storage/base.dart';
 import '../../../data/utils.dart';
 import '../../utils.dart';
@@ -27,12 +27,14 @@ Future<CoagContact?> createContactFromProfileInvite(
     name: invite.name,
     myIdentity: await generateKeyPairBest(),
     myIntroductionKeyPair: await generateKeyPairBest(),
-    dhtSettings: DhtSettings(
+    dhtConnection: DhtConnectionState.invited(
       recordKeyThemSharing: invite.recordKey,
-      theirNextPublicKey: invite.publicKey,
+    ),
+    connectionCrypto: CryptoState.establishedAsymmetric(
+      myKeyPair: myInitialKeyPair,
       myNextKeyPair: myInitialKeyPair,
-      // We skip the DH key exchange and directly start with all pub keys
-      theyAckHandshakeComplete: true,
+      theirPublicKey: invite.publicKey,
+      theirNextPublicKey: invite.publicKey,
     ),
   );
 

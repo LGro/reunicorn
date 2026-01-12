@@ -4,7 +4,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:reunicorn/data/services/dht.dart';
+import 'package:reunicorn/data/services/dht/veilid_dht.dart';
 
 void main() {
   test('chop payload chunks for payload smaller than chunk size', () {

@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:reunicorn/data/models/circle.dart';
-import 'package:reunicorn/data/models/coag_contact.dart';
-import 'package:reunicorn/data/models/contact_location.dart';
+import 'package:reunicorn/data/models/models.dart';
 import 'package:reunicorn/data/models/profile_info.dart';
 import 'package:reunicorn/data/models/profile_sharing_settings.dart';
 import 'package:reunicorn/data/repositories/contact_dht.dart';
+import 'package:reunicorn/data/services/dht/veilid_dht.dart';
 import 'package:reunicorn/data/services/storage/memory.dart';
 import 'package:reunicorn/ui/receive_request/utils/direct_sharing.dart';
 import 'package:reunicorn/ui/utils.dart';
@@ -32,6 +32,7 @@ void main() {
     final contactStorageB = MemoryStorage<CoagContact>();
     final circleStorageB = MemoryStorage<Circle>();
     final profileStorageB = MemoryStorage<ProfileInfo>();
+    final dhtStorage = VeilidDht(watchLocalChanges: true);
 
     // Initialize Alice's repository
     final _cRepoA = ContactDhtRepository(
@@ -49,7 +50,7 @@ void main() {
           ),
         ),
       ),
-      true,
+      dhtStorage,
     );
 
     // Initialize Bob's repository
@@ -68,12 +69,12 @@ void main() {
           ),
         ),
       ),
-      true,
+      dhtStorage,
     );
 
     // Alice prepares invite for Bob and shares via default circle
     debugPrint('ALICE ACTING');
-    var contactBobInvitedByA = await createContactForInvite(
+    var contactBobInvitedByA = await _cRepoA.createContactForInvite(
       'Bob Invite',
       pubKey: null,
     );

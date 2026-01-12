@@ -5,8 +5,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:reunicorn/data/models/coag_contact.dart';
-import 'package:reunicorn/data/models/contact_location.dart';
+import 'package:reunicorn/data/models/models.dart';
 import 'package:reunicorn/data/models/profile_info.dart';
 import 'package:reunicorn/data/models/profile_sharing_settings.dart';
 import 'package:reunicorn/data/providers/system_contacts/base.dart';
@@ -122,7 +121,14 @@ void main() {
     final filtered = filterAccordingToSharingProfile(
       profile: profile,
       activeCirclesWithMemberCount: {'Circle': 2},
-      dhtSettings: DhtSettings(myNextKeyPair: fakeKeyPair()),
+      dhtConnection: DhtConnectionState.invited(
+        recordKeyThemSharing: fakeDhtRecordKey(),
+      ),
+      connectionCrypto: CryptoState.establishedSymmetric(
+        initialSharedSecret: fakePsk(0),
+        myNextKeyPair: fakeKeyPair(),
+        theirNextPublicKey: fakeKeyPair().key,
+      ),
       identityKey: null,
       introductionKey: null,
       introductions: [],
@@ -181,7 +187,7 @@ void main() {
   });
 
   test('filter names', () {
-    final filteredNames = filterNames(
+    final filteredNames = filterContactDetailsList(
       {'nick': 'dudi', 'fullname': 'Dudeli Dideli'},
       {
         'nick': ['circle1'],

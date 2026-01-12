@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../../../data/models/coag_contact.dart';
+import '../../../../data/models/models.dart';
 import '../../../utils.dart';
 
 class ProfileBasedSharingWidget extends StatelessWidget {
@@ -12,9 +12,16 @@ class ProfileBasedSharingWidget extends StatelessWidget {
 
   ProfileBasedSharingWidget(CoagContact contact, {super.key}) {
     _uri = ProfileBasedInvite(
-      contact.sharedProfile?.details.names.values.firstOrNull ?? '???',
-      contact.dhtSettings.recordKeyMeSharing!,
-      contact.dhtSettings.myKeyPair!.key,
+      contact
+              .profileSharingStatus
+              .sharedProfile
+              ?.details
+              .names
+              .values
+              .firstOrNull ??
+          '???',
+      contact.dhtConnection.recordKeyMeSharingOrNull!,
+      contact.connectionCrypto.myKeyPairOrNull!.key,
     ).uri;
   }
 

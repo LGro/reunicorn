@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 // TODO: Ensure this page looks ok if no contact could be found for given ID -> alert and redirect
@@ -11,7 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/models/circle.dart';
-import '../../data/models/coag_contact.dart';
+import '../../data/models/models.dart';
 import '../../data/models/profile_info.dart';
 import '../../data/repositories/contact_dht.dart';
 import '../../data/services/storage/base.dart';
@@ -458,16 +458,20 @@ class _ContactPageState extends State<ContactPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                if (contact.dhtSettings.recordKeyMeSharing != null)
-                  DhtStatusWidget(
-                    recordKey: contact.dhtSettings.recordKeyMeSharing!,
+                switch (contact.dhtConnection) {
+                  DhtConnectionInitialized(:final recordKeyMeSharing) ||
+                  DhtConnectionEstablished(
+                    :final recordKeyMeSharing,
+                  ) => DhtStatusWidget(
+                    recordKey: recordKeyMeSharing,
                     statusWidgets: const {},
                   ),
-                if (contact.dhtSettings.recordKeyThemSharing != null)
-                  DhtStatusWidget(
-                    recordKey: contact.dhtSettings.recordKeyThemSharing!,
-                    statusWidgets: const {},
-                  ),
+                  _ => const SizedBox(),
+                },
+                DhtStatusWidget(
+                  recordKey: contact.dhtConnection.recordKeyThemSharing,
+                  statusWidgets: const {},
+                ),
               ],
             ),
             // const SizedBox(height: 8),
@@ -475,25 +479,46 @@ class _ContactPageState extends State<ContactPage> {
             // Text('Changed: ${contact.mostRecentChange}'),
             _paddedDivider(),
             Text(
-              'MyPubKey: ${_shorten(contact.dhtSettings.myKeyPair?.key.toString() ?? 'null')}...',
+              contact.connectionCrypto.map(
+                initializedSymmetric: (_) => 'initSym',
+                establishedSymmetric: (_) => 'estSym',
+                initializedAsymmetric: (_) => 'initAsym',
+                establishedAsymmetric: (_) => 'estAsym',
+              ),
+            ),
+            if (contact.profileSharingStatus.mostRecentAttempt != null &&
+                contact.profileSharingStatus.mostRecentSuccess != null &&
+                !contact.profileSharingStatus.mostRecentSuccess!.isBefore(
+                  contact.profileSharingStatus.mostRecentAttempt!,
+                ))
+              const Text('Successfully shared')
+            else if (contact.profileSharingStatus.mostRecentAttempt != null &&
+                contact.profileSharingStatus.mostRecentSuccess != null &&
+                contact.profileSharingStatus.mostRecentSuccess!.isBefore(
+                  contact.profileSharingStatus.mostRecentAttempt!,
+                ))
+              const Text('Pending changes not shared yet'),
+            // TODO(LGro): show diff above between shared profile and pending changes in shared profile
+            Text(
+              'MyPubKey: ${_shorten(contact.connectionCrypto.myKeyPairOrNull?.key.toString() ?? 'null')}...',
             ),
             Text(
-              'MyNextPubKey: ${_shorten(contact.dhtSettings.myNextKeyPair?.key.toString() ?? 'null')}...',
+              'MyNextPubKey: ${_shorten(contact.connectionCrypto.myNextKeyPair.key.toString())}...',
             ),
             Text(
-              'MyDhtKey: ${_shorten(contact.dhtSettings.recordKeyMeSharing.toString())}...',
+              'MyDhtKey: ${_shorten(contact.dhtConnection.recordKeyMeSharingOrNull.toString())}...',
             ),
             Text(
-              'TheirPubKey: ${_shorten(contact.dhtSettings.theirPublicKey.toString())}...',
+              'TheirPubKey: ${_shorten(contact.connectionCrypto.theirPublicKeyOrNull.toString())}...',
             ),
             Text(
-              'TheirNextPubKey: ${_shorten(contact.dhtSettings.theirNextPublicKey.toString())}...',
+              'TheirNextPubKey: ${_shorten(contact.connectionCrypto.theirNextPublicKeyOrNull.toString())}...',
             ),
             Text(
-              'TheirDhtKey: ${_shorten(contact.dhtSettings.recordKeyThemSharing.toString())}...',
+              'TheirDhtKey: ${_shorten(contact.dhtConnection.recordKeyThemSharing.toString())}...',
             ),
             Text(
-              'InitSec: ${_shorten(contact.dhtSettings.initialSecret.toString())}...',
+              'InitSec: ${_shorten(contact.connectionCrypto.initialSharedSecretOrNull.toString())}...',
             ),
             const SizedBox(height: 16),
           ],
@@ -520,20 +545,26 @@ class SharingSettings extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         CirclesCard(_contact.coagContactId, _circles.values.toList()),
-        if ((_contact.dhtSettings.recordKeyMeSharing == null ||
+        if ((_contact.dhtConnection is DhtConnectionInvited ||
                 _contact.details == null) &&
             context.read<ContactDetailsCubit>().wasNotIntroduced(_contact)) ...[
           _paddedDivider(),
           ConnectingCard(context, _contact, _circles),
         ],
-        if (_circles.isNotEmpty && _contact.sharedProfile != null) ...[
+        if (_circles.isNotEmpty &&
+            _contact.profileSharingStatus.sharedProfile != null) ...[
           _paddedDivider(),
           SharedProfile(
-            _contact.sharedProfile!.details,
-            _contact.sharedProfile!.addressLocations,
+            _contact.profileSharingStatus.sharedProfile!.details,
+            _contact.profileSharingStatus.sharedProfile!.addressLocations,
           ),
         ],
-        if (_contact.sharedProfile?.temporaryLocations.isNotEmpty ?? false) ...[
+        if (_contact
+                .profileSharingStatus
+                .sharedProfile
+                ?.temporaryLocations
+                .isNotEmpty ??
+            false) ...[
           _paddedDivider(),
           TemporaryLocationsCard(
             const Row(
@@ -543,7 +574,7 @@ class SharingSettings extends StatelessWidget {
                 Text('Shared locations', textScaler: TextScaler.linear(1.2)),
               ],
             ),
-            _contact.sharedProfile!.temporaryLocations,
+            _contact.profileSharingStatus.sharedProfile!.temporaryLocations,
           ),
           Padding(
             padding: const EdgeInsets.only(left: 12, right: 12, bottom: 8),

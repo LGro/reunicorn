@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'dht_communication.dart';
+part of 'encrypted_communication.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator

@@ -11,7 +11,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 import '../../data/models/coag_contact.dart';
 import '../../data/models/contact_introduction.dart';
-import '../../data/repositories/contact_dht.dart';
+import '../../data/services/dht/veilid_dht.dart';
 import '../../data/services/storage/base.dart';
 import '../../data/shared_contact_discovery.dart';
 
@@ -50,8 +50,8 @@ class IntroduceContactsCubit extends Cubit<IntroduceContactsState> {
   }) async {
     // TODO: Can this fail? Do we need to try except this?
     try {
-      final (recordKeyA, writerA) = await createRecord();
-      final (recordKeyB, writerB) = await createRecord();
+      final (recordKeyA, writerA) = await VeilidDht().create();
+      final (recordKeyB, writerB) = await VeilidDht().create();
 
       // Get most up to date contacts since dht record creation might have taken
       // a moment

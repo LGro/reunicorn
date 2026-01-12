@@ -3,8 +3,8 @@
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'profile_sharing_settings.freezed.dart';
-part 'profile_sharing_settings.g.dart';
+part 'settings.freezed.dart';
+part 'settings.g.dart';
 
 @freezed
 sealed class ProfileSharingSettings with _$ProfileSharingSettings {

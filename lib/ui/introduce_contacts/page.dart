@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../data/models/coag_contact.dart';
+import '../../data/models/models.dart';
 import '../../data/services/storage/base.dart';
 import '../../data/shared_contact_discovery.dart';
 import '../utils.dart';
@@ -107,7 +107,7 @@ class _IntroduceContactsPageState extends State<IntroduceContactsPage> {
                   ),
                   // TODO: Move into validator instead
                   if (_contactA != null &&
-                      _contactA!.dhtSettings.theirPublicKey == null)
+                      _contactA!.connectionCrypto.theirPublicKeyOrNull == null)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Text(
@@ -179,7 +179,7 @@ class _IntroduceContactsPageState extends State<IntroduceContactsPage> {
                   ),
                   // TODO: Move into validator instead
                   if (_contactB != null &&
-                      _contactB!.dhtSettings.theirPublicKey == null)
+                      _contactB!.connectionCrypto.theirPublicKeyOrNull == null)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Text(

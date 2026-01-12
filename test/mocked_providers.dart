@@ -1,9 +1,10 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:reunicorn/data/models/models.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 const dummyAppUserName = 'App User Name';
@@ -37,5 +38,20 @@ KeyPair fakeKeyPair([int pub = 0, int sec = 1]) => KeyPair.fromBareKeyPair(
   BareKeyPair(
     key: BarePublicKey.fromBytes(Uint8List.fromList(List.filled(32, pub))),
     secret: BareSecretKey.fromBytes(Uint8List.fromList(List.filled(32, sec))),
+  ),
+);
+
+final minimalBaseContact = CoagContact(
+  coagContactId: 'dummy-id',
+  name: 'dummy',
+  myIdentity: fakeKeyPair(1000),
+  myIntroductionKeyPair: fakeKeyPair(2000),
+  dhtConnection: DhtConnectionState.invited(
+    recordKeyThemSharing: fakeDhtRecordKey(),
+  ),
+  connectionCrypto: CryptoState.establishedSymmetric(
+    initialSharedSecret: fakePsk(3),
+    myNextKeyPair: fakeKeyPair(1),
+    theirNextPublicKey: fakeKeyPair(2).key,
   ),
 );

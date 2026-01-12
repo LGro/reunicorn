@@ -4,6 +4,7 @@ report.xml
 secrets/
 /android/build/
 .cxx/
+vod_test.dart
 
 # Miscellaneous
 *.class

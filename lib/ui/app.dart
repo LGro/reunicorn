@@ -28,6 +28,7 @@ import '../data/repositories/contact_system.dart';
 import '../data/repositories/contact_update.dart';
 import '../data/repositories/notifications.dart';
 import '../data/repositories/settings.dart';
+import '../data/services/dht/veilid_dht.dart';
 import '../data/services/storage/base.dart';
 import '../data/services/storage/sqlite.dart';
 import '../l10n/app_localizations.dart';
@@ -388,6 +389,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
                   (v) => jsonEncode(v.toJson()),
                   profileMigrateFromJson,
                 ),
+                VeilidDht(),
               );
               // ignore: unused_local_variable we just need init and listen
               final updateRepo = UpdateRepository(

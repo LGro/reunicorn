@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import '../../../data/models/coag_contact.dart';
-import '../../../data/models/profile_sharing_settings.dart';
+import '../../../data/models/models.dart';
 import '../../utils.dart';
 import '../../widgets/details_list.dart';
 import '../cubit.dart';

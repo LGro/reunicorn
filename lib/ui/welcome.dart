@@ -8,10 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
+
+import '../../../data/models/models.dart';
 import '../data/models/circle.dart';
-import '../data/models/coag_contact.dart';
 import '../data/models/profile_info.dart';
-import '../data/models/profile_sharing_settings.dart';
 import '../data/services/storage/base.dart';
 import '../data/utils.dart';
 import 'legal/privacy_policy.dart';

@@ -8,14 +8,25 @@ import 'package:veilid_support/veilid_support.dart';
 
 import '../models/backup.dart';
 import '../models/circle.dart';
-import '../models/coag_contact.dart';
+import '../models/models.dart';
 import '../models/profile_info.dart';
 import '../models/setting.dart';
-import '../services/dht.dart';
+import '../services/dht/veilid_dht.dart';
 import '../services/storage/base.dart';
 import '../utils.dart';
 import 'base_dht.dart';
-import 'contact_dht.dart';
+
+String? tryUtf8Decode(Uint8List? content) {
+  if (content == null) {
+    return null;
+  }
+  try {
+    return utf8.decode(content);
+  } on FormatException catch (e) {
+    // debugPrint('UTF-8 decode attempt lead to $e');
+    return null;
+  }
+}
 
 @override
 Future<void> updateBackupRecord(
@@ -32,7 +43,7 @@ Future<void> updateBackupRecord(
     recordKey,
     writer,
     crypto: crypto,
-    debugName: 'rncrn::backup',
+    debugName: 'rcrn::backup',
   );
   await Future.wait(
     chopPayloadChunks(
@@ -64,16 +75,16 @@ Future<String?> readBackupRecord(
       final content = await DHTRecordPool.instance
           .openRecordRead(
             recordKey,
-            debugName: 'rncrn::backup::read',
+            debugName: 'rcrn::backup::read',
             crypto: pskCrypto,
           )
           .then((record) async {
             try {
               final payload = await getChunkedPayload(
                 record,
-                pskCrypto,
                 refreshMode,
                 numChunks: 32,
+                crypto: pskCrypto,
               );
               debugPrint('read psk ${recordKey.toString().substring(5, 10)}');
               return tryUtf8Decode(payload);
@@ -164,7 +175,8 @@ class BackupRepository extends BaseDhtRepository {
               myIntroductionKeyPair: c.myIntroductionKeyPair,
               myPreviousIntroductionKeyPairs: c.myPreviousIntroductionKeyPairs,
               name: c.name,
-              dhtSettings: c.dhtSettings,
+              dhtConnection: c.dhtConnection,
+              connectionCrypto: c.connectionCrypto,
               origin: c.origin,
               comment: c.comment,
               verified: c.verified,
@@ -175,7 +187,7 @@ class BackupRepository extends BaseDhtRepository {
               connectionAttestations: const [],
               addressLocations: const {},
               temporaryLocations: const {},
-              sharedProfile: null,
+              profileSharingStatus: const ProfileSharingStatus(),
               theirIntroductionKey: null,
               introductionsByThem: const [],
             ),
@@ -200,7 +212,7 @@ class BackupRepository extends BaseDhtRepository {
       );
     } catch (e) {
       // Create new backup record and secret
-      (backupDhtKey, dhtWriter) = await createRecord();
+      (backupDhtKey, dhtWriter) = await VeilidDht().create();
       backupSecretKey = await generateRandomSharedSecretBest();
 
       // Save for future updates

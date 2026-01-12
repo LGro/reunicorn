@@ -1,11 +1,11 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:uuid/uuid.dart';
 
 import '../../ui/utils.dart';
-import '../models/coag_contact.dart';
 import '../models/contact_update.dart';
+import '../models/models.dart';
 import '../services/storage/base.dart';
 
 typedef NotificationCallback =
@@ -39,24 +39,35 @@ class UpdateRepository {
       final update = ContactUpdate(
         coagContactId: newContact.coagContactId,
         oldContact: CoagContact(
-          coagContactId: newContact.coagContactId,
-          name: newContact.name,
-          myIdentity: newContact.myIdentity,
-          myIntroductionKeyPair: newContact.myIntroductionKeyPair,
-          dhtSettings: newContact.dhtSettings.copyWith(),
-          details: newContact.details?.copyWith(),
-          temporaryLocations: {...newContact.temporaryLocations},
-          addressLocations: {...newContact.addressLocations},
+          coagContactId: oldContact?.coagContactId ?? newContact.coagContactId,
+          name: oldContact?.name ?? newContact.name,
+          myIdentity: oldContact?.myIdentity ?? newContact.myIdentity,
+          myIntroductionKeyPair:
+              oldContact?.myIntroductionKeyPair ??
+              newContact.myIntroductionKeyPair,
+          dhtConnection: oldContact?.dhtConnection ?? newContact.dhtConnection,
+          connectionCrypto:
+              oldContact?.connectionCrypto ?? newContact.connectionCrypto,
+          details:
+              oldContact?.details?.copyWith() ?? newContact.details?.copyWith(),
+          temporaryLocations:
+              oldContact?.temporaryLocations ??
+              {...newContact.temporaryLocations},
+          addressLocations:
+              oldContact?.addressLocations ?? {...newContact.addressLocations},
+          profileSharingStatus: const ProfileSharingStatus(),
         ),
         newContact: CoagContact(
           coagContactId: newContact.coagContactId,
           name: newContact.name,
           myIdentity: newContact.myIdentity,
           myIntroductionKeyPair: newContact.myIntroductionKeyPair,
-          dhtSettings: newContact.dhtSettings.copyWith(),
+          dhtConnection: newContact.dhtConnection,
+          connectionCrypto: newContact.connectionCrypto,
           details: newContact.details?.copyWith(),
           temporaryLocations: {...newContact.temporaryLocations},
           addressLocations: {...newContact.addressLocations},
+          profileSharingStatus: const ProfileSharingStatus(),
         ),
         // TODO: Use update time from when the update was sent not received
         timestamp: DateTime.now(),

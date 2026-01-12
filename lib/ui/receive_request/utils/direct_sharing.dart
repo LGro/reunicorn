@@ -1,9 +1,9 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:uuid/uuid.dart';
 
-import '../../../data/models/coag_contact.dart';
+import '../../../data/models/models.dart';
 import '../../../data/services/storage/base.dart';
 import '../../../data/utils.dart';
 import '../../utils.dart';
@@ -24,7 +24,7 @@ Future<CoagContact?> createContactFromDirectSharing(
   // If we're already receiving from that record, redirect to existing contact/
   // TODO: Should we check for ID or pubkey change / mismatch?
   final existingContactsThemSharing = existingContacts.values.where(
-    (c) => c.dhtSettings.recordKeyThemSharing == invite.recordKey,
+    (c) => c.dhtConnection.recordKeyThemSharing == invite.recordKey,
   );
   if (existingContactsThemSharing.isNotEmpty) {
     return existingContactsThemSharing.first;
@@ -32,7 +32,7 @@ Future<CoagContact?> createContactFromDirectSharing(
 
   // If I accidentally scanned my own QR code, don't add a contact
   final existingContactsMeSharing = existingContacts.values.where(
-    (c) => c.dhtSettings.recordKeyMeSharing == invite.recordKey,
+    (c) => c.dhtConnection.recordKeyMeSharingOrNull == invite.recordKey,
   );
   if (existingContactsMeSharing.isNotEmpty) {
     return null;
@@ -45,10 +45,11 @@ Future<CoagContact?> createContactFromDirectSharing(
     name: invite.name,
     myIdentity: await generateKeyPairBest(),
     myIntroductionKeyPair: await generateKeyPairBest(),
-    // TODO: Handle fromString parsing errors
-    dhtSettings: DhtSettings(
+    dhtConnection: DhtConnectionState.invited(
       recordKeyThemSharing: invite.recordKey,
-      initialSecret: invite.psk,
+    ),
+    connectionCrypto: CryptoState.initializedSymmetric(
+      initialSharedSecret: invite.psk,
       myNextKeyPair: await generateKeyPairBest(),
     ),
   );

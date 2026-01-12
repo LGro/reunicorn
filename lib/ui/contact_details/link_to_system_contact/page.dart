@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 
 import '../../../data/models/coag_contact.dart';
+import '../../../data/repositories/contact_system.dart';
 import '../../../data/services/storage/base.dart';
 import '../../utils.dart';
 import '../../widgets/searchable_list.dart';

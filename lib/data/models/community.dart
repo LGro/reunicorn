@@ -6,8 +6,10 @@ import 'dart:convert';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import 'coag_contact.dart';
+import 'contact_details.dart';
 import 'contact_location.dart';
+import 'crypto_state.dart';
+import 'dht_connection_state.dart';
 import 'utils.dart';
 
 part 'community.freezed.dart';
@@ -222,7 +224,8 @@ sealed class CommunityIntroduction with _$CommunityIntroduction {
     required String organizerComment,
     required KeyPair myKeyPair,
     @Default(false) bool deferred,
-    DhtSettings? theirSharingSettings,
+    // FIXME(LGro)
+    // DhtSettings? theirSharingSettings,
     ContactDetails? theirDetails,
     Map<String, ContactAddressLocation>? addressLocations,
     Map<String, ContactTemporaryLocation>? temporaryLocations,

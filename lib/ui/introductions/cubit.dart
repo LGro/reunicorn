@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -8,8 +8,8 @@ import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../data/models/coag_contact.dart';
 import '../../data/models/contact_introduction.dart';
+import '../../data/models/models.dart';
 import '../../data/services/storage/base.dart';
 import '../../data/utils.dart';
 
@@ -54,13 +54,17 @@ class IntroductionsCubit extends Cubit<IntroductionsState> {
       name: introduction.otherName,
       myIdentity: await generateKeyPairBest(),
       myIntroductionKeyPair: await generateKeyPairBest(),
-      dhtSettings: DhtSettings(
-        myKeyPair: myKeyPair,
-        theirNextPublicKey: introduction.otherPublicKey,
+      profileSharingStatus: const ProfileSharingStatus(),
+      dhtConnection: DhtConnectionState.established(
         recordKeyMeSharing: introduction.dhtRecordKeySharing,
         writerMeSharing: introduction.dhtWriterSharing,
         recordKeyThemSharing: introduction.dhtRecordKeyReceiving,
-        theyAckHandshakeComplete: true,
+      ),
+      connectionCrypto: CryptoState.establishedAsymmetric(
+        myKeyPair: myKeyPair,
+        myNextKeyPair: await generateKeyPairBest(),
+        theirNextPublicKey: introduction.otherPublicKey,
+        theirPublicKey: introduction.otherPublicKey,
       ),
     );
 

@@ -3,7 +3,7 @@
 
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:reunicorn/data/models/coag_contact.dart';
+import 'package:reunicorn/data/models/models.dart';
 
 void main() {
   test('contact details from address book types to simple maps', () {

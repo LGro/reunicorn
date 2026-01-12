@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:synchronized/synchronized.dart';
 
 import '../../../debug_log.dart';
 import '../../../tools/tools.dart';

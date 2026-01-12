@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:math';
@@ -6,15 +6,10 @@ import 'dart:typed_data';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:faker/faker.dart';
 import 'package:image/image.dart' as img;
 import 'package:json_annotation/json_annotation.dart';
-import 'package:uuid/uuid.dart';
 
-import '../../data/models/coag_contact.dart';
-import '../../data/models/contact_location.dart';
 import '../../data/repositories/settings.dart';
-import '../../data/utils.dart';
 
 part 'cubit.g.dart';
 part 'state.dart';
@@ -64,52 +59,51 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   // TODO: Move to demo / dev storage with initial set of contacts
   Future<void> addDummyContact() async {
-    final faker = Faker();
-    final coagContactId = Uuid().v4();
-    final c1 = CoagContact(
-      coagContactId: coagContactId,
-      name: faker.person.name(),
-      myIdentity: await generateKeyPairBest(),
-      myIntroductionKeyPair: await generateKeyPairBest(),
-      details: ContactDetails(
-        // TODO: do too large noisy images break things?
-        picture: generateRandomImage(20, 20),
-        phones: {'mobile': faker.phoneNumber.de()},
-      ),
-      addressLocations: Map.fromEntries(
-        [1, 2, 3].map(
-          (index) => MapEntry(
-            'address $index',
-            ContactAddressLocation(
-              longitude: faker.geo.longitude(),
-              latitude: faker.geo.latitude(),
-              address: faker.address.streetAddress(),
-              coagContactId: coagContactId,
-            ),
-          ),
-        ),
-      ),
-      temporaryLocations: Map.fromEntries(
-        [Uuid().v4(), Uuid().v4(), Uuid().v4()].map((id) {
-          final start = faker.date.dateTime(
-            minYear: DateTime.now().year,
-            maxYear: DateTime.now().year + 1,
-          );
-          return MapEntry(
-            id,
-            ContactTemporaryLocation(
-              longitude: faker.geo.longitude(),
-              latitude: faker.geo.latitude(),
-              name: faker.address.streetAddress(),
-              start: start,
-              end: start.add(Duration(days: faker.randomGenerator.integer(30))),
-              details: faker.lorem.sentence(),
-            ),
-          );
-        }),
-      ),
-      dhtSettings: const DhtSettings(),
-    );
+    // final faker = Faker();
+    // final coagContactId = Uuid().v4();
+    // final c1 = CoagContact(
+    //   coagContactId: coagContactId,
+    //   name: faker.person.name(),
+    //   myIdentity: await generateKeyPairBest(),
+    //   myIntroductionKeyPair: await generateKeyPairBest(),
+    //   details: ContactDetails(
+    //     // TODO: do too large noisy images break things?
+    //     picture: generateRandomImage(20, 20),
+    //     phones: {'mobile': faker.phoneNumber.de()},
+    //   ),
+    //   addressLocations: Map.fromEntries(
+    //     [1, 2, 3].map(
+    //       (index) => MapEntry(
+    //         'address $index',
+    //         ContactAddressLocation(
+    //           longitude: faker.geo.longitude(),
+    //           latitude: faker.geo.latitude(),
+    //           address: faker.address.streetAddress(),
+    //           coagContactId: coagContactId,
+    //         ),
+    //       ),
+    //     ),
+    //   ),
+    //   temporaryLocations: Map.fromEntries(
+    //     [Uuid().v4(), Uuid().v4(), Uuid().v4()].map((id) {
+    //       final start = faker.date.dateTime(
+    //         minYear: DateTime.now().year,
+    //         maxYear: DateTime.now().year + 1,
+    //       );
+    //       return MapEntry(
+    //         id,
+    //         ContactTemporaryLocation(
+    //           longitude: faker.geo.longitude(),
+    //           latitude: faker.geo.latitude(),
+    //           name: faker.address.streetAddress(),
+    //           start: start,
+    //           end: start.add(Duration(days: faker.randomGenerator.integer(30))),
+    //           details: faker.lorem.sentence(),
+    //         ),
+    //       );
+    //     }),
+    //   ),
+    // );
     // await contactsRepository.saveContact(c1);
     // await contactsRepository.updateCirclesForContact(
     //     c1.coagContactId,

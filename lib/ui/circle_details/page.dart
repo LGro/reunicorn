@@ -48,7 +48,7 @@ Widget contactsListView(
         circleMemberships[contact.coagContactId]?.contains(circleId) ?? false,
     title: GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () async =>
+      onTap: () =>
           Navigator.of(context).push(ContactPage.route(contact.coagContactId)),
       child: Row(
         children: [
@@ -226,23 +226,21 @@ Widget _sharedInformationList(
             state.profileInfo!.sharingSettings.names[l],
         circles: state.circles,
         circleMemberships: state.circleMemberships,
-        editCallback: (label, doShare) async =>
-            updateSharedInformationWithCircle(
-              state: state,
-              detailSharingSettings: {
-                ...state.profileInfo!.sharingSettings.names,
-              },
-              label: label,
-              doShare: doShare,
-              updateDetailSharingSettings: (sharingSettings) =>
-                  context.read<Storage<ProfileInfo>>().set(
-                    state.profileInfo!.id,
-                    state.profileInfo!.copyWith(
-                      sharingSettings: state.profileInfo!.sharingSettings
-                          .copyWith(names: sharingSettings),
-                    ),
+        editCallback: (label, doShare) => updateSharedInformationWithCircle(
+          state: state,
+          detailSharingSettings: {...state.profileInfo!.sharingSettings.names},
+          label: label,
+          doShare: doShare,
+          updateDetailSharingSettings: (sharingSettings) =>
+              context.read<Storage<ProfileInfo>>().set(
+                state.profileInfo!.id,
+                state.profileInfo!.copyWith(
+                  sharingSettings: state.profileInfo!.sharingSettings.copyWith(
+                    names: sharingSettings,
                   ),
-            ),
+                ),
+              ),
+        ),
       ),
     if (state.profileInfo!.details.phones.isNotEmpty)
       ...detailsList(

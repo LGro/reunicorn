@@ -1,23 +1,35 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../../../data/models/coag_contact.dart';
+import '../../../../data/models/models.dart';
 import '../../../utils.dart';
 
 class DirectSharingWidget extends StatelessWidget {
   late final Uri _uri;
   late final String _contactName;
 
-  DirectSharingWidget(CoagContact contact, {super.key}) {
+  DirectSharingWidget(
+    CoagContact contact,
+    DhtConnectionInitialized dhtConnection,
+    CryptoInitializedSymmetric connectionCrypto, {
+    super.key,
+  }) {
     _contactName = contact.name;
     _uri = DirectSharingInvite(
-      contact.sharedProfile?.details.names.values.firstOrNull ?? '???',
-      contact.dhtSettings.recordKeyMeSharing!,
-      contact.dhtSettings.initialSecret!,
+      contact
+              .profileSharingStatus
+              .sharedProfile
+              ?.details
+              .names
+              .values
+              .firstOrNull ??
+          '???',
+      dhtConnection.recordKeyMeSharing,
+      connectionCrypto.initialSharedSecret,
     ).uri;
   }
 

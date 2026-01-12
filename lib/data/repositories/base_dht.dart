@@ -28,7 +28,7 @@ abstract class BaseDhtRepository {
   }
 
   void _veilidConnectionStateChangeCallback(ProcessorConnectionState event) {
-    logDebug('rncrn-veilid-connection-state-changed: $event');
+    logDebug('rcrn-veilid-connection-state-changed: $event');
     if (event.isPublicInternetReady && event.isAttached && !isDhtAvailable) {
       isDhtAvailable = true;
       unawaited(dhtBecameAvailableCallback());

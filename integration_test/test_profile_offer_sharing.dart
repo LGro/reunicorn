@@ -9,6 +9,7 @@ import 'package:reunicorn/data/models/community.dart';
 import 'package:reunicorn/data/models/profile_info.dart';
 import 'package:reunicorn/data/models/profile_sharing_settings.dart';
 import 'package:reunicorn/data/repositories/contact_dht.dart';
+import 'package:reunicorn/data/services/dht/veilid_dht.dart';
 import 'package:reunicorn/data/services/storage/memory.dart';
 import 'package:reunicorn/data/utils.dart';
 import 'package:reunicorn/ui/receive_request/cubit.dart';
@@ -27,6 +28,7 @@ Future<void> testProfileOfferBasedSharing() async {
   final _contactStorageB = MemoryStorage<CoagContact>();
   final _circleStorageB = MemoryStorage<Circle>();
   final _profileStorageB = MemoryStorage<ProfileInfo>();
+  final dhtStorage = VeilidDht(watchLocalChanges: true);
 
   await _profileStorageA.set(
     'p1',
@@ -53,7 +55,7 @@ Future<void> testProfileOfferBasedSharing() async {
         ),
       ),
     ),
-    true,
+    dhtStorage,
   );
 
   // Initialize Bob's repository
@@ -72,7 +74,7 @@ Future<void> testProfileOfferBasedSharing() async {
         ),
       ),
     ),
-    true,
+    dhtStorage,
   );
 
   final bobsMainKeyPair = await _profileStorageB.getAll().then(

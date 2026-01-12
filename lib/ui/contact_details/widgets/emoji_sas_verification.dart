@@ -6,8 +6,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../data/models/coag_contact.dart';
 import '../../../data/models/emoji_sas.dart';
+import '../../../data/models/models.dart';
 import '../../../data/services/storage/base.dart';
 
 class EmojiWrap extends StatelessWidget {
@@ -98,11 +98,15 @@ class EmojiSasVerification extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      if (contact.dhtSettings.myKeyPair == null ||
-          contact.dhtSettings.theirNextPublicKey == null)
-        const SizedBox()
-      else ...[
+    children: switch (contact.connectionCrypto) {
+      CryptoInitializedAsymmetric(
+        :final myKeyPair,
+        :final theirNextPublicKey,
+      ) ||
+      CryptoEstablishedAsymmetric(
+        :final myKeyPair,
+        :final theirNextPublicKey,
+      ) => [
         Padding(
           padding: const EdgeInsets.only(left: 12, top: 8, right: 12),
           child: Text(
@@ -136,8 +140,8 @@ class EmojiSasVerification extends StatelessWidget {
                   ),
                   FutureBuilder<List<SasEmoji>>(
                     future: sharedSecretVerificationHash(
-                      contact.dhtSettings.myKeyPair!,
-                      contact.dhtSettings.theirNextPublicKey!,
+                      myKeyPair,
+                      theirNextPublicKey,
                     ).then(sasEmojisFromHash),
                     builder: (context, emoji) => Center(
                       child: (!emoji.hasData)
@@ -183,6 +187,7 @@ class EmojiSasVerification extends StatelessWidget {
           ),
         ),
       ],
-    ],
+      _ => [const SizedBox()],
+    },
   );
 }

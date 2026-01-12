@@ -5,8 +5,7 @@ import 'dart:convert';
 
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:reunicorn/data/models/coag_contact.dart';
-import 'package:reunicorn/data/models/contact_location.dart';
+import 'package:reunicorn/data/models/models.dart';
 import 'package:reunicorn/data/providers/legacy/sqlite.dart';
 
 import '../../mocked_providers.dart';
