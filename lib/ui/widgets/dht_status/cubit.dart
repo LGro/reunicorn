@@ -15,7 +15,7 @@ part 'state.dart';
 // TODO: Refactor status to enum
 class DhtStatusCubit extends Cubit<DhtStatusState> with WidgetsBindingObserver {
   DhtStatusCubit({required this.recordKey})
-      : super(const DhtStatusState('initial')) {
+    : super(const DhtStatusState('initial')) {
     WidgetsBinding.instance.addObserver(this);
     _startTimer();
     unawaited(updateStatus());
@@ -49,12 +49,12 @@ class DhtStatusCubit extends Cubit<DhtStatusState> with WidgetsBindingObserver {
       final report = await DHTRecordPool.instance
           .openRecordRead(recordKey, debugName: 'coag::read::stats')
           .then((record) async {
-        final report = await record.routingContext.inspectDHTRecord(
-          recordKey,
-        );
-        await record.close();
-        return report;
-      });
+            final report = await record.routingContext.inspectDHTRecord(
+              recordKey,
+            );
+            await record.close();
+            return report;
+          });
 
       if (!isClosed) {
         if (report.offlineSubkeys.isEmpty) {

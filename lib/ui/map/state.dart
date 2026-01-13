@@ -36,11 +36,11 @@ final class MapState extends Equatable {
 
   @override
   List<Object?> get props => [
-        contacts,
-        circleMemberships,
-        circles,
-        profileInfo,
-        contacts,
-        status,
-      ];
+    contacts,
+    circleMemberships,
+    circles,
+    profileInfo,
+    contacts,
+    status,
+  ];
 }

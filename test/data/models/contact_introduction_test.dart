@@ -27,13 +27,9 @@ void main() {
     for (final jsonEntry
         in loadAllPreviousSchemaVersionJsonFiles<ContactIntroduction>()
             .entries) {
-      try {
-        final jsonData =
-            await jsonDecode(jsonEntry.value) as Map<String, dynamic>;
-        ContactIntroduction.fromJson(jsonData);
-      } catch (e, stackTrace) {
-        fail('Failed to deserialize ${jsonEntry.key}:\n$e\n$stackTrace');
-      }
+      final jsonData =
+          await jsonDecode(jsonEntry.value) as Map<String, dynamic>;
+      ContactIntroduction.fromJson(jsonData);
     }
   });
 }

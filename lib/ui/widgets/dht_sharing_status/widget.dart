@@ -14,8 +14,9 @@ class DhtSharingStatusWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-      create: (context) => DhtSharingStatusCubit(recordKeys: recordKeys),
-      child: BlocBuilder<DhtSharingStatusCubit, DhtSharingStatusState>(
-        builder: (context, state) => Text(state.status),
-      ));
+    create: (context) => DhtSharingStatusCubit(recordKeys: recordKeys),
+    child: BlocBuilder<DhtSharingStatusCubit, DhtSharingStatusState>(
+      builder: (context, state) => Text(state.status),
+    ),
+  );
 }

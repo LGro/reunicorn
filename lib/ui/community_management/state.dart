@@ -30,25 +30,25 @@ class Batch extends Equatable {
   Map<String, dynamic> toJson() => _$BatchToJson(this);
 
   Batch copyWith({int? numPopulatedSubkeys}) => Batch(
-        label: this.label,
-        expiration: this.expiration,
-        dhtRecordKey: this.dhtRecordKey,
-        writer: this.writer,
-        subkeyWriters: [...this.subkeyWriters],
-        psk: this.psk,
-        numPopulatedSubkeys: numPopulatedSubkeys ?? this.numPopulatedSubkeys,
-      );
+    label: this.label,
+    expiration: this.expiration,
+    dhtRecordKey: this.dhtRecordKey,
+    writer: this.writer,
+    subkeyWriters: [...this.subkeyWriters],
+    psk: this.psk,
+    numPopulatedSubkeys: numPopulatedSubkeys ?? this.numPopulatedSubkeys,
+  );
 
   @override
   List<Object?> get props => [
-        label,
-        expiration,
-        dhtRecordKey,
-        writer,
-        subkeyWriters,
-        psk,
-        numPopulatedSubkeys,
-      ];
+    label,
+    expiration,
+    dhtRecordKey,
+    writer,
+    subkeyWriters,
+    psk,
+    numPopulatedSubkeys,
+  ];
 }
 
 @JsonSerializable()

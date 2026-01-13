@@ -7,7 +7,6 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reunicorn/data/models/models.dart';
 import 'package:reunicorn/data/models/profile_info.dart';
-import 'package:reunicorn/data/models/profile_sharing_settings.dart';
 import 'package:reunicorn/data/providers/system_contacts/base.dart';
 import 'package:reunicorn/data/repositories/contact_dht.dart';
 

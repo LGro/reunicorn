@@ -44,8 +44,7 @@ Uint8List trimPaddedUint8List(Uint8List padded) {
 // TODO(LGro): Drop share back writer when handshake ack to reduce risk of leaking it
 @freezed
 sealed class EncryptionMetaData with _$EncryptionMetaData {
-  // TODO(LGro): Shrink this down to the required maximum
-  static const byteLength = 400;
+  static const byteLength = 343;
 
   const factory EncryptionMetaData({
     /// DHT record key for recipient to share back

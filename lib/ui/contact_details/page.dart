@@ -265,10 +265,10 @@ class _ContactPageState extends State<ContactPage> {
           child: SharingSettings(contact, circles),
         ),
 
-        Padding(
-          padding: const EdgeInsets.only(left: 4, top: 4, right: 4),
-          child: EmojiSasVerification(contact),
-        ),
+        // Padding(
+        //   padding: const EdgeInsets.only(left: 4, top: 4, right: 4),
+        //   child: EmojiSasVerification(contact),
+        // ),
 
         // Introductions
         if (contact.introductionsByThem.isNotEmpty ||

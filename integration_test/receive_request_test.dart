@@ -20,11 +20,9 @@ import '../test/mocked_providers.dart';
 const appUserName = 'App User Name';
 
 RecordKey _dummyDhtRecordKey(int i) => RecordKey.fromBareRecordKey(
-      cryptoKindVLD0,
-      BareRecordKey.fromBytes(
-        Uint8List.fromList(List.filled(32, i)),
-      ),
-    );
+  cryptoKindVLD0,
+  BareRecordKey.fromBytes(Uint8List.fromList(List.filled(32, i))),
+);
 
 SharedSecret _dummyPsk(int i) =>
     SharedSecret.fromBytes(Uint8List.fromList(List.filled(32, i)));
@@ -32,16 +30,15 @@ SharedSecret _dummyPsk(int i) =>
 Future<ContactsRepository> _contactsRepositoryFromContacts({
   required List<CoagContact> contacts,
   required Map<RecordKey, CoagContactDHTSchema> initialDht,
-}) async =>
-    ContactsRepository(
-      DummyPersistentStorage(
-        Map.fromEntries(contacts.map((c) => MapEntry(c.coagContactId, c))),
-      ),
-      DummyDistributedStorage(initialDht: initialDht),
-      DummySystemContacts([]),
-      appUserName,
-      initialize: false,
-    );
+}) async => ContactsRepository(
+  DummyPersistentStorage(
+    Map.fromEntries(contacts.map((c) => MapEntry(c.coagContactId, c))),
+  ),
+  DummyDistributedStorage(initialDht: initialDht),
+  DummySystemContacts([]),
+  appUserName,
+  initialize: false,
+);
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -59,18 +56,14 @@ void main() {
           name: 'Existing Contact A',
           myIdentity: await generateKeyPairBest(),
           myIntroductionKeyPair: await generateKeyPairBest(),
-          dhtSettings: DhtSettings(
-            myNextKeyPair: await generateKeyPairBest(),
-          ),
+          dhtSettings: DhtSettings(myNextKeyPair: await generateKeyPairBest()),
         ),
         CoagContact(
           coagContactId: '5',
           name: 'Existing Contact B',
           myIdentity: await generateKeyPairBest(),
           myIntroductionKeyPair: await generateKeyPairBest(),
-          dhtSettings: DhtSettings(
-            myNextKeyPair: await generateKeyPairBest(),
-          ),
+          dhtSettings: DhtSettings(myNextKeyPair: await generateKeyPairBest()),
         ),
       ];
       initialDht = {

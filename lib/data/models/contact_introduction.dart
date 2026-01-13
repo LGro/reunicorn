@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:equatable/equatable.dart';
@@ -21,17 +21,7 @@ class ContactIntroduction extends Equatable implements JsonEncodable {
   });
 
   factory ContactIntroduction.fromJson(Map<String, dynamic> json) =>
-      // Backwards compatibility for previously missing and now non existing
-      // public key field
-      // TODO: Would it be better to make publicKey nullable?
-      _$ContactIntroductionFromJson(
-        json.containsKey('public_key')
-            ? json
-            : {
-                'public_key': 'DUMMYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
-                ...json,
-              },
-      );
+      _$ContactIntroductionFromJson(migrateToVeilidTypedKeys(json));
 
   /// Name of the contact this is not the introduction for
   final String otherName;
@@ -54,6 +44,7 @@ class ContactIntroduction extends Equatable implements JsonEncodable {
   /// Writer for the key where the contact this is the introduction for can share
   final KeyPair dhtWriterSharing;
 
+  @override
   Map<String, dynamic> toJson() => _$ContactIntroductionToJson(this);
 
   @override
@@ -66,4 +57,28 @@ class ContactIntroduction extends Equatable implements JsonEncodable {
     dhtRecordKeySharing,
     dhtWriterSharing,
   ];
+}
+
+Map<String, dynamic> migrateToVeilidTypedKeys(Map<String, dynamic> json) {
+  final _json = {...json};
+  const toMigrate = [
+    'other_public_key',
+    'public_key',
+    'dht_record_key_receiving',
+    'dht_record_key_sharing',
+    'dht_writer_sharing',
+  ];
+  for (final k in toMigrate) {
+    if (_json.containsKey(k) &&
+        _json[k] != null &&
+        _json[k] != 'null' &&
+        !(_json[k] as String).startsWith('VLD0:')) {
+      _json[k] = 'VLD0:${_json[k]}';
+    }
+  }
+  if (!_json.containsKey('public_key') || _json['public_key'] == null) {
+    // This makes the invite useless but prevents crashes during deserialization
+    _json['public_key'] = 'VLD0:AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE';
+  }
+  return _json;
 }

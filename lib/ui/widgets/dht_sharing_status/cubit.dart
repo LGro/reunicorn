@@ -17,12 +17,12 @@ Future<DHTRecordReport?> getRecordReport(RecordKey recordKey) async {
     return DHTRecordPool.instance
         .openRecordRead(recordKey, debugName: 'coag::read::stats')
         .then((record) async {
-      final report = await record.routingContext.inspectDHTRecord(
-        recordKey,
-      );
-      await record.close();
-      return report;
-    });
+          final report = await record.routingContext.inspectDHTRecord(
+            recordKey,
+          );
+          await record.close();
+          return report;
+        });
   } on VeilidAPIExceptionTryAgain catch (e) {
     return null;
   }
@@ -31,7 +31,7 @@ Future<DHTRecordReport?> getRecordReport(RecordKey recordKey) async {
 class DhtSharingStatusCubit extends Cubit<DhtSharingStatusState>
     with WidgetsBindingObserver {
   DhtSharingStatusCubit({required this.recordKeys})
-      : super(const DhtSharingStatusState('initial')) {
+    : super(const DhtSharingStatusState('initial')) {
     WidgetsBinding.instance.addObserver(this);
     _startTimer();
     unawaited(updateStatus());
@@ -70,9 +70,9 @@ class DhtSharingStatusCubit extends Cubit<DhtSharingStatusState>
       );
 
       final numOfflineSubkeys = offlineSubkeysPerContact.whereType<int>().fold(
-            0,
-            (a, b) => a + b,
-          );
+        0,
+        (a, b) => a + b,
+      );
 
       if (!isClosed) {
         // TODO: Move rendering to widget
@@ -80,8 +80,8 @@ class DhtSharingStatusCubit extends Cubit<DhtSharingStatusState>
         if (numSubkeys == 0) {
           return emit(const DhtSharingStatusState(''));
         }
-        final percentageSynced =
-            ((1 - (numOfflineSubkeys / numSubkeys)) * 100).round();
+        final percentageSynced = ((1 - (numOfflineSubkeys / numSubkeys)) * 100)
+            .round();
         return emit(DhtSharingStatusState('$percentageSynced% synced'));
       }
     } on DHTExceptionNotAvailable {

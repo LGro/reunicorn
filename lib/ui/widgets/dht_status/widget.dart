@@ -19,11 +19,11 @@ class DhtStatusWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-        create: (context) => DhtStatusCubit(recordKey: recordKey),
-        child: BlocBuilder<DhtStatusCubit, DhtStatusState>(
-          builder: (context, state) =>
-              // TODO: Replace default with const SizedBox.shrink()
-              statusWidgets[state.status] ?? Text(state.status),
-        ),
-      );
+    create: (context) => DhtStatusCubit(recordKey: recordKey),
+    child: BlocBuilder<DhtStatusCubit, DhtStatusState>(
+      builder: (context, state) =>
+          // TODO: Replace default with const SizedBox.shrink()
+          statusWidgets[state.status] ?? Text(state.status),
+    ),
+  );
 }

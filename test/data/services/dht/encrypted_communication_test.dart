@@ -36,6 +36,7 @@ void main() {
         shareBackPubKey: initialStateB.myNextKeyPair.key,
         usedPublicKey: null,
         usedKeyPair: null,
+        ackHandshakeComplete: true,
         keyPairGenerator: () async => fakeKeyPair(300, 303),
       );
       expect(
@@ -56,12 +57,12 @@ void main() {
         shareBackPubKey: stateA1.myNextKeyPair.key,
         usedPublicKey: stateA1.myNextKeyPair.key,
         usedKeyPair: initialStateB.myNextKeyPair,
+        ackHandshakeComplete: true,
         keyPairGenerator: () async => fakeKeyPair(400, 404),
       );
-      stateB1 as CryptoEstablishedAsymmetric;
+      stateB1 as CryptoInitializedAsymmetric;
       expect(stateB1.myKeyPair, initialStateB.myNextKeyPair);
       expect(stateB1.myNextKeyPair, fakeKeyPair(400, 404));
-      expect(stateB1.theirPublicKey, stateA1.myNextKeyPair.key);
       expect(stateB1.theirNextPublicKey, stateA1.myNextKeyPair.key);
 
       // B writes using the available public private key crypto
@@ -71,12 +72,12 @@ void main() {
         shareBackPubKey: stateB1.myNextKeyPair.key,
         usedPublicKey: stateB1.myNextKeyPair.key,
         usedKeyPair: stateA1.myNextKeyPair,
+        ackHandshakeComplete: true,
         keyPairGenerator: () async => fakeKeyPair(500, 505),
       );
-      stateA2 as CryptoEstablishedAsymmetric;
+      stateA2 as CryptoInitializedAsymmetric;
       expect(stateA2.myKeyPair, stateA1.myNextKeyPair);
       expect(stateA2.myNextKeyPair, fakeKeyPair(500, 505));
-      expect(stateA2.theirPublicKey, stateB1.myNextKeyPair.key);
       expect(stateA2.theirNextPublicKey, stateB1.myNextKeyPair.key);
 
       // A writes, B reads, both using asymmetric crypto
@@ -85,6 +86,7 @@ void main() {
         shareBackPubKey: stateA2.myNextKeyPair.key,
         usedPublicKey: stateA1.myNextKeyPair.key,
         usedKeyPair: stateB1.myNextKeyPair,
+        ackHandshakeComplete: true,
         keyPairGenerator: () async => fakeKeyPair(600, 606),
       );
       stateB2 as CryptoEstablishedAsymmetric;
@@ -99,11 +101,12 @@ void main() {
         shareBackPubKey: stateB2.myNextKeyPair.key,
         usedPublicKey: stateB1.myNextKeyPair.key,
         usedKeyPair: stateA1.myNextKeyPair,
+        ackHandshakeComplete: true,
         keyPairGenerator: () async => fakeKeyPair(700, 707),
       );
       stateA3 as CryptoEstablishedAsymmetric;
       expect(stateA3.myKeyPair, stateA1.myNextKeyPair);
-      expect(stateA3.myNextKeyPair, fakeKeyPair(700, 707));
+      expect(stateA3.myNextKeyPair, fakeKeyPair(500, 505));
       expect(stateA3.theirPublicKey, stateB1.myNextKeyPair.key);
       expect(stateA3.theirNextPublicKey, stateB2.myNextKeyPair.key);
     });
@@ -135,6 +138,17 @@ void main() {
       );
       expect(em, em2, reason: 'meta-data does not match after deserialization');
       expect(pl, pl2, reason: 'payload does not match after deserialization');
+    });
+
+    test('encryption metadata max size matches byteLength', () {
+      final m = EncryptionMetaData(
+        shareBackDHTKey: fakeDhtRecordKey(),
+        shareBackDHTWriter: fakeKeyPair(),
+        shareBackPubKey: fakeKeyPair().key,
+        ackHandshakeComplete: false,
+      );
+      final bytes = Uint8List.fromList(utf8.encode(jsonEncode(m.toJson())));
+      expect(bytes.length, equals(EncryptionMetaData.byteLength));
     });
   });
 }

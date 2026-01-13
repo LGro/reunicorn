@@ -75,16 +75,17 @@ class DynamicFitListState<T> extends State<DynamicFitList<T>> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: List.generate(
-                widget.items.length,
-                (i) => MeasureSize(
-                      onChange: (size) {
-                        final h = size.height;
-                        if (i >= 0 && i < _heights.length && _heights[i] != h) {
-                          setState(() => _heights[i] = h);
-                        }
-                      },
-                      child: widget.itemBuilder(context, widget.items[i]),
-                    )),
+              widget.items.length,
+              (i) => MeasureSize(
+                onChange: (size) {
+                  final h = size.height;
+                  if (i >= 0 && i < _heights.length && _heights[i] != h) {
+                    setState(() => _heights[i] = h);
+                  }
+                },
+                child: widget.itemBuilder(context, widget.items[i]),
+              ),
+            ),
           ),
         ),
       ],
@@ -104,7 +105,9 @@ class MeasureSize extends SingleChildRenderObjectWidget {
 
   @override
   void updateRenderObject(
-      BuildContext context, covariant _RenderMeasureSize renderObject) {
+    BuildContext context,
+    covariant _RenderMeasureSize renderObject,
+  ) {
     renderObject.onChange = onChange;
   }
 }

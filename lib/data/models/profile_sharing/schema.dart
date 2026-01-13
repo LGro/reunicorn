@@ -26,16 +26,16 @@ sealed class ContactSharingSchemaV3
     required ContactDetails details,
 
     /// Shared address locations of author
-    required Map<String, ContactAddressLocation> addressLocations,
+    @Default({}) Map<String, ContactAddressLocation> addressLocations,
 
     /// Shared temporary locations of author
-    required Map<String, ContactTemporaryLocation> temporaryLocations,
+    @Default({}) Map<String, ContactTemporaryLocation> temporaryLocations,
 
     /// Attestations for connections between the author and their contacts
-    required List<String> connectionAttestations,
+    @Default([]) List<String> connectionAttestations,
 
     /// Introduction proposals by the author for the recipient
-    required List<ContactIntroduction> introductions,
+    @Default([]) List<ContactIntroduction> introductions,
 
     /// Long lived identity key, used for example to derive a connection
     /// attestation for enabling others to discover shared contacts
@@ -53,8 +53,6 @@ sealed class ContactSharingSchemaV3
     // late final DateTime? mostRecentUpdate;?? DateTime.now();
 
     /// Schema version to facilitate data migration
-    // @JsonKey(includeToJson: true)
-    // TODO: Make this const
     @Default(3) int schemaVersion,
   }) = _ContactSharingSchemaV3;
   const ContactSharingSchemaV3._();

@@ -10,7 +10,7 @@ When you plan to visit a city, find out immediately who of your old friends you 
 - You can personalize what you share with whom so that colleagues, friends and lovers each stay up-to-date on what you want them to know and nothing else.
 
 This [Flutter](flutter.dev) based implementation is derived from [VeilidChat](https://gitlab.com/veilid/veilidchat/).
-Accordingly, the Copyright to all code files belongs to the Veilid developers unless explicitly stated otherwise.
+Accordingly, the Copyright to all code files belongs to the Veilid developers licensed under MPL-2.0 unless explicitly stated otherwise.
 
 The map style files `assets/map-style-*.json` originate from https://maps.protomaps.com, so the Copyright belongs to them.
 

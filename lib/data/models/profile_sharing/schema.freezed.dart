@@ -236,7 +236,7 @@ return $default(_that.details,_that.addressLocations,_that.temporaryLocations,_t
 @JsonSerializable()
 
 class _ContactSharingSchemaV3 extends ContactSharingSchemaV3 {
-  const _ContactSharingSchemaV3({required this.details, required final  Map<String, ContactAddressLocation> addressLocations, required final  Map<String, ContactTemporaryLocation> temporaryLocations, required final  List<String> connectionAttestations, required final  List<ContactIntroduction> introductions, this.identityKey, this.introductionKey, this.pushNotificationTopic, this.schemaVersion = 3}): _addressLocations = addressLocations,_temporaryLocations = temporaryLocations,_connectionAttestations = connectionAttestations,_introductions = introductions,super._();
+  const _ContactSharingSchemaV3({required this.details, final  Map<String, ContactAddressLocation> addressLocations = const {}, final  Map<String, ContactTemporaryLocation> temporaryLocations = const {}, final  List<String> connectionAttestations = const [], final  List<ContactIntroduction> introductions = const [], this.identityKey, this.introductionKey, this.pushNotificationTopic, this.schemaVersion = 3}): _addressLocations = addressLocations,_temporaryLocations = temporaryLocations,_connectionAttestations = connectionAttestations,_introductions = introductions,super._();
   factory _ContactSharingSchemaV3.fromJson(Map<String, dynamic> json) => _$ContactSharingSchemaV3FromJson(json);
 
 /// Shared contact details of author
@@ -244,7 +244,7 @@ class _ContactSharingSchemaV3 extends ContactSharingSchemaV3 {
 /// Shared address locations of author
  final  Map<String, ContactAddressLocation> _addressLocations;
 /// Shared address locations of author
-@override Map<String, ContactAddressLocation> get addressLocations {
+@override@JsonKey() Map<String, ContactAddressLocation> get addressLocations {
   if (_addressLocations is EqualUnmodifiableMapView) return _addressLocations;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableMapView(_addressLocations);
@@ -253,7 +253,7 @@ class _ContactSharingSchemaV3 extends ContactSharingSchemaV3 {
 /// Shared temporary locations of author
  final  Map<String, ContactTemporaryLocation> _temporaryLocations;
 /// Shared temporary locations of author
-@override Map<String, ContactTemporaryLocation> get temporaryLocations {
+@override@JsonKey() Map<String, ContactTemporaryLocation> get temporaryLocations {
   if (_temporaryLocations is EqualUnmodifiableMapView) return _temporaryLocations;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableMapView(_temporaryLocations);
@@ -262,7 +262,7 @@ class _ContactSharingSchemaV3 extends ContactSharingSchemaV3 {
 /// Attestations for connections between the author and their contacts
  final  List<String> _connectionAttestations;
 /// Attestations for connections between the author and their contacts
-@override List<String> get connectionAttestations {
+@override@JsonKey() List<String> get connectionAttestations {
   if (_connectionAttestations is EqualUnmodifiableListView) return _connectionAttestations;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_connectionAttestations);
@@ -271,7 +271,7 @@ class _ContactSharingSchemaV3 extends ContactSharingSchemaV3 {
 /// Introduction proposals by the author for the recipient
  final  List<ContactIntroduction> _introductions;
 /// Introduction proposals by the author for the recipient
-@override List<ContactIntroduction> get introductions {
+@override@JsonKey() List<ContactIntroduction> get introductions {
   if (_introductions is EqualUnmodifiableListView) return _introductions;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_introductions);

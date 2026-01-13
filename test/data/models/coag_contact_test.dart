@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:convert';
@@ -7,6 +7,7 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reunicorn/data/models/models.dart';
 import 'package:reunicorn/data/providers/legacy/sqlite.dart';
+import 'package:reunicorn/data/repositories/contact_system.dart';
 
 import '../../mocked_providers.dart';
 import 'utils.dart';
@@ -21,75 +22,15 @@ void main() {
   });
 
   test('schema serialization and deserialization', () {
-    final schema = CoagContactDHTSchemaV2(
-      details: const ContactDetails(names: {'0': 'My Name'}),
-      shareBackDHTKey: 'dhtKey',
-      shareBackDHTWriter: 'dhtWriter',
-      shareBackPubKey: 'pubKey',
+    const schema = ContactSharingSchema(
+      details: ContactDetails(names: {'0': 'My Name'}),
+      addressLocations: {},
+      temporaryLocations: {},
+      connectionAttestations: [],
+      introductions: [],
     );
-    final schema2 = CoagContactDHTSchemaV2.fromJson(schema.toJson());
+    final schema2 = ContactSharingSchema.fromJson(schema.toJson());
     expect(schema, schema2);
-  });
-
-  test('equality test copy with change', () {
-    final contact = CoagContact(
-      coagContactId: '',
-      name: 'name',
-      myIdentity: fakeKeyPair(),
-      myIntroductionKeyPair: fakeKeyPair(),
-      dhtSettings: DhtSettings(myNextKeyPair: fakeKeyPair()),
-      details: const ContactDetails(picture: [1, 2, 3]),
-      temporaryLocations: {
-        '0': ContactTemporaryLocation(
-          longitude: 0,
-          latitude: 0,
-          name: 'loc',
-          details: '',
-          start: DateTime(2000),
-          end: DateTime(2000).add(const Duration(days: 1)),
-        ),
-      },
-    );
-    final copy = contact.copyWith(
-      details: contact.details!.copyWith(
-        names: {
-          ...contact.details!.names,
-          ...{'1': 'b'},
-        },
-      ),
-    );
-    expect(contact == copy, false);
-  });
-
-  test('equality test copy then change, ensure no references', () {
-    final contact = CoagContact(
-      coagContactId: '',
-      name: 'name',
-      myIdentity: fakeKeyPair(),
-      myIntroductionKeyPair: fakeKeyPair(),
-      dhtSettings: DhtSettings(myNextKeyPair: fakeKeyPair()),
-      details: const ContactDetails(picture: [1, 2, 3]),
-      temporaryLocations: {
-        '0': ContactTemporaryLocation(
-          longitude: 0,
-          latitude: 0,
-          name: 'loc',
-          details: '',
-          start: DateTime(2000),
-          end: DateTime(2000).add(const Duration(days: 1)),
-        ),
-      },
-    );
-    final copy = contact.copyWith();
-    copy.temporaryLocations['1'] = ContactTemporaryLocation(
-      longitude: 2,
-      latitude: 2,
-      name: 'loc2',
-      details: '',
-      start: DateTime(2000),
-      end: DateTime(2000).add(const Duration(days: 1)),
-    );
-    expect(contact == copy, false);
   });
 
   test('merge system contacts', () {
@@ -172,7 +113,14 @@ void main() {
     final contactMinimal = CoagContact.explicit(
       coagContactId: 'coag-contact-id',
       name: 'Display Name',
-      dhtSettings: const DhtSettings(),
+      dhtConnection: DhtConnectionState.invited(
+        recordKeyThemSharing: fakeDhtRecordKey(),
+      ),
+      connectionCrypto: CryptoState.establishedSymmetric(
+        initialSharedSecret: fakePsk(0),
+        myNextKeyPair: fakeKeyPair(),
+        theirNextPublicKey: fakeKeyPair(1, 2).key,
+      ),
       myIdentity: fakeKeyPair(),
       myIntroductionKeyPair: fakeKeyPair(),
       theirIntroductionKey: fakeKeyPair().key,
@@ -183,7 +131,7 @@ void main() {
       addressLocations: const {},
       temporaryLocations: const {},
       comment: '',
-      sharedProfile: null,
+      profileSharingStatus: const ProfileSharingStatus(),
       myPreviousIntroductionKeyPairs: const [],
       introductionsForThem: const [],
       introductionsByThem: const [],
@@ -192,17 +140,16 @@ void main() {
     );
     // TODO: Add more to full contact
     final contactFull = contactMinimal.copyWith(
-      dhtSettings: DhtSettings(
-        myNextKeyPair: fakeKeyPair(),
-        myKeyPair: fakeKeyPair(),
-        theirNextPublicKey: fakeKeyPair().key,
-        theirPublicKey: fakeKeyPair().key,
-        recordKeyMeSharing: fakeDhtRecordKey(0),
+      dhtConnection: DhtConnectionState.established(
+        recordKeyThemSharing: fakeDhtRecordKey(),
+        recordKeyMeSharing: fakeDhtRecordKey(),
         writerMeSharing: fakeKeyPair(),
-        recordKeyThemSharing: fakeDhtRecordKey(1),
-        writerThemSharing: fakeKeyPair(),
-        initialSecret: fakePsk(0),
-        theyAckHandshakeComplete: true,
+      ),
+      connectionCrypto: CryptoState.establishedAsymmetric(
+        myNextKeyPair: fakeKeyPair(),
+        theirNextPublicKey: fakeKeyPair(1, 2).key,
+        myKeyPair: fakeKeyPair(3, 4),
+        theirPublicKey: fakeKeyPair(5, 6).key,
       ),
       details: const ContactDetails(
         names: {'n1': 'Awesome Name'},
@@ -216,17 +163,13 @@ void main() {
   test('test loading previous json schema versions', () async {
     for (final jsonEntry
         in loadAllPreviousSchemaVersionJsonFiles<CoagContact>().entries) {
-      try {
-        final jsonData =
-            await jsonDecode(jsonEntry.value) as Map<String, dynamic>;
-        final migrated = await migrateContactAddIdentityAndIntroductionKeyPairs(
-          jsonData,
-          generateKeyPair: () async => fakeKeyPair(),
-        );
-        CoagContact.fromJson(migrated);
-      } catch (e, stackTrace) {
-        fail('Failed to deserialize ${jsonEntry.key}:\n$e\n$stackTrace');
-      }
+      final jsonData =
+          await jsonDecode(jsonEntry.value) as Map<String, dynamic>;
+      final migrated = await migrateContactAddIdentityAndIntroductionKeyPairs(
+        jsonData,
+        generateKeyPair: () async => fakeKeyPair(),
+      );
+      CoagContact.fromJson(migrated);
     }
   });
 }

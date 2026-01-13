@@ -353,8 +353,13 @@ class ContactDhtRepository {
         profileInfo,
         circleMemberships,
       );
-      // If we already have shared the most recent profile version, stop here
-      if (updatedSharedProfile == contact.profileSharingStatus.sharedProfile) {
+      // If we already have shared the most recent profile version, stop here;
+      // but only if we've made the potential switch from symmetric to
+      // asymmetric cryptography
+      // TODO(LGro): This seems risky, we might miss changing this when we add
+      //             more possible crypto states
+      if (updatedSharedProfile == contact.profileSharingStatus.sharedProfile &&
+          contact.connectionCrypto is CryptoEstablishedAsymmetric) {
         debugPrint(
           'rcrn-dht-on-update | ${contact.coagContactId.substring(0, 5)} | '
           'skip-no-change',

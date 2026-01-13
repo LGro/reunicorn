@@ -122,7 +122,7 @@ void main() {
       CloseByMatch(
         myLocationLabel: 'myAddr1',
         theirLocationLabel: 'theirAddr1Label',
-        theirLocationId: 'l1',
+        theirLocationId: 'theirAddr1',
         coagContactId: '1',
         coagContactName: 'contactName',
         start: DateTime(2000),
@@ -167,7 +167,7 @@ void main() {
       CloseByMatch(
         myLocationLabel: 'myAddr1Label',
         theirLocationLabel: 'theirAddr1Label',
-        theirLocationId: 'l1',
+        theirLocationId: 'theirAddr1',
         coagContactId: '1',
         coagContactName: 'contactName',
         start: DateTime(2001),
@@ -206,7 +206,7 @@ void main() {
       CloseByMatch(
         myLocationLabel: 'myAddr1Label',
         theirLocationLabel: 'theirAddr1',
-        theirLocationId: 'l1',
+        theirLocationId: 'theirAddr1',
         coagContactId: '1',
         coagContactName: 'contactName',
         start: DateTime(2000),
@@ -245,7 +245,7 @@ void main() {
       CloseByMatch(
         myLocationLabel: 'myAddr1Label',
         theirLocationLabel: 'theirAddr1',
-        theirLocationId: 'l1',
+        theirLocationId: 'theirAddr1',
         coagContactId: '1',
         coagContactName: 'contactName',
         start: DateTime(2000),

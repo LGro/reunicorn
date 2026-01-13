@@ -10,22 +10,32 @@ _ContactSharingSchemaV3 _$ContactSharingSchemaV3FromJson(
   Map<String, dynamic> json,
 ) => _ContactSharingSchemaV3(
   details: ContactDetails.fromJson(json['details'] as Map<String, dynamic>),
-  addressLocations: (json['address_locations'] as Map<String, dynamic>).map(
-    (k, e) =>
-        MapEntry(k, ContactAddressLocation.fromJson(e as Map<String, dynamic>)),
-  ),
-  temporaryLocations: (json['temporary_locations'] as Map<String, dynamic>).map(
-    (k, e) => MapEntry(
-      k,
-      ContactTemporaryLocation.fromJson(e as Map<String, dynamic>),
-    ),
-  ),
-  connectionAttestations: (json['connection_attestations'] as List<dynamic>)
-      .map((e) => e as String)
-      .toList(),
-  introductions: (json['introductions'] as List<dynamic>)
-      .map((e) => ContactIntroduction.fromJson(e as Map<String, dynamic>))
-      .toList(),
+  addressLocations:
+      (json['address_locations'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(
+          k,
+          ContactAddressLocation.fromJson(e as Map<String, dynamic>),
+        ),
+      ) ??
+      const {},
+  temporaryLocations:
+      (json['temporary_locations'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(
+          k,
+          ContactTemporaryLocation.fromJson(e as Map<String, dynamic>),
+        ),
+      ) ??
+      const {},
+  connectionAttestations:
+      (json['connection_attestations'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  introductions:
+      (json['introductions'] as List<dynamic>?)
+          ?.map((e) => ContactIntroduction.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
   identityKey: json['identity_key'] == null
       ? null
       : Typed<BarePublicKey>.fromJson(json['identity_key']),

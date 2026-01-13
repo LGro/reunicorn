@@ -26,30 +26,39 @@ bool introducible(CoagContact? c1, CoagContact? c2) =>
 Future<List<String>> connectionAttestations(
   CoagContact contact,
   Iterable<CoagContact> contacts,
-) async =>
-    (contact.theirIdentity == null)
-        ? []
-        : await Future.wait(contacts
+) async => (contact.theirIdentity == null)
+    ? []
+    : await Future.wait(
+        contacts
             .where((c) => c.coagContactId != contact.coagContactId)
             .map((c) => c.theirIdentity)
             // Remove null entries
             .whereType<PublicKey>()
             // Remove duplicates
             .toSet()
-            .map((otherIdentityKey) => Veilid.instance
-                .getCryptoSystem(cryptoKindVLD0)
-                .then((cs) async => cs
-                    .generateHash(Uint8List.fromList([
-                      ...utf8.encode(await cs
-                          .generateSharedSecret(
-                            otherIdentityKey,
-                            contact.myIdentity.secret,
-                            utf8.encode(
-                              'contact-discovery-connection-secret',
+            .map(
+              (otherIdentityKey) => Veilid.instance
+                  .getCryptoSystem(cryptoKindVLD0)
+                  .then(
+                    (cs) async => cs
+                        .generateHash(
+                          Uint8List.fromList([
+                            ...utf8.encode(
+                              await cs
+                                  .generateSharedSecret(
+                                    otherIdentityKey,
+                                    contact.myIdentity.secret,
+                                    utf8.encode(
+                                      'contact-discovery-connection-secret',
+                                    ),
+                                  )
+                                  .then((s) => s.toString()),
                             ),
-                          )
-                          .then((s) => s.toString())),
-                      ...utf8.encode(contact.theirIdentity.toString()),
-                    ]))
-                    .then((hash) => hash.toString())))
-            .toList());
+                            ...utf8.encode(contact.theirIdentity.toString()),
+                          ]),
+                        )
+                        .then((hash) => hash.toString()),
+                  ),
+            )
+            .toList(),
+      );

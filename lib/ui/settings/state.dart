@@ -36,20 +36,13 @@ final class SettingsState extends Equatable {
     bool? autoAddressResolution,
     SettingsStatus? status,
     String? message,
-  }) =>
-      SettingsState(
-        darkMode: darkMode ?? this.darkMode,
-        autoAddressResolution:
-            autoAddressResolution ?? this.autoAddressResolution,
-        status: status ?? this.status,
-        message: message ?? this.message,
-      );
+  }) => SettingsState(
+    darkMode: darkMode ?? this.darkMode,
+    autoAddressResolution: autoAddressResolution ?? this.autoAddressResolution,
+    status: status ?? this.status,
+    message: message ?? this.message,
+  );
 
   @override
-  List<Object?> get props => [
-        status,
-        message,
-        darkMode,
-        autoAddressResolution,
-      ];
+  List<Object?> get props => [status, message, darkMode, autoAddressResolution];
 }
