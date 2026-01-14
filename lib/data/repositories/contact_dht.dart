@@ -229,7 +229,6 @@ Future<ContactSharingSchema> updateSharedProfile(
 );
 
 class ContactDhtRepository {
-  final _watchedRecords = <RecordKey>{};
   final Storage<CoagContact> _contactStorage;
   final Storage<Circle> _circleStorage;
   final Storage<ProfileInfo> _profileStorage;
@@ -474,7 +473,6 @@ class ContactDhtRepository {
   }
 
   Future<void> _onDeleteContact(CoagContact contact) async {
-    _watchedRecords.remove(contact.dhtConnection.recordKeyThemSharing);
     try {
       await contact.dhtConnection.map(
         invited: (s) => null,

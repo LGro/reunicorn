@@ -173,18 +173,6 @@ GoRouter buildAppRouter(
           builder: (_, state) => const MapPage(),
           routes: [
             GoRoute(
-              path: 'atLocation/:latitude/:longitude',
-              name: 'mapAtLocation',
-              builder: (_, state) => MapPage(
-                latitude: double.tryParse(
-                  state.pathParameters['latitude'] ?? '',
-                ),
-                longitude: double.tryParse(
-                  state.pathParameters['longitude'] ?? '',
-                ),
-              ),
-            ),
-            GoRoute(
               path: 'importIcs',
               name: 'importIcs',
               builder: (_, state) =>
@@ -206,6 +194,14 @@ GoRouter buildAppRouter(
               builder: (_, __) => const LocationListPage(),
             ),
           ],
+        ),
+        GoRoute(
+          path: '/mapAtLocation/:latitude/:longitude',
+          name: 'mapAtLocation',
+          builder: (_, state) => MapPage(
+            latitude: double.tryParse(state.pathParameters['latitude'] ?? ''),
+            longitude: double.tryParse(state.pathParameters['longitude'] ?? ''),
+          ),
         ),
         GoRoute(
           path: '/updates',

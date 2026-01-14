@@ -703,142 +703,148 @@ class _MapPageState extends State<MapPage> {
           }
         }
       },
-      builder: (context, state) => (state.profileInfo == null)
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                MapLibreMap(
-                  styleString: context
-                      .read<SettingsRepository>()
-                      .mapStyleString,
-                  initialCameraPosition: CameraPosition(
-                    target:
-                        (widget.latitude != null && widget.longitude != null)
-                        ? LatLng(widget.latitude!, widget.longitude!)
-                        : initialLocation(
-                                state.profileInfo?.addressLocations.values ??
-                                    [],
-                                state.profileInfo?.temporaryLocations.values ??
-                                    [],
-                                state.contacts
-                                    .map((c) => c.addressLocations.values)
-                                    .expand((l) => l),
-                                state.contacts
-                                    .map((c) => c.temporaryLocations.values)
-                                    .expand((l) => l),
-                              ) ??
-                              const LatLng(20, 0),
-                    zoom: (widget.latitude != null && widget.longitude != null)
-                        ? 12
-                        : 2.5,
-                  ),
-                  trackCameraPosition: true,
-                  minMaxZoomPreference: const MinMaxZoomPreference(null, 22),
-                  onMapCreated: _onMapCreated,
-                  onStyleLoadedCallback: () async {
-                    final markers = _getMarkers(context, state);
+      builder: (context, state) => Scaffold(
+        body: (state.profileInfo == null)
+            ? const Center(child: CircularProgressIndicator())
+            : Stack(
+                children: [
+                  MapLibreMap(
+                    styleString: context
+                        .read<SettingsRepository>()
+                        .mapStyleString,
+                    initialCameraPosition: CameraPosition(
+                      target:
+                          (widget.latitude != null && widget.longitude != null)
+                          ? LatLng(widget.latitude!, widget.longitude!)
+                          : initialLocation(
+                                  state.profileInfo?.addressLocations.values ??
+                                      [],
+                                  state
+                                          .profileInfo
+                                          ?.temporaryLocations
+                                          .values ??
+                                      [],
+                                  state.contacts
+                                      .map((c) => c.addressLocations.values)
+                                      .expand((l) => l),
+                                  state.contacts
+                                      .map((c) => c.temporaryLocations.values)
+                                      .expand((l) => l),
+                                ) ??
+                                const LatLng(20, 0),
+                      zoom:
+                          (widget.latitude != null && widget.longitude != null)
+                          ? 12
+                          : 2.5,
+                    ),
+                    trackCameraPosition: true,
+                    minMaxZoomPreference: const MinMaxZoomPreference(null, 22),
+                    onMapCreated: _onMapCreated,
+                    onStyleLoadedCallback: () async {
+                      final markers = _getMarkers(context, state);
 
-                    final clusterCircleColor = colorToHex(
-                      Theme.of(context).colorScheme.primary,
-                    );
-                    final clusterCircleTextColor = colorToHex(
-                      Theme.of(context).colorScheme.onPrimary,
-                    );
-
-                    await _addMarkerImages(markers);
-
-                    setState(() {
-                      _markers = markers.asMap().map(
-                        (i, marker) => MapEntry('marker-$i', marker),
+                      final clusterCircleColor = colorToHex(
+                        Theme.of(context).colorScheme.primary,
                       );
-                    });
+                      final clusterCircleTextColor = colorToHex(
+                        Theme.of(context).colorScheme.onPrimary,
+                      );
 
-                    // Add GeoJSON source with clustering enabled
-                    await _controller?.addSource(
-                      'points',
-                      GeojsonSourceProperties(
-                        data: toGeoJson(
-                          markers.map((m) => m.coordinates).toList(),
-                        ),
-                        cluster: true,
-                        clusterMaxZoom: 22,
-                        clusterRadius: 50,
-                      ),
-                    );
+                      await _addMarkerImages(markers);
 
-                    // Layer: individual unclustered points (add first)
-                    if (!(await _controller?.getLayerIds() ?? []).contains(
-                      'unclustered-points',
-                    )) {
-                      await _controller?.addLayer(
+                      setState(() {
+                        _markers = markers.asMap().map(
+                          (i, marker) => MapEntry('marker-$i', marker),
+                        );
+                      });
+
+                      // Add GeoJSON source with clustering enabled
+                      await _controller?.addSource(
                         'points',
+                        GeojsonSourceProperties(
+                          data: toGeoJson(
+                            markers.map((m) => m.coordinates).toList(),
+                          ),
+                          cluster: true,
+                          clusterMaxZoom: 22,
+                          clusterRadius: 50,
+                        ),
+                      );
+
+                      // Layer: individual unclustered points (add first)
+                      if (!(await _controller?.getLayerIds() ?? []).contains(
                         'unclustered-points',
-                        const SymbolLayerProperties(
-                          iconImage: ['get', 'icon'],
-                          iconSize: 1,
-                          iconAllowOverlap: true,
-                          iconIgnorePlacement: true,
-                        ),
-                        filter: [
-                          '!',
-                          ['has', 'point_count'],
-                        ],
-                      );
-                    }
+                      )) {
+                        await _controller?.addLayer(
+                          'points',
+                          'unclustered-points',
+                          const SymbolLayerProperties(
+                            iconImage: ['get', 'icon'],
+                            iconSize: 1,
+                            iconAllowOverlap: true,
+                            iconIgnorePlacement: true,
+                          ),
+                          filter: [
+                            '!',
+                            ['has', 'point_count'],
+                          ],
+                        );
+                      }
 
-                    // Layer: cluster circles (simpler styling first)
-                    if (!(await _controller?.getLayerIds() ?? []).contains(
-                      'clusters',
-                    )) {
-                      await _controller?.addLayer(
-                        'points',
+                      // Layer: cluster circles (simpler styling first)
+                      if (!(await _controller?.getLayerIds() ?? []).contains(
                         'clusters',
-                        CircleLayerProperties(
-                          circleColor: clusterCircleColor,
-                          circleRadius: 25,
-                          circleStrokeWidth: 0,
-                          circleStrokeColor: '#ffffff',
-                        ),
-                        filter: ['has', 'point_count'],
-                      );
-                    }
+                      )) {
+                        await _controller?.addLayer(
+                          'points',
+                          'clusters',
+                          CircleLayerProperties(
+                            circleColor: clusterCircleColor,
+                            circleRadius: 25,
+                            circleStrokeWidth: 0,
+                            circleStrokeColor: '#ffffff',
+                          ),
+                          filter: ['has', 'point_count'],
+                        );
+                      }
 
-                    // Layer: cluster count text
-                    if (!(await _controller?.getLayerIds() ?? []).contains(
-                      'cluster-count',
-                    )) {
-                      await _controller?.addLayer(
-                        'points',
+                      // Layer: cluster count text
+                      if (!(await _controller?.getLayerIds() ?? []).contains(
                         'cluster-count',
-                        SymbolLayerProperties(
-                          textField: ['get', 'point_count_abbreviated'],
-                          textSize: 16,
-                          textColor: clusterCircleTextColor,
-                          textHaloColor: '#000000',
-                          textHaloWidth: 0,
-                        ),
-                        filter: ['has', 'point_count'],
-                      );
-                    }
-                  },
-                  attributionButtonMargins: const Point<num>(12, 12),
-                  rotateGesturesEnabled: false,
-                  tiltGesturesEnabled: false,
-                  dragEnabled: false,
-                ),
-                checkInAndScheduleButtons(),
-                Align(
-                  alignment: AlignmentDirectional.topEnd,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 32, right: 12),
-                    child: IconButton.filledTonal(
-                      onPressed: () => context.pushNamed('locationListPage'),
-                      icon: const Icon(Icons.list),
+                      )) {
+                        await _controller?.addLayer(
+                          'points',
+                          'cluster-count',
+                          SymbolLayerProperties(
+                            textField: ['get', 'point_count_abbreviated'],
+                            textSize: 16,
+                            textColor: clusterCircleTextColor,
+                            textHaloColor: '#000000',
+                            textHaloWidth: 0,
+                          ),
+                          filter: ['has', 'point_count'],
+                        );
+                      }
+                    },
+                    attributionButtonMargins: const Point<num>(12, 12),
+                    rotateGesturesEnabled: false,
+                    tiltGesturesEnabled: false,
+                    dragEnabled: false,
+                  ),
+                  checkInAndScheduleButtons(),
+                  Align(
+                    alignment: AlignmentDirectional.topEnd,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 32, right: 12),
+                      child: IconButton.filledTonal(
+                        onPressed: () => context.pushNamed('locationListPage'),
+                        icon: const Icon(Icons.list),
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+      ),
     ),
   );
 }

@@ -48,7 +48,6 @@ abstract class BaseDht {
 }
 
 class VeilidDht implements BaseDht {
-  // TODO(LGro): on which level do we handle watched bookkeeping? could be dht contact repo and then we could make these all functions
   final _watchedRecords = <RecordKey>{};
 
   // Whether to watch local changes; this is useful for integration tests
