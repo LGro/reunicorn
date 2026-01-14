@@ -26,7 +26,7 @@ import 'widgets/circles.dart';
 import 'widgets/connecting.dart';
 import 'widgets/contact_details_and_locations.dart';
 import 'widgets/emoji_sas_verification.dart';
-import 'widgets/shared_profile.dart';
+import 'widgets/shared_profile/widget.dart';
 import 'widgets/temporary_locations.dart';
 
 String _shorten(String str) => str.substring(0, min(10, str.length));
@@ -540,52 +540,43 @@ class SharingSettings extends StatelessWidget {
   final Map<String, String> _circles;
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CirclesCard(_contact.coagContactId, _circles.values.toList()),
-        if ((_contact.dhtConnection is DhtConnectionInvited ||
-                _contact.details == null) &&
-            context.read<ContactDetailsCubit>().wasNotIntroduced(_contact)) ...[
-          _paddedDivider(),
-          ConnectingCard(context, _contact, _circles),
-        ],
-        if (_circles.isNotEmpty &&
-            _contact.profileSharingStatus.sharedProfile != null) ...[
-          _paddedDivider(),
-          SharedProfile(
-            _contact.profileSharingStatus.sharedProfile!.details,
-            _contact.profileSharingStatus.sharedProfile!.addressLocations,
-          ),
-        ],
-        if (_contact
-                .profileSharingStatus
-                .sharedProfile
-                ?.temporaryLocations
-                .isNotEmpty ??
-            false) ...[
-          _paddedDivider(),
-          TemporaryLocationsCard(
-            const Row(
-              children: [
-                Icon(Icons.share_location),
-                SizedBox(width: 8),
-                Text('Shared locations', textScaler: TextScaler.linear(1.2)),
-              ],
-            ),
-            _contact.profileSharingStatus.sharedProfile!.temporaryLocations,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 12, right: 12, bottom: 8),
-            child: Text(
-              'These current and future locations are available to '
-              '${_contact.name} based on the circles you shared the '
-              'locations with.',
-            ),
-          ),
-        ],
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      CirclesCard(_contact.coagContactId, _circles.values.toList()),
+      if ((_contact.dhtConnection is DhtConnectionInvited ||
+              _contact.details == null) &&
+          context.read<ContactDetailsCubit>().wasNotIntroduced(_contact)) ...[
+        ConnectingCard(context, _contact, _circles),
       ],
-    ),
+      if (_circles.isNotEmpty &&
+          _contact.profileSharingStatus.sharedProfile != null)
+        SharedProfile(_contact.coagContactId),
+      if (_contact
+              .profileSharingStatus
+              .sharedProfile
+              ?.temporaryLocations
+              .isNotEmpty ??
+          false) ...[
+        TemporaryLocationsCard(
+          const Row(
+            children: [
+              Icon(Icons.share_location),
+              SizedBox(width: 8),
+              Text('Shared locations', textScaler: TextScaler.linear(1.2)),
+            ],
+          ),
+          _contact.profileSharingStatus.sharedProfile!.temporaryLocations,
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 12, right: 12, bottom: 8),
+          child: Text(
+            'These current and future locations are available to '
+            '${_contact.name} based on the circles you shared the '
+            'locations with.',
+          ),
+        ),
+      ],
+    ],
   );
 }

@@ -8,6 +8,7 @@ import 'base.dart';
 import 'contact_details.dart';
 
 part 'contact_sharing_schema.freezed.dart';
+part 'contact_sharing_schema.g.dart';
 
 @freezed
 sealed class ContactSharingSchemaDiff with _$ContactSharingSchemaDiff {
@@ -17,6 +18,24 @@ sealed class ContactSharingSchemaDiff with _$ContactSharingSchemaDiff {
     required Map<String, DiffStatus> temporaryLocations,
     required DiffStatus introductions,
   }) = _ContactSharingSchemaDiff;
+
+  factory ContactSharingSchemaDiff.fromJson(Map<String, dynamic> json) =>
+      _$ContactSharingSchemaDiffFromJson(json);
+}
+
+extension ConvenienceGetters on ContactSharingSchemaDiff {
+  bool get areAllKeep {
+    if (!introductions.isKeep) {
+      return false;
+    }
+    if (addressLocations.values.where((v) => !v.isKeep).isNotEmpty) {
+      return false;
+    }
+    if (temporaryLocations.values.where((v) => !v.isKeep).isNotEmpty) {
+      return false;
+    }
+    return details.areAllKeep;
+  }
 }
 
 ContactSharingSchemaDiff diffContactSharingSchema(

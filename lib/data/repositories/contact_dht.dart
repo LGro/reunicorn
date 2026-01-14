@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:collection/collection.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loggy/loggy.dart';
+import 'package:pointycastle/pointycastle.dart' show Digest;
 import 'package:uuid/uuid.dart';
 import 'package:veilid_support/veilid_support.dart';
 
@@ -25,15 +27,25 @@ import '../utils.dart';
 Map<String, T> filterContactDetailsList<T>(
   Map<String, T> values,
   Map<String, List<String>> settings,
-  Iterable<String> activeCircles,
-) {
+  Iterable<String> activeCircles, {
+  String Function(String)? labelObfuscation,
+}) {
   if (activeCircles.isEmpty) {
     return {};
   }
-  return {...values}..removeWhere(
-    (label, value) =>
-        !(settings[label]?.asSet().intersectsWith(activeCircles.asSet()) ??
-            false),
+  return Map.fromEntries(
+    values.entries
+        .where(
+          (e) =>
+              settings[e.key]?.asSet().intersectsWith(activeCircles.asSet()) ??
+              false,
+        )
+        .map(
+          (e) => MapEntry(
+            (labelObfuscation == null) ? e.key : labelObfuscation(e.key),
+            e.value,
+          ),
+        ),
   );
 }
 
@@ -50,11 +62,14 @@ List<int>? selectPicture(
     .firstOrNull
     ?.value;
 
-// TODO(LGro): Replace IDs for names and tags by random new IDs to prevent
-//             shared contact discovery leaks; Alternatively, use List instead
-//             of Map for shared names and other fields that just have IDs for
-//             profile editing purposes; Does the same apply for locations?
+/// Hash the contactId together with the label to create a unique label to avoid
+/// leaking a global, intra-contact identifier that could be used by malicious
+/// contacts to reconstruct the social net
+String personalizedLabelHash(String contactId, String label) =>
+    Digest('SHA-512').process(utf8.encode('$label$contactId')).toString();
+
 ContactDetails filterDetails(
+  String contactId,
   Map<String, List<int>> pictures,
   ContactDetails details,
   ProfileSharingSettings settings,
@@ -66,6 +81,7 @@ ContactDetails filterDetails(
     details.names,
     settings.names,
     activeCirclesWithMemberCount.keys,
+    labelObfuscation: (l) => personalizedLabelHash(contactId, l),
   ),
   phones: filterContactDetailsList(
     details.phones,
@@ -96,6 +112,7 @@ ContactDetails filterDetails(
     details.organizations,
     settings.organizations,
     activeCirclesWithMemberCount.keys,
+    labelObfuscation: (l) => personalizedLabelHash(contactId, l),
   ),
   misc: filterContactDetailsList(
     details.misc,
@@ -106,6 +123,7 @@ ContactDetails filterDetails(
     details.tags,
     settings.tags,
     activeCirclesWithMemberCount.keys,
+    labelObfuscation: (l) => personalizedLabelHash(contactId, l),
   ),
 );
 
@@ -143,6 +161,7 @@ Map<String, ContactTemporaryLocation> filterTemporaryLocations(
 
 // TODO: Empty all the known contacts and misc stuff when no circles active?
 ContactSharingSchema filterAccordingToSharingProfile({
+  required String contactId,
   required ProfileInfo profile,
   required Map<String, int> activeCirclesWithMemberCount,
   required DhtConnectionState dhtConnection,
@@ -154,6 +173,7 @@ ContactSharingSchema filterAccordingToSharingProfile({
   List<String> knownPersonalContactIds = const [],
 }) => ContactSharingSchema(
   details: filterDetails(
+    contactId,
     profile.pictures,
     profile.details,
     profile.sharingSettings,
@@ -184,6 +204,7 @@ Future<ContactSharingSchema> updateSharedProfile(
   ProfileInfo profileInfo,
   Map<String, List<String>> circleMemberships,
 ) async => filterAccordingToSharingProfile(
+  contactId: contact.coagContactId,
   profile: profileInfo,
   // TODO: Also expose this view of the data from contacts repo?
   //       Seems to be used in different places.
@@ -292,7 +313,7 @@ class ContactDhtRepository {
       'rcrn-dht-on-update | ${contactId.substring(0, 5)} | '
       'called',
     );
-    await _contactStorage.lock.synchronized(() async {
+    await _contactStorage.lock.synchronized(contactId, () async {
       debugPrint(
         'rcrn-dht-on-update | ${contactId.substring(0, 5)} | '
         'started-sync',
@@ -353,13 +374,8 @@ class ContactDhtRepository {
         profileInfo,
         circleMemberships,
       );
-      // If we already have shared the most recent profile version, stop here;
-      // but only if we've made the potential switch from symmetric to
-      // asymmetric cryptography
-      // TODO(LGro): This seems risky, we might miss changing this when we add
-      //             more possible crypto states
-      if (updatedSharedProfile == contact.profileSharingStatus.sharedProfile &&
-          contact.connectionCrypto is CryptoEstablishedAsymmetric) {
+      // If we already have shared the most recent profile version, stop here
+      if (updatedSharedProfile == contact.profileSharingStatus.sharedProfile) {
         debugPrint(
           'rcrn-dht-on-update | ${contact.coagContactId.substring(0, 5)} | '
           'skip-no-change',

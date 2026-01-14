@@ -14,8 +14,35 @@ sealed class StorageEvent<T> with _$StorageEvent<T> {
   const factory StorageEvent.delete(T value) = DeleteEvent;
 }
 
-abstract class Storage<T> {
+class KeyLockManager {
+  final Map<String, _LockReference> _locks = {};
+
+  Future<T> synchronized<T>(
+    String key,
+    Future<T> Function() computation,
+  ) async {
+    final ref = _locks.putIfAbsent(key, _LockReference.new);
+    ref.count++;
+
+    try {
+      return await ref.lock.synchronized(computation);
+    } finally {
+      ref.count--;
+      if (ref.count == 0) {
+        _locks.remove(key);
+      }
+    }
+  }
+}
+
+class _LockReference {
   final lock = Lock();
+  // Keeps track of how many processes are waiting on this lock
+  var count = 0;
+}
+
+abstract class Storage<T> {
+  final lock = KeyLockManager();
 
   Future<void> set(String key, T value);
   Future<T?> get(String key);

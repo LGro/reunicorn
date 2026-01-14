@@ -54,24 +54,30 @@ Future<List<SearchResult>> searchLocation({
       'key': apiKey,
     },
   );
-  final response = await http.get(
-    url,
-    headers: {'User-Agent': userAgentHeader},
-  );
+  try {
+    final response = await http.get(
+      url,
+      headers: {'User-Agent': userAgentHeader},
+    );
 
-  if (response.statusCode == 200) {
-    try {
-      final data = json.decode(response.body) as Map<String, dynamic>;
-      final features = data['features'] as List;
-      return features
-          .map((f) => SearchResult.fromJson(f as Map<String, dynamic>))
-          .toList();
-    } on Exception catch (e) {
-      // TODO: Refine error handling
+    if (response.statusCode == 200) {
+      try {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        final features = data['features'] as List;
+        return features
+            .map((f) => SearchResult.fromJson(f as Map<String, dynamic>))
+            .toList();
+      } on Exception catch (e) {
+        // TODO: Refine error handling
+        return [];
+      }
+    } else {
+      // throw Exception('Failed to load data');
       return [];
     }
-  } else {
-    // throw Exception('Failed to load data');
+  } catch (e) {
+    // http.get might throw a _ClientSocketException if offline
+    // TODO(LGro): log / handle
     return [];
   }
 }

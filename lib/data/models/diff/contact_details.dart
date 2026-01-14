@@ -7,6 +7,7 @@ import '../contact_details.dart';
 import 'base.dart';
 
 part 'contact_details.freezed.dart';
+part 'contact_details.g.dart';
 
 @freezed
 sealed class ContactDetailsDiff with _$ContactDetailsDiff {
@@ -23,6 +24,45 @@ sealed class ContactDetailsDiff with _$ContactDetailsDiff {
     required Map<String, DiffStatus> tags,
   }) = _ContactDetailsDiff;
   const ContactDetailsDiff._();
+
+  factory ContactDetailsDiff.fromJson(Map<String, dynamic> json) =>
+      _$ContactDetailsDiffFromJson(json);
+}
+
+extension ConvenienceGetters on ContactDetailsDiff {
+  bool get areAllKeep {
+    if (!picture.isKeep) {
+      return false;
+    }
+    if (names.values.where((v) => !v.isKeep).isNotEmpty) {
+      return false;
+    }
+    if (phones.values.where((v) => !v.isKeep).isNotEmpty) {
+      return false;
+    }
+    if (emails.values.where((v) => !v.isKeep).isNotEmpty) {
+      return false;
+    }
+    if (websites.values.where((v) => !v.isKeep).isNotEmpty) {
+      return false;
+    }
+    if (socialMedias.values.where((v) => !v.isKeep).isNotEmpty) {
+      return false;
+    }
+    if (events.values.where((v) => !v.isKeep).isNotEmpty) {
+      return false;
+    }
+    if (organizations.values.where((v) => !v.isKeep).isNotEmpty) {
+      return false;
+    }
+    if (misc.values.where((v) => !v.isKeep).isNotEmpty) {
+      return false;
+    }
+    if (tags.values.where((v) => !v.isKeep).isNotEmpty) {
+      return false;
+    }
+    return true;
+  }
 }
 
 ContactDetailsDiff diffContactDetails(

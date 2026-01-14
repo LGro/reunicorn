@@ -57,6 +57,7 @@ void main() {
       'dummy': [1, 2, 3],
     };
     final filteredDetails = filterDetails(
+      'c1',
       pictures,
       ContactDetails(
         names: const {'0': 'Main Name'},
@@ -118,6 +119,7 @@ void main() {
       },
     );
     final filtered = filterAccordingToSharingProfile(
+      contactId: 'c1',
       profile: profile,
       activeCirclesWithMemberCount: {'Circle': 2},
       dhtConnection: DhtConnectionState.invited(

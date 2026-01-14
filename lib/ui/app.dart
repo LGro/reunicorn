@@ -301,6 +301,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   static const _apnsChannel = MethodChannel('apns_token');
   final _rootNavigatorKey = GlobalKey<NavigatorState>();
   late final GoRouter _appRouter;
+  late final AppLifecycleListener _lifecycleListener;
 
   final _seedColor = Colors.indigo;
 
@@ -347,7 +348,8 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+
+    _lifecycleListener = AppLifecycleListener(onRestart: _handleAppRestart);
 
     _appRouter = buildAppRouter(_rootNavigatorKey, widget.isFirstRun);
 
@@ -440,7 +442,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    _lifecycleListener.dispose();
     super.dispose();
   }
 
@@ -482,6 +484,16 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     //   context,
     //   MaterialPageRoute<void>(builder: (context) => SecondScreen(payload)),
     // );
+  }
+
+  Future<void> _handleAppRestart() async {
+    // On iOS sometimes when the app has been in the background for a while,
+    // Veilid ends up showing up uninitialized, so let's try to initialize it
+    try {
+      await AppGlobalInit.initialize('bootstrap-v1.veilid.net');
+    } catch (_) {
+      // AppGlobalInit.initialize can throw Already attached VeilidAPIException
+    }
   }
 
   @override

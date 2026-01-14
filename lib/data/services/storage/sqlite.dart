@@ -5,7 +5,6 @@ import 'dart:async';
 
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:synchronized/synchronized.dart';
 
 import '../../../debug_log.dart';
 import '../../../tools/tools.dart';
@@ -127,12 +126,15 @@ class SqliteStorage<T> extends Storage<T> {
   @override
   Future<void> delete(String key) async {
     log.debug('RCRN-S DEL $T $key');
-    final removed = await get(key);
-    if (removed != null) {
-      await _getDb().then(
-        (db) => db.delete('data', where: '"id" = ?', whereArgs: [key]),
-      );
-      _changeEventStreamController.add(StorageEvent.delete(removed));
-    }
+    // Await lock to ensure nobody else is attempting to write
+    await lock.synchronized(key, () async {
+      final removed = await get(key);
+      if (removed != null) {
+        await _getDb().then(
+          (db) => db.delete('data', where: '"id" = ?', whereArgs: [key]),
+        );
+        _changeEventStreamController.add(StorageEvent.delete(removed));
+      }
+    });
   }
 }

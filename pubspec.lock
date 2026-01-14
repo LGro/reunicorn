@@ -93,10 +93,10 @@ packages:
     dependency: "direct main"
     description:
       name: bloc
-      sha256: a2cebb899f91d36eeeaa55c7b20b5915db5a9df1b8fd4a3c9c825e22e474537d
+      sha256: a48653a82055a900b88cd35f92429f068c5a8057ae9b136d197b3d56c57efb81
       url: "https://pub.dev"
     source: hosted
-    version: "9.1.0"
+    version: "9.2.0"
   bloc_advanced_tools:
     dependency: "direct main"
     description:
@@ -189,10 +189,10 @@ packages:
     dependency: transitive
     description:
       name: built_value
-      sha256: "426cf75afdb23aa74bd4e471704de3f9393f3c7b04c1e2d9c6f1073ae0b8b139"
+      sha256: "7931c90b84bc573fef103548e354258ae4c9d28d140e41961df6843c5d60d4d8"
       url: "https://pub.dev"
     source: hosted
-    version: "8.12.1"
+    version: "8.12.3"
   change_case:
     dependency: transitive
     description:
@@ -261,10 +261,10 @@ packages:
     dependency: transitive
     description:
       name: code_builder
-      sha256: "11654819532ba94c34de52ff5feb52bd81cba1de00ef2ed622fd50295f9d4243"
+      sha256: "6a6cab2ba4680d6423f34a9b972a4c9a94ebe1b62ecec4e1a1f2cba91fd1319d"
       url: "https://pub.dev"
     source: hosted
-    version: "4.11.0"
+    version: "4.11.1"
   collection:
     dependency: "direct main"
     description:
@@ -390,10 +390,10 @@ packages:
     dependency: "direct main"
     description:
       name: equatable
-      sha256: "567c64b3cb4cf82397aac55f4f0cbd3ca20d77c6c03bedbc4ceaddc08904aef7"
+      sha256: "3e0141505477fd8ad55d6eb4e7776d3fe8430be8e497ccb1521370c3f21a3e2b"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.7"
+    version: "2.0.8"
   fake_async:
     dependency: transitive
     description:
@@ -422,10 +422,10 @@ packages:
     dependency: transitive
     description:
       name: ffi
-      sha256: "289279317b4b16eb2bb7e271abccd4bf84ec9bdcbe999e278a94b804f5630418"
+      sha256: d07d37192dbf97461359c1518788f203b0c9102cfd2c35a716b823741219542c
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.4"
+    version: "2.1.5"
   file:
     dependency: transitive
     description:
@@ -438,10 +438,10 @@ packages:
     dependency: "direct main"
     description:
       name: file_picker
-      sha256: "7872545770c277236fd32b022767576c562ba28366204ff1a5628853cf8f2200"
+      sha256: d974b6ba2606371ac71dd94254beefb6fa81185bde0b59bdc1df09885da85fde
       url: "https://pub.dev"
     source: hosted
-    version: "10.3.7"
+    version: "10.3.8"
   file_selector_linux:
     dependency: transitive
     description:
@@ -652,10 +652,10 @@ packages:
     dependency: transitive
     description:
       name: geolocator_linux
-      sha256: c4e966f0a7a87e70049eac7a2617f9e16fd4c585a26e4330bdfc3a71e6a721f3
+      sha256: d64112a205931926f4363bb6bd48f14cb38e7326833041d170615586cd143797
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.3"
+    version: "0.2.4"
   geolocator_platform_interface:
     dependency: transitive
     description:
@@ -788,10 +788,10 @@ packages:
     dependency: "direct main"
     description:
       name: image
-      sha256: "51555e36056541237b15b57afc31a0f53d4f9aefd9bd00873a6dc0090e54e332"
+      sha256: "492bd52f6c4fbb6ee41f781ff27765ce5f627910e1e0cbecfa3d9add5562604c"
       url: "https://pub.dev"
     source: hosted
-    version: "4.6.0"
+    version: "4.7.2"
   image_picker:
     dependency: "direct main"
     description:
@@ -1089,10 +1089,10 @@ packages:
     dependency: transitive
     description:
       name: package_info_plus
-      sha256: "16eee997588c60225bda0488b6dcfac69280a6b7a3cf02c741895dd370a02968"
+      sha256: f69da0d3189a4b4ceaeb1a3defb0f329b3b352517f52bed4290f83d4f06bc08d
       url: "https://pub.dev"
     source: hosted
-    version: "8.3.1"
+    version: "9.0.0"
   package_info_plus_platform_interface:
     dependency: transitive
     description:
@@ -1233,10 +1233,10 @@ packages:
     dependency: "direct main"
     description:
       name: phone_numbers_parser
-      sha256: "95fe667ce10b46c31fba50da3df4dd15272b0febd37091575e5135c087032e37"
+      sha256: ca0e0ddbea2876b6df7efadd1d79a92cb9fd574170c807a6be31a19457b1b120
       url: "https://pub.dev"
     source: hosted
-    version: "9.0.17"
+    version: "9.0.18"
   platform:
     dependency: transitive
     description:
@@ -1253,6 +1253,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.8"
+  pointycastle:
+    dependency: "direct main"
+    description:
+      name: pointycastle
+      sha256: "92aa3841d083cc4b0f4709b5c74fd6409a3e6ba833ffc7dc6a8fee096366acf5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.0"
   pool:
     dependency: transitive
     description:
@@ -1362,10 +1370,10 @@ packages:
     dependency: transitive
     description:
       name: rrule
-      sha256: b7425410c594d4b6717c9f17ec8ef83c9d1ff2e513c428a135b5924fc2e8e045
+      sha256: f6f6ad5bf7b19d218d4c985d6055d3c9717f1d6efd5d1c0127b1146f1eb3640c
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.17"
+    version: "0.2.18"
   rxdart:
     dependency: "direct main"
     description:
@@ -1852,10 +1860,10 @@ packages:
     dependency: transitive
     description:
       name: watcher
-      sha256: f52385d4f73589977c80797e60fe51014f7f2b957b5e9a62c3f6ada439889249
+      sha256: "1398c9f081a753f9226febe8900fce8f7d0a67163334e1c94a2438339d79d635"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.0"
+    version: "1.2.1"
   web:
     dependency: transitive
     description:

@@ -29,8 +29,6 @@ mixin _$ContactSharingSchemaV3 {
  String? get pushNotificationTopic;// TODO(LGro): In case we bring this back, make sure it is excluded from the equality and hash checks to not trigger unwanted profile update writes
 // late final DateTime? mostRecentUpdate;?? DateTime.now();
 /// Schema version to facilitate data migration
-// @JsonKey(includeToJson: true)
-// TODO: Make this const
  int get schemaVersion;
 /// Create a copy of ContactSharingSchemaV3
 /// with the given fields replaced by the non-null parameter values.
@@ -289,8 +287,6 @@ class _ContactSharingSchemaV3 extends ContactSharingSchemaV3 {
 // TODO(LGro): In case we bring this back, make sure it is excluded from the equality and hash checks to not trigger unwanted profile update writes
 // late final DateTime? mostRecentUpdate;?? DateTime.now();
 /// Schema version to facilitate data migration
-// @JsonKey(includeToJson: true)
-// TODO: Make this const
 @override@JsonKey() final  int schemaVersion;
 
 /// Create a copy of ContactSharingSchemaV3

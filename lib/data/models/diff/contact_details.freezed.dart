@@ -11,6 +11,7 @@ part of 'contact_details.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
+
 /// @nodoc
 mixin _$ContactDetailsDiff {
 
@@ -21,6 +22,8 @@ mixin _$ContactDetailsDiff {
 @pragma('vm:prefer-inline')
 $ContactDetailsDiffCopyWith<ContactDetailsDiff> get copyWith => _$ContactDetailsDiffCopyWithImpl<ContactDetailsDiff>(this as ContactDetailsDiff, _$identity);
 
+  /// Serializes this ContactDetailsDiff to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -28,7 +31,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is ContactDetailsDiff&&(identical(other.picture, picture) || other.picture == picture)&&const DeepCollectionEquality().equals(other.names, names)&&const DeepCollectionEquality().equals(other.phones, phones)&&const DeepCollectionEquality().equals(other.emails, emails)&&const DeepCollectionEquality().equals(other.websites, websites)&&const DeepCollectionEquality().equals(other.socialMedias, socialMedias)&&const DeepCollectionEquality().equals(other.events, events)&&const DeepCollectionEquality().equals(other.organizations, organizations)&&const DeepCollectionEquality().equals(other.misc, misc)&&const DeepCollectionEquality().equals(other.tags, tags));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,picture,const DeepCollectionEquality().hash(names),const DeepCollectionEquality().hash(phones),const DeepCollectionEquality().hash(emails),const DeepCollectionEquality().hash(websites),const DeepCollectionEquality().hash(socialMedias),const DeepCollectionEquality().hash(events),const DeepCollectionEquality().hash(organizations),const DeepCollectionEquality().hash(misc),const DeepCollectionEquality().hash(tags));
 
@@ -206,11 +209,11 @@ return $default(_that.picture,_that.names,_that.phones,_that.emails,_that.websit
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _ContactDetailsDiff extends ContactDetailsDiff {
   const _ContactDetailsDiff({required this.picture, required final  Map<String, DiffStatus> names, required final  Map<String, DiffStatus> phones, required final  Map<String, DiffStatus> emails, required final  Map<String, DiffStatus> websites, required final  Map<String, DiffStatus> socialMedias, required final  Map<String, DiffStatus> events, required final  Map<String, DiffStatus> organizations, required final  Map<String, DiffStatus> misc, required final  Map<String, DiffStatus> tags}): _names = names,_phones = phones,_emails = emails,_websites = websites,_socialMedias = socialMedias,_events = events,_organizations = organizations,_misc = misc,_tags = tags,super._();
-  
+  factory _ContactDetailsDiff.fromJson(Map<String, dynamic> json) => _$ContactDetailsDiffFromJson(json);
 
 @override final  DiffStatus picture;
  final  Map<String, DiffStatus> _names;
@@ -283,14 +286,17 @@ class _ContactDetailsDiff extends ContactDetailsDiff {
 @pragma('vm:prefer-inline')
 _$ContactDetailsDiffCopyWith<_ContactDetailsDiff> get copyWith => __$ContactDetailsDiffCopyWithImpl<_ContactDetailsDiff>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$ContactDetailsDiffToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _ContactDetailsDiff&&(identical(other.picture, picture) || other.picture == picture)&&const DeepCollectionEquality().equals(other._names, _names)&&const DeepCollectionEquality().equals(other._phones, _phones)&&const DeepCollectionEquality().equals(other._emails, _emails)&&const DeepCollectionEquality().equals(other._websites, _websites)&&const DeepCollectionEquality().equals(other._socialMedias, _socialMedias)&&const DeepCollectionEquality().equals(other._events, _events)&&const DeepCollectionEquality().equals(other._organizations, _organizations)&&const DeepCollectionEquality().equals(other._misc, _misc)&&const DeepCollectionEquality().equals(other._tags, _tags));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,picture,const DeepCollectionEquality().hash(_names),const DeepCollectionEquality().hash(_phones),const DeepCollectionEquality().hash(_emails),const DeepCollectionEquality().hash(_websites),const DeepCollectionEquality().hash(_socialMedias),const DeepCollectionEquality().hash(_events),const DeepCollectionEquality().hash(_organizations),const DeepCollectionEquality().hash(_misc),const DeepCollectionEquality().hash(_tags));
 

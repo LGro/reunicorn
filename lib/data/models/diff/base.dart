@@ -3,6 +3,13 @@
 
 enum DiffStatus { add, change, remove, keep }
 
+extension DiffStatusCheckers on DiffStatus {
+  bool get isAdd => this == DiffStatus.add;
+  bool get isChange => this == DiffStatus.change;
+  bool get isRemove => this == DiffStatus.remove;
+  bool get isKeep => this == DiffStatus.keep;
+}
+
 Map<String, DiffStatus> diffMaps(
   Map<String, dynamic> old,
   Map<String, dynamic> target,

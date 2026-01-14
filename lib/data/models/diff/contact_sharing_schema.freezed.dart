@@ -11,6 +11,7 @@ part of 'contact_sharing_schema.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
+
 /// @nodoc
 mixin _$ContactSharingSchemaDiff {
 
@@ -21,6 +22,8 @@ mixin _$ContactSharingSchemaDiff {
 @pragma('vm:prefer-inline')
 $ContactSharingSchemaDiffCopyWith<ContactSharingSchemaDiff> get copyWith => _$ContactSharingSchemaDiffCopyWithImpl<ContactSharingSchemaDiff>(this as ContactSharingSchemaDiff, _$identity);
 
+  /// Serializes this ContactSharingSchemaDiff to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -28,7 +31,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is ContactSharingSchemaDiff&&(identical(other.details, details) || other.details == details)&&const DeepCollectionEquality().equals(other.addressLocations, addressLocations)&&const DeepCollectionEquality().equals(other.temporaryLocations, temporaryLocations)&&(identical(other.introductions, introductions) || other.introductions == introductions));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,details,const DeepCollectionEquality().hash(addressLocations),const DeepCollectionEquality().hash(temporaryLocations),introductions);
 
@@ -209,11 +212,11 @@ return $default(_that.details,_that.addressLocations,_that.temporaryLocations,_t
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _ContactSharingSchemaDiff implements ContactSharingSchemaDiff {
   const _ContactSharingSchemaDiff({required this.details, required final  Map<String, DiffStatus> addressLocations, required final  Map<String, DiffStatus> temporaryLocations, required this.introductions}): _addressLocations = addressLocations,_temporaryLocations = temporaryLocations;
-  
+  factory _ContactSharingSchemaDiff.fromJson(Map<String, dynamic> json) => _$ContactSharingSchemaDiffFromJson(json);
 
 @override final  ContactDetailsDiff details;
  final  Map<String, DiffStatus> _addressLocations;
@@ -238,14 +241,17 @@ class _ContactSharingSchemaDiff implements ContactSharingSchemaDiff {
 @pragma('vm:prefer-inline')
 _$ContactSharingSchemaDiffCopyWith<_ContactSharingSchemaDiff> get copyWith => __$ContactSharingSchemaDiffCopyWithImpl<_ContactSharingSchemaDiff>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$ContactSharingSchemaDiffToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _ContactSharingSchemaDiff&&(identical(other.details, details) || other.details == details)&&const DeepCollectionEquality().equals(other._addressLocations, _addressLocations)&&const DeepCollectionEquality().equals(other._temporaryLocations, _temporaryLocations)&&(identical(other.introductions, introductions) || other.introductions == introductions));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,details,const DeepCollectionEquality().hash(_addressLocations),const DeepCollectionEquality().hash(_temporaryLocations),introductions);
 
