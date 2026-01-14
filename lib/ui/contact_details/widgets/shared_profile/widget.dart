@@ -61,13 +61,12 @@ class SharedProfile extends StatelessWidget {
                     ],
                   ),
                 ),
-                // if (_details.picture != null)
-                //   Center(
-                //     child: Padding(
-                //       padding: const EdgeInsets.only(left: 12, top: 4, right: 12),
-                //       child: roundPictureOrPlaceholder(_details.picture, radius: 48),
-                //     ),
-                //   ),
+                // Picture
+                PictureDiff(
+                  state.current?.details.picture,
+                  state.pending?.details.picture,
+                  state.diff!.details.picture,
+                ),
                 // Names
                 DetailsDiffList(
                   state.current!.details.names,
@@ -204,6 +203,50 @@ class SharedProfile extends StatelessWidget {
             ),
     ),
   );
+}
+
+class PictureDiff extends StatelessWidget {
+  final List<int>? _current;
+  final List<int>? _pending;
+  final DiffStatus _diff;
+
+  const PictureDiff(this._current, this._pending, this._diff, {super.key});
+
+  @override
+  Widget build(BuildContext context) => (_current == null && _pending == null)
+      ? const SizedBox()
+      : Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: switch (_diff) {
+            // TODO(LGro): Mark with icon or fade or otherwise indicate add
+            DiffStatus.add => Center(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12, right: 12),
+                child: roundPictureOrPlaceholder(_pending, radius: 48),
+              ),
+            ),
+            DiffStatus.change => Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                roundPictureOrPlaceholder(_current, radius: 48),
+                roundPictureOrPlaceholder(_pending, radius: 48),
+              ],
+            ),
+            // TODO(LGro): Mark with icon or fade or otherwise indicate delete
+            DiffStatus.remove => Center(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12, right: 12),
+                child: roundPictureOrPlaceholder(_current, radius: 48),
+              ),
+            ),
+            DiffStatus.keep => Center(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12, right: 12),
+                child: roundPictureOrPlaceholder(_current, radius: 48),
+              ),
+            ),
+          },
+        );
 }
 
 class DetailsDiffList extends StatelessWidget {

@@ -1,6 +1,7 @@
 // Copyright 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
+import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../profile_sharing/schema.dart';
@@ -58,7 +59,7 @@ DiffStatus diffLists(List<dynamic> old, List<dynamic> target) {
   if (old.isNotEmpty && target.isEmpty) {
     return DiffStatus.remove;
   }
-  if (old != target) {
+  if (!ListEquality().equals(old, target)) {
     return DiffStatus.change;
   }
   // old == target

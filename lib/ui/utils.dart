@@ -45,14 +45,20 @@ Widget roundPictureOrPlaceholder(
   double? radius,
   bool clipOval = true,
 }) {
+  final fallback = CircleAvatar(
+    radius: radius,
+    child: const Icon(Icons.person),
+  );
+  if (picture == null || picture.isEmpty) {
+    return fallback;
+  }
   final image = Image.memory(
-    Uint8List.fromList(picture ?? []),
+    Uint8List.fromList(picture),
     gaplessPlayback: true,
     width: (radius == null) ? null : radius * 2,
     height: (radius == null) ? null : radius * 2,
     fit: BoxFit.cover,
-    errorBuilder: (context, error, stackTrace) =>
-        CircleAvatar(radius: radius, child: const Icon(Icons.person)),
+    errorBuilder: (context, error, stackTrace) => fallback,
   );
   if (clipOval) {
     return ClipOval(child: image);
