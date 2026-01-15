@@ -18,6 +18,7 @@ import '../models/circle.dart';
 import '../models/contact_introduction.dart';
 import '../models/models.dart';
 import '../models/profile_info.dart';
+import '../models/setting.dart';
 import '../services/dht/encrypted_communication.dart' as dht_comm;
 import '../services/dht/veilid_dht.dart';
 import '../services/storage/base.dart';
@@ -170,6 +171,7 @@ ContactSharingSchema filterAccordingToSharingProfile({
   required PublicKey? introductionKey,
   List<String> connectionAttestations = const [],
   List<String> knownPersonalContactIds = const [],
+  List<RecordKey> recordsToPin = const [],
 }) => ContactSharingSchema(
   details: filterDetails(
     contactId,
@@ -192,6 +194,7 @@ ContactSharingSchema filterAccordingToSharingProfile({
   connectionAttestations: connectionAttestations,
   introductionKey: introductionKey,
   introductions: introductions,
+  recordsToPin: recordsToPin,
 );
 
 /// Ensure the most recent profile contact details are shared with the contact
@@ -202,6 +205,7 @@ Future<ContactSharingSchema> updateSharedProfile(
   Map<String, CoagContact> contacts,
   ProfileInfo profileInfo,
   Map<String, List<String>> circleMemberships,
+  List<RecordKey> recordsToPin,
 ) async => filterAccordingToSharingProfile(
   contactId: contact.coagContactId,
   profile: profileInfo,
@@ -224,12 +228,32 @@ Future<ContactSharingSchema> updateSharedProfile(
     contact,
     contacts.values,
   ),
+  recordsToPin: recordsToPin,
 );
+
+// TODO(LGro): move where it fits better
+extension BackupSettings on Storage<Setting> {
+  Future<RecordKey?> getBackupDhtRecord() async {
+    final backupConfig = await get('backup');
+    if (backupConfig == null) {
+      return null;
+    }
+    if (!backupConfig.value.containsKey('record')) {
+      return null;
+    }
+    try {
+      return RecordKey.fromString(backupConfig.value['record'] as String);
+    } catch (_) {
+      return null;
+    }
+  }
+}
 
 class ContactDhtRepository {
   final Storage<CoagContact> _contactStorage;
   final Storage<Circle> _circleStorage;
   final Storage<ProfileInfo> _profileStorage;
+  final Storage<Setting> _settingStorage;
   final BaseDht _dhtStorage;
   var veilidNetworkAvailable = false;
 
@@ -239,6 +263,7 @@ class ContactDhtRepository {
     this._contactStorage,
     this._circleStorage,
     this._profileStorage,
+    this._settingStorage,
     this._dhtStorage,
   ) {
     unawaited(_initVeilidNetworkAvailable());
@@ -379,11 +404,13 @@ class ContactDhtRepository {
       final circleMemberships = await _circleStorage.getAll().then(
         (circles) => circlesByContactIds(circles.values),
       );
+      final recordsToPin = [await _settingStorage.getBackupDhtRecord()];
       final updatedSharedProfile = await updateSharedProfile(
         contact,
         contacts,
         profileInfo,
         circleMemberships,
+        recordsToPin.whereType<RecordKey>().toList(),
       );
       // If we already have shared the most recent profile version, stop here
       if (updatedSharedProfile == contact.profileSharingStatus.sharedProfile) {

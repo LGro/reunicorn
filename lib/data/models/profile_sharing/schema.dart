@@ -37,6 +37,9 @@ sealed class ContactSharingSchemaV3
     /// Introduction proposals by the author for the recipient
     @Default([]) List<ContactIntroduction> introductions,
 
+    /// Keys for DHT records the author asks the recipient to pin for them
+    @Default([]) List<RecordKey> recordsToPin,
+
     /// Long lived identity key, used for example to derive a connection
     /// attestation for enabling others to discover shared contacts
     PublicKey? identityKey,
@@ -48,9 +51,6 @@ sealed class ContactSharingSchemaV3
     /// Recipient specific push notification topic the recipient can use to
     /// trigger notifications for the author via the Reunicorn Veilid Push Bridge
     String? pushNotificationTopic,
-
-    // TODO(LGro): In case we bring this back, make sure it is excluded from the equality and hash checks to not trigger unwanted profile update writes
-    // late final DateTime? mostRecentUpdate;?? DateTime.now();
 
     /// Schema version to facilitate data migration
     @Default(3) int schemaVersion,

@@ -36,6 +36,11 @@ _ContactSharingSchemaV3 _$ContactSharingSchemaV3FromJson(
           ?.map((e) => ContactIntroduction.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
+  recordsToPin:
+      (json['records_to_pin'] as List<dynamic>?)
+          ?.map(RecordKey.fromJson)
+          .toList() ??
+      const [],
   identityKey: json['identity_key'] == null
       ? null
       : Typed<BarePublicKey>.fromJson(json['identity_key']),
@@ -58,6 +63,7 @@ Map<String, dynamic> _$ContactSharingSchemaV3ToJson(
   ),
   'connection_attestations': instance.connectionAttestations,
   'introductions': instance.introductions.map((e) => e.toJson()).toList(),
+  'records_to_pin': instance.recordsToPin.map((e) => e.toJson()).toList(),
   'identity_key': instance.identityKey?.toJson(),
   'introduction_key': instance.introductionKey?.toJson(),
   'push_notification_topic': instance.pushNotificationTopic,
