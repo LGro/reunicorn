@@ -468,10 +468,11 @@ class _ContactPageState extends State<ContactPage> {
                   ),
                   _ => const SizedBox(),
                 },
-                DhtStatusWidget(
-                  recordKey: contact.dhtConnection.recordKeyThemSharing,
-                  statusWidgets: const {},
-                ),
+                if (contact.dhtConnection != null)
+                  DhtStatusWidget(
+                    recordKey: contact.dhtConnection!.recordKeyThemSharing,
+                    statusWidgets: const {},
+                  ),
               ],
             ),
             // const SizedBox(height: 8),
@@ -506,7 +507,7 @@ class _ContactPageState extends State<ContactPage> {
               'MyNextPubKey: ${_shorten(contact.connectionCrypto.myNextKeyPair.key.toString())}...',
             ),
             Text(
-              'MyDhtKey: ${_shorten(contact.dhtConnection.recordKeyMeSharingOrNull.toString())}...',
+              'MyDhtKey: ${_shorten(contact.dhtConnection?.recordKeyMeSharingOrNull.toString() ?? '')}...',
             ),
             Text(
               'TheirPubKey: ${_shorten(contact.connectionCrypto.theirPublicKeyOrNull.toString())}...',
@@ -515,7 +516,7 @@ class _ContactPageState extends State<ContactPage> {
               'TheirNextPubKey: ${_shorten(contact.connectionCrypto.theirNextPublicKeyOrNull.toString())}...',
             ),
             Text(
-              'TheirDhtKey: ${_shorten(contact.dhtConnection.recordKeyThemSharing.toString())}...',
+              'TheirDhtKey: ${_shorten(contact.dhtConnection?.recordKeyThemSharing.toString() ?? '')}...',
             ),
             Text(
               'InitSec: ${_shorten(contact.connectionCrypto.initialSharedSecretOrNull.toString())}...',

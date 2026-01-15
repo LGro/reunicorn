@@ -24,7 +24,7 @@ Future<CoagContact?> createContactFromDirectSharing(
   // If we're already receiving from that record, redirect to existing contact/
   // TODO: Should we check for ID or pubkey change / mismatch?
   final existingContactsThemSharing = existingContacts.values.where(
-    (c) => c.dhtConnection.recordKeyThemSharing == invite.recordKey,
+    (c) => c.dhtConnection?.recordKeyThemSharing == invite.recordKey,
   );
   if (existingContactsThemSharing.isNotEmpty) {
     return existingContactsThemSharing.first;
@@ -32,7 +32,7 @@ Future<CoagContact?> createContactFromDirectSharing(
 
   // If I accidentally scanned my own QR code, don't add a contact
   final existingContactsMeSharing = existingContacts.values.where(
-    (c) => c.dhtConnection.recordKeyMeSharingOrNull == invite.recordKey,
+    (c) => c.dhtConnection?.recordKeyMeSharingOrNull == invite.recordKey,
   );
   if (existingContactsMeSharing.isNotEmpty) {
     return null;

@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:veilid/veilid.dart';
 
 import '../../data/models/circle.dart';
-import '../../data/models/coag_contact.dart';
 import '../../data/models/models.dart';
 import '../../data/services/storage/base.dart';
 import '../contact_details/page.dart';
@@ -171,7 +170,7 @@ class _ContactListPageState extends State<ContactListPage> {
         children: [
           DhtSharingStatusWidget(
             recordKeys: state.contacts
-                .map((c) => c.dhtConnection.recordKeyMeSharingOrNull)
+                .map((c) => c.dhtConnection?.recordKeyMeSharingOrNull)
                 .whereType<RecordKey>(),
           ),
         ],
@@ -303,7 +302,7 @@ Widget? contactSharingReceivingStatus(
     return const Icon(Icons.done_all);
   }
   // We're both sharing, but haven't received the ack
-  if (contact.dhtConnection.recordKeyMeSharingOrNull != null &&
+  if (contact.dhtConnection?.recordKeyMeSharingOrNull != null &&
       contact.details != null) {
     // TODO: Does it confuse folks if we don't explain the difference between one and two checkmarks?
     return const Icon(Icons.done);

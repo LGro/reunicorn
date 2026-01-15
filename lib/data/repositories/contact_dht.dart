@@ -164,7 +164,6 @@ ContactSharingSchema filterAccordingToSharingProfile({
   required String contactId,
   required ProfileInfo profile,
   required Map<String, int> activeCirclesWithMemberCount,
-  required DhtConnectionState dhtConnection,
   required CryptoState connectionCrypto,
   required List<ContactIntroduction> introductions,
   required PublicKey? identityKey,
@@ -216,7 +215,6 @@ Future<ContactSharingSchema> updateSharedProfile(
       ),
     ),
   ),
-  dhtConnection: contact.dhtConnection,
   connectionCrypto: contact.connectionCrypto,
   introductions: contact.introductionsForThem,
   identityKey: contact.myIdentity.key,
@@ -256,7 +254,9 @@ class ContactDhtRepository {
       ),
     );
     _contactStorage.getEvents.listen(
-      (c) => _watchContact(c.coagContactId, c.dhtConnection),
+      (c) => (c.dhtConnection == null)
+          ? null
+          : _watchContact(c.coagContactId, c.dhtConnection!),
     );
     _circleStorage.changeEvents.listen(
       (e) => e.when(
@@ -322,10 +322,22 @@ class ContactDhtRepository {
         return;
       }
 
+      if (contact.dhtConnection == null) {
+        return _contactStorage.set(
+          contactId,
+          contact.copyWith(
+            dhtConnection: await dht_comm.initializeEncryptedDhtConnection(
+              _dhtStorage,
+              contact.connectionCrypto,
+            ),
+          ),
+        );
+      }
+
       final (dhtContact, dhtConnection, connectionCrypto) = await dht_comm
           .readEncrypted(
             _dhtStorage,
-            contact.dhtConnection,
+            contact.dhtConnection!,
             contact.connectionCrypto,
             ContactSharingSchema.fromBytes,
           );
@@ -392,7 +404,7 @@ class ContactDhtRepository {
         final isWriteSuccess = await dht_comm.writeEncrypted(
           _dhtStorage,
           updatedSharedProfile,
-          contact.dhtConnection,
+          contact.dhtConnection!,
           contact.connectionCrypto,
         );
         final now = DateTime.now();
@@ -473,8 +485,11 @@ class ContactDhtRepository {
   }
 
   Future<void> _onDeleteContact(CoagContact contact) async {
+    if (contact.dhtConnection == null) {
+      return;
+    }
     try {
-      await contact.dhtConnection.map(
+      await contact.dhtConnection!.map(
         invited: (s) => null,
         initialized: (s) => _dhtStorage.write(
           s.recordKeyMeSharing,
@@ -534,18 +549,21 @@ class ContactDhtRepository {
     String name, {
     PublicKey? pubKey,
   }) async {
-    final (dhtConnection, connectionCrypto) = await dht_comm
-        .initializeEncryptedDhtConnection(_dhtStorage);
+    final connectionCrypto =
+        CryptoState.initializedSymmetric(
+              myNextKeyPair: await generateKeyPairBest(),
+              initialSharedSecret: await generateRandomSharedSecretBest(),
+            )
+            as CryptoInitializedSymmetric;
     final contact = CoagContact(
       coagContactId: Uuid().v4(),
       name: name,
       myIdentity: await generateKeyPairBest(),
       myIntroductionKeyPair: await generateKeyPairBest(),
-      dhtConnection: dhtConnection,
       connectionCrypto: (pubKey == null)
           ? connectionCrypto
           : CryptoState.establishedSymmetric(
-              initialSharedSecret: connectionCrypto.initialSharedSecret,
+              initialSharedSecret: connectionCrypto.initialSharedSecretOrNull!,
               myNextKeyPair: connectionCrypto.myNextKeyPair,
               theirNextPublicKey: pubKey,
             ),

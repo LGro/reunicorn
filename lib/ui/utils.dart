@@ -243,8 +243,8 @@ class CommunityInvite {
   );
 }
 
-bool showSharingInitializing(DhtConnectionState connectionState) =>
-    connectionState.recordKeyMeSharingOrNull == null;
+bool showSharingInitializing(DhtConnectionState? connectionState) =>
+    connectionState?.recordKeyMeSharingOrNull == null;
 
 bool showSharingOffer(CoagContact contact) =>
     contact.connectionCrypto.initialSharedSecretOrNull == null &&
@@ -263,7 +263,7 @@ Iterable<(CoagContact, ContactIntroduction)> pendingIntroductions(
       (c) => c.introductionsByThem
           .where(
             (i) => !contacts
-                .map((c) => c.dhtConnection.recordKeyThemSharing)
+                .map((c) => c.dhtConnection?.recordKeyThemSharing)
                 .contains(i.dhtRecordKeyReceiving),
           )
           .map((i) => (c, i)),

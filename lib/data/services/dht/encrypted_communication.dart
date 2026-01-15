@@ -325,8 +325,10 @@ Future<CryptoState> evolveCryptoState(
   },
 );
 
-Future<(DhtConnectionInitialized, CryptoInitializedSymmetric)>
-initializeEncryptedDhtConnection(BaseDht dht) async {
+Future<DhtConnectionInitialized> initializeEncryptedDhtConnection(
+  BaseDht dht,
+  CryptoState cryptoState,
+) async {
   // Init sharing settings
   final (shareKey, shareWriter) = await dht.create();
 
@@ -341,13 +343,6 @@ initializeEncryptedDhtConnection(BaseDht dht) async {
             writerThemSharing: receiveWriter,
           )
           as DhtConnectionInitialized;
-
-  final cryptoState =
-      CryptoState.initializedSymmetric(
-            myNextKeyPair: await generateKeyPairBest(),
-            initialSharedSecret: await generateRandomSharedSecretBest(),
-          )
-          as CryptoInitializedSymmetric;
 
   // Already try to make the share back information available
   final encryptionCrypto = await getVeilidEncryptionCrypto(cryptoState);
@@ -366,7 +361,7 @@ initializeEncryptedDhtConnection(BaseDht dht) async {
     // Best effort, doesn't matter if that fails
   }
 
-  return (connectionState, cryptoState);
+  return connectionState;
 }
 
 Future<(T?, DhtConnectionState, CryptoState)>

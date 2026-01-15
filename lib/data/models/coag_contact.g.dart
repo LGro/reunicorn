@@ -9,9 +9,6 @@ part of 'coag_contact.dart';
 CoagContact _$CoagContactFromJson(Map<String, dynamic> json) => CoagContact(
   coagContactId: json['coag_contact_id'] as String,
   name: json['name'] as String,
-  dhtConnection: DhtConnectionState.fromJson(
-    json['dht_connection'] as Map<String, dynamic>,
-  ),
   connectionCrypto: CryptoState.fromJson(
     json['connection_crypto'] as Map<String, dynamic>,
   ),
@@ -20,6 +17,11 @@ CoagContact _$CoagContactFromJson(Map<String, dynamic> json) => CoagContact(
   details: json['details'] == null
       ? null
       : ContactDetails.fromJson(json['details'] as Map<String, dynamic>),
+  dhtConnection: json['dht_connection'] == null
+      ? null
+      : DhtConnectionState.fromJson(
+          json['dht_connection'] as Map<String, dynamic>,
+        ),
   theirIdentity: json['their_identity'] == null
       ? null
       : Typed<BarePublicKey>.fromJson(json['their_identity']),
@@ -89,7 +91,7 @@ Map<String, dynamic> _$CoagContactToJson(CoagContact instance) =>
       'temporary_locations': instance.temporaryLocations.map(
         (k, e) => MapEntry(k, e.toJson()),
       ),
-      'dht_connection': instance.dhtConnection.toJson(),
+      'dht_connection': instance.dhtConnection?.toJson(),
       'connection_crypto': instance.connectionCrypto.toJson(),
       'profile_sharing_status': instance.profileSharingStatus.toJson(),
       'their_introduction_key': instance.theirIntroductionKey?.toJson(),

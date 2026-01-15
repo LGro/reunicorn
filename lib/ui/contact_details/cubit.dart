@@ -162,7 +162,7 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
       .where(
         (c) => c.introductionsByThem
             .map((i) => i.dhtRecordKeyReceiving)
-            .contains(contact.dhtConnection.recordKeyThemSharing),
+            .contains(contact.dhtConnection?.recordKeyThemSharing),
       )
       .isEmpty;
 

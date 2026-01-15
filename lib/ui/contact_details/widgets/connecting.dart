@@ -36,7 +36,7 @@ class ConnectingCard extends StatelessWidget {
         ),
         const SizedBox(height: 4),
 
-        if (showSharingInitializing(contact.dhtConnection) &&
+        if (contact.dhtConnection?.recordKeyMeSharingOrNull == null &&
             circles.keys.where((cId) => cId.startsWith('VLD')).isNotEmpty) ...[
           Text(
             '${contact.name} was added automatically via a batch that '
@@ -45,7 +45,7 @@ class ConnectingCard extends StatelessWidget {
             'settings to decide what to share with ${contact.name} and '
             'others joining via that batch.',
           ),
-        ] else if (showSharingInitializing(contact.dhtConnection)) ...[
+        ] else if (contact.dhtConnection?.recordKeyMeSharingOrNull == null) ...[
           const Text(
             'Please wait a moment until sharing options are initialized.',
           ),
@@ -54,11 +54,12 @@ class ConnectingCard extends StatelessWidget {
         ] else if (showSharingOffer(contact))
           ProfileBasedSharingWidget(contact)
         else if (showDirectSharing(contact) &&
+            contact.dhtConnection != null &&
             contact.dhtConnection is DhtConnectionInitialized &&
             contact.connectionCrypto is CryptoInitializedSymmetric)
           DirectSharingWidget(
             contact,
-            contact.dhtConnection as DhtConnectionInitialized,
+            contact.dhtConnection! as DhtConnectionInitialized,
             contact.connectionCrypto as CryptoInitializedSymmetric,
           )
         else

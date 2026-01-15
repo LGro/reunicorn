@@ -122,9 +122,6 @@ void main() {
       contactId: 'c1',
       profile: profile,
       activeCirclesWithMemberCount: {'Circle': 2},
-      dhtConnection: DhtConnectionState.invited(
-        recordKeyThemSharing: fakeDhtRecordKey(),
-      ),
       connectionCrypto: CryptoState.establishedSymmetric(
         initialSharedSecret: fakePsk(0),
         myNextKeyPair: fakeKeyPair(),

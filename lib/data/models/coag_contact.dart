@@ -28,11 +28,11 @@ class CoagContact extends Equatable implements JsonEncodable {
   const CoagContact({
     required this.coagContactId,
     required this.name,
-    required this.dhtConnection,
     required this.connectionCrypto,
     required this.myIdentity,
     required this.myIntroductionKeyPair,
     this.details,
+    this.dhtConnection,
     this.theirIdentity,
     this.connectionAttestations = const [],
     this.systemContactId,
@@ -103,7 +103,7 @@ class CoagContact extends Equatable implements JsonEncodable {
   final Map<String, ContactTemporaryLocation> temporaryLocations;
 
   /// DHT record info for sharing with this contact
-  final DhtConnectionState dhtConnection;
+  final DhtConnectionState? dhtConnection;
 
   /// Cryptographic keys for sharing with this contact
   final CryptoState connectionCrypto;

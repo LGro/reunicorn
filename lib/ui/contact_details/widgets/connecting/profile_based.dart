@@ -1,4 +1,4 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
@@ -20,7 +20,8 @@ class ProfileBasedSharingWidget extends StatelessWidget {
               .values
               .firstOrNull ??
           '???',
-      contact.dhtConnection.recordKeyMeSharingOrNull!,
+      // TODO(LGro): Eliminate risk of null check operators
+      contact.dhtConnection!.recordKeyMeSharingOrNull!,
       contact.connectionCrypto.myKeyPairOrNull!.key,
     ).uri;
   }

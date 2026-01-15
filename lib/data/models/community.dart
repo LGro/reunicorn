@@ -8,8 +8,6 @@ import 'package:veilid_support/veilid_support.dart';
 
 import 'contact_details.dart';
 import 'contact_location.dart';
-import 'crypto_state.dart';
-import 'dht_connection_state.dart';
 import 'utils.dart';
 
 part 'community.freezed.dart';

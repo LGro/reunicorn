@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -27,7 +27,7 @@ class DhtStatusCubit extends Cubit<DhtStatusState> with WidgetsBindingObserver {
   void _startTimer() {
     timerPersistentStorageRefresh = Timer.periodic(
       const Duration(seconds: 5),
-      (_) async => updateStatus(),
+      (_) => updateStatus(),
     );
   }
 
@@ -70,6 +70,10 @@ class DhtStatusCubit extends Cubit<DhtStatusState> with WidgetsBindingObserver {
     } on VeilidAPIExceptionTryAgain catch (e) {
       if (!isClosed) {
         return emit(DhtStatusState('disconnected $e'));
+      }
+    } on DHTExceptionNoRecord catch (e) {
+      if (!isClosed) {
+        return emit(DhtStatusState('unavailable $e'));
       }
     }
   }
