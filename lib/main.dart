@@ -132,6 +132,7 @@ void main() async {
       contactStorage,
       circleStorage,
       profileStorage,
+      settingStorage,
       VeilidDht(),
     );
     final systemContactRepository = SystemContactRepository(contactStorage);

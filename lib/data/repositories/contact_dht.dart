@@ -368,6 +368,10 @@ class ContactDhtRepository {
           );
       await _watchContact(contact.coagContactId, dhtConnection);
       if (dhtContact != null) {
+        // Pin first 10 of the records the contact asked us to pin
+        for (final toPin in dhtContact.recordsToPin.take(10)) {
+          await _dhtStorage.watch(toPin, () {});
+        }
         final updatedContact = contact.copyWith(
           name: (contact.name == '???')
               ? dhtContact.details.names.values.firstOrNull ?? contact.name

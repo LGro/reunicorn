@@ -387,6 +387,11 @@ class _AppState extends State<App> with WidgetsBindingObserver {
                   (v) => jsonEncode(v.toJson()),
                   profileMigrateFromJson,
                 ),
+                SqliteStorage<Setting>(
+                  'setting',
+                  (v) => jsonEncode(v.toJson()),
+                  (v) async => Setting(jsonDecode(v) as Map<String, dynamic>),
+                ),
                 VeilidDht(),
               );
               // ignore: unused_local_variable we just need init and listen

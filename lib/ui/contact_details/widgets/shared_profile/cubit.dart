@@ -68,6 +68,7 @@ class SharedProfileCubit extends Cubit<SharedProfileState> {
       contacts,
       profileInfo,
       circleMemberships,
+      [],
     );
     final diff = diffContactSharingSchema(
       contact.profileSharingStatus.sharedProfile!,
