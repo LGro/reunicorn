@@ -1,7 +1,6 @@
 // Copyright 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../profile_sharing/schema.dart';
@@ -51,17 +50,3 @@ ContactSharingSchemaDiff diffContactSharingSchema(
   ),
   introductions: diffLists(old.introductions, target.introductions),
 );
-
-DiffStatus diffLists(List<dynamic> old, List<dynamic> target) {
-  if (old.isEmpty && target.isNotEmpty) {
-    return DiffStatus.add;
-  }
-  if (old.isNotEmpty && target.isEmpty) {
-    return DiffStatus.remove;
-  }
-  if (!ListEquality().equals(old, target)) {
-    return DiffStatus.change;
-  }
-  // old == target
-  return DiffStatus.keep;
-}

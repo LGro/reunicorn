@@ -1,6 +1,7 @@
 // Copyright 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
+import 'package:collection/equality.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../contact_details.dart';
@@ -69,7 +70,7 @@ ContactDetailsDiff diffContactDetails(
   ContactDetails old,
   ContactDetails target,
 ) => ContactDetailsDiff(
-  picture: diffPicture(old.picture, target.picture),
+  picture: diffLists(old.picture, target.picture),
   names: diffMaps(old.names, target.names),
   phones: diffMaps(old.phones, target.phones),
   emails: diffMaps(old.emails, target.emails),
@@ -81,12 +82,16 @@ ContactDetailsDiff diffContactDetails(
   tags: diffMaps(old.tags, target.tags),
 );
 
-DiffStatus diffPicture(List<int>? old, List<int>? target) =>
-    switch ((old, target)) {
-      (null, null) => DiffStatus.keep,
-      (null, _) => DiffStatus.add,
-      (_, null) => DiffStatus.remove,
-      _ when old != target => DiffStatus.change,
-      // old == target
-      _ => DiffStatus.keep,
-    };
+DiffStatus diffLists(List<dynamic>? old, List<dynamic>? target) {
+  if ((old?.isEmpty ?? true) && (target?.isNotEmpty ?? false)) {
+    return DiffStatus.add;
+  }
+  if ((old?.isNotEmpty ?? false) && (target?.isEmpty ?? true)) {
+    return DiffStatus.remove;
+  }
+  if (!ListEquality().equals(old, target)) {
+    return DiffStatus.change;
+  }
+  // old == target
+  return DiffStatus.keep;
+}
