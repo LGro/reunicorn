@@ -34,6 +34,7 @@ import '../data/services/storage/sqlite.dart';
 import '../l10n/app_localizations.dart';
 import '../notification_service.dart';
 import '../tick.dart';
+import '../tools/tools.dart';
 import '../veilid_init.dart';
 import '../veilid_processor/views/developer.dart';
 import 'account_restore/page.dart';
@@ -350,6 +351,12 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     _appRouter = buildAppRouter(_rootNavigatorKey, widget.isFirstRun);
 
     unawaited(_initAPNs());
+
+    if (isiOS) {
+      // Do not configure background fetch for iOS to test if that helps with
+      // Veilid ending up uninitialized
+      return;
+    }
 
     // Configure background fetch
     unawaited(
