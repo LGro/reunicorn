@@ -137,14 +137,14 @@ sealed class Member with _$Member {
     DateTime? mostRecentCommentUpdate,
 
     /// Their public key for initial sharing encryption
-    PublicKey? publicKey,
+    PublicKey? theirPublicKey,
 
     /// The record key where they share information with me
-    RecordKey? sharingRecordKey,
+    RecordKey? recordKeyThemSharing,
 
     /// After a community member was added as a contact, my sharing record key
     /// is stored here as well to allow construction of my `MemberInfo`
-    RecordKey? mySharingRecordKey,
+    RecordKey? recordKeyMeSharing,
   }) = _Member;
 
   factory Member.fromJson(Map<String, dynamic> json) => _$MemberFromJson(json);
@@ -253,93 +253,10 @@ accepted introduction
 // TODO: Allow people to indicate they left a community
 
 
-
-
 /*
 
-SqliteStorageService / HiveStorageServices
-- delete for key
-- upsert for key
-- get for key
-
-DhtService
-- create record
-- write record
-- write record range
-- read record
-- read record range
-
----
-
-CommunityStorage
-- init (load from disk and clean up stragglers)
-- community update stream
-- member update stream
-- set/update community
-
-CommunityDhtSync
-- listens to DHT community updates
-- listens to storage member updates
-
-CommunityManagement
-- listen to storage community updates
-- listen to storage member updates
-- update member
-
-----
-
-ContactStorage
-- init (load from disk and clean up stragglers)
-- contact update stream
-- set/update/delete contact
-- get contact(s)
-
-ContactDhtSync
-- listens to DHT contact record updates
-- listens to storage contact updates (shared profile is handled on ui side, integrating circles and stuff)
-
-ContactManagement
-- listen to storage contact updates
-- add contact
-- update contact
-- delete contact
-
-----
-
+shared profile is handled on ui side, integrating circles and stuff
+load from disk and clean up stragglers
 only clean up stragglers if contacts are available at all to avoid cascading error!!!
-
-CircleStorage
-- init (load from disk and clean up stragglers)
-- circle update stream
-- set/update/delete circle
-- get circle(s)
-
-CircleManagement
-- listen to storage circle updates
-- add circle
-- update circle
-- delete circle
-
----
-
-ProfileStorage
-- init (load from disk and clean up stragglers)
-- profile update stream
-- get profile
-- update profile
-
-ProfileManagement
-- listen to storage circle updates
-- update profile
-
----
-
-SettingsStorage
-- init (load from disk and clean up stragglers)
-- get profile
-- update profile
-
-SettingsManagement
-- update setting
 
 */

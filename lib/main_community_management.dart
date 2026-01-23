@@ -1,14 +1,20 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
+import 'dart:convert';
 
-import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
 import 'bloc_observer.dart';
+import 'data/models/community.dart';
+import 'data/models/models.dart';
+import 'data/repositories/community_dht.dart';
+import 'data/services/storage/base.dart';
+import 'data/services/storage/sqlite.dart';
 import 'tools/loggy.dart';
 import 'ui/community_management/page.dart';
 import 'veilid_init.dart';
@@ -24,7 +30,18 @@ void main() async {
     // Observer for logging Bloc related things
     Bloc.observer = const AppBlocObserver();
 
-    runApp(const CommunityManagementApp());
+    final contactStorage = SqliteStorage<CoagContact>(
+      'contact',
+      (v) => jsonEncode(v.toJson()),
+      contactMigrateFromJson,
+    );
+    final communityStorage = SqliteStorage<Community>(
+      'community',
+      (v) => jsonEncode(v.toJson()),
+      communityMigrateFromJson,
+    );
+
+    runApp(CommunityManagementApp(communityStorage, contactStorage));
   }
 
   if (kDebugMode) {
@@ -39,7 +56,14 @@ void main() async {
 }
 
 class CommunityManagementApp extends StatelessWidget {
-  const CommunityManagementApp({super.key});
+  const CommunityManagementApp(
+    this._communityStorage,
+    this._contactStorage, {
+    super.key,
+  });
+
+  final Storage<Community> _communityStorage;
+  final Storage<CoagContact> _contactStorage;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -52,7 +76,10 @@ class CommunityManagementApp extends StatelessWidget {
       catchError: (context, error) => null,
       builder: (context, child) => (context.watch<AppGlobalInit?>() == null)
           ? const Center(child: CircularProgressIndicator())
-          : const CommunityManagementPage(),
+          : RepositoryProvider.value(
+              value: CommunityDhtRepository(_communityStorage, _contactStorage),
+              child: const CommunityManagementPage(),
+            ),
     ),
   );
 }

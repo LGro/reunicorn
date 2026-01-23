@@ -3,19 +3,17 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
-import 'package:loggy/loggy.dart';
 import 'package:multiple_result/multiple_result.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../../veilid_processor/models/processor_connection_state.dart';
-import '../../veilid_processor/repository/processor_repository.dart';
-import '../models/coag_contact.dart';
 import '../models/community.dart';
 import '../models/models.dart';
 import '../services/dht/veilid_dht.dart';
 import '../services/storage/base.dart';
+import 'base_dht.dart';
 
 extension CommunityExtension on Community {
   bool isExpired() => info?.expiresAt?.isBefore(mostRecentUpdate) ?? false;
@@ -26,12 +24,17 @@ class CommunityOrigin {
   static const prefix = 'COMMUNITY';
 
   final RecordKey communityRecordKey;
-  final RecordKey memberRecordKey;
+  final RecordKey memberInfoRecordKey;
 
   CommunityOrigin({
     required this.communityRecordKey,
-    required this.memberRecordKey,
+    required this.memberInfoRecordKey,
   });
+
+  factory CommunityOrigin.fromMember(Member member) => CommunityOrigin(
+    communityRecordKey: member.communityRecordKey,
+    memberInfoRecordKey: member.infoRecordKey,
+  );
 
   static CommunityOrigin? fromString(String string) {
     if (!string.startsWith(prefix)) {
@@ -42,7 +45,7 @@ class CommunityOrigin {
     try {
       return CommunityOrigin(
         communityRecordKey: RecordKey.fromString(parts[1]),
-        memberRecordKey: RecordKey.fromString(parts[2]),
+        memberInfoRecordKey: RecordKey.fromString(parts[2]),
       );
     } catch (e) {
       return null;
@@ -50,13 +53,8 @@ class CommunityOrigin {
   }
 
   @override
-  String toString() => [
-    prefix,
-    separator,
-    communityRecordKey,
-    separator,
-    memberRecordKey,
-  ].join();
+  String toString() =>
+      [prefix, communityRecordKey, memberInfoRecordKey].join(separator);
 }
 
 Future<CommunityInfo?> getCommunityInfo(
@@ -246,8 +244,8 @@ Future<Member> getMember(
     community.recordWriter.secret,
   );
   return member.copyWith(
-    publicKey: memberPublicKey,
-    sharingRecordKey: memberSharingRecordKey,
+    theirPublicKey: memberPublicKey,
+    recordKeyThemSharing: memberSharingRecordKey,
   );
 }
 
@@ -283,11 +281,11 @@ Future<List<(HashDigest, RecordKey)>> sharingOffers(
   SecretKey mySecretKey,
 ) => Future.wait(
   members
-      .where((m) => m.publicKey != null && m.mySharingRecordKey != null)
+      .where((m) => m.theirPublicKey != null && m.recordKeyMeSharing != null)
       .map(
         (m) async => (
-          await generateMemberSecretHash(m.publicKey!, mySecretKey),
-          m.mySharingRecordKey!,
+          await generateMemberSecretHash(m.theirPublicKey!, mySecretKey),
+          m.recordKeyMeSharing!,
         ),
       ),
 );
@@ -325,7 +323,7 @@ Future<Community> updateCommunity(Community community) async {
   return community.copyWith(mostRecentUpdate: DateTime.now());
 }
 
-class CommunityDhtRepository {
+class CommunityDhtRepository extends BaseDhtRepository {
   final _watchedRecords = <RecordKey>{};
   final Storage<Community> _communityStorage;
   final Storage<CoagContact> _contactStorage;
@@ -334,14 +332,10 @@ class CommunityDhtRepository {
   // TODO: Add information about which community is currently being synced / was synced last
 
   CommunityDhtRepository(this._communityStorage, this._contactStorage) {
-    unawaited(_initVeilidNetworkAvailable());
-    ProcessorRepository.instance.streamProcessorConnectionState().listen(
-      _veilidConnectionStateChangeCallback,
-    );
     _communityStorage.changeEvents.listen((e) async {
       await e.when(
         set: (oldCommunity, newCommunity) =>
-            _updateCommunity(newCommunity.recordKey),
+            _updateCommunityFromDht(newCommunity.recordKey),
         delete: _onDeleteCommunity,
       );
     });
@@ -353,33 +347,6 @@ class CommunityDhtRepository {
         await _onContactSet(e.newValue);
       }
     });
-  }
-
-  Future<void> _initVeilidNetworkAvailable() async {
-    final state = await Veilid.instance.getVeilidState();
-    veilidNetworkAvailable =
-        state.attachment.publicInternetReady &&
-        state.attachment.state == AttachmentState.fullyAttached;
-  }
-
-  void _veilidConnectionStateChangeCallback(ProcessorConnectionState event) {
-    logDebug('rcrn-veilid-connection-state-changed: $event');
-    if (event.isPublicInternetReady &&
-        event.isAttached &&
-        !veilidNetworkAvailable) {
-      veilidNetworkAvailable = true;
-      unawaited(
-        _communityStorage.getAll().then(
-          (communities) => communities.values.map(
-            (community) => _updateCommunity(community.recordKey),
-          ),
-        ),
-      );
-    }
-
-    if (!event.isPublicInternetReady || !event.isAttached) {
-      veilidNetworkAvailable = false;
-    }
   }
 
   /// Watch for community updates via the DHT
@@ -399,7 +366,7 @@ class CommunityDhtRepository {
       await record.listen(
         // TODO: If we want to make use of data here, we also likely need to pass crypto to decrypt it
         (record, data, subkeys) =>
-            _updateCommunity(record.key, useLocalCache: true),
+            _updateCommunityFromDht(record.key, useLocalCache: true),
         localChanges: false,
       );
     } catch (e) {
@@ -407,7 +374,7 @@ class CommunityDhtRepository {
     }
   }
 
-  Future<void> _updateCommunity(
+  Future<void> _updateCommunityFromDht(
     RecordKey recordKey, {
     bool useLocalCache = false,
   }) async {
@@ -453,7 +420,7 @@ class CommunityDhtRepository {
 
     // Get full community member data
     final member = community.members.firstWhereOrNull(
-      (m) => m.infoRecordKey == origin.memberRecordKey,
+      (m) => m.infoRecordKey == origin.memberInfoRecordKey,
     );
     if (member == null) {
       return;
@@ -467,12 +434,41 @@ class CommunityDhtRepository {
           ..remove(member)
           ..add(
             member.copyWith(
-              mySharingRecordKey:
+              recordKeyMeSharing:
                   (contact.dhtConnection as DhtConnectionEstablished)
                       .recordKeyMeSharing,
             ),
           ),
       ),
     );
+  }
+
+  @override
+  Future<void> dhtBecameAvailableCallback() => _communityStorage.getAll().then(
+    (communities) => communities.values.map(
+      (community) => _updateCommunityFromDht(community.recordKey),
+    ),
+  );
+
+  //// COMMUNITY MANAGEMENT FEATURES ////
+  // TODO(LGro): Do we separate them out from the regular member user facing?
+
+  Future<bool> updateManagedCommunityToDht(ManagedCommunity community) async {
+    return false;
+  }
+
+  Future<(RecordKey, KeyPair)> createMemberRecord() async {
+    final record = await DHTRecordPool.instance.createRecord(
+      debugName: 'rcrn::create-member',
+    );
+    final opened = await DHTRecordPool.instance.openRecordWrite(
+      record.key,
+      record.writer!,
+      debugName: 'rcrn::open-write-member',
+    );
+    // TODO(LGro): do we need to write it once to be available on the network?
+    await opened.eventualWriteBytes(Uint8List(0));
+    // TODO(LGro): when don't we ge a writer?
+    return (record.key, record.writer!);
   }
 }

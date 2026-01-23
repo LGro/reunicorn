@@ -1,160 +1,119 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:bloc/bloc.dart';
-import 'package:equatable/equatable.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:uuid/uuid.dart';
-import 'package:veilid_support/veilid_support.dart';
+import 'package:veilid/veilid.dart';
 
-import '../../data/models/batch_invites.dart';
+import '../../data/models/community.dart';
+import '../../data/repositories/community_dht.dart';
+import '../../data/utils.dart';
 
+part 'cubit.freezed.dart';
 part 'cubit.g.dart';
 part 'state.dart';
 
-/// Create DHT record with first subkey for general info and then the
-/// specified number of subkeys with an individual writer key pair each.
-Future<Batch> createBatch(
-  int numSubKeys,
-  String label,
-  DateTime expiration,
-) async {
-  final cryptoSystem = await Veilid.instance.getCryptoSystem(cryptoKindVLD0);
-  final routingContext = await Veilid.instance.routingContext();
+class CommunityManagementCubit extends Cubit<CommunityManagementState> {
+  CommunityManagementCubit(this._communityDhtRepository)
+    : super(const CommunityManagementState());
 
-  // Generate writer key pairs for owner and subkeys
-  final ownerWriter = await cryptoSystem.generateKeyPair();
-  final subkeyWriters = await Future.wait(
-    List.generate(numSubKeys, (_) => cryptoSystem.generateKeyPair()),
-  );
+  final CommunityDhtRepository _communityDhtRepository;
 
-  // Create record with individual subkey writers
-  final record = await routingContext.createDHTRecord(
-    cryptoKindVLD0,
-    DHTSchema.smpl(
-      oCnt: 1,
-      members: await Future.wait(
-        subkeyWriters
-            .map(
-              (w) => DHTSchemaMember.fromPublicKey(Veilid.instance, w.key, 1),
-            )
-            .toList(),
-      ),
-    ),
-    owner: ownerWriter,
-  );
-
-  // DHT record content crypto
-  final psk = await cryptoSystem.randomSharedSecret();
-  final pskCrypto = await VeilidCryptoPrivate.fromSharedSecret(
-    cryptoSystem.kind(),
-    psk,
-  );
-
-  // Write general info to first subkey with owner writer key pair
-  final info = BatchInviteInfoSchema(label, expiration);
-  await routingContext.openDHTRecord(record.key, writer: ownerWriter);
-  await routingContext.setDHTValue(
-    record.key,
-    0,
-    await pskCrypto.encrypt(utf8.encode(jsonEncode(info.toJson()))),
-    options: SetDHTValueOptions(writer: ownerWriter),
-  );
-  await routingContext.closeDHTRecord(record.key);
-
-  return Batch(
-    label: label,
-    expiration: expiration,
-    dhtRecordKey: record.key,
-    writer: ownerWriter,
-    subkeyWriters: subkeyWriters,
-    psk: psk,
-  );
-}
-
-Future<Batch> updateBatchWithPopulatedSubkeyCount(Batch batch) async {
-  var numPopulatedSubkeys = 0;
-
-  final crypto = await VeilidCryptoPrivate.fromSharedSecret(
-    batch.dhtRecordKey.kind,
-    batch.psk,
-  );
-
-  for (var subkey = 1; subkey <= batch.subkeyWriters.length; subkey++) {
-    final record = await DHTRecordPool.instance.openRecordRead(
-      batch.dhtRecordKey,
-      debugName: 'coag::read',
-      crypto: crypto,
-    );
+  Future<void> createCommunity() async {
+    emit(state.copyWith(isProcessing: true));
     try {
-      final content = await record.get(
-        crypto: crypto,
-        refreshMode: DHTRecordRefreshMode.network,
-        subkey: subkey,
+      final communitySecret = await generateRandomSharedSecretBest();
+      emit(
+        state.copyWith(
+          community: ManagedCommunity(
+            name: 'Awesome Community',
+            communityUuid: Uuid().v4(),
+            communitySecret: communitySecret,
+          ),
+          isProcessing: false,
+        ),
       );
-      if (content?.isNotEmpty ?? false) {
-        numPopulatedSubkeys++;
-      }
-    } finally {
-      await record.close();
+    } catch (e) {
+      emit(state.copyWith(isProcessing: false));
     }
   }
 
-  return batch.copyWith(numPopulatedSubkeys: numPopulatedSubkeys);
-}
+  void import(ManagedCommunity community) =>
+      emit(state.copyWith(community: community));
 
-class BatchInvitesCubit extends Cubit<BatchInvitesState> {
-  BatchInvitesCubit() : super(const BatchInvitesState()) {
-    unawaited(initialize());
+  void updateCommunity(ManagedCommunity community) {
+    emit(state.copyWith(community: community));
   }
 
-  Future<void> initialize() async {
-    //  TODO: Load from persistent storage
-    final batches = <String, Batch>{};
-    emit(BatchInvitesState(batches: batches));
-    await updateBatchesWithPopulatedSubkeyCount();
+  Future<void> addMembers(String commaSeparatedNames) async {
+    emit(state.copyWith(isProcessing: true));
+    final newMembersWithWriters = await Future.wait(
+      commaSeparatedNames
+          .split(',')
+          .map((n) => n.trim())
+          .where((n) => n.isNotEmpty)
+          .map((n) async {
+            final (recordKey, writer) = await _communityDhtRepository
+                .createMemberRecord();
+            final info = OrganizerProvidedMemberInfo(
+              recordKey: recordKey,
+              name: n,
+            );
+            return (info, writer);
+          }),
+    );
+    // TODO(LGro): Handle failed member creation / report which missing
+    // TODO(LGro): Enforce unique member names?
+    final updatedCommunity = state.community?.copyWith(
+      membersWithWriters:
+          (state.community?.membersWithWriters
+            ?..addAll(newMembersWithWriters)) ??
+          [],
+    );
+    emit(state.copyWith(community: updatedCommunity, isProcessing: false));
   }
 
-  // TODO: How long does this take? Do we need a loading spinner?
-  Future<void> generateInvites(
-    String label,
-    int amount,
-    DateTime expiration,
-  ) async {
-    final newBatch = await createBatch(amount, label, expiration);
+  Future<void> saveCommunity(ManagedCommunity community) async {
+    emit(state.copyWith(isProcessing: true));
+    final isSuccess = await _communityDhtRepository.updateManagedCommunityToDht(
+      community,
+    );
+    // TODO(LGro): Report success/failed update status to user
+    emit(state.copyWith(community: community, isProcessing: false));
+  }
 
-    // TODO: Persist batch
-
-    final updatedBatches = {...state.batches};
-    updatedBatches[Uuid().v4()] = newBatch;
-    if (!isClosed) {
-      emit(state.copyWith(batches: updatedBatches));
+  void selectMember(int i) => emit(state.copyWith(iSelectedMember: i));
+  void deselectMember() => emit(state.copyWith(iSelectedMember: null));
+  Future<void> updateMember({
+    required RecordKey memberRecordKey,
+    required String name,
+    required String comment,
+  }) async {
+    if (state.community == null) {
+      return;
     }
+    emit(state.copyWith(isProcessing: true));
+    final updatedMembersWithWriters = state.community!.membersWithWriters
+        .map(
+          (mww) => (mww.$1.recordKey == memberRecordKey)
+              ? (
+                  mww.$1.copyWith(
+                    name: name.trim(),
+                    comment: (comment.trim().isEmpty) ? null : comment.trim(),
+                  ),
+                  mww.$2,
+                )
+              : mww,
+        )
+        .toList();
+    final updatedCommunity = state.community!.copyWith(
+      membersWithWriters: updatedMembersWithWriters,
+    );
+    await _communityDhtRepository.updateManagedCommunityToDht(updatedCommunity);
+    emit(state.copyWith(community: updatedCommunity, isProcessing: false));
   }
 
-  Future<void> updateBatchesWithPopulatedSubkeyCount() async {
-    // TODO: Is this prone to overriding a batch that was created while an update was running?
-    for (final batch in state.batches.entries) {
-      final updatedBatch = await updateBatchWithPopulatedSubkeyCount(
-        batch.value,
-      );
-
-      if (isClosed) {
-        return;
-      }
-
-      final updatedBatches = {...state.batches};
-      updatedBatches[batch.key] = updatedBatch;
-      emit(state.copyWith(batches: updatedBatches));
-    }
-  }
-
-  Future<void> importBatch(Batch batch) async => emit(
-    state.copyWith(
-      batches: {batch.dhtRecordKey.toString(): batch, ...state.batches},
-    ),
-  );
+  void deactivateMember() {}
+  void removeMember() {}
 }

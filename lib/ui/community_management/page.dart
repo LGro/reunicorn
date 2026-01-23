@@ -1,263 +1,92 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'dart:async';
 import 'dart:convert';
 
-import 'package:file_picker/file_picker.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../widgets/dht_batch_invite_status/widget.dart';
-import '../widgets/dht_status/widget.dart';
+import '../../data/models/community.dart';
+import '../../data/repositories/community_dht.dart';
 import 'cubit.dart';
+import 'widgets/community_overview.dart';
+import 'widgets/import_community.dart';
+import 'widgets/member_details.dart';
 
-class CommunityManagementPage extends StatefulWidget {
+class CommunityManagementPage extends StatelessWidget {
   const CommunityManagementPage({super.key});
 
   @override
-  _CommunityManagementPageState createState() =>
-      _CommunityManagementPageState();
-}
-
-class _CommunityManagementPageState extends State<CommunityManagementPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _labelFieldKey = GlobalKey<FormFieldState>();
-  final _amountFieldKey = GlobalKey<FormFieldState>();
-  final _expirationFieldKey = GlobalKey<FormFieldState>();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _invitationsAmountController =
-      TextEditingController();
-  final TextEditingController _expirationController = TextEditingController();
-  DateTime? _selectedDate;
-  bool _readyToSubmit = false;
-
-  String? validateLabel(String? value) {
-    if (value != null && !RegExp(r'^[a-zA-Z0-9]*$').hasMatch(value)) {
-      return 'Label includes special characters, '
-          'only use letters and numbers.';
-    }
-    return null;
-  }
-
-  String? validateAmount(String? value) {
-    if (value == null || value.isEmpty) {
-      return null;
-    }
-    final parsedValue = int.tryParse(value);
-    if (parsedValue == null) {
-      return 'Not a valid number';
-    }
-    if (parsedValue > 100) {
-      return 'We are limited to 100 invites right now. '
-          'Contact the Reunicorn team if you need more.';
-    }
-    return null;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController.addListener(_updateButtonState);
-    _invitationsAmountController.addListener(_updateButtonState);
-  }
-
-  void _updateButtonState() {
-    setState(() {
-      _readyToSubmit =
-          _nameController.text.trim().isNotEmpty &&
-          _invitationsAmountController.text.trim().isNotEmpty &&
-          _selectedDate != null &&
-          validateLabel(_nameController.text) == null &&
-          validateAmount(_invitationsAmountController.text) == null;
-    });
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _invitationsAmountController.dispose();
-    _expirationController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickDate() async {
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate:
-          _selectedDate ?? DateTime.now().add(const Duration(days: 14)),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-
-    if (pickedDate != null && pickedDate != _selectedDate) {
-      setState(() {
-        _selectedDate = pickedDate;
-      });
-      _expirationController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
-      _updateButtonState();
-    }
-  }
-
-  void _resetForm() {
-    _nameController.text = '';
-    _invitationsAmountController.text = '';
-    _selectedDate = null;
-    _expirationController.text = '';
-    _readyToSubmit = false;
-  }
-
-  Widget _body(
-    BuildContext context,
-    BatchInvitesState state,
-  ) => SingleChildScrollView(
-    padding: const EdgeInsets.symmetric(horizontal: 20),
-    child: Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Do you want to invite a bunch of folks from an existing '
-            'community who already do or want to know each other?',
-          ),
-          const Text(
-            'With invitation batches, everyone invited via the same '
-            'batch will see the label and everyone else invited to the '
-            'batch to connect with them before the invites expire.',
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'New batch',
-            textScaler: const TextScaler.linear(1.2),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            key: _labelFieldKey,
-            controller: _nameController,
-            autocorrect: false,
-            decoration: const InputDecoration(
-              labelText: 'Batch label',
-              border: OutlineInputBorder(),
-              helperMaxLines: 100,
-              errorMaxLines: 100,
-              helperText:
-                  'Only alpha numeric characters i.e. letters and '
-                  'numbers are allowed',
-            ),
-            validator: validateLabel,
-            onChanged: (label) => _labelFieldKey.currentState?.validate(),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            key: _amountFieldKey,
-            controller: _invitationsAmountController,
-            autocorrect: false,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
-              labelText: 'Invitations',
-              border: OutlineInputBorder(),
-              helperMaxLines: 100,
-              errorMaxLines: 100,
-              helperText:
-                  'Number of invitations in the batch. Pick a handful '
-                  'more than you think, since you can not generate any '
-                  'more later',
-            ),
-            validator: validateAmount,
-            onChanged: (label) => _amountFieldKey.currentState?.validate(),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            key: _expirationFieldKey,
-            onTap: _pickDate,
-            controller: _expirationController,
-            readOnly: true,
-            autocorrect: false,
-            decoration: const InputDecoration(
-              labelText: 'Expiration date',
-              border: OutlineInputBorder(),
-              helperMaxLines: 100,
-              helperText:
-                  'Until this date, everyone needs to have used their '
-                  'invitation.',
-            ),
-          ),
-          const SizedBox(height: 8),
-          FilledButton(
-            onPressed: (!_readyToSubmit)
-                ? null
-                : () async {
-                    if (!_formKey.currentState!.validate()) {
-                      return;
-                    }
-                    await context.read<BatchInvitesCubit>().generateInvites(
-                      _nameController.text.trim(),
-                      int.tryParse(_invitationsAmountController.text.trim()) ??
-                          0,
-                      _selectedDate!,
-                    );
-                    _resetForm();
-                  },
-            child: const Text('Generate invites batch'),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Generated batches',
-            textScaler: const TextScaler.linear(1.2),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          const Text(
-            'WARNING: When you leave this view, you will no longer have '
-            'access to the batch you created. Make sure to wait until '
-            'the status changed from pending to synced and then copy / '
-            'save the generated invitation batch links directly.',
-          ),
-          const SizedBox(height: 8),
-          ...state.batches.values.map((b) => existingBatchWidget(context, b)),
-          const SizedBox(height: 8),
-          importBatchWidget(context),
-        ],
+  Widget build(context) => Scaffold(
+    appBar: AppBar(title: const Text('Community Management')),
+    body: BlocProvider(
+      create: (context) =>
+          CommunityManagementCubit(context.read<CommunityDhtRepository>()),
+      child: BlocBuilder<CommunityManagementCubit, CommunityManagementState>(
+        builder: (context, state) {
+          if (state.isProcessing) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final selectedMember = (state.iSelectedMember == null)
+              ? null
+              : state.community!.membersWithWriters.getOrNull(
+                  state.iSelectedMember!,
+                );
+          // Member details if selected
+          if (state.community != null && selectedMember != null) {
+            final memberWithWriter =
+                state.community!.membersWithWriters[state.iSelectedMember!];
+            return MemberDetails(
+              state.community!,
+              memberWithWriter.$1,
+              memberWithWriter.$2,
+            );
+          }
+          // Community overview if imported or created
+          if (state.community != null) {
+            return CommunityOverview(state.community!);
+          }
+          // Offer to create or import community
+          return Column(
+            spacing: 16,
+            children: [
+              // Just to establish full width
+              const Row(),
+              FilledButton(
+                onPressed: (state.isProcessing)
+                    ? null
+                    : context.read<CommunityManagementCubit>().createCommunity,
+                child: (state.isProcessing)
+                    ? const CircularProgressIndicator()
+                    : const Text('Create Community'),
+              ),
+              const ImportCommunity(),
+            ],
+          );
+        },
       ),
     ),
   );
-
-  @override
-  Widget build(BuildContext _) => Scaffold(
-    appBar: AppBar(title: const Text('Invitation batches')),
-    body: BlocProvider(
-      create: (context) => BatchInvitesCubit(),
-      child: BlocBuilder<BatchInvitesCubit, BatchInvitesState>(builder: _body),
-    ),
-  );
 }
 
-Widget existingBatchWidget(BuildContext context, Batch batch) => Column(
+Widget existingCommunityWidget(
+  BuildContext context,
+  ManagedCommunity community,
+) => Column(
   crossAxisAlignment: CrossAxisAlignment.start,
   children: [
     Text(
-      'Batch "${batch.label}"',
+      'Community: "${community.name}"',
       style: const TextStyle(fontWeight: FontWeight.bold),
     ),
-    Row(
-      children: [
-        Text('Due date ${DateFormat('yyyy-MM-dd').format(batch.expiration)}, '),
-        DhtStatusWidget(recordKey: batch.dhtRecordKey, statusWidgets: const {}),
-      ],
-    ),
-    const SizedBox(height: 4),
-    DhtBatchInviteStatusWidget(batch),
+    if (community.expiresAt != null)
+      Text(
+        'Due date ${DateFormat('yyyy-MM-dd').format(community.expiresAt!)}, ',
+      ),
     const SizedBox(height: 8),
     Row(
       children: [
@@ -285,7 +114,10 @@ Widget existingBatchWidget(BuildContext context, Batch batch) => Column(
               files: [
                 XFile.fromData(utf8.encode('FIXME'), mimeType: 'text/plain'),
               ],
-              fileNameOverrides: ['reunicorn_batch_${batch.label}.txt'],
+              // TODO(LGro): Lower case, ASCII, space to underscore
+              fileNameOverrides: [
+                'reunicorn_community_invites_${community.name}.txt',
+              ],
             ),
           ),
           child: const Row(
@@ -301,83 +133,28 @@ Widget existingBatchWidget(BuildContext context, Batch batch) => Column(
     ),
     const SizedBox(height: 4),
     FilledButton.tonal(
-      onPressed: () async => SharePlus.instance.share(
+      onPressed: () => SharePlus.instance.share(
         ShareParams(
           files: [
             XFile.fromData(
-              utf8.encode(jsonEncode(batch.toJson())),
+              utf8.encode(jsonEncode(community.toJson())),
               mimeType: 'text/plain',
             ),
           ],
-          fileNameOverrides: ['reunicorn_batch_admin_${batch.label}.json'],
+          // TODO(LGro): Lower case, ASCII, space to underscore
+          fileNameOverrides: [
+            'reunicorn_community_admin_${community.name}.json',
+          ],
         ),
       ),
       child: const Row(
         children: [
           Icon(Icons.download),
           SizedBox(width: 8),
-          Text('Save batch admin info'),
+          Text('Save community management info'),
           SizedBox(width: 2),
         ],
       ),
     ),
   ],
-);
-
-Widget importBatchWidget(BuildContext context) => IconButton(
-  icon: const Icon(Icons.upload_file),
-  onPressed: () async {
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        final _jsonController = TextEditingController();
-        return AlertDialog(
-          title: const Text('Import Batch Admin JSON'),
-          content: ElevatedButton.icon(
-            icon: const Icon(Icons.upload_file),
-            label: const Text('Pick JSON file'),
-            onPressed: () async {
-              final result = await FilePicker.platform.pickFiles(
-                type: FileType.custom,
-                allowedExtensions: ['json'],
-              );
-              if (result != null && result.files.single.bytes != null) {
-                final jsonString = utf8.decode(result.files.single.bytes!);
-                Navigator.of(context).pop(jsonString);
-              }
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(_jsonController.text),
-              child: const Text('Import'),
-            ),
-          ],
-        );
-      },
-    );
-    if (result != null && result.trim().isNotEmpty) {
-      try {
-        final jsonMap = jsonDecode(result.trim()) as Map<String, dynamic>;
-        if (context.mounted) {
-          await context.read<BatchInvitesCubit>().importBatch(
-            Batch.fromJson(jsonMap),
-          );
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Batch imported successfully')),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Failed to import batch: $e')));
-        }
-      }
-    }
-  },
 );

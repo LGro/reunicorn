@@ -1157,10 +1157,10 @@ mixin _$Member {
  String get name;/// Comment by the organizer, e.g. to explain reason for expelling member
  String? get comment;/// Timestamp of the most recent comment change
  DateTime? get mostRecentCommentUpdate;/// Their public key for initial sharing encryption
- PublicKey? get publicKey;/// The record key where they share information with me
- RecordKey? get sharingRecordKey;/// After a community member was added as a contact, my sharing record key
+ PublicKey? get theirPublicKey;/// The record key where they share information with me
+ RecordKey? get recordKeyThemSharing;/// After a community member was added as a contact, my sharing record key
 /// is stored here as well to allow construction of my `MemberInfo`
- RecordKey? get mySharingRecordKey;
+ RecordKey? get recordKeyMeSharing;
 /// Create a copy of Member
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1173,16 +1173,16 @@ $MemberCopyWith<Member> get copyWith => _$MemberCopyWithImpl<Member>(this as Mem
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Member&&(identical(other.communityRecordKey, communityRecordKey) || other.communityRecordKey == communityRecordKey)&&(identical(other.infoRecordKey, infoRecordKey) || other.infoRecordKey == infoRecordKey)&&(identical(other.name, name) || other.name == name)&&(identical(other.comment, comment) || other.comment == comment)&&(identical(other.mostRecentCommentUpdate, mostRecentCommentUpdate) || other.mostRecentCommentUpdate == mostRecentCommentUpdate)&&(identical(other.publicKey, publicKey) || other.publicKey == publicKey)&&(identical(other.sharingRecordKey, sharingRecordKey) || other.sharingRecordKey == sharingRecordKey)&&(identical(other.mySharingRecordKey, mySharingRecordKey) || other.mySharingRecordKey == mySharingRecordKey));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Member&&(identical(other.communityRecordKey, communityRecordKey) || other.communityRecordKey == communityRecordKey)&&(identical(other.infoRecordKey, infoRecordKey) || other.infoRecordKey == infoRecordKey)&&(identical(other.name, name) || other.name == name)&&(identical(other.comment, comment) || other.comment == comment)&&(identical(other.mostRecentCommentUpdate, mostRecentCommentUpdate) || other.mostRecentCommentUpdate == mostRecentCommentUpdate)&&(identical(other.theirPublicKey, theirPublicKey) || other.theirPublicKey == theirPublicKey)&&(identical(other.recordKeyThemSharing, recordKeyThemSharing) || other.recordKeyThemSharing == recordKeyThemSharing)&&(identical(other.recordKeyMeSharing, recordKeyMeSharing) || other.recordKeyMeSharing == recordKeyMeSharing));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,communityRecordKey,infoRecordKey,name,comment,mostRecentCommentUpdate,publicKey,sharingRecordKey,mySharingRecordKey);
+int get hashCode => Object.hash(runtimeType,communityRecordKey,infoRecordKey,name,comment,mostRecentCommentUpdate,theirPublicKey,recordKeyThemSharing,recordKeyMeSharing);
 
 @override
 String toString() {
-  return 'Member(communityRecordKey: $communityRecordKey, infoRecordKey: $infoRecordKey, name: $name, comment: $comment, mostRecentCommentUpdate: $mostRecentCommentUpdate, publicKey: $publicKey, sharingRecordKey: $sharingRecordKey, mySharingRecordKey: $mySharingRecordKey)';
+  return 'Member(communityRecordKey: $communityRecordKey, infoRecordKey: $infoRecordKey, name: $name, comment: $comment, mostRecentCommentUpdate: $mostRecentCommentUpdate, theirPublicKey: $theirPublicKey, recordKeyThemSharing: $recordKeyThemSharing, recordKeyMeSharing: $recordKeyMeSharing)';
 }
 
 
@@ -1193,7 +1193,7 @@ abstract mixin class $MemberCopyWith<$Res>  {
   factory $MemberCopyWith(Member value, $Res Function(Member) _then) = _$MemberCopyWithImpl;
 @useResult
 $Res call({
- RecordKey communityRecordKey, RecordKey infoRecordKey, String name, String? comment, DateTime? mostRecentCommentUpdate, PublicKey? publicKey, RecordKey? sharingRecordKey, RecordKey? mySharingRecordKey
+ RecordKey communityRecordKey, RecordKey infoRecordKey, String name, String? comment, DateTime? mostRecentCommentUpdate, PublicKey? theirPublicKey, RecordKey? recordKeyThemSharing, RecordKey? recordKeyMeSharing
 });
 
 
@@ -1210,16 +1210,16 @@ class _$MemberCopyWithImpl<$Res>
 
 /// Create a copy of Member
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? communityRecordKey = null,Object? infoRecordKey = null,Object? name = null,Object? comment = freezed,Object? mostRecentCommentUpdate = freezed,Object? publicKey = freezed,Object? sharingRecordKey = freezed,Object? mySharingRecordKey = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? communityRecordKey = null,Object? infoRecordKey = null,Object? name = null,Object? comment = freezed,Object? mostRecentCommentUpdate = freezed,Object? theirPublicKey = freezed,Object? recordKeyThemSharing = freezed,Object? recordKeyMeSharing = freezed,}) {
   return _then(_self.copyWith(
 communityRecordKey: null == communityRecordKey ? _self.communityRecordKey : communityRecordKey // ignore: cast_nullable_to_non_nullable
 as RecordKey,infoRecordKey: null == infoRecordKey ? _self.infoRecordKey : infoRecordKey // ignore: cast_nullable_to_non_nullable
 as RecordKey,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
 as String?,mostRecentCommentUpdate: freezed == mostRecentCommentUpdate ? _self.mostRecentCommentUpdate : mostRecentCommentUpdate // ignore: cast_nullable_to_non_nullable
-as DateTime?,publicKey: freezed == publicKey ? _self.publicKey : publicKey // ignore: cast_nullable_to_non_nullable
-as PublicKey?,sharingRecordKey: freezed == sharingRecordKey ? _self.sharingRecordKey : sharingRecordKey // ignore: cast_nullable_to_non_nullable
-as RecordKey?,mySharingRecordKey: freezed == mySharingRecordKey ? _self.mySharingRecordKey : mySharingRecordKey // ignore: cast_nullable_to_non_nullable
+as DateTime?,theirPublicKey: freezed == theirPublicKey ? _self.theirPublicKey : theirPublicKey // ignore: cast_nullable_to_non_nullable
+as PublicKey?,recordKeyThemSharing: freezed == recordKeyThemSharing ? _self.recordKeyThemSharing : recordKeyThemSharing // ignore: cast_nullable_to_non_nullable
+as RecordKey?,recordKeyMeSharing: freezed == recordKeyMeSharing ? _self.recordKeyMeSharing : recordKeyMeSharing // ignore: cast_nullable_to_non_nullable
 as RecordKey?,
   ));
 }
@@ -1302,10 +1302,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RecordKey communityRecordKey,  RecordKey infoRecordKey,  String name,  String? comment,  DateTime? mostRecentCommentUpdate,  PublicKey? publicKey,  RecordKey? sharingRecordKey,  RecordKey? mySharingRecordKey)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RecordKey communityRecordKey,  RecordKey infoRecordKey,  String name,  String? comment,  DateTime? mostRecentCommentUpdate,  PublicKey? theirPublicKey,  RecordKey? recordKeyThemSharing,  RecordKey? recordKeyMeSharing)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Member() when $default != null:
-return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.comment,_that.mostRecentCommentUpdate,_that.publicKey,_that.sharingRecordKey,_that.mySharingRecordKey);case _:
+return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.comment,_that.mostRecentCommentUpdate,_that.theirPublicKey,_that.recordKeyThemSharing,_that.recordKeyMeSharing);case _:
   return orElse();
 
 }
@@ -1323,10 +1323,10 @@ return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.co
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RecordKey communityRecordKey,  RecordKey infoRecordKey,  String name,  String? comment,  DateTime? mostRecentCommentUpdate,  PublicKey? publicKey,  RecordKey? sharingRecordKey,  RecordKey? mySharingRecordKey)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RecordKey communityRecordKey,  RecordKey infoRecordKey,  String name,  String? comment,  DateTime? mostRecentCommentUpdate,  PublicKey? theirPublicKey,  RecordKey? recordKeyThemSharing,  RecordKey? recordKeyMeSharing)  $default,) {final _that = this;
 switch (_that) {
 case _Member():
-return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.comment,_that.mostRecentCommentUpdate,_that.publicKey,_that.sharingRecordKey,_that.mySharingRecordKey);}
+return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.comment,_that.mostRecentCommentUpdate,_that.theirPublicKey,_that.recordKeyThemSharing,_that.recordKeyMeSharing);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -1340,10 +1340,10 @@ return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.co
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RecordKey communityRecordKey,  RecordKey infoRecordKey,  String name,  String? comment,  DateTime? mostRecentCommentUpdate,  PublicKey? publicKey,  RecordKey? sharingRecordKey,  RecordKey? mySharingRecordKey)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RecordKey communityRecordKey,  RecordKey infoRecordKey,  String name,  String? comment,  DateTime? mostRecentCommentUpdate,  PublicKey? theirPublicKey,  RecordKey? recordKeyThemSharing,  RecordKey? recordKeyMeSharing)?  $default,) {final _that = this;
 switch (_that) {
 case _Member() when $default != null:
-return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.comment,_that.mostRecentCommentUpdate,_that.publicKey,_that.sharingRecordKey,_that.mySharingRecordKey);case _:
+return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.comment,_that.mostRecentCommentUpdate,_that.theirPublicKey,_that.recordKeyThemSharing,_that.recordKeyMeSharing);case _:
   return null;
 
 }
@@ -1355,7 +1355,7 @@ return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.co
 @JsonSerializable()
 
 class _Member implements Member {
-  const _Member({required this.communityRecordKey, required this.infoRecordKey, required this.name, this.comment, this.mostRecentCommentUpdate, this.publicKey, this.sharingRecordKey, this.mySharingRecordKey});
+  const _Member({required this.communityRecordKey, required this.infoRecordKey, required this.name, this.comment, this.mostRecentCommentUpdate, this.theirPublicKey, this.recordKeyThemSharing, this.recordKeyMeSharing});
   factory _Member.fromJson(Map<String, dynamic> json) => _$MemberFromJson(json);
 
 @override final  RecordKey communityRecordKey;
@@ -1367,12 +1367,12 @@ class _Member implements Member {
 /// Timestamp of the most recent comment change
 @override final  DateTime? mostRecentCommentUpdate;
 /// Their public key for initial sharing encryption
-@override final  PublicKey? publicKey;
+@override final  PublicKey? theirPublicKey;
 /// The record key where they share information with me
-@override final  RecordKey? sharingRecordKey;
+@override final  RecordKey? recordKeyThemSharing;
 /// After a community member was added as a contact, my sharing record key
 /// is stored here as well to allow construction of my `MemberInfo`
-@override final  RecordKey? mySharingRecordKey;
+@override final  RecordKey? recordKeyMeSharing;
 
 /// Create a copy of Member
 /// with the given fields replaced by the non-null parameter values.
@@ -1387,16 +1387,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Member&&(identical(other.communityRecordKey, communityRecordKey) || other.communityRecordKey == communityRecordKey)&&(identical(other.infoRecordKey, infoRecordKey) || other.infoRecordKey == infoRecordKey)&&(identical(other.name, name) || other.name == name)&&(identical(other.comment, comment) || other.comment == comment)&&(identical(other.mostRecentCommentUpdate, mostRecentCommentUpdate) || other.mostRecentCommentUpdate == mostRecentCommentUpdate)&&(identical(other.publicKey, publicKey) || other.publicKey == publicKey)&&(identical(other.sharingRecordKey, sharingRecordKey) || other.sharingRecordKey == sharingRecordKey)&&(identical(other.mySharingRecordKey, mySharingRecordKey) || other.mySharingRecordKey == mySharingRecordKey));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Member&&(identical(other.communityRecordKey, communityRecordKey) || other.communityRecordKey == communityRecordKey)&&(identical(other.infoRecordKey, infoRecordKey) || other.infoRecordKey == infoRecordKey)&&(identical(other.name, name) || other.name == name)&&(identical(other.comment, comment) || other.comment == comment)&&(identical(other.mostRecentCommentUpdate, mostRecentCommentUpdate) || other.mostRecentCommentUpdate == mostRecentCommentUpdate)&&(identical(other.theirPublicKey, theirPublicKey) || other.theirPublicKey == theirPublicKey)&&(identical(other.recordKeyThemSharing, recordKeyThemSharing) || other.recordKeyThemSharing == recordKeyThemSharing)&&(identical(other.recordKeyMeSharing, recordKeyMeSharing) || other.recordKeyMeSharing == recordKeyMeSharing));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,communityRecordKey,infoRecordKey,name,comment,mostRecentCommentUpdate,publicKey,sharingRecordKey,mySharingRecordKey);
+int get hashCode => Object.hash(runtimeType,communityRecordKey,infoRecordKey,name,comment,mostRecentCommentUpdate,theirPublicKey,recordKeyThemSharing,recordKeyMeSharing);
 
 @override
 String toString() {
-  return 'Member(communityRecordKey: $communityRecordKey, infoRecordKey: $infoRecordKey, name: $name, comment: $comment, mostRecentCommentUpdate: $mostRecentCommentUpdate, publicKey: $publicKey, sharingRecordKey: $sharingRecordKey, mySharingRecordKey: $mySharingRecordKey)';
+  return 'Member(communityRecordKey: $communityRecordKey, infoRecordKey: $infoRecordKey, name: $name, comment: $comment, mostRecentCommentUpdate: $mostRecentCommentUpdate, theirPublicKey: $theirPublicKey, recordKeyThemSharing: $recordKeyThemSharing, recordKeyMeSharing: $recordKeyMeSharing)';
 }
 
 
@@ -1407,7 +1407,7 @@ abstract mixin class _$MemberCopyWith<$Res> implements $MemberCopyWith<$Res> {
   factory _$MemberCopyWith(_Member value, $Res Function(_Member) _then) = __$MemberCopyWithImpl;
 @override @useResult
 $Res call({
- RecordKey communityRecordKey, RecordKey infoRecordKey, String name, String? comment, DateTime? mostRecentCommentUpdate, PublicKey? publicKey, RecordKey? sharingRecordKey, RecordKey? mySharingRecordKey
+ RecordKey communityRecordKey, RecordKey infoRecordKey, String name, String? comment, DateTime? mostRecentCommentUpdate, PublicKey? theirPublicKey, RecordKey? recordKeyThemSharing, RecordKey? recordKeyMeSharing
 });
 
 
@@ -1424,16 +1424,16 @@ class __$MemberCopyWithImpl<$Res>
 
 /// Create a copy of Member
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? communityRecordKey = null,Object? infoRecordKey = null,Object? name = null,Object? comment = freezed,Object? mostRecentCommentUpdate = freezed,Object? publicKey = freezed,Object? sharingRecordKey = freezed,Object? mySharingRecordKey = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? communityRecordKey = null,Object? infoRecordKey = null,Object? name = null,Object? comment = freezed,Object? mostRecentCommentUpdate = freezed,Object? theirPublicKey = freezed,Object? recordKeyThemSharing = freezed,Object? recordKeyMeSharing = freezed,}) {
   return _then(_Member(
 communityRecordKey: null == communityRecordKey ? _self.communityRecordKey : communityRecordKey // ignore: cast_nullable_to_non_nullable
 as RecordKey,infoRecordKey: null == infoRecordKey ? _self.infoRecordKey : infoRecordKey // ignore: cast_nullable_to_non_nullable
 as RecordKey,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
 as String?,mostRecentCommentUpdate: freezed == mostRecentCommentUpdate ? _self.mostRecentCommentUpdate : mostRecentCommentUpdate // ignore: cast_nullable_to_non_nullable
-as DateTime?,publicKey: freezed == publicKey ? _self.publicKey : publicKey // ignore: cast_nullable_to_non_nullable
-as PublicKey?,sharingRecordKey: freezed == sharingRecordKey ? _self.sharingRecordKey : sharingRecordKey // ignore: cast_nullable_to_non_nullable
-as RecordKey?,mySharingRecordKey: freezed == mySharingRecordKey ? _self.mySharingRecordKey : mySharingRecordKey // ignore: cast_nullable_to_non_nullable
+as DateTime?,theirPublicKey: freezed == theirPublicKey ? _self.theirPublicKey : theirPublicKey // ignore: cast_nullable_to_non_nullable
+as PublicKey?,recordKeyThemSharing: freezed == recordKeyThemSharing ? _self.recordKeyThemSharing : recordKeyThemSharing // ignore: cast_nullable_to_non_nullable
+as RecordKey?,recordKeyMeSharing: freezed == recordKeyMeSharing ? _self.recordKeyMeSharing : recordKeyMeSharing // ignore: cast_nullable_to_non_nullable
 as RecordKey?,
   ));
 }

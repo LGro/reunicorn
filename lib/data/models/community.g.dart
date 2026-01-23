@@ -119,15 +119,15 @@ _Member _$MemberFromJson(Map<String, dynamic> json) => _Member(
   mostRecentCommentUpdate: json['most_recent_comment_update'] == null
       ? null
       : DateTime.parse(json['most_recent_comment_update'] as String),
-  publicKey: json['public_key'] == null
+  theirPublicKey: json['their_public_key'] == null
       ? null
-      : Typed<BarePublicKey>.fromJson(json['public_key']),
-  sharingRecordKey: json['sharing_record_key'] == null
+      : Typed<BarePublicKey>.fromJson(json['their_public_key']),
+  recordKeyThemSharing: json['record_key_them_sharing'] == null
       ? null
-      : RecordKey.fromJson(json['sharing_record_key']),
-  mySharingRecordKey: json['my_sharing_record_key'] == null
+      : RecordKey.fromJson(json['record_key_them_sharing']),
+  recordKeyMeSharing: json['record_key_me_sharing'] == null
       ? null
-      : RecordKey.fromJson(json['my_sharing_record_key']),
+      : RecordKey.fromJson(json['record_key_me_sharing']),
 );
 
 Map<String, dynamic> _$MemberToJson(_Member instance) => <String, dynamic>{
@@ -137,9 +137,9 @@ Map<String, dynamic> _$MemberToJson(_Member instance) => <String, dynamic>{
   'comment': instance.comment,
   'most_recent_comment_update': instance.mostRecentCommentUpdate
       ?.toIso8601String(),
-  'public_key': instance.publicKey?.toJson(),
-  'sharing_record_key': instance.sharingRecordKey?.toJson(),
-  'my_sharing_record_key': instance.mySharingRecordKey?.toJson(),
+  'their_public_key': instance.theirPublicKey?.toJson(),
+  'record_key_them_sharing': instance.recordKeyThemSharing?.toJson(),
+  'record_key_me_sharing': instance.recordKeyMeSharing?.toJson(),
 };
 
 _Community _$CommunityFromJson(Map<String, dynamic> json) => _Community(
