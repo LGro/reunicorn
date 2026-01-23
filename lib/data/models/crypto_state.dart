@@ -28,6 +28,11 @@ sealed class CryptoState with _$CryptoState {
     required PublicKey theirNextPublicKey,
   }) = CryptoEstablishedSymmetric;
 
+  const factory CryptoState.pendingAsymmetric({
+    /// My key pair for asymmetric cryptography
+    required KeyPair myNextKeyPair,
+  }) = CryptoPendingAsymmetric;
+
   const factory CryptoState.initializedAsymmetric({
     /// Initial shared secret for symmetric cryptography
     required SharedSecret initialSharedSecret,

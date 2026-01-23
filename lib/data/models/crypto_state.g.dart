@@ -46,6 +46,20 @@ Map<String, dynamic> _$CryptoEstablishedSymmetricToJson(
   'runtimeType': instance.$type,
 };
 
+CryptoPendingAsymmetric _$CryptoPendingAsymmetricFromJson(
+  Map<String, dynamic> json,
+) => CryptoPendingAsymmetric(
+  myNextKeyPair: KeyPair.fromJson(json['my_next_key_pair']),
+  $type: json['runtimeType'] as String?,
+);
+
+Map<String, dynamic> _$CryptoPendingAsymmetricToJson(
+  CryptoPendingAsymmetric instance,
+) => <String, dynamic>{
+  'my_next_key_pair': instance.myNextKeyPair.toJson(),
+  'runtimeType': instance.$type,
+};
+
 CryptoInitializedAsymmetric _$CryptoInitializedAsymmetricFromJson(
   Map<String, dynamic> json,
 ) => CryptoInitializedAsymmetric(

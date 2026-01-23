@@ -84,7 +84,9 @@ sealed class EncryptionMetaData with _$EncryptionMetaData {
   );
 }
 
-Future<VeilidCryptoPrivate> getVeilidEncryptionCrypto(CryptoState cryptoState) {
+Future<VeilidCryptoPrivate?> getVeilidEncryptionCrypto(
+  CryptoState cryptoState,
+) async {
   switch (cryptoState) {
     // Symmetric crypto
     case CryptoInitializedSymmetric(:final initialSharedSecret) ||
@@ -117,6 +119,8 @@ Future<VeilidCryptoPrivate> getVeilidEncryptionCrypto(CryptoState cryptoState) {
             (secret) =>
                 VeilidCryptoPrivate.fromSharedSecret(secret.kind, secret),
           );
+    case CryptoPendingAsymmetric():
+      return null;
   }
 }
 
@@ -128,8 +132,9 @@ Future<(KeyPair?, PublicKey?, EncryptionMetaData?, Uint8List?)> decrypt(
   CryptoState crypto,
 ) async {
   final domain = utf8.encode('dht');
-  final secrets = <(KeyPair?, PublicKey?, SharedSecret)>[
+  final secrets = <(KeyPair?, PublicKey?, SharedSecret?)>[
     ...await crypto.map(
+      pendingAsymmetric: (s) => [(null, null, null)],
       initializedSymmetric: (s) => [(null, null, s.initialSharedSecret)],
       establishedSymmetric: (s) async => [
         // Already try asymmetric ...
@@ -199,18 +204,21 @@ Future<(KeyPair?, PublicKey?, EncryptionMetaData?, Uint8List?)> decrypt(
   ];
 
   _debugPrint('trying ${secrets.length} secrets');
-  for (final secret in secrets) {
-    if (secret.$2 == null && secret.$1 == null) {
-      _debugPrint('trying psk ${_short(secret.$3)}');
+  for (final (kp, pubKey, sharedSecret) in secrets) {
+    if (sharedSecret == null) {
+      continue;
+    }
+    if (pubKey == null && kp == null) {
+      _debugPrint('trying psk ${_short(sharedSecret)}');
     } else {
-      _debugPrint('trying pub ${_short(secret.$2)} kp ${_short(secret.$1)}');
+      _debugPrint('trying pub ${_short(pubKey)} kp ${_short(kp)}');
     }
 
     final Uint8List decryptedData;
     try {
       decryptedData = await VeilidCryptoPrivate.fromSharedSecret(
-        secret.$3.kind,
-        secret.$3,
+        sharedSecret.kind,
+        sharedSecret,
       ).then((dc) => dc.decrypt(data));
     } on FormatException catch (e) {
       _debugPrint('failed to decrypt with $e');
@@ -220,14 +228,12 @@ Future<(KeyPair?, PublicKey?, EncryptionMetaData?, Uint8List?)> decrypt(
 
     try {
       final (metaData, payload) = EncryptionMetaData.fromBytes(decryptedData);
-      if (secret.$2 == null && secret.$1 == null) {
-        _debugPrint('got with psk ${_short(secret.$3)}');
+      if (pubKey == null && kp == null) {
+        _debugPrint('got with psk ${_short(sharedSecret)}');
       } else {
-        _debugPrint(
-          'got with pub ${_short(secret.$2)} kp ${_short(secret.$1)}',
-        );
+        _debugPrint('got with pub ${_short(pubKey)} kp ${_short(kp)}');
       }
-      return (secret.$1, secret.$2, metaData, payload);
+      return (kp, pubKey, metaData, payload);
     } catch (e) {
       // TODO(LGro): Try previous schema versions (e.g. different
       //             EncryptionMetaData sizes).
@@ -292,6 +298,8 @@ Future<CryptoState> evolveCryptoState(
       theirNextPublicKey: shareBackPubKey,
     );
   },
+  // Pending Asymmetric
+  pendingAsymmetric: (s) => s,
   // Initialized Asymmetric
   initializedAsymmetric: (s) async {
     if (usedPublicKey == null || usedKeyPair == null) {
@@ -346,19 +354,21 @@ Future<DhtConnectionInitialized> initializeEncryptedDhtConnection(
 
   // Already try to make the share back information available
   final encryptionCrypto = await getVeilidEncryptionCrypto(cryptoState);
-  try {
-    await dht.write(
-      shareKey,
-      shareWriter,
-      await encryptionCrypto.encrypt(
-        EncryptionMetaData(
-          shareBackDHTKey: receiveKey,
-          shareBackDHTWriter: receiveWriter,
-        ).toBytes(),
-      ),
-    );
-  } catch (e) {
-    // Best effort, doesn't matter if that fails
+  if (encryptionCrypto != null) {
+    try {
+      await dht.write(
+        shareKey,
+        shareWriter,
+        await encryptionCrypto.encrypt(
+          EncryptionMetaData(
+            shareBackDHTKey: receiveKey,
+            shareBackDHTWriter: receiveWriter,
+          ).toBytes(),
+        ),
+      );
+    } catch (e) {
+      // Best effort, doesn't matter if that fails
+    }
   }
 
   return connectionState;
@@ -501,9 +511,11 @@ Future<bool> writeEncrypted<T extends BinarySerializable>(
         if (value != null) ...value.toBytes(),
       ]);
 
-      final encryptedPayload = await getVeilidEncryptionCrypto(
-        cryptoState,
-      ).then((ec) => ec.encrypt(payload));
+      final encryptionCrypto = await getVeilidEncryptionCrypto(cryptoState);
+      if (encryptionCrypto == null) {
+        return false;
+      }
+      final encryptedPayload = await encryptionCrypto.encrypt(payload);
 
       try {
         //TODO(LGro): Check encrypted payload size < DHT record limit?

@@ -216,7 +216,7 @@ class PictureDiff extends StatelessWidget {
   Widget build(BuildContext context) => (_current == null && _pending == null)
       ? const SizedBox()
       : Padding(
-          padding: const EdgeInsets.only(top: 4),
+          padding: const EdgeInsets.only(top: 4, bottom: 8),
           child: switch (_diff) {
             // TODO(LGro): Mark with icon or fade or otherwise indicate add
             DiffStatus.add => Center(

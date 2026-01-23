@@ -128,7 +128,7 @@ class _LinkToSystemContactPageState extends State<LinkToSystemContactPage> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: SearchableList<Contact>(
+            child: SearchableList(
               items: state.contacts,
               matchesItem: (search, contact) => jsonEncode(
                 contact.toJson(),

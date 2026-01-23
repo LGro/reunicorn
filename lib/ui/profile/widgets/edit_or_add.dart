@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../utils.dart';
+import 'utils.dart';
 
 Future<void> onAddDetail({
   required BuildContext context,
@@ -93,19 +94,11 @@ Future<void> onEditDetail({
       controller: scrollController,
       child: EditOrAddWidget(
         isEditing: true,
-        circles: circles
-            .map(
-              (cId, cLabel) => MapEntry(cId, (
-                cId,
-                cLabel,
-                detailSharingSettings[label]?.contains(cId) ?? false,
-                circleMemberships.values
-                    .where((circles) => circles.contains(cId))
-                    .length,
-              )),
-            )
-            .values
-            .toList(),
+        circles: circlesWithStatus(
+          circles: circles,
+          circleMemberships: circleMemberships,
+          detailSharingSettingsForLabel: detailSharingSettings[label] ?? [],
+        ),
         headlineSuffix: headlineSuffix,
         valueHintText: valueHintText,
         labelHelperText: labelHelperText,

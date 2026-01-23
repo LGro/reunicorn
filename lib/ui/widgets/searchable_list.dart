@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
@@ -8,19 +8,28 @@ class SearchableList<T> extends StatefulWidget {
     required this.items,
     required this.matchesItem,
     required this.buildItemWidget,
+    this.infoWidget,
     super.key,
   });
 
+  /// All items to display and from which to search
   final List<T> items;
+
+  /// String matching function for search selection of generic T
   final bool Function(String, T) matchesItem;
+
+  /// Function to build list item from T instance
   final Widget Function(T) buildItemWidget;
+
+  /// Optional widget to display between search bar and list entries
+  final Widget? infoWidget;
   @override
   State<SearchableList<T>> createState() => _SearchableListState<T>();
 }
 
 class _SearchableListState<T> extends State<SearchableList<T>> {
   List<T> _filteredItems = [];
-  String _query = '';
+  var _query = '';
   final _controller = TextEditingController();
 
   void search(String query) {
@@ -61,6 +70,7 @@ class _SearchableListState<T> extends State<SearchableList<T>> {
           ),
         ),
       ),
+      if (widget.infoWidget != null) widget.infoWidget!,
       if (_filteredItems.isNotEmpty || _query.isNotEmpty)
         if (_filteredItems.isEmpty)
           const Center(

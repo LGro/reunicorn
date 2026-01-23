@@ -51,6 +51,13 @@ open coverage/html/index.html
 
 ```
 
+### WidgetBook
+
+Start this script to re-build and run WidgetBook in Chrome:
+```
+./widgetbook/run.sh
+```
+
 ### Fastlane
 
 For Fastlane setup see https://docs.fastlane.tools/

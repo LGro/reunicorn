@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -15,7 +15,6 @@ import 'package:maplibre_gl/maplibre_gl.dart' hide Circle;
 import 'package:uuid/uuid.dart';
 
 import '../../../data/models/circle.dart';
-import '../../../data/models/coag_contact.dart';
 import '../../../data/models/contact_location.dart';
 import '../../../data/models/profile_info.dart';
 import '../../../data/providers/geocoding/maptiler.dart';
@@ -154,7 +153,11 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
   @override
   void initState() {
     super.initState();
-    unawaited(_asyncInit());
+
+    // This schedules the code to run after the build is complete
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_asyncInit());
+    });
   }
 
   Future<void> _asyncInit() async {
@@ -419,6 +422,7 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
                         child: TextFormField(
                           key: _titleFieldKey,
                           controller: _titleController,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
                           decoration: const InputDecoration(
                             border: OutlineInputBorder(),
                             helperMaxLines: 2,
@@ -432,10 +436,9 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
                             }
                             return null;
                           },
-                          onChanged: (_) {
-                            _titleFieldKey.currentState?.validate();
-                            updateReadyToSubmit();
-                          },
+                          // Postpone execution until the current build frame is done
+                          onChanged: (_) =>
+                              Future.microtask(updateReadyToSubmit),
                         ),
                       ),
                       const SizedBox(height: 8),

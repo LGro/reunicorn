@@ -1,19 +1,15 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 part of 'cubit.dart';
 
-@JsonSerializable()
-final class IntroductionsState extends Equatable {
-  const IntroductionsState({this.contacts = const {}});
+@freezed
+sealed class IntroductionsState with _$IntroductionsState {
+  const factory IntroductionsState({
+    @Default({}) Map<String, CoagContact> contacts,
+    @Default({}) Map<String, Community> communities,
+  }) = _IntroductionsState;
 
   factory IntroductionsState.fromJson(Map<String, dynamic> json) =>
       _$IntroductionsStateFromJson(json);
-
-  final Map<String, CoagContact> contacts;
-
-  Map<String, dynamic> toJson() => _$IntroductionsStateToJson(this);
-
-  @override
-  List<Object?> get props => [contacts];
 }

@@ -4,20 +4,24 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
-import 'package:equatable/equatable.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:uuid/uuid.dart';
+import 'package:veilid/veilid.dart';
 
+import '../../data/models/community.dart';
 import '../../data/models/contact_introduction.dart';
 import '../../data/models/models.dart';
+import '../../data/repositories/community_dht.dart';
 import '../../data/services/storage/base.dart';
 import '../../data/utils.dart';
 
 part 'state.dart';
+part 'cubit.freezed.dart';
 part 'cubit.g.dart';
 
 class IntroductionsCubit extends Cubit<IntroductionsState> {
-  IntroductionsCubit(this._contactStorage) : super(const IntroductionsState()) {
+  IntroductionsCubit(this._contactStorage, this._communityStorage)
+    : super(const IntroductionsState()) {
     _contactSubscription = _contactStorage.changeEvents.listen(
       (_) => fetchData(),
     );
@@ -25,12 +29,15 @@ class IntroductionsCubit extends Cubit<IntroductionsState> {
   }
 
   final Storage<CoagContact> _contactStorage;
+  final Storage<Community> _communityStorage;
   late final StreamSubscription<StorageEvent<CoagContact>> _contactSubscription;
 
   Future<void> fetchData() async {
     final contacts = await _contactStorage.getAll();
+    final communities = await _communityStorage.getAll();
+
     if (!isClosed) {
-      emit(IntroductionsState(contacts: contacts));
+      emit(IntroductionsState(contacts: contacts, communities: communities));
     }
   }
 
@@ -86,9 +93,63 @@ class IntroductionsCubit extends Cubit<IntroductionsState> {
     return contact.coagContactId;
   }
 
+  Future<String?> acceptCommunityMember(Member member) async {
+    final contact = CoagContact(
+      coagContactId: Uuid().v4(),
+      name: member.name,
+      origin: CommunityOrigin.fromMember(member).toString(),
+      myIdentity: await generateKeyPairBest(),
+      myIntroductionKeyPair: await generateKeyPairBest(),
+      // TODO(LGro): or do we need to initialize sharing settings?
+      dhtConnection: (member.recordKeyThemSharing == null)
+          ? null
+          : DhtConnectionState.invited(
+              recordKeyThemSharing: member.recordKeyThemSharing!,
+            ),
+      connectionCrypto: await generateKeyPairBest().then(
+        (kp) => (member.theirPublicKey == null)
+            ? CryptoState.pendingAsymmetric(myNextKeyPair: kp)
+            : CryptoState.establishedAsymmetric(
+                myKeyPair: kp,
+                myNextKeyPair: kp,
+                theirPublicKey: member.theirPublicKey!,
+                theirNextPublicKey: member.theirPublicKey!,
+              ),
+      ),
+    );
+
+    await _contactStorage.set(contact.coagContactId, contact);
+
+    return contact.coagContactId;
+  }
+
   @override
   Future<void> close() {
     unawaited(_contactSubscription.cancel());
     return super.close();
   }
+}
+
+List<(String?, Member)> pendingCommunityIntroductions(
+  Iterable<Community> communities,
+  Iterable<CoagContact> contacts,
+) {
+  // Or should we be checking contact origins instead?
+  final establishedReceivingRecordKeys = contacts
+      .map((c) => c.dhtConnection?.recordKeyThemSharing)
+      .whereType<RecordKey>()
+      .toSet();
+  final introductions = <(String?, Member)>[];
+  for (final community in communities) {
+    for (final member in community.members) {
+      if (establishedReceivingRecordKeys.contains(
+        member.recordKeyThemSharing,
+      )) {
+        // Skip member if we already added them as a contact
+        continue;
+      }
+      introductions.add((community.info?.name, member));
+    }
+  }
+  return introductions;
 }

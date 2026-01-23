@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -77,7 +77,7 @@ Future<void> showModalAddressLocationDetails(
   required String contactName,
   required String label,
   required ContactAddressLocation location,
-}) async => showModalBottomSheet<void>(
+}) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
   builder: (modalContext) => DraggableScrollableSheet(
@@ -127,7 +127,7 @@ Future<void> showModalAddressLocationDetails(
               Center(
                 child: FilledButton.tonal(
                   child: const Text('Contact details'),
-                  onPressed: () async => Navigator.push(
+                  onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute<ContactPage>(
                       builder: (_) =>
@@ -152,7 +152,7 @@ Future<void> showModalTemporaryLocationDetails(
   bool showEditAndDelete = false,
   Map<String, String> circles = const {},
   Map<String, List<String>> circleMemberships = const {},
-}) async => showModalBottomSheet<void>(
+}) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
   builder: (modalContext) => DraggableScrollableSheet(
@@ -309,10 +309,9 @@ Future<void> showModalTemporaryLocationDetails(
                     ),
                   ),
                   FilledButton(
-                    onPressed: () async => Navigator.push(
-                      context,
+                    onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute<ScheduleWidget>(
-                        builder: (_) => ScheduleWidget(
+                        builder: (context) => ScheduleWidget(
                           locationId: locationId,
                           location: location,
                         ),
@@ -329,76 +328,108 @@ Future<void> showModalTemporaryLocationDetails(
   ),
 );
 
-Widget checkInAndScheduleButtons() => BlocProvider(
-  create: (context) => LocationsCubit(
-    context.read<Storage<ProfileInfo>>(),
-    context.read<Storage<Circle>>(),
-  ),
-  child: BlocConsumer<LocationsCubit, LocationsState>(
-    listener: (context, state) {},
-    builder: (context, state) => Align(
-      alignment: AlignmentDirectional.bottomStart,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
-        child: Row(
+class AddAndCheckInButtons extends StatelessWidget {
+  const AddAndCheckInButtons({super.key});
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    children: [
+      FilledButton(
+        onPressed: () => showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          builder: (modalContext) => DraggableScrollableSheet(
+            expand: false,
+            maxChildSize: 0.9,
+            initialChildSize: 0.8,
+            builder: (_, scrollController) => SingleChildScrollView(
+              controller: scrollController,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [CheckInWidget()],
+                ),
+              ),
+            ),
+          ),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Expanded(child: SizedBox()),
-            FilledButton(
-              onPressed: () async => showModalBottomSheet<void>(
-                context: context,
-                isScrollControlled: true,
-                builder: (modalContext) => DraggableScrollableSheet(
-                  expand: false,
-                  maxChildSize: 0.9,
-                  initialChildSize: 0.8,
-                  builder: (_, scrollController) => SingleChildScrollView(
-                    controller: scrollController,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        bottom: MediaQuery.of(modalContext).viewInsets.bottom,
-                      ),
-                      child: const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [CheckInWidget()],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.pin_drop),
-                  SizedBox(width: 8),
-                  Text('Check-in'),
-                ],
-              ),
-            ),
-            const Expanded(child: SizedBox()),
-            FilledButton(
-              onPressed: () async => Navigator.push(
-                context,
-                MaterialPageRoute<ScheduleWidget>(
-                  builder: (_) => const ScheduleWidget(),
-                ),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.calendar_month),
-                  SizedBox(width: 8),
-                  Text('Schedule'),
-                ],
-              ),
-            ),
-            const Expanded(child: SizedBox()),
+            Icon(Icons.pin_drop),
+            SizedBox(width: 8),
+            Text('Check-in'),
           ],
         ),
       ),
-    ),
-  ),
-);
+      FilledButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute<ScheduleWidget>(
+            builder: (_) => const ScheduleWidget(),
+          ),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.calendar_month),
+            SizedBox(width: 8),
+            Text('Schedule'),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+class TimeSelectionSlider extends StatelessWidget {
+  const TimeSelectionSlider({
+    required this.selection,
+    required this.labels,
+    required this.callback,
+    super.key,
+  });
+
+  final DateTime? selection;
+  final List<DateTime> labels;
+  final void Function(DateTime) callback;
+
+  @override
+  Widget build(BuildContext context) => (labels.length < 2)
+      ? const SizedBox()
+      : Card(
+          child: Padding(
+            padding: const EdgeInsetsGeometry.all(4),
+            child: Slider(
+              value: (selection == null)
+                  ? 0
+                  : (labels
+                                .asMap()
+                                .entries
+                                .where(
+                                  (e) =>
+                                      e.value.month == selection!.month &&
+                                      e.value.year == selection!.year,
+                                )
+                                .map((e) => e.key)
+                                .firstOrNull ??
+                            0)
+                        .toDouble(),
+              max: (labels.length - 1).toDouble(),
+              divisions: labels.length - 1,
+              label: DateFormat(
+                (labels.first.year == labels.last.year) ? 'MMM' : 'MMM yy',
+              ).format(selection ?? labels.first),
+              onChanged: (value) => callback(labels[value.round()]),
+            ),
+          ),
+        );
+}
 
 Map<String, Object> toGeoJson(List<LatLng> locations) => {
   'type': 'FeatureCollection',
@@ -461,6 +492,7 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   MapLibreMapController? _controller;
   Map<String, MarkerData> _markers = {};
+  DateTime? _timeSelection;
 
   Future<void> _showClusterMarkerList(List<String> markerIds) async {
     final defaultImageData = await DefaultAssetBundle.of(
@@ -563,9 +595,14 @@ class _MapPageState extends State<MapPage> {
     super.dispose();
   }
 
-  List<MarkerData> _getMarkers(BuildContext context, MapState state) => [
+  List<MarkerData> _getMarkers(
+    BuildContext context,
+    MapState state,
+    DateTime? timeSelection,
+  ) => [
     ...filterTemporaryLocations(
       state.profileInfo?.temporaryLocations ?? {},
+      timeSelection: timeSelection,
     ).entries.map(
       (l) => MarkerData(
         coordinates: LatLng(l.value.latitude, l.value.longitude),
@@ -587,21 +624,25 @@ class _MapPageState extends State<MapPage> {
     // Contacts temporary locations
     ...state.contacts
         .map(
-          (c) => filterTemporaryLocations(c.temporaryLocations).entries.map(
-            (l) => MarkerData(
-              coordinates: LatLng(l.value.latitude, l.value.longitude),
-              onTap: () async => showModalTemporaryLocationDetails(
-                context,
-                contactName: c.name,
-                location: l.value.copyWith(coagContactId: c.coagContactId),
-                locationId: l.key,
+          (c) =>
+              filterTemporaryLocations(
+                c.temporaryLocations,
+                timeSelection: timeSelection,
+              ).entries.map(
+                (l) => MarkerData(
+                  coordinates: LatLng(l.value.latitude, l.value.longitude),
+                  onTap: () => showModalTemporaryLocationDetails(
+                    context,
+                    contactName: c.name,
+                    location: l.value.copyWith(coagContactId: c.coagContactId),
+                    locationId: l.key,
+                  ),
+                  picture: c.details?.picture,
+                  title: c.name,
+                  subTitle: l.value.name,
+                  type: MarkerType.temporary,
+                ),
               ),
-              picture: c.details?.picture,
-              title: c.name,
-              subTitle: l.value.name,
-              type: MarkerType.temporary,
-            ),
-          ),
         )
         .expand((l) => l),
     // Profile address locations
@@ -611,7 +652,7 @@ class _MapPageState extends State<MapPage> {
             label,
             MarkerData(
               coordinates: LatLng(location.latitude, location.longitude),
-              onTap: () async => showModalAddressLocationDetails(
+              onTap: () => showModalAddressLocationDetails(
                 context,
                 contactName: 'Me',
                 label: label,
@@ -634,7 +675,7 @@ class _MapPageState extends State<MapPage> {
                   label,
                   MarkerData(
                     coordinates: LatLng(location.latitude, location.longitude),
-                    onTap: () async => showModalAddressLocationDetails(
+                    onTap: () => showModalAddressLocationDetails(
                       context,
                       label: label,
                       contactName: c.name,
@@ -689,7 +730,7 @@ class _MapPageState extends State<MapPage> {
         if (_controller != null) {
           final sourceIds = await _controller!.getSourceIds();
           if (sourceIds.contains('points') && context.mounted) {
-            final markers = _getMarkers(context, state);
+            final markers = _getMarkers(context, state, _timeSelection);
             await _controller?.setGeoJsonSource(
               'points',
               toGeoJson(markers.map((m) => m.coordinates).toList()),
@@ -741,7 +782,11 @@ class _MapPageState extends State<MapPage> {
                     minMaxZoomPreference: const MinMaxZoomPreference(null, 22),
                     onMapCreated: _onMapCreated,
                     onStyleLoadedCallback: () async {
-                      final markers = _getMarkers(context, state);
+                      final markers = _getMarkers(
+                        context,
+                        state,
+                        _timeSelection,
+                      );
 
                       final clusterCircleColor = colorToHex(
                         Theme.of(context).colorScheme.primary,
@@ -831,7 +876,43 @@ class _MapPageState extends State<MapPage> {
                     tiltGesturesEnabled: false,
                     dragEnabled: false,
                   ),
-                  checkInAndScheduleButtons(),
+                  Align(
+                    alignment: AlignmentDirectional.bottomStart,
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 8,
+                        right: 8,
+                        bottom: 8,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // TimeSelectionSlider(
+                          //   selection: _timeSelection,
+                          //   labels: <ContactTemporaryLocation>[
+                          //     ...filterTemporaryLocations(
+                          //       state.profileInfo?.temporaryLocations ?? {},
+                          //     ).values,
+                          //     ...state.contacts
+                          //         .map(
+                          //           (c) => filterTemporaryLocations(
+                          //             c.temporaryLocations,
+                          //           ).values,
+                          //         )
+                          //         .expand((l) => l),
+                          //   ].map((l) => l.end).sorted(),
+                          //   callback: (date) {
+                          //     setState(() {
+                          //       _timeSelection = date;
+                          //     });
+                          //   },
+                          // ),
+                          // const SizedBox(height: 4),
+                          const AddAndCheckInButtons(),
+                        ],
+                      ),
+                    ),
+                  ),
                   Align(
                     alignment: AlignmentDirectional.topEnd,
                     child: Padding(

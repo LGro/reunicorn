@@ -23,6 +23,10 @@ CryptoState _$CryptoStateFromJson(
           return CryptoEstablishedSymmetric.fromJson(
             json
           );
+                case 'pendingAsymmetric':
+          return CryptoPendingAsymmetric.fromJson(
+            json
+          );
                 case 'initializedAsymmetric':
           return CryptoInitializedAsymmetric.fromJson(
             json
@@ -121,12 +125,13 @@ extension CryptoStatePatterns on CryptoState {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( CryptoInitializedSymmetric value)?  initializedSymmetric,TResult Function( CryptoEstablishedSymmetric value)?  establishedSymmetric,TResult Function( CryptoInitializedAsymmetric value)?  initializedAsymmetric,TResult Function( CryptoEstablishedAsymmetric value)?  establishedAsymmetric,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( CryptoInitializedSymmetric value)?  initializedSymmetric,TResult Function( CryptoEstablishedSymmetric value)?  establishedSymmetric,TResult Function( CryptoPendingAsymmetric value)?  pendingAsymmetric,TResult Function( CryptoInitializedAsymmetric value)?  initializedAsymmetric,TResult Function( CryptoEstablishedAsymmetric value)?  establishedAsymmetric,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case CryptoInitializedSymmetric() when initializedSymmetric != null:
 return initializedSymmetric(_that);case CryptoEstablishedSymmetric() when establishedSymmetric != null:
-return establishedSymmetric(_that);case CryptoInitializedAsymmetric() when initializedAsymmetric != null:
+return establishedSymmetric(_that);case CryptoPendingAsymmetric() when pendingAsymmetric != null:
+return pendingAsymmetric(_that);case CryptoInitializedAsymmetric() when initializedAsymmetric != null:
 return initializedAsymmetric(_that);case CryptoEstablishedAsymmetric() when establishedAsymmetric != null:
 return establishedAsymmetric(_that);case _:
   return orElse();
@@ -146,12 +151,13 @@ return establishedAsymmetric(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( CryptoInitializedSymmetric value)  initializedSymmetric,required TResult Function( CryptoEstablishedSymmetric value)  establishedSymmetric,required TResult Function( CryptoInitializedAsymmetric value)  initializedAsymmetric,required TResult Function( CryptoEstablishedAsymmetric value)  establishedAsymmetric,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( CryptoInitializedSymmetric value)  initializedSymmetric,required TResult Function( CryptoEstablishedSymmetric value)  establishedSymmetric,required TResult Function( CryptoPendingAsymmetric value)  pendingAsymmetric,required TResult Function( CryptoInitializedAsymmetric value)  initializedAsymmetric,required TResult Function( CryptoEstablishedAsymmetric value)  establishedAsymmetric,}){
 final _that = this;
 switch (_that) {
 case CryptoInitializedSymmetric():
 return initializedSymmetric(_that);case CryptoEstablishedSymmetric():
-return establishedSymmetric(_that);case CryptoInitializedAsymmetric():
+return establishedSymmetric(_that);case CryptoPendingAsymmetric():
+return pendingAsymmetric(_that);case CryptoInitializedAsymmetric():
 return initializedAsymmetric(_that);case CryptoEstablishedAsymmetric():
 return establishedAsymmetric(_that);}
 }
@@ -167,12 +173,13 @@ return establishedAsymmetric(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( CryptoInitializedSymmetric value)?  initializedSymmetric,TResult? Function( CryptoEstablishedSymmetric value)?  establishedSymmetric,TResult? Function( CryptoInitializedAsymmetric value)?  initializedAsymmetric,TResult? Function( CryptoEstablishedAsymmetric value)?  establishedAsymmetric,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( CryptoInitializedSymmetric value)?  initializedSymmetric,TResult? Function( CryptoEstablishedSymmetric value)?  establishedSymmetric,TResult? Function( CryptoPendingAsymmetric value)?  pendingAsymmetric,TResult? Function( CryptoInitializedAsymmetric value)?  initializedAsymmetric,TResult? Function( CryptoEstablishedAsymmetric value)?  establishedAsymmetric,}){
 final _that = this;
 switch (_that) {
 case CryptoInitializedSymmetric() when initializedSymmetric != null:
 return initializedSymmetric(_that);case CryptoEstablishedSymmetric() when establishedSymmetric != null:
-return establishedSymmetric(_that);case CryptoInitializedAsymmetric() when initializedAsymmetric != null:
+return establishedSymmetric(_that);case CryptoPendingAsymmetric() when pendingAsymmetric != null:
+return pendingAsymmetric(_that);case CryptoInitializedAsymmetric() when initializedAsymmetric != null:
 return initializedAsymmetric(_that);case CryptoEstablishedAsymmetric() when establishedAsymmetric != null:
 return establishedAsymmetric(_that);case _:
   return null;
@@ -191,11 +198,12 @@ return establishedAsymmetric(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair)?  initializedSymmetric,TResult Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)?  establishedSymmetric,TResult Function( SharedSecret initialSharedSecret,  KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)?  initializedAsymmetric,TResult Function( KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirPublicKey,  PublicKey theirNextPublicKey)?  establishedAsymmetric,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair)?  initializedSymmetric,TResult Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)?  establishedSymmetric,TResult Function( KeyPair myNextKeyPair)?  pendingAsymmetric,TResult Function( SharedSecret initialSharedSecret,  KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)?  initializedAsymmetric,TResult Function( KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirPublicKey,  PublicKey theirNextPublicKey)?  establishedAsymmetric,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case CryptoInitializedSymmetric() when initializedSymmetric != null:
 return initializedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair);case CryptoEstablishedSymmetric() when establishedSymmetric != null:
-return establishedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoInitializedAsymmetric() when initializedAsymmetric != null:
+return establishedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoPendingAsymmetric() when pendingAsymmetric != null:
+return pendingAsymmetric(_that.myNextKeyPair);case CryptoInitializedAsymmetric() when initializedAsymmetric != null:
 return initializedAsymmetric(_that.initialSharedSecret,_that.myKeyPair,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoEstablishedAsymmetric() when establishedAsymmetric != null:
 return establishedAsymmetric(_that.myKeyPair,_that.myNextKeyPair,_that.theirPublicKey,_that.theirNextPublicKey);case _:
   return orElse();
@@ -215,11 +223,12 @@ return establishedAsymmetric(_that.myKeyPair,_that.myNextKeyPair,_that.theirPubl
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair)  initializedSymmetric,required TResult Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)  establishedSymmetric,required TResult Function( SharedSecret initialSharedSecret,  KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)  initializedAsymmetric,required TResult Function( KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirPublicKey,  PublicKey theirNextPublicKey)  establishedAsymmetric,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair)  initializedSymmetric,required TResult Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)  establishedSymmetric,required TResult Function( KeyPair myNextKeyPair)  pendingAsymmetric,required TResult Function( SharedSecret initialSharedSecret,  KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)  initializedAsymmetric,required TResult Function( KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirPublicKey,  PublicKey theirNextPublicKey)  establishedAsymmetric,}) {final _that = this;
 switch (_that) {
 case CryptoInitializedSymmetric():
 return initializedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair);case CryptoEstablishedSymmetric():
-return establishedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoInitializedAsymmetric():
+return establishedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoPendingAsymmetric():
+return pendingAsymmetric(_that.myNextKeyPair);case CryptoInitializedAsymmetric():
 return initializedAsymmetric(_that.initialSharedSecret,_that.myKeyPair,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoEstablishedAsymmetric():
 return establishedAsymmetric(_that.myKeyPair,_that.myNextKeyPair,_that.theirPublicKey,_that.theirNextPublicKey);}
 }
@@ -235,11 +244,12 @@ return establishedAsymmetric(_that.myKeyPair,_that.myNextKeyPair,_that.theirPubl
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair)?  initializedSymmetric,TResult? Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)?  establishedSymmetric,TResult? Function( SharedSecret initialSharedSecret,  KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)?  initializedAsymmetric,TResult? Function( KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirPublicKey,  PublicKey theirNextPublicKey)?  establishedAsymmetric,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair)?  initializedSymmetric,TResult? Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)?  establishedSymmetric,TResult? Function( KeyPair myNextKeyPair)?  pendingAsymmetric,TResult? Function( SharedSecret initialSharedSecret,  KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)?  initializedAsymmetric,TResult? Function( KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirPublicKey,  PublicKey theirNextPublicKey)?  establishedAsymmetric,}) {final _that = this;
 switch (_that) {
 case CryptoInitializedSymmetric() when initializedSymmetric != null:
 return initializedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair);case CryptoEstablishedSymmetric() when establishedSymmetric != null:
-return establishedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoInitializedAsymmetric() when initializedAsymmetric != null:
+return establishedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoPendingAsymmetric() when pendingAsymmetric != null:
+return pendingAsymmetric(_that.myNextKeyPair);case CryptoInitializedAsymmetric() when initializedAsymmetric != null:
 return initializedAsymmetric(_that.initialSharedSecret,_that.myKeyPair,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoEstablishedAsymmetric() when establishedAsymmetric != null:
 return establishedAsymmetric(_that.myKeyPair,_that.myNextKeyPair,_that.theirPublicKey,_that.theirNextPublicKey);case _:
   return null;
@@ -400,6 +410,80 @@ initialSharedSecret: null == initialSharedSecret ? _self.initialSharedSecret : i
 as SharedSecret,myNextKeyPair: null == myNextKeyPair ? _self.myNextKeyPair : myNextKeyPair // ignore: cast_nullable_to_non_nullable
 as KeyPair,theirNextPublicKey: null == theirNextPublicKey ? _self.theirNextPublicKey : theirNextPublicKey // ignore: cast_nullable_to_non_nullable
 as PublicKey,
+  ));
+}
+
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class CryptoPendingAsymmetric implements CryptoState {
+  const CryptoPendingAsymmetric({required this.myNextKeyPair, final  String? $type}): $type = $type ?? 'pendingAsymmetric';
+  factory CryptoPendingAsymmetric.fromJson(Map<String, dynamic> json) => _$CryptoPendingAsymmetricFromJson(json);
+
+/// My key pair for asymmetric cryptography
+@override final  KeyPair myNextKeyPair;
+
+@JsonKey(name: 'runtimeType')
+final String $type;
+
+
+/// Create a copy of CryptoState
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$CryptoPendingAsymmetricCopyWith<CryptoPendingAsymmetric> get copyWith => _$CryptoPendingAsymmetricCopyWithImpl<CryptoPendingAsymmetric>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$CryptoPendingAsymmetricToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CryptoPendingAsymmetric&&(identical(other.myNextKeyPair, myNextKeyPair) || other.myNextKeyPair == myNextKeyPair));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,myNextKeyPair);
+
+@override
+String toString() {
+  return 'CryptoState.pendingAsymmetric(myNextKeyPair: $myNextKeyPair)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $CryptoPendingAsymmetricCopyWith<$Res> implements $CryptoStateCopyWith<$Res> {
+  factory $CryptoPendingAsymmetricCopyWith(CryptoPendingAsymmetric value, $Res Function(CryptoPendingAsymmetric) _then) = _$CryptoPendingAsymmetricCopyWithImpl;
+@override @useResult
+$Res call({
+ KeyPair myNextKeyPair
+});
+
+
+
+
+}
+/// @nodoc
+class _$CryptoPendingAsymmetricCopyWithImpl<$Res>
+    implements $CryptoPendingAsymmetricCopyWith<$Res> {
+  _$CryptoPendingAsymmetricCopyWithImpl(this._self, this._then);
+
+  final CryptoPendingAsymmetric _self;
+  final $Res Function(CryptoPendingAsymmetric) _then;
+
+/// Create a copy of CryptoState
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? myNextKeyPair = null,}) {
+  return _then(CryptoPendingAsymmetric(
+myNextKeyPair: null == myNextKeyPair ? _self.myNextKeyPair : myNextKeyPair // ignore: cast_nullable_to_non_nullable
+as KeyPair,
   ));
 }
 

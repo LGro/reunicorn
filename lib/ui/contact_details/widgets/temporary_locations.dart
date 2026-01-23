@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
@@ -15,47 +15,56 @@ int numberContactsShared(
     .where((c) => c.toSet().intersectsWith(circles.toSet()))
     .length;
 
-Widget locationTile(
-  BuildContext context,
-  ContactTemporaryLocation location, {
-  Map<String, List<String>>? circleMemberships,
-  Future<void> Function()? onTap,
-}) => ListTile(
-  title: Text(location.name),
-  contentPadding: EdgeInsets.zero,
-  onTap: onTap,
-  subtitle: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        'From: ${DateFormat.yMd(Localizations.localeOf(context).languageCode).format(location.start)}',
-      ),
-      if (location.end != location.start)
+class LocationTile extends StatelessWidget {
+  final ContactTemporaryLocation _location;
+  final Map<String, List<String>>? circleMemberships;
+  final Future<void> Function()? onTap;
+
+  const LocationTile(
+    this._location, {
+    this.circleMemberships,
+    this.onTap,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    title: Text(_location.name),
+    contentPadding: EdgeInsets.zero,
+    onTap: onTap,
+    subtitle: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Text(
-          'Till: ${DateFormat.yMd(Localizations.localeOf(context).languageCode).format(location.end)}',
+          'From: ${DateFormat.yMd(Localizations.localeOf(context).languageCode).format(_location.start)}',
         ),
-      // Text('Lon: ${location.longitude.toStringAsFixed(4)}, '
-      //     'Lat: ${location.latitude.toStringAsFixed(4)}'),
-      if (circleMemberships != null)
-        Text(
-          'Shared with ${numberContactsShared(circleMemberships.values, location.circles)} '
-          'contact${(numberContactsShared(circleMemberships.values, location.circles) == 1) ? '' : 's'}',
-        ),
-      if (location.details.isNotEmpty) Text(location.details),
-    ],
-  ),
-  trailing:
-      // TODO: Better icon to indicate checked in
-      (location.checkedIn && DateTime.now().isBefore(location.end))
-      ? const Icon(Icons.pin_drop_outlined)
-      : null,
-);
+        if (_location.end != _location.start)
+          Text(
+            'Till: ${DateFormat.yMd(Localizations.localeOf(context).languageCode).format(_location.end)}',
+          ),
+        // Text('Lon: ${location.longitude.toStringAsFixed(4)}, '
+        //     'Lat: ${location.latitude.toStringAsFixed(4)}'),
+        if (circleMemberships != null)
+          Text(
+            'Shared with ${numberContactsShared(circleMemberships!.values, _location.circles)} '
+            'contact${(numberContactsShared(circleMemberships!.values, _location.circles) == 1) ? '' : 's'}',
+          ),
+        if (_location.details.isNotEmpty) Text(_location.details),
+      ],
+    ),
+    trailing:
+        // TODO: Better icon to indicate checked in
+        (_location.checkedIn && DateTime.now().isBefore(_location.end))
+        ? const Icon(Icons.pin_drop_outlined)
+        : null,
+  );
+}
 
 class TemporaryLocationsCard extends StatelessWidget {
-  const TemporaryLocationsCard(this.title, this.locations, {super.key});
+  const TemporaryLocationsCard(this.title, this._locations, {super.key});
 
   final Widget title;
-  final Map<String, ContactTemporaryLocation> locations;
+  final Map<String, ContactTemporaryLocation> _locations;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -69,7 +78,7 @@ class TemporaryLocationsCard extends StatelessWidget {
         padding: const EdgeInsets.only(left: 4, right: 4, top: 4),
         child: Card(
           child: Column(
-            children: locations.values
+            children: _locations.values
                 .where((l) => l.end.isAfter(DateTime.now()))
                 .map(
                   (l) => Padding(
@@ -78,8 +87,7 @@ class TemporaryLocationsCard extends StatelessWidget {
                       right: 16,
                       bottom: 4,
                     ),
-                    child: locationTile(
-                      context,
+                    child: LocationTile(
                       l,
                       onTap: () async => context.goNamed(
                         'mapAtLocation',

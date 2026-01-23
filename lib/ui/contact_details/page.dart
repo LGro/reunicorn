@@ -485,6 +485,7 @@ class _ContactPageState extends State<ContactPage> {
                 establishedSymmetric: (_) => 'estSym',
                 initializedAsymmetric: (_) => 'initAsym',
                 establishedAsymmetric: (_) => 'estAsym',
+                pendingAsymmetric: (_) => 'penAsym',
               ),
             ),
             if (contact.profileSharingStatus.mostRecentAttempt != null &&

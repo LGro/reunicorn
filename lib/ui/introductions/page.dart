@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'package:flutter/material.dart';
@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/models/coag_contact.dart';
-import '../../data/models/contact_introduction.dart';
+import '../../data/models/community.dart';
 import '../../data/services/storage/base.dart';
 import '../introduce_contacts/page.dart';
 import '../utils.dart';
@@ -14,31 +14,27 @@ import 'cubit.dart';
 
 class IntroductionListTile extends StatelessWidget {
   const IntroductionListTile({
-    required this.introducer,
-    required this.introduction,
+    required this.introducerName,
+    required this.otherName,
+    required this.message,
+    required this.acceptCallback,
     super.key,
   });
 
-  final CoagContact introducer;
-  final ContactIntroduction introduction;
+  final String introducerName;
+  final String otherName;
+  final String? message;
+  final Future<String?> Function() acceptCallback;
 
   @override
   Widget build(BuildContext context) => ListTile(
-    title: Text(
-      '${introduction.otherName} via ${introducer.name}',
-      softWrap: true,
-    ),
-    subtitle: (introduction.message == null)
-        ? null
-        : Text(introduction.message!, softWrap: true),
+    title: Text('$otherName via $introducerName', softWrap: true),
+    subtitle: (message == null) ? null : Text(message!, softWrap: true),
     onTap: () => showDialog<void>(
       context: context,
       builder: (alertContext) => AlertDialog(
         titlePadding: const EdgeInsets.only(left: 16, right: 16, top: 16),
-        title: Text(
-          'Accept introduction to '
-          '${introduction.otherName}',
-        ),
+        title: Text('Accept introduction to $otherName'),
         actions: [
           const SizedBox(height: 4),
           Center(
@@ -51,9 +47,7 @@ class IntroductionListTile extends StatelessWidget {
           Center(
             child: FilledButton(
               onPressed: () async {
-                final coagContactId = await context
-                    .read<IntroductionsCubit>()
-                    .accept(introducer, introduction);
+                final coagContactId = await acceptCallback();
                 if (context.mounted && coagContactId != null) {
                   context.goNamed(
                     'contactDetails',
@@ -64,10 +58,7 @@ class IntroductionListTile extends StatelessWidget {
                 } else if (context.mounted && coagContactId == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text(
-                        'Accepting introduction failed. '
-                        'Ask the introducer to send one again.',
-                      ),
+                      content: Text('Accepting introduction failed.'),
                     ),
                   );
                 }
@@ -112,23 +103,45 @@ class IntroductionsPage extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Introductions')),
     body: BlocProvider(
-      create: (context) =>
-          IntroductionsCubit(context.read<Storage<CoagContact>>()),
+      create: (context) => IntroductionsCubit(
+        context.read<Storage<CoagContact>>(),
+        context.read<Storage<Community>>(),
+      ),
       child: BlocConsumer<IntroductionsCubit, IntroductionsState>(
         listener: (context, state) {},
         builder: (context, state) {
-          final introductions = pendingIntroductions(state.contacts.values);
+          final introductionTiles = [
+            ...pendingIntroductions(state.contacts.values).map(
+              (entry) => IntroductionListTile(
+                introducerName: entry.$1.name,
+                otherName: entry.$2.otherName,
+                message: entry.$2.message,
+                acceptCallback: () => context.read<IntroductionsCubit>().accept(
+                  entry.$1,
+                  entry.$2,
+                ),
+              ),
+            ),
+            ...pendingCommunityIntroductions(
+              state.communities.values,
+              state.contacts.values,
+            ).map(
+              (e) => IntroductionListTile(
+                introducerName: e.$1 ?? 'Unknown Community',
+                otherName: e.$2.name,
+                message: e.$2.comment,
+                // TODO(LGro): Implement community member add callback,
+                // community dht repo might already have something to use
+                acceptCallback: () => context
+                    .read<IntroductionsCubit>()
+                    .acceptCommunityMember(e.$2),
+              ),
+            ),
+          ];
           return ListView(
-            children: introductions.isEmpty
+            children: introductionTiles.isEmpty
                 ? _noIntroductionsBody(context)
-                : introductions
-                      .map(
-                        (entry) => IntroductionListTile(
-                          introducer: entry.$1,
-                          introduction: entry.$2,
-                        ),
-                      )
-                      .toList(),
+                : introductionTiles,
           );
         },
       ),

@@ -1,39 +1,131 @@
-// // Copyright 2024 The Reunicorn Authors. All rights reserved.
-// // SPDX-License-Identifier: MPL-2.0
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
+// SPDX-License-Identifier: MPL-2.0
 
-// import 'package:reunicorn/data/models/coag_contact.dart';
-// import 'package:reunicorn/data/repositories/contacts.dart';
-// import 'package:reunicorn/ui/profile/page.dart';
-// import 'package:flutter/material.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:flutter_contacts/flutter_contacts.dart';
-// import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:reunicorn/data/models/circle.dart';
+import 'package:reunicorn/data/models/models.dart';
+import 'package:reunicorn/data/models/profile_info.dart';
+import 'package:reunicorn/data/services/storage/base.dart';
+import 'package:reunicorn/data/services/storage/memory.dart';
+import 'package:reunicorn/l10n/app_localizations.dart';
+import 'package:reunicorn/ui/profile/cubit.dart';
+import 'package:reunicorn/ui/profile/page.dart';
 
-// import '../mocked_providers.dart';
-
-// Future<Widget> createProfilePage(ContactsRepository contactsRepository) async =>
-//     RepositoryProvider.value(
-//         value: contactsRepository,
-//         child: const MaterialApp(
-//             home: Directionality(
-//           textDirection: TextDirection.ltr,
-//           child: ProfilePage(),
-//         )));
-
-// final _profileContact = CoagContact(
-//   coagContactId: '1',
-//   systemContact: Contact(
-//     id: '1',
-//     displayName: 'Test Name',
-//     name: Name(first: 'Test', last: 'Name'),
-//     emails: [Email('test@mail.com')],
-//     phones: [Phone('12345')],
-//     socialMedias: [SocialMedia('@social')],
-//     websites: [Website('www.awesome.org')],
-//   ),
-// );
+Future<Widget> createProfilePage(
+  Storage<ProfileInfo> profileStorage,
+  Storage<Circle> circleStorage,
+) async => MultiRepositoryProvider(
+  providers: [
+    RepositoryProvider.value(value: profileStorage),
+    RepositoryProvider.value(value: circleStorage),
+  ],
+  child: const MaterialApp(
+    home: Directionality(
+      textDirection: TextDirection.ltr,
+      child: ProfilePage(),
+    ),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+  ),
+);
 
 void main() {
+  test('update circles for social medias', () async {
+    final profileStorage = MemoryStorage<ProfileInfo>();
+    final circleStorage = MemoryStorage<Circle>();
+
+    await profileStorage.set(
+      'pId',
+      const ProfileInfo(
+        'pId',
+        details: ContactDetails(socialMedias: {'l1': 'v1', 'l2': 'v2'}),
+      ),
+    );
+    await circleStorage.set(
+      'cId',
+      Circle(id: 'cId', name: 'circleName', memberIds: []),
+    );
+
+    final cubit = ProfileCubit(profileStorage, circleStorage);
+    await cubit.fetchData();
+    await cubit.updateSocialMedia('l1', 'l1', 'new1', [
+      ('cId', 'circleName', true),
+    ]);
+
+    expect(
+      cubit.state.profileInfo?.sharingSettings.socialMedias,
+      equals({
+        'l1': ['cId'],
+      }),
+    );
+  });
+
+  testWidgets('Test Chosen Profile Displayed', (tester) async {
+    final profileStorage = MemoryStorage<ProfileInfo>();
+    final circleStorage = MemoryStorage<Circle>();
+
+    await profileStorage.set(
+      'pId',
+      const ProfileInfo(
+        'pId',
+        details: ContactDetails(socialMedias: {'l1': 'v1', 'l2': 'v2'}),
+      ),
+    );
+    await circleStorage.set(
+      'cId',
+      Circle(id: 'cId', name: 'circleName', memberIds: []),
+    );
+
+    // final cubit = ProfileCubit(profileStorage, circleStorage);
+    // await cubit.fetchData();
+
+    final pageWidget = await createProfilePage(profileStorage, circleStorage);
+    await tester.pumpWidget(pageWidget);
+    await tester.pumpWidget(pageWidget);
+
+    expect(find.text('l1'), findsOneWidget);
+    expect(find.text('v1'), findsOneWidget);
+    expect(find.text('l2'), findsOneWidget);
+    expect(find.text('v2'), findsOneWidget);
+
+    // await tester.tap(find.byKey(const Key('addProfileDetailSocials')));
+    // await tester.pump();
+  });
+
+  // testWidgets('Test circle creation and assignment', (tester) async {
+  //   final contactsRepository = ContactsRepository(
+  //     DummyPersistentStorage(
+  //       [_profileContact].asMap().map((_, v) => MapEntry(v.coagContactId, v)),
+  //     )..profileContactId = '1',
+  //     DummyDistributedStorage(),
+  //     DummySystemContacts([_profileContact.systemContact!]),
+  //   );
+
+  //   final pageWidget = await createProfilePage(contactsRepository);
+  //   await tester.pumpWidget(pageWidget);
+
+  //   await tester.tap(find.byKey(const Key('emailsCirclesMgmt0')));
+  //   await tester.pump();
+  //   expect(find.textContaining('Share'), findsOneWidget);
+  //   expect(find.text('New Circle'), findsOneWidget);
+
+  //   const circleName = 'new circle name';
+  //   await tester.enterText(
+  //     find.byKey(const Key('circlesForm_newCircleInput')),
+  //     circleName,
+  //   );
+
+  //   await tester.tap(find.byKey(const Key('circlesForm_submit')));
+  //   await tester.pump();
+
+  //   await tester.tap(find.byKey(const Key('websitesCirclesMgmt0')));
+  //   await tester.pump();
+  //   // TODO: This should come back true, why doesn't it?
+  //   // expect(find.textContaining(circleName), findsOneWidget);
+  // });
+
   //   testWidgets('Test Chosen Profile Displayed', (tester) async {
   //     final contactsRepository = ContactsRepository(
   //         DummyPersistentStorage([_profileContact]

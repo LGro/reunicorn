@@ -68,6 +68,9 @@ class ManageBackupPage extends StatelessWidget {
               const SizedBox(height: 8),
               if (state.status.isFailure)
                 const Text('Creating a backup failed, try again later.'),
+              // TODO(LGro): Add option to select 4 trusted contacts to Shamir
+              //             secret split backup record key + secret with min
+              //             3 parts recovery target
             ],
           ),
         ),

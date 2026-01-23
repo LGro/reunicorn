@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import '../../data/models/circle.dart';
 import '../../data/models/close_by_match.dart';
 import '../../data/models/coag_contact.dart';
+import '../../data/models/community.dart';
 import '../../data/models/contact_introduction.dart';
 import '../../data/models/contact_update.dart';
 import '../../data/models/profile_info.dart';
@@ -146,6 +147,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     BlocProvider(
                       create: (context) => IntroductionsCubit(
                         context.read<Storage<CoagContact>>(),
+                        context.read<Storage<Community>>(),
                       ),
                       child:
                           BlocConsumer<IntroductionsCubit, IntroductionsState>(
@@ -158,8 +160,12 @@ class _DashboardPageState extends State<DashboardPage> {
                                   maxRowsHeight: listRowsMaxH,
                                   itemBuilder: (context, data) =>
                                       IntroductionListTile(
-                                        introducer: data.$1,
-                                        introduction: data.$2,
+                                        introducerName: data.$1.name,
+                                        otherName: data.$2.otherName,
+                                        message: data.$2.message,
+                                        acceptCallback: () => context
+                                            .read<IntroductionsCubit>()
+                                            .accept(data.$1, data.$2),
                                       ),
                                 ),
                           ),

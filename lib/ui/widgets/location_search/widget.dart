@@ -45,17 +45,26 @@ class _LocationSearchWidgetState extends State<LocationSearchWidget> {
     onSelected: widget.onSelected,
     displayStringForOption: (option) => option.placeName,
     fieldViewBuilder:
-        (context, textEditingController, focusNode, onFieldSubmitted) =>
-            TextFormField(
-              decoration: const InputDecoration(
-                isDense: true,
-                filled: true,
-                border: OutlineInputBorder(),
-              ),
-              controller: textEditingController
-                ..text = widget.initialValue ?? '',
-              focusNode: focusNode,
-              onFieldSubmitted: (_) => onFieldSubmitted,
+        (context, textEditingController, focusNode, onFieldSubmitted) {
+          // Only update the text if it's different to avoid redundant rebuilds
+          if (widget.initialValue != null &&
+              textEditingController.text != widget.initialValue) {
+            // Wrap in a microtask to move it out of the build phase
+            Future.microtask(
+              () => textEditingController.text = widget.initialValue!,
+            );
+          }
+
+          return TextFormField(
+            decoration: const InputDecoration(
+              isDense: true,
+              filled: true,
+              border: OutlineInputBorder(),
             ),
+            controller: textEditingController,
+            focusNode: focusNode,
+            onFieldSubmitted: (_) => onFieldSubmitted,
+          );
+        },
   );
 }

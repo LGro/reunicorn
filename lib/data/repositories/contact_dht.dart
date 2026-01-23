@@ -147,12 +147,16 @@ Map<String, ContactAddressLocation> filterAddressLocations(
 /// Remove locations that ended longer than a day ago,
 /// or aren't shared with the given circles if provided
 Map<String, ContactTemporaryLocation> filterTemporaryLocations(
-  Map<String, ContactTemporaryLocation> locations, [
+  Map<String, ContactTemporaryLocation> locations, {
+  DateTime? timeSelection,
   Iterable<String>? activeCircles,
-]) => Map.fromEntries(
+}) => Map.fromEntries(
   locations.entries.where(
     (l) =>
         l.value.end.isAfter(DateTime.now()) &&
+        (timeSelection == null ||
+            (l.value.start.year == timeSelection.year &&
+                l.value.start.month == timeSelection.month)) &&
         // TODO: Unify that selected circles are part of profileShareSettings
         //       instead of the location instance?
         (activeCircles == null ||
@@ -183,7 +187,7 @@ ContactSharingSchema filterAccordingToSharingProfile({
   // Only share locations up to 1 day ago
   temporaryLocations: filterTemporaryLocations(
     profile.temporaryLocations,
-    activeCirclesWithMemberCount.keys,
+    activeCircles: activeCirclesWithMemberCount.keys,
   ),
   addressLocations: filterAddressLocations(
     profile.addressLocations,

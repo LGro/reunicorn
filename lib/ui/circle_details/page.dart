@@ -41,7 +41,7 @@ Widget contactsListView(
   List<CoagContact> contacts,
   Map<String, List<String>> circleMemberships,
   void Function(String, bool) updateCircleMembership,
-) => SearchableList<CoagContact>(
+) => SearchableList(
   items: contacts,
   buildItemWidget: (contact) => CheckboxListTile(
     value:

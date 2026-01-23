@@ -16,6 +16,7 @@ import '../receive_request/page.dart';
 import '../updates/page.dart';
 import '../utils.dart';
 import '../widgets/dht_sharing_status/widget.dart';
+import '../widgets/introductions_summary.dart';
 import '../widgets/searchable_list.dart';
 import 'cubit.dart';
 
@@ -23,8 +24,9 @@ Widget contactsListView(
   BuildContext context,
   List<CoagContact> contacts,
   Map<String, List<String>> circleMemberships,
-) => SearchableList<CoagContact>(
+) => SearchableList(
   items: contacts,
+  infoWidget: IntroductionsSummary([]),
   buildItemWidget: (contact) => ListTile(
     leading: roundPictureOrPlaceholder(contact.details?.picture, radius: 18),
     title: Text(contact.name),
