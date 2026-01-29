@@ -394,6 +394,10 @@ readEncrypted<T extends BinarySerializable>(
     //             that something more fundamental is broken?
     _debugPrint('tried reading $shortDhtKey but record not found');
     return (null, connectionState, cryptoState);
+  } on StateError catch (e) {
+    // TODO(LGro): This was observed when a record is already closed
+    _debugPrint('tried reading $shortDhtKey but got state error $e');
+    return (null, connectionState, cryptoState);
   }
 
   if (encryptedPayload == null) {

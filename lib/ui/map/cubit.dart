@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:async';
@@ -48,15 +48,17 @@ class MapCubit extends Cubit<MapState> {
       (contacts) => contacts.values,
     );
 
-    emit(
-      MapState(
-        status: MapStatus.success,
-        profileInfo: profileInfo,
-        contacts: contacts.toList(),
-        circleMemberships: circleMemberships,
-        circles: circles.map((id, c) => MapEntry(id, c.name)),
-      ),
-    );
+    if (!isClosed) {
+      emit(
+        MapState(
+          status: MapStatus.success,
+          profileInfo: profileInfo,
+          contacts: contacts.toList(),
+          circleMemberships: circleMemberships,
+          circles: circles.map((id, c) => MapEntry(id, c.name)),
+        ),
+      );
+    }
   }
 
   Future<void> removeLocation(String locationId) async {

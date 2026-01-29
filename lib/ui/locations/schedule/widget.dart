@@ -12,6 +12,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:loggy/loggy.dart';
 import 'package:maplibre_gl/maplibre_gl.dart' hide Circle;
+import 'package:reunicorn/tools/tools.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../data/models/circle.dart';
@@ -392,7 +393,7 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
       title: const Text('Schedule a visit'),
       actions: [
         // # TODO: Remove check once #58 is solved
-        if (Platform.isAndroid)
+        if (!isWeb && Platform.isAndroid)
           IconButton(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<CalendarEventsPage>(

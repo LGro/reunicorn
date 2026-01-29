@@ -14,6 +14,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loggy/loggy.dart';
 import 'package:provider/provider.dart';
+import 'package:reunicorn/data/services/storage/hive.dart';
 
 import '../data/models/circle.dart';
 import '../data/models/coag_contact.dart';
@@ -30,7 +31,6 @@ import '../data/repositories/notifications.dart';
 import '../data/repositories/settings.dart';
 import '../data/services/dht/veilid_dht.dart';
 import '../data/services/storage/base.dart';
-import '../data/services/storage/sqlite.dart';
 import '../l10n/app_localizations.dart';
 import '../notification_service.dart';
 import '../tick.dart';
@@ -376,7 +376,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
               final startTime = DateTime.now();
               log.add('Start update to and from DHT at $startTime');
 
-              final contactStorage = SqliteStorage<CoagContact>(
+              final contactStorage = HiveStorage<CoagContact>(
                 'contact',
                 (v) => jsonEncode(v.toJson()),
                 contactMigrateFromJson,
@@ -384,17 +384,17 @@ class _AppState extends State<App> with WidgetsBindingObserver {
               // ignore: unused_local_variable we just need init and listen
               final contactRepo = ContactDhtRepository(
                 contactStorage,
-                SqliteStorage<Circle>(
+                HiveStorage<Circle>(
                   'circle',
                   (v) => jsonEncode(v.toJson()),
                   circleMigrateFromJson,
                 ),
-                SqliteStorage<ProfileInfo>(
+                HiveStorage<ProfileInfo>(
                   'profile',
                   (v) => jsonEncode(v.toJson()),
                   profileMigrateFromJson,
                 ),
-                SqliteStorage<Setting>(
+                HiveStorage<Setting>(
                   'setting',
                   (v) => jsonEncode(v.toJson()),
                   (v) async => Setting(jsonDecode(v) as Map<String, dynamic>),
@@ -404,7 +404,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
               // ignore: unused_local_variable we just need init and listen
               final updateRepo = UpdateRepository(
                 contactStorage,
-                SqliteStorage<ContactUpdate>(
+                HiveStorage<ContactUpdate>(
                   'update',
                   (v) => jsonEncode(v.toJson()),
                   contactUpdateMigrateFromJson,

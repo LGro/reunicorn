@@ -13,6 +13,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:maplibre_gl/maplibre_gl.dart' hide Circle;
+import 'package:reunicorn/tools/tools.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../data/models/circle.dart';
@@ -24,7 +25,6 @@ import '../../data/repositories/settings.dart';
 import '../../data/services/storage/base.dart';
 import '../contact_details/page.dart';
 import '../locations/check_in/widget.dart';
-import '../locations/cubit.dart';
 import '../locations/schedule/widget.dart';
 import '../utils.dart';
 import 'cubit.dart';
@@ -699,7 +699,7 @@ class _MapPageState extends State<MapPage> {
     ).load('assets/images/icon.png');
     final defaultImage = await createCircularImageWithBorder(
       defaultImageData.buffer.asUint8List(),
-      128,
+      isWeb ? 42 : 128,
       borderWidth: 3,
     );
     for (final e in markers.asMap().entries) {
@@ -707,7 +707,7 @@ class _MapPageState extends State<MapPage> {
       try {
         image = await createCircularImageWithBorder(
           Uint8List.fromList(e.value.picture ?? []),
-          128,
+          isWeb ? 42 : 128,
           borderWidth: 3,
         );
       } catch (e) {

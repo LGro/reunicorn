@@ -37,7 +37,7 @@ class PushNotificationRepository {
     // TODO(LGro): Listen for change in push settings, update all contacts
     try {
       _pushBridgeRouteId = Typed<BareRouteId>.fromString(
-        String.fromEnvironment('REUNICORN_PUSH_BRIDGE_ROUTE'),
+        const String.fromEnvironment('REUNICORN_PUSH_BRIDGE_ROUTE'),
       );
     } on Exception catch (e) {
       // TODO(LGro): Log

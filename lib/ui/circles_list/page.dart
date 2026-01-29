@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:math';
@@ -8,6 +8,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:reunicorn/data/models/models.dart';
 
 import '../../data/models/circle.dart';
 import '../../data/services/storage/base.dart';
@@ -113,7 +114,7 @@ class _CirclesListPageState extends State<CirclesListPage> {
   @override
   void initState() {
     super.initState();
-    _sessionSeed = Random().nextInt(1 << 32);
+    _sessionSeed = Random().nextInt(pow(2, 32).toInt());
     _newCircleController = TextEditingController()
       ..addListener(_onNewCircleNameChanges);
   }
@@ -229,8 +230,10 @@ class _CirclesListPageState extends State<CirclesListPage> {
     body: MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) =>
-              CirclesListCubit(context.read<Storage<Circle>>()),
+          create: (context) => CirclesListCubit(
+            context.read<Storage<Circle>>(),
+            context.read<Storage<CoagContact>>(),
+          ),
         ),
       ],
       child: BlocConsumer<CirclesListCubit, CirclesListState>(

@@ -85,7 +85,7 @@ class UpdateRepository {
           ? update.oldContact.details!.names.values.join(' / ')
           : update.newContact.details!.names.values.join(' / ');
       if (_notificationCallback != null && updateSummary.isNotEmpty) {
-        await _notificationCallback(
+        await _notificationCallback!(
           0,
           notificationTitle,
           'Updated $updateSummary',
