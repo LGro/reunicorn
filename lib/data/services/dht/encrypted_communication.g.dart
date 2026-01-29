@@ -6,24 +6,24 @@ part of 'encrypted_communication.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_EncryptionMetaData _$EncryptionMetaDataFromJson(Map<String, dynamic> json) =>
-    _EncryptionMetaData(
-      shareBackDHTKey: json['share_back_d_h_t_key'] == null
-          ? null
-          : RecordKey.fromJson(json['share_back_d_h_t_key']),
-      shareBackDHTWriter: json['share_back_d_h_t_writer'] == null
-          ? null
-          : KeyPair.fromJson(json['share_back_d_h_t_writer']),
-      shareBackPubKey: json['share_back_pub_key'] == null
-          ? null
-          : Typed<BarePublicKey>.fromJson(json['share_back_pub_key']),
-      ackHandshakeComplete: json['ack_handshake_complete'] as bool? ?? false,
-    );
+_MessageWithEncryptionMetaData _$MessageWithEncryptionMetaDataFromJson(
+  Map<String, dynamic> json,
+) => _MessageWithEncryptionMetaData(
+  shareBackDHTKey: json['share_back_d_h_t_key'] == null
+      ? null
+      : RecordKey.fromJson(json['share_back_d_h_t_key']),
+  shareBackDHTWriter: json['share_back_d_h_t_writer'] == null
+      ? null
+      : KeyPair.fromJson(json['share_back_d_h_t_writer']),
+  oneTimeKey: json['one_time_key'] as String?,
+  message: json['message'] as Map<String, dynamic>?,
+);
 
-Map<String, dynamic> _$EncryptionMetaDataToJson(_EncryptionMetaData instance) =>
-    <String, dynamic>{
-      'share_back_d_h_t_key': instance.shareBackDHTKey?.toJson(),
-      'share_back_d_h_t_writer': instance.shareBackDHTWriter?.toJson(),
-      'share_back_pub_key': instance.shareBackPubKey?.toJson(),
-      'ack_handshake_complete': instance.ackHandshakeComplete,
-    };
+Map<String, dynamic> _$MessageWithEncryptionMetaDataToJson(
+  _MessageWithEncryptionMetaData instance,
+) => <String, dynamic>{
+  'share_back_d_h_t_key': instance.shareBackDHTKey?.toJson(),
+  'share_back_d_h_t_writer': instance.shareBackDHTWriter?.toJson(),
+  'one_time_key': instance.oneTimeKey,
+  'message': instance.message,
+};

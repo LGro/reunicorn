@@ -1,5 +1,5 @@
 // Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
 
@@ -87,6 +87,9 @@ class DhtSharingStatusCubit extends Cubit<DhtSharingStatusState>
     } on DHTExceptionNotAvailable {
       return;
     } on VeilidAPIExceptionTryAgain {
+      return;
+    } on StateError {
+      // Observed: StateError (Bad state: record already closed)
       return;
     }
   }

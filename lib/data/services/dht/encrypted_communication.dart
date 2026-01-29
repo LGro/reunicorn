@@ -1,15 +1,16 @@
 // Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:reunicorn/data/models/utils.dart';
 import 'package:veilid_support/veilid_support.dart';
+import 'package:vodozemac/vodozemac.dart' as vod;
 
 import '../../models/models.dart';
-import '../../utils.dart';
 import 'veilid_dht.dart';
 
 part 'encrypted_communication.freezed.dart';
@@ -41,302 +42,110 @@ Uint8List trimPaddedUint8List(Uint8List padded) {
   return padded.sublist(0, end);
 }
 
-// TODO(LGro): Drop share back writer when handshake ack to reduce risk of leaking it
 @freezed
-sealed class EncryptionMetaData with _$EncryptionMetaData {
-  static const byteLength = 343;
-
-  const factory EncryptionMetaData({
+sealed class MessageWithEncryptionMetaData
+    with _$MessageWithEncryptionMetaData {
+  const factory MessageWithEncryptionMetaData({
     /// DHT record key for recipient to share back
     RecordKey? shareBackDHTKey,
 
     /// DHT record writer for recipient to share back
     KeyPair? shareBackDHTWriter,
 
-    /// The next author public key for the recipient to use when encrypting
-    /// their shared back information and to try when decrypting the next update
-    PublicKey? shareBackPubKey,
-    @Default(false) bool ackHandshakeComplete,
-  }) = _EncryptionMetaData;
+    /// Base64 encoded vodozemac curve25519 one-time-key
+    String? oneTimeKey,
 
-  const EncryptionMetaData._();
+    /// JSON message
+    Map<String, dynamic>? message,
+  }) = _MessageWithEncryptionMetaData;
 
-  factory EncryptionMetaData.fromJson(Map<String, dynamic> json) =>
-      _$EncryptionMetaDataFromJson(json);
+  const MessageWithEncryptionMetaData._();
 
-  Uint8List toBytes() => padUint8ListRight(
-    Uint8List.fromList(utf8.encode(jsonEncode(toJson()))),
-    byteLength,
-  );
+  factory MessageWithEncryptionMetaData.fromJson(Map<String, dynamic> json) =>
+      _$MessageWithEncryptionMetaDataFromJson(json);
 
-  static (EncryptionMetaData, Uint8List) fromBytes(Uint8List data) => (
-    EncryptionMetaData.fromJson(
-      jsonDecode(
-            utf8.decode(
-              trimPaddedUint8List(
-                Uint8List.fromList(data.getRange(0, byteLength).toList()),
-              ),
-            ),
-          )
-          as Map<String, dynamic>,
-    ),
-    Uint8List.fromList(data.getRange(byteLength, data.length).toList()),
-  );
-}
+  String toJsonString() => jsonEncode(toJson());
 
-Future<VeilidCryptoPrivate?> getVeilidEncryptionCrypto(
-  CryptoState cryptoState,
-) async {
-  switch (cryptoState) {
-    // Symmetric crypto
-    case CryptoInitializedSymmetric(:final initialSharedSecret) ||
-        CryptoEstablishedSymmetric(:final initialSharedSecret):
-      return VeilidCryptoPrivate.fromSharedSecret(
-        initialSharedSecret.kind,
-        initialSharedSecret,
+  static MessageWithEncryptionMetaData? fromJsonString(String data) {
+    try {
+      return MessageWithEncryptionMetaData.fromJson(
+        jsonDecode(data) as Map<String, dynamic>,
       );
-
-    // Asymmetric crypto
-    // Always encrypt with the next available one to signal we received it
-    case CryptoInitializedAsymmetric(
-          :final myKeyPair,
-          :final theirNextPublicKey,
-        ) ||
-        CryptoEstablishedAsymmetric(
-          :final myKeyPair,
-          :final theirNextPublicKey,
-        ):
-      return Veilid.instance
-          .getCryptoSystem(myKeyPair.kind)
-          .then(
-            (cs) => cs.generateSharedSecret(
-              theirNextPublicKey,
-              myKeyPair.secret,
-              utf8.encode('dht'),
-            ),
-          )
-          .then(
-            (secret) =>
-                VeilidCryptoPrivate.fromSharedSecret(secret.kind, secret),
-          );
-    case CryptoPendingAsymmetric():
+    } on FormatException {
       return null;
+    }
   }
+
+  Uint8List toBytes() => utf8.encode(toJsonString());
+
+  static MessageWithEncryptionMetaData? fromBytes(Uint8List data) =>
+      fromJsonString(utf8.decode(data));
 }
 
 String _short(Object? value) =>
     value?.toString().substring(0, min(10, value.toString().length)) ?? 'null';
 
-Future<(KeyPair?, PublicKey?, EncryptionMetaData?, Uint8List?)> decrypt(
-  Uint8List data,
-  CryptoState crypto,
-) async {
-  final domain = utf8.encode('dht');
-  final secrets = <(KeyPair?, PublicKey?, SharedSecret?)>[
-    ...await crypto.map(
-      pendingAsymmetric: (s) => [(null, null, null)],
-      initializedSymmetric: (s) => [(null, null, s.initialSharedSecret)],
-      establishedSymmetric: (s) async => [
-        // Already try asymmetric ...
-        (
-          s.myNextKeyPair,
-          s.theirNextPublicKey,
-          await Veilid.instance
-              .getCryptoSystem(s.myNextKeyPair.kind)
-              .then(
-                (cs) => cs.generateSharedSecret(
-                  s.theirNextPublicKey,
-                  s.myNextKeyPair.secret,
-                  domain,
-                ),
-              ),
-        ),
-        // ... but fall back to symmetric
-        (null, null, s.initialSharedSecret),
-      ],
-      initializedAsymmetric: (s) async =>
-          <(KeyPair?, PublicKey?, SharedSecret)>[
-            ...(await Future.wait(
-              [
-                    (s.myNextKeyPair, s.theirNextPublicKey),
-                    (s.myKeyPair, s.theirNextPublicKey),
-                  ]
-                  .map(
-                    (v) async => (
-                      v.$1,
-                      v.$2,
-                      await Veilid.instance
-                          .getCryptoSystem(v.$1.kind)
-                          .then(
-                            (cs) => cs.generateSharedSecret(
-                              v.$2,
-                              v.$1.secret,
-                              domain,
-                            ),
-                          ),
-                    ),
-                  )
-                  .toList(),
-            )),
-            // Still include fall back to symmetric
-            (null, null, s.initialSharedSecret),
-          ],
-      // Try all combinations for asymmetric crypto
-      establishedAsymmetric: (s) => Future.wait(
-        [
-          (s.myKeyPair, s.theirPublicKey),
-          (s.myKeyPair, s.theirNextPublicKey),
-          (s.myNextKeyPair, s.theirPublicKey),
-          (s.myNextKeyPair, s.theirNextPublicKey),
-        ].map(
-          (v) async => (
-            v.$1,
-            v.$2,
-            await Veilid.instance
-                .getCryptoSystem(v.$1.kind)
-                .then(
-                  (cs) => cs.generateSharedSecret(v.$2, v.$1.secret, domain),
-                ),
-          ),
-        ),
-      ),
-    ),
-  ];
-
-  _debugPrint('trying ${secrets.length} secrets');
-  for (final (kp, pubKey, sharedSecret) in secrets) {
-    if (sharedSecret == null) {
-      continue;
-    }
-    if (pubKey == null && kp == null) {
-      _debugPrint('trying psk ${_short(sharedSecret)}');
-    } else {
-      _debugPrint('trying pub ${_short(pubKey)} kp ${_short(kp)}');
-    }
-
-    final Uint8List decryptedData;
-    try {
-      decryptedData = await VeilidCryptoPrivate.fromSharedSecret(
-        sharedSecret.kind,
-        sharedSecret,
-      ).then((dc) => dc.decrypt(data));
-    } on FormatException catch (e) {
-      _debugPrint('failed to decrypt with $e');
-      // This seems to happen for the "not enough bytes to decrypt" case
-      return (null, null, null, null);
-    }
-
-    try {
-      final (metaData, payload) = EncryptionMetaData.fromBytes(decryptedData);
-      if (pubKey == null && kp == null) {
-        _debugPrint('got with psk ${_short(sharedSecret)}');
-      } else {
-        _debugPrint('got with pub ${_short(pubKey)} kp ${_short(kp)}');
-      }
-      return (kp, pubKey, metaData, payload);
-    } catch (e) {
-      // TODO(LGro): Try previous schema versions (e.g. different
-      //             EncryptionMetaData sizes).
-      continue;
-    }
-  }
-
-  _debugPrint('nothing found');
-  return (null, null, null, null);
-}
-
-EncryptionMetaData encryptionMetaData(
+MessageWithEncryptionMetaData encryptionMetaData(
   DhtConnectionState connection,
   CryptoState crypto,
-) => connection.maybeMap(
-  initialized: (s) => EncryptionMetaData(
-    shareBackDHTKey: s.recordKeyThemSharing,
-    shareBackDHTWriter: s.writerThemSharing,
-    shareBackPubKey: crypto.myNextKeyPair.key,
-    ackHandshakeComplete: crypto.theirNextPublicKeyOrNull != null,
-  ),
-  orElse: () => EncryptionMetaData(
-    shareBackPubKey: crypto.myNextKeyPair.key,
-    ackHandshakeComplete: crypto.theirNextPublicKeyOrNull != null,
-  ),
-);
+) {
+  final metaData = connection.maybeMap(
+    initialized: (s) => MessageWithEncryptionMetaData(
+      shareBackDHTKey: s.recordKeyThemSharing,
+      shareBackDHTWriter: s.writerThemSharing,
+    ),
+    orElse: () => MessageWithEncryptionMetaData(),
+  );
+  return crypto.map(
+    vodozemac: (s) => metaData,
+    symToVod: (s) => metaData,
+    symmetric: (s) {
+      final account = vod.Account.fromPickleEncrypted(
+        pickle: s.accountVod,
+        pickleKey: Uint8List(32),
+      );
+      return metaData.copyWith(
+        oneTimeKey: account.oneTimeKeys.values.first.toBase64(),
+      );
+    },
+  );
+}
 
 Future<CryptoState> evolveCryptoState(
   CryptoState cryptoState, {
-  required PublicKey? shareBackPubKey,
-  required PublicKey? usedPublicKey,
-  required KeyPair? usedKeyPair,
-  required bool ackHandshakeComplete,
-  Future<KeyPair> Function() keyPairGenerator = generateKeyPairBest,
+  String? theirIdentityKey,
+  String? theirOnetimeKey,
 }) async => cryptoState.map(
-  // Initialized Symmetric
-  initializedSymmetric: (s) {
-    if (shareBackPubKey == null) {
+  symmetric: (s) {
+    if (theirIdentityKey == null || theirOnetimeKey == null) {
       return s;
     }
-    _debugPrint('CS: initialized to established symmetric');
-    return CryptoState.establishedSymmetric(
-      // unchanged
-      initialSharedSecret: s.initialSharedSecret,
-      myNextKeyPair: s.myNextKeyPair,
-      // new info
-      theirNextPublicKey: shareBackPubKey,
+    final account = vod.Account();
+    final session = account.createOutboundSession(
+      identityKey: vod.Curve25519PublicKey.fromBase64(theirIdentityKey),
+      oneTimeKey: vod.Curve25519PublicKey.fromBase64(theirOnetimeKey),
+    );
+    return CryptoState.symToVod(
+      sharedSecret: s.sharedSecret,
+      theirIdentityKey: theirIdentityKey,
+      myIdentityKey: account.identityKeys.curve25519.toBase64(),
+      sessionVod: session.toPickleEncrypted(Uint8List(32)),
     );
   },
-  // Established Symmetric
-  establishedSymmetric: (s) async {
-    // If we either do not have a share back public key yet, or we do but they
-    // haven't queued another one for rotation yet
-    if (shareBackPubKey == null || !ackHandshakeComplete) {
-      return s;
-    }
-    _debugPrint('CS: established symmetric to initialized asymmetric');
-    return CryptoState.initializedAsymmetric(
-      initialSharedSecret: s.initialSharedSecret,
-      myKeyPair: s.myNextKeyPair,
-      myNextKeyPair: await keyPairGenerator(),
-      theirNextPublicKey: shareBackPubKey,
-    );
-  },
-  // Pending Asymmetric
-  pendingAsymmetric: (s) => s,
-  // Initialized Asymmetric
-  initializedAsymmetric: (s) async {
-    if (usedPublicKey == null || usedKeyPair == null) {
-      return s;
-    }
-    _debugPrint('CS: initialized to established asymmetric');
-    return CryptoState.establishedAsymmetric(
-      myKeyPair: usedKeyPair,
-      theirPublicKey: usedPublicKey,
-      myNextKeyPair: (usedKeyPair == s.myNextKeyPair)
-          ? await keyPairGenerator()
-          : s.myNextKeyPair,
-      theirNextPublicKey: shareBackPubKey ?? s.theirNextPublicKey,
-    );
-  },
-  // Established Asymmetric
-  establishedAsymmetric: (s) async {
-    if (usedPublicKey == null || usedKeyPair == null) {
-      return s;
-    }
-    _debugPrint('CS: rotated established asymmetric');
-    return CryptoState.establishedAsymmetric(
-      // new info
-      myKeyPair: usedKeyPair,
-      theirPublicKey: usedPublicKey,
-      myNextKeyPair: (usedKeyPair == s.myNextKeyPair)
-          ? await keyPairGenerator()
-          : s.myNextKeyPair,
-      theirNextPublicKey: shareBackPubKey ?? s.theirNextPublicKey,
-    );
-  },
+  symToVod: (s) => s,
+  vodozemac: (s) => s,
 );
 
-Future<DhtConnectionInitialized> initializeEncryptedDhtConnection(
-  BaseDht dht,
-  CryptoState cryptoState,
-) async {
+vod.Curve25519PublicKey? curve25519PublicKeyFromBytesOrNull(Uint8List bytes) {
+  try {
+    return vod.Curve25519PublicKey.fromBytes(bytes);
+  } catch (e) {
+    return null;
+  }
+}
+
+Future<(DhtConnectionInitialized, CryptoState)>
+initializeEncryptedDhtConnection(BaseDht dht, CryptoState cryptoState) async {
   // Init sharing settings
   final (shareKey, shareWriter) = await dht.create();
 
@@ -352,26 +161,168 @@ Future<DhtConnectionInitialized> initializeEncryptedDhtConnection(
           )
           as DhtConnectionInitialized;
 
-  // Already try to make the share back information available
-  final encryptionCrypto = await getVeilidEncryptionCrypto(cryptoState);
-  if (encryptionCrypto != null) {
-    try {
-      await dht.write(
-        shareKey,
-        shareWriter,
-        await encryptionCrypto.encrypt(
-          EncryptionMetaData(
-            shareBackDHTKey: receiveKey,
-            shareBackDHTWriter: receiveWriter,
-          ).toBytes(),
-        ),
-      );
-    } catch (e) {
-      // Best effort, doesn't matter if that fails
-    }
+  try {
+    // Already try to make the share back information available
+    return await encryptAndPrependVodInfo(
+      jsonEncode(
+        MessageWithEncryptionMetaData(
+          shareBackDHTKey: receiveKey,
+          shareBackDHTWriter: receiveWriter,
+        ).toJson(),
+      ),
+      cryptoState,
+    ).then(
+      (v) async => dht
+          .write(shareKey, shareWriter, v.$1)
+          .then((_) async => (connectionState, v.$2)),
+    );
+  } catch (e) {
+    // Best effort, doesn't matter if that fails
   }
 
-  return connectionState;
+  return (connectionState, cryptoState);
+}
+
+Future<String?> decryptSymmetric(
+  Uint8List ciphertext,
+  SharedSecret sharedSecret,
+) async {
+  try {
+    final payload = await VeilidCryptoPrivate.fromSharedSecret(
+      sharedSecret.kind,
+      sharedSecret,
+    ).then((crypto) => crypto.decrypt(ciphertext));
+    return utf8.decode(payload);
+  } on FormatException {
+    // This seems to happen for the "not enough bytes to decrypt" case
+  }
+  return null;
+}
+
+Future<(String?, String)> decryptVodozemacEstablished(
+  int messageType,
+  Uint8List ciphertext,
+  String session,
+) async {
+  try {
+    final _session = vod.Session.fromPickleEncrypted(
+      pickle: session,
+      pickleKey: Uint8List(32),
+    );
+    final payload = _session.decrypt(
+      messageType: messageType,
+      ciphertext: utf8.decode(ciphertext),
+    );
+    _debugPrint('successfully decrypted vodozemac');
+    return (payload, _session.toPickleEncrypted(Uint8List(32)));
+  } catch (e) {
+    // TODO(LGro): This should actually not happen
+    _debugPrint('could not decrypt vodozemac');
+  }
+  return (null, session);
+}
+
+Future<(String?, CryptoState, String?)> decrypt(
+  Uint8List payload,
+  CryptoState cryptoState,
+) async {
+  if (payload.isEmpty) {
+    _debugPrint('no payload to decrypt');
+    return (null, cryptoState, null);
+  }
+
+  final messageType = payload[0];
+  final theirIdentityKey = curve25519PublicKeyFromBytesOrNull(
+    payload.sublist(1, 33),
+  );
+  final ciphertext = payload.sublist(33);
+
+  return cryptoState.map(
+    // Symmetric crypto
+    symmetric: (s) async {
+      // Try vodozemac encryption
+      if (theirIdentityKey != null) {
+        _debugPrint('trying to decrypt vodozemac for the first time');
+        try {
+          final myAccount = vod.Account.fromPickleEncrypted(
+            pickle: s.accountVod,
+            pickleKey: Uint8List(32),
+          );
+          final decrypted = myAccount.createInboundSession(
+            theirIdentityKey: theirIdentityKey,
+            // TODO(LGro): What about base64?
+            preKeyMessageBase64: utf8.decode(ciphertext),
+          );
+          final updatedCryptoState = CryptoState.symToVod(
+            sharedSecret: s.sharedSecret,
+            theirIdentityKey: theirIdentityKey.toBase64(),
+            myIdentityKey: myAccount.identityKeys.curve25519.toBase64(),
+            sessionVod: decrypted.session.toPickleEncrypted(Uint8List(32)),
+          );
+          _debugPrint(
+            'successfully decrypted with vodozemac for the first time',
+          );
+          return (
+            decrypted.plaintext,
+            updatedCryptoState,
+            theirIdentityKey.toBase64(),
+          );
+        } catch (e) {
+          _debugPrint('failed to decrypt vodozemac for the first time: $e');
+        }
+      }
+
+      // Fall back to symmetric encryption
+      final payload = await decryptSymmetric(ciphertext, s.sharedSecret);
+      _debugPrint(
+        'decrypting symmetric ${(payload == null) ? 'failed' : 'succeeded'}',
+      );
+      return (payload, s, theirIdentityKey?.toBase64());
+    },
+
+    // Transition between symmetric and vodozemac crypto
+    symToVod: (s) async {
+      _debugPrint('trying decrypt established vodozemac');
+      final (plaintextVod, session) = await decryptVodozemacEstablished(
+        messageType,
+        ciphertext,
+        s.sessionVod,
+      );
+      if (plaintextVod != null) {
+        return (
+          plaintextVod,
+          CryptoState.vodozemac(
+            theirIdentityKey: s.theirIdentityKey,
+            myIdentityKey: s.myIdentityKey,
+            sessionVod: session,
+          ),
+          theirIdentityKey?.toBase64(),
+        );
+      }
+
+      // Fall back to symmetric encryption
+      final plaintextSym = await decryptSymmetric(ciphertext, s.sharedSecret);
+      _debugPrint(
+        'decrypting symmetric ${(plaintextSym == null) ? 'failed' : 'succeeded'}',
+      );
+      return (plaintextSym, s, theirIdentityKey?.toBase64());
+    },
+
+    // Established vodozemac crypto
+    vodozemac: (s) async {
+      _debugPrint('trying decrypt established vodozemac');
+      final (plaintextVod, session) = await decryptVodozemacEstablished(
+        messageType,
+        ciphertext,
+        s.sessionVod,
+      );
+      return (
+        plaintextVod,
+        s.copyWith(sessionVod: session),
+        theirIdentityKey?.toBase64(),
+      );
+    },
+  );
 }
 
 Future<(T?, DhtConnectionState, CryptoState)>
@@ -379,13 +330,13 @@ readEncrypted<T extends BinarySerializable>(
   BaseDht dht,
   DhtConnectionState connectionState,
   CryptoState cryptoState,
-  T Function(Uint8List) decodePayload,
+  T Function(Map<String, dynamic>) decodePayload,
 ) async {
   final shortDhtKey = _short(connectionState.recordKeyThemSharing);
-  final Uint8List? encryptedPayload;
+  final Uint8List? dhtValue;
   try {
     // Try reading DHT record
-    encryptedPayload = await dht.read(connectionState.recordKeyThemSharing);
+    dhtValue = await dht.read(connectionState.recordKeyThemSharing);
   } on DHTExceptionNotAvailable {
     _debugPrint('tried reading $shortDhtKey but dht unavailable');
     return (null, connectionState, cryptoState);
@@ -400,94 +351,124 @@ readEncrypted<T extends BinarySerializable>(
     return (null, connectionState, cryptoState);
   }
 
-  if (encryptedPayload == null) {
-    _debugPrint('no payload for $shortDhtKey');
+  if (dhtValue == null) {
+    _debugPrint('no dht value for $shortDhtKey');
     return (null, connectionState, cryptoState);
   }
 
-  // Try decrypting payload
-  final (usedKeyPair, usedPublicKey, metaData, payload) = await decrypt(
-    encryptedPayload,
+  final String? decryptedDhtValue;
+  final String? theirIdentityKey;
+  (decryptedDhtValue, cryptoState, theirIdentityKey) = await decrypt(
+    dhtValue,
     cryptoState,
   );
 
-  if (metaData == null || payload == null) {
+  if (decryptedDhtValue == null) {
     _debugPrint('read $shortDhtKey but could not decrypt');
+    return (null, connectionState, cryptoState);
+  }
+  final payload = MessageWithEncryptionMetaData.fromJsonString(
+    decryptedDhtValue,
+  );
+
+  if (payload == null) {
+    _debugPrint(
+      'read and decrypted $shortDhtKey but could not parse meta data',
+    );
     return (null, connectionState, cryptoState);
   }
 
   cryptoState = await evolveCryptoState(
     cryptoState,
-    shareBackPubKey: metaData.shareBackPubKey,
-    usedPublicKey: usedPublicKey,
-    usedKeyPair: usedKeyPair,
-    ackHandshakeComplete: metaData.ackHandshakeComplete,
+    theirIdentityKey: theirIdentityKey,
+    theirOnetimeKey: payload.oneTimeKey,
   );
 
   // If are in an invited state without any sharing connection infos and we've
   // just received a share back record, evolve the connection to established
   if (connectionState is DhtConnectionInvited &&
-      metaData.shareBackDHTKey != null &&
-      metaData.shareBackDHTWriter != null) {
+      payload.shareBackDHTKey != null &&
+      payload.shareBackDHTWriter != null) {
     connectionState = DhtConnectionState.established(
-      recordKeyMeSharing: metaData.shareBackDHTKey!,
-      writerMeSharing: metaData.shareBackDHTWriter!,
+      recordKeyMeSharing: payload.shareBackDHTKey!,
+      writerMeSharing: payload.shareBackDHTWriter!,
       recordKeyThemSharing: connectionState.recordKeyThemSharing,
     );
   }
 
-  try {
-    final decodedPayload = decodePayload(payload);
-    _debugPrint('read $shortDhtKey, decrypted, decoded payload successfully');
-    return (decodedPayload, connectionState, cryptoState);
-  } catch ($e) {
-    _debugPrint('read and decrypted $shortDhtKey but failed decoding payload');
+  if (payload.message != null) {
+    try {
+      final decodedPayload = decodePayload(payload.message!);
+      _debugPrint('read $shortDhtKey, decrypted, decoded payload successfully');
+      return (decodedPayload, connectionState, cryptoState);
+    } catch ($e) {
+      _debugPrint(
+        'read and decrypted $shortDhtKey but failed decoding payload',
+      );
+    }
   }
 
   return (null, connectionState, cryptoState);
 }
 
-// FIXME(LGro): this still doesn't bring back the correct plaintext
-Future<T?> _readMyEncrypted<T extends BinarySerializable>(
-  BaseDht dht,
-  DhtConnectionState connectionState,
+Future<(Uint8List, CryptoState)> encryptAndPrependVodInfo(
+  String payload,
   CryptoState cryptoState,
-  T Function(Uint8List) decodePayload,
-) async {
-  if (connectionState.recordKeyMeSharingOrNull == null) {
-    return null;
-  }
-  final Uint8List? encryptedPayload;
-  try {
-    encryptedPayload = await dht.read(
-      connectionState.recordKeyMeSharingOrNull!,
-      local: true,
+) async => cryptoState.map(
+  symmetric: (s) async {
+    _debugPrint('encrypting symmetric');
+    final account = vod.Account.fromPickleEncrypted(
+      pickle: s.accountVod,
+      pickleKey: Uint8List(32),
     );
-  } on DHTExceptionNotAvailable {
-    return null;
-  } on DHTExceptionNoRecord {
-    // This shouldn't happen when reading our own record locally
-    return null;
-  }
-  if (encryptedPayload == null) {
-    return null;
-  }
-  try {
-    final (_, _, metaData, payload) = await decrypt(
-      encryptedPayload,
+    final encrypted = await VeilidCryptoPrivate.fromSharedSecret(
+      s.sharedSecret.kind,
+      s.sharedSecret,
+    ).then((dc) => dc.encrypt(utf8.encode(payload)));
+    return (
+      Uint8List.fromList([
+        0,
+        ...account.identityKeys.curve25519.toBytes(),
+        ...encrypted,
+      ]),
       cryptoState,
     );
-    if (payload != null) {
-      return decodePayload(payload);
-    }
-  } on FormatException {
-    return null;
-  }
-}
+  },
+  symToVod: (s) async {
+    _debugPrint('encrypting symToVod with vod');
+    final session = vod.Session.fromPickleEncrypted(
+      pickle: s.sessionVod,
+      pickleKey: Uint8List(32),
+    );
+    final encrypted = session.encrypt(payload);
+    return (
+      Uint8List.fromList([
+        encrypted.messageType,
+        ...vod.Curve25519PublicKey.fromBase64(s.myIdentityKey).toBytes(),
+        ...utf8.encode(encrypted.ciphertext),
+      ]),
+      s.copyWith(sessionVod: session.toPickleEncrypted(Uint8List(32))),
+    );
+  },
+  vodozemac: (s) async {
+    _debugPrint('encrypting established vod');
+    final session = vod.Session.fromPickleEncrypted(
+      pickle: s.sessionVod,
+      pickleKey: Uint8List(32),
+    );
+    final encrypted = session.encrypt(payload);
+    return (
+      Uint8List.fromList([
+        encrypted.messageType,
+        ...vod.Curve25519PublicKey.fromBase64(s.myIdentityKey).toBytes(),
+        ...utf8.encode(encrypted.ciphertext),
+      ]),
+      s.copyWith(sessionVod: session.toPickleEncrypted(Uint8List(32))),
+    );
+  },
+);
 
-// TODO(LGro): Only populate the next key pair here when writing updates to
-// avoid triggering a loop of useless key rotations
-Future<bool> writeEncrypted<T extends BinarySerializable>(
+Future<CryptoState?> writeEncrypted<T extends JsonEncodable>(
   BaseDht dht,
   T? value,
   DhtConnectionState connectionState,
@@ -499,7 +480,7 @@ Future<bool> writeEncrypted<T extends BinarySerializable>(
       _debugPrint(
         'trying to write but no record key to write to or writer to use',
       );
-      return false;
+      return null;
 
     // We extract the fields into final local variables directly
     case DhtConnectionInitialized(
@@ -510,25 +491,30 @@ Future<bool> writeEncrypted<T extends BinarySerializable>(
           :final recordKeyMeSharing,
           :final writerMeSharing,
         ):
-      final payload = Uint8List.fromList([
-        ...encryptionMetaData(connectionState, cryptoState).toBytes(),
-        if (value != null) ...value.toBytes(),
-      ]);
+      final (
+        encryptedPayloadWithVodInfo,
+        updatedCryptoState,
+      ) = await encryptAndPrependVodInfo(
+        encryptionMetaData(
+          connectionState,
+          cryptoState,
+        ).copyWith(message: value?.toJson()).toJsonString(),
 
-      final encryptionCrypto = await getVeilidEncryptionCrypto(cryptoState);
-      if (encryptionCrypto == null) {
-        return false;
-      }
-      final encryptedPayload = await encryptionCrypto.encrypt(payload);
+        cryptoState,
+      );
 
       try {
         //TODO(LGro): Check encrypted payload size < DHT record limit?
         //            Or leave it to dht layer to start spreading across records?
-        await dht.write(recordKeyMeSharing, writerMeSharing, encryptedPayload);
-        return true;
+        await dht.write(
+          recordKeyMeSharing,
+          writerMeSharing,
+          encryptedPayloadWithVodInfo,
+        );
+        return updatedCryptoState;
       } on DHTExceptionNotAvailable catch (e) {
         _debugPrint('dht error for ${_short(recordKeyMeSharing)} $e');
-        return false;
+        return null;
       }
   }
 }

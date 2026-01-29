@@ -1,5 +1,5 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
 
@@ -172,6 +172,10 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
   // name~publicKey
   Future<void> handleProfileLink(String fragment) async {
     if (!isClosed) {
+      return emit(const ReceiveRequestState(ReceiveRequestStatus.qrcode));
+    }
+
+    if (!isClosed) {
       emit(const ReceiveRequestState(ReceiveRequestStatus.processing));
     }
 
@@ -200,7 +204,8 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     // TODO: Check if contact already exists - key generation can take a moment and this can cause duplicate entries if people resubmit
     final contact = await _contactDhtRepository.createContactForInvite(
       name,
-      pubKey: publicKey,
+      // FIXME
+      // pubKey: publicKey,
     );
 
     if (!isClosed) {

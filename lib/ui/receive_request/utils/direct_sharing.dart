@@ -1,7 +1,10 @@
 // Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import 'dart:typed_data';
 
 import 'package:uuid/uuid.dart';
+import 'package:vodozemac/vodozemac.dart' as vod;
 
 import '../../../data/models/models.dart';
 import '../../../data/services/storage/base.dart';
@@ -48,9 +51,11 @@ Future<CoagContact?> createContactFromDirectSharing(
     dhtConnection: DhtConnectionState.invited(
       recordKeyThemSharing: invite.recordKey,
     ),
-    connectionCrypto: CryptoState.initializedSymmetric(
-      initialSharedSecret: invite.psk,
-      myNextKeyPair: await generateKeyPairBest(),
+    connectionCrypto: CryptoState.symmetric(
+      sharedSecret: invite.psk,
+      accountVod: (vod.Account()..generateOneTimeKeys(1)).toPickleEncrypted(
+        Uint8List(32),
+      ),
     ),
   );
 

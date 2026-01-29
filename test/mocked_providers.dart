@@ -1,5 +1,5 @@
 // Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:math';
 import 'dart:typed_data';
@@ -49,9 +49,8 @@ final minimalBaseContact = CoagContact(
   dhtConnection: DhtConnectionState.invited(
     recordKeyThemSharing: fakeDhtRecordKey(),
   ),
-  connectionCrypto: CryptoState.establishedSymmetric(
-    initialSharedSecret: fakePsk(3),
-    myNextKeyPair: fakeKeyPair(1),
-    theirNextPublicKey: fakeKeyPair(2).key,
+  connectionCrypto: CryptoState.symmetric(
+    sharedSecret: fakePsk(3),
+    accountVod: '',
   ),
 );

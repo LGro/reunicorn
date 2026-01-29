@@ -1,5 +1,5 @@
 // Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 // TODO: Ensure this page looks ok if no contact could be found for given ID -> alert and redirect
 
@@ -481,11 +481,9 @@ class _ContactPageState extends State<ContactPage> {
             _paddedDivider(),
             Text(
               contact.connectionCrypto.map(
-                initializedSymmetric: (_) => 'initSym',
-                establishedSymmetric: (_) => 'estSym',
-                initializedAsymmetric: (_) => 'initAsym',
-                establishedAsymmetric: (_) => 'estAsym',
-                pendingAsymmetric: (_) => 'penAsym',
+                symmetric: (_) => 'symmetric',
+                symToVod: (_) => 'symToVod',
+                vodozemac: (_) => 'vodozemac',
               ),
             ),
             if (contact.profileSharingStatus.mostRecentAttempt != null &&
@@ -502,25 +500,13 @@ class _ContactPageState extends State<ContactPage> {
               const Text('Pending changes not shared yet'),
             // TODO(LGro): show diff above between shared profile and pending changes in shared profile
             Text(
-              'MyPubKey: ${_shorten(contact.connectionCrypto.myKeyPairOrNull?.key.toString() ?? 'null')}...',
-            ),
-            Text(
-              'MyNextPubKey: ${_shorten(contact.connectionCrypto.myNextKeyPair.key.toString())}...',
-            ),
-            Text(
               'MyDhtKey: ${_shorten(contact.dhtConnection?.recordKeyMeSharingOrNull.toString() ?? '')}...',
-            ),
-            Text(
-              'TheirPubKey: ${_shorten(contact.connectionCrypto.theirPublicKeyOrNull.toString())}...',
-            ),
-            Text(
-              'TheirNextPubKey: ${_shorten(contact.connectionCrypto.theirNextPublicKeyOrNull.toString())}...',
             ),
             Text(
               'TheirDhtKey: ${_shorten(contact.dhtConnection?.recordKeyThemSharing.toString() ?? '')}...',
             ),
             Text(
-              'InitSec: ${_shorten(contact.connectionCrypto.initialSharedSecretOrNull.toString())}...',
+              'InitSec: ${_shorten(contact.connectionCrypto.sharedSecretOrNull.toString())}...',
             ),
             const SizedBox(height: 16),
           ],

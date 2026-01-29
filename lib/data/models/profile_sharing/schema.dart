@@ -1,10 +1,11 @@
 // Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:reunicorn/data/models/utils.dart';
 import 'package:veilid/veilid.dart';
 
 import '../coag_contact.dart';
@@ -20,7 +21,7 @@ typedef ContactSharingSchema = ContactSharingSchemaV3;
 @freezed
 sealed class ContactSharingSchemaV3
     with _$ContactSharingSchemaV3
-    implements BinarySerializable {
+    implements BinarySerializable, JsonEncodable {
   const factory ContactSharingSchemaV3({
     /// Shared contact details of author
     required ContactDetails details,

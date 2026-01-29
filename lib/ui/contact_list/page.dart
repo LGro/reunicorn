@@ -1,5 +1,5 @@
 // Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -287,20 +287,9 @@ Widget? contactSharingReceivingStatus(
     // from an invite batch
     return const Icon(Icons.hourglass_empty);
   }
-  // They're sharing but I'm not sharing back
-  // (with the default everyone circle, this likely doesn't happen)
-  if (contact.connectionCrypto.theirPublicKeyOrNull != null &&
-      !isMemberAnyCircle) {
-    return const Icon(Icons.call_received);
-  }
-  // I still need to send them something
-  if (showSharingOffer(contact) || showDirectSharing(contact)) {
-    return const Icon(Icons.call_made);
-  }
   // Me and them are sharing
   if (contact.details != null &&
-      (contact.connectionCrypto is CryptoInitializedAsymmetric ||
-          contact.connectionCrypto is CryptoEstablishedAsymmetric)) {
+      (contact.connectionCrypto is CryptoVodozemac)) {
     return const Icon(Icons.done_all);
   }
   // We're both sharing, but haven't received the ack
@@ -308,9 +297,6 @@ Widget? contactSharingReceivingStatus(
       contact.details != null) {
     // TODO: Does it confuse folks if we don't explain the difference between one and two checkmarks?
     return const Icon(Icons.done);
-  }
-  if (contact.connectionCrypto.theirPublicKeyOrNull != null) {
-    return const Icon(Icons.hourglass_empty);
   }
   return const Icon(Icons.question_mark);
 }

@@ -1,5 +1,5 @@
 // Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:flutter/material.dart';
 
@@ -56,11 +56,11 @@ class ConnectingCard extends StatelessWidget {
         else if (showDirectSharing(contact) &&
             contact.dhtConnection != null &&
             contact.dhtConnection is DhtConnectionInitialized &&
-            contact.connectionCrypto is CryptoInitializedSymmetric)
+            contact.connectionCrypto is CryptoSymmetric)
           DirectSharingWidget(
             contact,
             contact.dhtConnection! as DhtConnectionInitialized,
-            contact.connectionCrypto as CryptoInitializedSymmetric,
+            contact.connectionCrypto as CryptoSymmetric,
           )
         else
           const Text(

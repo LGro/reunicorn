@@ -29,10 +29,11 @@ VeilidConfigLogLevel convertToVeilidConfigLogLevel(LogLevel? level) {
   return VeilidConfigLogLevel.off;
 }
 
-void setVeilidLogLevel(LogLevel? level) {
-  Veilid.instance.changeLogLevel('all', convertToVeilidConfigLogLevel(level));
+void setVeilidLogLevel(String directives) {
+  Veilid.instance.changeLogLevel('all', directives);
 }
 
+@Deprecated("'ignore' syntax was confusing, migrate to changeLogLevel")
 void changeVeilidLogIgnore(String change) {
   Veilid.instance.changeLogIgnore('all', change.split(','));
 }
@@ -71,12 +72,9 @@ void processLog(VeilidLog log) {
 void initVeilidLog(bool debugMode) {
   // Always allow LOG_TRACE option
   // ignore: do_not_use_environment
-  const isTrace = String.fromEnvironment('LOG_TRACE') != '';
-  LogLevel logLevel;
-  if (isTrace) {
-    logLevel = traceLevel;
-  } else {
-    logLevel = debugMode ? LogLevel.debug : LogLevel.info;
-  }
-  setVeilidLogLevel(logLevel);
+  final directives = String.fromEnvironment(
+    'VEILID_LOG',
+    defaultValue: debugMode ? '#common=debug' : '#common=info',
+  );
+  setVeilidLogLevel(directives);
 }

@@ -1,5 +1,5 @@
 // Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
 import 'dart:convert';
@@ -11,6 +11,7 @@ import 'package:loggy/loggy.dart';
 import 'package:pointycastle/pointycastle.dart' show Digest;
 import 'package:uuid/uuid.dart';
 import 'package:veilid_support/veilid_support.dart';
+import 'package:vodozemac/vodozemac.dart' as vod;
 
 import '../../veilid_processor/models/processor_connection_state.dart';
 import '../../veilid_processor/repository/processor_repository.dart';
@@ -352,13 +353,16 @@ class ContactDhtRepository {
       }
 
       if (contact.dhtConnection == null) {
+        final (dhtConnection, updatedConnectionCrypto) = await dht_comm
+            .initializeEncryptedDhtConnection(
+              _dhtStorage,
+              contact.connectionCrypto,
+            );
         return _contactStorage.set(
           contactId,
           contact.copyWith(
-            dhtConnection: await dht_comm.initializeEncryptedDhtConnection(
-              _dhtStorage,
-              contact.connectionCrypto,
-            ),
+            dhtConnection: dhtConnection,
+            connectionCrypto: updatedConnectionCrypto,
           ),
         );
       }
@@ -368,7 +372,7 @@ class ContactDhtRepository {
             _dhtStorage,
             contact.dhtConnection!,
             contact.connectionCrypto,
-            ContactSharingSchema.fromBytes,
+            ContactSharingSchema.fromJson,
           );
       await _watchContact(contact.coagContactId, dhtConnection);
       if (dhtContact != null) {
@@ -436,7 +440,7 @@ class ContactDhtRepository {
       );
       try {
         // TODO: do we ever use the shared profile = null to empty the record?
-        final isWriteSuccess = await dht_comm.writeEncrypted(
+        final updatedConnectionCrypto = await dht_comm.writeEncrypted(
           _dhtStorage,
           updatedSharedProfile,
           contact.dhtConnection!,
@@ -446,14 +450,17 @@ class ContactDhtRepository {
         return _contactStorage.set(
           contact.coagContactId,
           contact.copyWith(
+            connectionCrypto: (updatedConnectionCrypto == null)
+                ? contact.connectionCrypto
+                : updatedConnectionCrypto,
             profileSharingStatus: contact.profileSharingStatus.copyWith(
               mostRecentAttempt: now,
-              sharedProfile: isWriteSuccess
-                  ? updatedSharedProfile
-                  : contact.profileSharingStatus.sharedProfile,
-              mostRecentSuccess: isWriteSuccess
-                  ? now
-                  : contact.profileSharingStatus.mostRecentSuccess,
+              sharedProfile: (updatedConnectionCrypto == null)
+                  ? contact.profileSharingStatus.sharedProfile
+                  : updatedSharedProfile,
+              mostRecentSuccess: (updatedConnectionCrypto == null)
+                  ? contact.profileSharingStatus.mostRecentSuccess
+                  : now,
             ),
           ),
         );
@@ -580,28 +587,20 @@ class ContactDhtRepository {
 
   /// Creating contact from just a name or from a profile link, i.e. with name
   /// and public key
-  Future<CoagContact> createContactForInvite(
-    String name, {
-    PublicKey? pubKey,
-  }) async {
+  Future<CoagContact> createContactForInvite(String name) async {
     final connectionCrypto =
-        CryptoState.initializedSymmetric(
-              myNextKeyPair: await generateKeyPairBest(),
-              initialSharedSecret: await generateRandomSharedSecretBest(),
+        CryptoState.symmetric(
+              sharedSecret: await generateRandomSharedSecretBest(),
+              accountVod: (vod.Account()..generateOneTimeKeys(1))
+                  .toPickleEncrypted(Uint8List(32)),
             )
-            as CryptoInitializedSymmetric;
+            as CryptoSymmetric;
     final contact = CoagContact(
       coagContactId: Uuid().v4(),
       name: name,
       myIdentity: await generateKeyPairBest(),
       myIntroductionKeyPair: await generateKeyPairBest(),
-      connectionCrypto: (pubKey == null)
-          ? connectionCrypto
-          : CryptoState.establishedSymmetric(
-              initialSharedSecret: connectionCrypto.initialSharedSecretOrNull!,
-              myNextKeyPair: connectionCrypto.myNextKeyPair,
-              theirNextPublicKey: pubKey,
-            ),
+      connectionCrypto: connectionCrypto,
     );
     await _contactStorage.set(contact.coagContactId, contact);
     return contact;

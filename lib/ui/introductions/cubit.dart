@@ -1,5 +1,5 @@
 // Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
 
@@ -55,72 +55,73 @@ class IntroductionsCubit extends Cubit<IntroductionsState> {
       return null;
     }
 
+    throw UnimplementedError();
+
     // Create new contact for the introduced
-    final contact = CoagContact(
-      coagContactId: Uuid().v4(),
-      name: introduction.otherName,
-      myIdentity: await generateKeyPairBest(),
-      myIntroductionKeyPair: await generateKeyPairBest(),
-      profileSharingStatus: const ProfileSharingStatus(),
-      dhtConnection: DhtConnectionState.established(
-        recordKeyMeSharing: introduction.dhtRecordKeySharing,
-        writerMeSharing: introduction.dhtWriterSharing,
-        recordKeyThemSharing: introduction.dhtRecordKeyReceiving,
-      ),
-      connectionCrypto: CryptoState.establishedAsymmetric(
-        myKeyPair: myKeyPair,
-        myNextKeyPair: await generateKeyPairBest(),
-        theirNextPublicKey: introduction.otherPublicKey,
-        theirPublicKey: introduction.otherPublicKey,
-      ),
-    );
+    // final contact = CoagContact(
+    //   coagContactId: Uuid().v4(),
+    //   name: introduction.otherName,
+    //   myIdentity: await generateKeyPairBest(),
+    //   myIntroductionKeyPair: await generateKeyPairBest(),
+    //   profileSharingStatus: const ProfileSharingStatus(),
+    //   dhtConnection: DhtConnectionState.established(
+    //     recordKeyMeSharing: introduction.dhtRecordKeySharing,
+    //     writerMeSharing: introduction.dhtWriterSharing,
+    //     recordKeyThemSharing: introduction.dhtRecordKeyReceiving,
+    //   ),
+    //   connectionCrypto: CryptoState.symmetric(
+    //     theirNextPublicKey: introduction.otherPublicKey,
+    //     theirPublicKey: introduction.otherPublicKey,
+    //   ),
+    // );
 
-    await _contactStorage.set(contact.coagContactId, contact);
+    // await _contactStorage.set(contact.coagContactId, contact);
 
-    // Rotate introduction key pair for introducer
-    // TODO: Can this cause issues when someone introduces multiple contacts at once?
-    await _contactStorage.set(
-      introducer.coagContactId,
-      introducer.copyWith(
-        myIntroductionKeyPair: await generateKeyPairBest(),
-        myPreviousIntroductionKeyPairs: [
-          introducer.myIntroductionKeyPair,
-          ...introducer.myPreviousIntroductionKeyPairs,
-        ],
-      ),
-    );
+    // // Rotate introduction key pair for introducer
+    // // TODO: Can this cause issues when someone introduces multiple contacts at once?
+    // await _contactStorage.set(
+    //   introducer.coagContactId,
+    //   introducer.copyWith(
+    //     myIntroductionKeyPair: await generateKeyPairBest(),
+    //     myPreviousIntroductionKeyPairs: [
+    //       introducer.myIntroductionKeyPair,
+    //       ...introducer.myPreviousIntroductionKeyPairs,
+    //     ],
+    //   ),
+    // );
 
-    return contact.coagContactId;
+    // return contact.coagContactId;
   }
 
   Future<String?> acceptCommunityMember(Member member) async {
-    final contact = CoagContact(
-      coagContactId: Uuid().v4(),
-      name: member.name,
-      origin: CommunityOrigin.fromMember(member).toString(),
-      myIdentity: await generateKeyPairBest(),
-      myIntroductionKeyPair: await generateKeyPairBest(),
-      // TODO(LGro): or do we need to initialize sharing settings?
-      dhtConnection: (member.recordKeyThemSharing == null)
-          ? null
-          : DhtConnectionState.invited(
-              recordKeyThemSharing: member.recordKeyThemSharing!,
-            ),
-      connectionCrypto: await generateKeyPairBest().then(
-        (kp) => (member.theirPublicKey == null)
-            ? CryptoState.pendingAsymmetric(myNextKeyPair: kp)
-            : CryptoState.establishedAsymmetric(
-                myKeyPair: kp,
-                myNextKeyPair: kp,
-                theirPublicKey: member.theirPublicKey!,
-                theirNextPublicKey: member.theirPublicKey!,
-              ),
-      ),
-    );
+    throw UnimplementedError();
+    // final contact = CoagContact(
+    //   coagContactId: Uuid().v4(),
+    //   name: member.name,
+    //   origin: CommunityOrigin.fromMember(member).toString(),
+    //   myIdentity: await generateKeyPairBest(),
+    //   myIntroductionKeyPair: await generateKeyPairBest(),
+    //   // TODO(LGro): or do we need to initialize sharing settings?
+    //   dhtConnection: (member.recordKeyThemSharing == null)
+    //       ? null
+    //       : DhtConnectionState.invited(
+    //           recordKeyThemSharing: member.recordKeyThemSharing!,
+    //         ),
+    //   connectionCrypto: await generateKeyPairBest().then(
+    //     (kp) => (member.theirPublicKey == null)
+    //         ? CryptoState.pendingAsymmetric(myNextKeyPair: kp)
+    //         : CryptoState.establishedAsymmetric(
+    //             myKeyPair: kp,
+    //             myNextKeyPair: kp,
+    //             theirPublicKey: member.theirPublicKey!,
+    //             theirNextPublicKey: member.theirPublicKey!,
+    //           ),
+    //   ),
+    // );
 
-    await _contactStorage.set(contact.coagContactId, contact);
+    // await _contactStorage.set(contact.coagContactId, contact);
 
-    return contact.coagContactId;
+    // return contact.coagContactId;
   }
 
   @override

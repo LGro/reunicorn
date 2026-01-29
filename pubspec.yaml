@@ -75,6 +75,8 @@ dependencies:
   hive_ce: ^2.19.1
   hive_ce_flutter: ^2.3.4
   flutter_secure_storage: ^10.0.0
+  vodozemac: ^0.4.0
+  flutter_vodozemac: ^0.4.1
 
 dev_dependencies:
   bloc_test: ^10.0.0

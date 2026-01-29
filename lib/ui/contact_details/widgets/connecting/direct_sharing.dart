@@ -1,5 +1,5 @@
 // Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -15,7 +15,7 @@ class DirectSharingWidget extends StatelessWidget {
   DirectSharingWidget(
     CoagContact contact,
     DhtConnectionInitialized dhtConnection,
-    CryptoInitializedSymmetric connectionCrypto, {
+    CryptoSymmetric connectionCrypto, {
     super.key,
   }) {
     _contactName = contact.name;
@@ -29,7 +29,7 @@ class DirectSharingWidget extends StatelessWidget {
               .firstOrNull ??
           '???',
       dhtConnection.recordKeyMeSharing,
-      connectionCrypto.initialSharedSecret,
+      connectionCrypto.sharedSecret,
     ).uri;
   }
 

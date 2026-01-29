@@ -1,5 +1,5 @@
 // Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -107,7 +107,7 @@ class _IntroduceContactsPageState extends State<IntroduceContactsPage> {
                   ),
                   // TODO: Move into validator instead
                   if (_contactA != null &&
-                      _contactA!.connectionCrypto.theirPublicKeyOrNull == null)
+                      _contactA!.connectionCrypto is! CryptoVodozemac)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Text(
@@ -179,7 +179,7 @@ class _IntroduceContactsPageState extends State<IntroduceContactsPage> {
                   ),
                   // TODO: Move into validator instead
                   if (_contactB != null &&
-                      _contactB!.connectionCrypto.theirPublicKeyOrNull == null)
+                      _contactB!.connectionCrypto is! CryptoVodozemac)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Text(

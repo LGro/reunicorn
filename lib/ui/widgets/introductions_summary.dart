@@ -1,5 +1,5 @@
 // Copyright 2026 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:flutter/material.dart';
 

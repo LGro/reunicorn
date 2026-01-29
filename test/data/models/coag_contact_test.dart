@@ -1,12 +1,11 @@
 // Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
-// SPDX-License-Identifier: MPL-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:convert';
 
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reunicorn/data/models/models.dart';
-import 'package:reunicorn/data/providers/legacy/sqlite.dart';
 import 'package:reunicorn/data/repositories/contact_system.dart';
 
 import '../../mocked_providers.dart';
@@ -116,10 +115,9 @@ void main() {
       dhtConnection: DhtConnectionState.invited(
         recordKeyThemSharing: fakeDhtRecordKey(),
       ),
-      connectionCrypto: CryptoState.establishedSymmetric(
-        initialSharedSecret: fakePsk(0),
-        myNextKeyPair: fakeKeyPair(),
-        theirNextPublicKey: fakeKeyPair(1, 2).key,
+      connectionCrypto: CryptoState.symmetric(
+        sharedSecret: fakePsk(0),
+        accountVod: '',
       ),
       myIdentity: fakeKeyPair(),
       myIntroductionKeyPair: fakeKeyPair(),
