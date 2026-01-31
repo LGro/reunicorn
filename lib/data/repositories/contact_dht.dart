@@ -347,7 +347,8 @@ class ContactDhtRepository {
         'rcrn-dht-on-update | ${contactId.substring(0, 5)} | '
         'started-sync',
       );
-      final contact = await _contactStorage.get(contactId);
+      var onlyUpdatedOnProfileChange = true;
+      var contact = await _contactStorage.get(contactId);
       if (contact == null) {
         return;
       }
@@ -399,12 +400,24 @@ class ContactDhtRepository {
             'rcrn-dht-on-update | ${contact.coagContactId.substring(0, 5)} | '
             'share-changed',
           );
-          await _contactStorage.set(contact.coagContactId, updatedContact);
-          // If we've had changes here, save and return; Set will trigger this
-          // updateContact callback again
-          // TODO(LGRo): Doing another read attempt until we don't receive
-          //             updates seems slow to get a write in
-          return;
+          if ((contact.connectionCrypto is CryptoSymmetric &&
+                  updatedContact.connectionCrypto is CryptoSymToVod) ||
+              (contact.connectionCrypto is CryptoSymToVod &&
+                  updatedContact.connectionCrypto is CryptoVodozemac)) {
+            // If also the connection crypto evolved, make sure to continue
+            // forcing an update even if the shared profile did not change, to
+            // ensure we help the contact advance crypto evolution as fast as
+            // possible
+            contact = updatedContact;
+            onlyUpdatedOnProfileChange = false;
+          } else {
+            // Otherwise, save updated contact and return, knowing that will
+            // trigger this method again
+            await _contactStorage.set(contact.coagContactId, updatedContact);
+            // TODO(LGRo): Doing another read attempt until we don't receive
+            //             updates seems slow to get a write in
+            return;
+          }
         }
       }
 
@@ -413,6 +426,7 @@ class ContactDhtRepository {
         return;
       }
       final contacts = await _contactStorage.getAll();
+      contacts[contact.coagContactId] = contact;
       final circleMemberships = await _circleStorage.getAll().then(
         (circles) => circlesByContactIds(circles.values),
       );
@@ -425,7 +439,8 @@ class ContactDhtRepository {
         recordsToPin.whereType<RecordKey>().toList(),
       );
       // If we already have shared the most recent profile version, stop here
-      if (updatedSharedProfile == contact.profileSharingStatus.sharedProfile) {
+      if (onlyUpdatedOnProfileChange &&
+          updatedSharedProfile == contact.profileSharingStatus.sharedProfile) {
         debugPrint(
           'rcrn-dht-on-update | ${contact.coagContactId.substring(0, 5)} | '
           'skip-no-change',
