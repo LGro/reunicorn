@@ -9,6 +9,7 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loggy/loggy.dart';
 import 'package:pointycastle/pointycastle.dart' show Digest;
+import 'package:reunicorn/data/repositories/base_dht.dart';
 import 'package:uuid/uuid.dart';
 import 'package:veilid_support/veilid_support.dart';
 import 'package:vodozemac/vodozemac.dart' as vod;
@@ -254,6 +255,57 @@ extension BackupSettings on Storage<Setting> {
   }
 }
 
+class NextContactPrep extends BaseDhtRepository {
+  final BaseDht _dhtStorage;
+  CoagContact? _nextContact;
+  bool _isPreparing = false;
+
+  NextContactPrep(this._dhtStorage) {
+    _prepContact();
+  }
+
+  CoagContact? getContact() {
+    if (_nextContact == null) {
+      return null;
+    }
+    final contactToReturn = _nextContact;
+    _nextContact = null;
+    unawaited(_prepContact());
+    return contactToReturn;
+  }
+
+  Future<void> _prepContact() async {
+    _isPreparing = true;
+    try {
+      final connectionCrypto =
+          CryptoState.symmetric(
+                sharedSecret: await generateRandomSharedSecretBest(),
+                accountVod: (vod.Account()..generateOneTimeKeys(1))
+                    .toPickleEncrypted(Uint8List(32)),
+              )
+              as CryptoSymmetric;
+      final (dhtConnection, updatedConnectionCrypto) = await dht_comm
+          .initializeEncryptedDhtConnection(_dhtStorage, connectionCrypto);
+      _nextContact = CoagContact(
+        coagContactId: Uuid().v4(),
+        name: '???',
+        myIdentity: await generateKeyPairBest(),
+        myIntroductionKeyPair: await generateKeyPairBest(),
+        connectionCrypto: updatedConnectionCrypto,
+        dhtConnection: dhtConnection,
+      );
+    } on VeilidAPIException {}
+    _isPreparing = false;
+  }
+
+  @override
+  Future<void> dhtBecameAvailableCallback() async {
+    if (_nextContact == null && !_isPreparing) {
+      unawaited(_prepContact());
+    }
+  }
+}
+
 class ContactDhtRepository {
   final Storage<CoagContact> _contactStorage;
   final Storage<Circle> _circleStorage;
@@ -261,6 +313,7 @@ class ContactDhtRepository {
   final Storage<Setting> _settingStorage;
   final BaseDht _dhtStorage;
   var veilidNetworkAvailable = false;
+  late final NextContactPrep _nextContactPrep;
 
   // TODO: Add information about which contact is currently being synced / was synced last
 
@@ -271,6 +324,7 @@ class ContactDhtRepository {
     this._settingStorage,
     this._dhtStorage,
   ) {
+    _nextContactPrep = NextContactPrep(_dhtStorage);
     unawaited(_initVeilidNetworkAvailable());
     ProcessorRepository.instance.streamProcessorConnectionState().listen(
       _veilidConnectionStateChangeCallback,
@@ -603,6 +657,12 @@ class ContactDhtRepository {
   /// Creating contact from just a name or from a profile link, i.e. with name
   /// and public key
   Future<CoagContact> createContactForInvite(String name) async {
+    final preparedContact = _nextContactPrep.getContact()?.copyWith(name: name);
+    if (preparedContact != null) {
+      await _contactStorage.set(preparedContact.coagContactId, preparedContact);
+      return preparedContact;
+    }
+
     final connectionCrypto =
         CryptoState.symmetric(
               sharedSecret: await generateRandomSharedSecretBest(),
