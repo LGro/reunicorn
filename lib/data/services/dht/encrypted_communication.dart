@@ -52,6 +52,9 @@ sealed class MessageWithEncryptionMetaData
     /// DHT record writer for recipient to share back
     KeyPair? shareBackDHTWriter,
 
+    /// DHT record writer of sender to support deniability of shared info
+    KeyPair? deniabilitySharingWriter,
+
     /// Base64 encoded vodozemac curve25519 one-time-key
     String? oneTimeKey,
 
@@ -93,6 +96,9 @@ MessageWithEncryptionMetaData encryptionMetaData(
     initialized: (s) => MessageWithEncryptionMetaData(
       shareBackDHTKey: s.recordKeyThemSharing,
       shareBackDHTWriter: s.writerThemSharing,
+    ),
+    established: (s) => MessageWithEncryptionMetaData(
+      deniabilitySharingWriter: s.writerMeSharing,
     ),
     orElse: () => MessageWithEncryptionMetaData(),
   );
@@ -164,12 +170,7 @@ initializeEncryptedDhtConnection(BaseDht dht, CryptoState cryptoState) async {
   try {
     // Already try to make the share back information available
     return await encryptAndPrependVodInfo(
-      jsonEncode(
-        MessageWithEncryptionMetaData(
-          shareBackDHTKey: receiveKey,
-          shareBackDHTWriter: receiveWriter,
-        ).toJson(),
-      ),
+      jsonEncode(encryptionMetaData(connectionState, cryptoState).toJson()),
       cryptoState,
     ).then(
       (v) async => dht
