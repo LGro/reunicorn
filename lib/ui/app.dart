@@ -45,6 +45,7 @@ import 'dashboard/page.dart';
 import 'import_ics/page.dart';
 import 'introductions/page.dart';
 import 'locations/schedule/widget.dart';
+import 'locations/share_location/widget.dart';
 import 'map/list_page.dart';
 import 'map/page.dart';
 import 'profile/page.dart';
@@ -184,6 +185,15 @@ GoRouter buildAppRouter(
               name: 'scheduleLocation',
               // TODO: Handle if extra cannot be casted
               builder: (_, state) => ScheduleWidget(
+                location: (state.extra == null)
+                    ? null
+                    : state.extra! as ContactTemporaryLocation,
+              ),
+            ),
+            GoRoute(
+              path: 'shareLocation',
+              name: 'shareLocation',
+              builder: (_, state) => ShareLocationWidget(
                 location: (state.extra == null)
                     ? null
                     : state.extra! as ContactTemporaryLocation,

@@ -24,8 +24,8 @@ import '../../data/repositories/contact_dht.dart';
 import '../../data/repositories/settings.dart';
 import '../../data/services/storage/base.dart';
 import '../contact_details/page.dart';
-import '../locations/check_in/widget.dart';
 import '../locations/schedule/widget.dart';
+import '../locations/share_location/widget.dart';
 import '../utils.dart';
 import 'cubit.dart';
 
@@ -328,62 +328,18 @@ Future<void> showModalTemporaryLocationDetails(
   ),
 );
 
-class AddAndCheckInButtons extends StatelessWidget {
-  const AddAndCheckInButtons({super.key});
+class AddLocationButton extends StatelessWidget {
+  const AddLocationButton({super.key});
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-    children: [
-      FilledButton(
-        onPressed: () => showModalBottomSheet<void>(
-          context: context,
-          isScrollControlled: true,
-          builder: (modalContext) => DraggableScrollableSheet(
-            expand: false,
-            maxChildSize: 0.9,
-            initialChildSize: 0.8,
-            builder: (_, scrollController) => SingleChildScrollView(
-              controller: scrollController,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(modalContext).viewInsets.bottom,
-                ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [CheckInWidget()],
-                ),
-              ),
-            ),
-          ),
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.pin_drop),
-            SizedBox(width: 8),
-            Text('Check-in'),
-          ],
-        ),
+  Widget build(BuildContext context) => IconButton.filled(
+    onPressed: () => Navigator.push(
+      context,
+      MaterialPageRoute<ShareLocationWidget>(
+        builder: (_) => const ShareLocationWidget(),
       ),
-      FilledButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute<ScheduleWidget>(
-            builder: (_) => const ScheduleWidget(),
-          ),
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.calendar_month),
-            SizedBox(width: 8),
-            Text('Schedule'),
-          ],
-        ),
-      ),
-    ],
+    ),
+    icon: const Icon(Icons.add),
   );
 }
 
@@ -908,7 +864,7 @@ class _MapPageState extends State<MapPage> {
                           //   },
                           // ),
                           // const SizedBox(height: 4),
-                          const AddAndCheckInButtons(),
+                          const Center(child: AddLocationButton()),
                         ],
                       ),
                     ),
