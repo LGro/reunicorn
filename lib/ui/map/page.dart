@@ -15,6 +15,7 @@ import 'package:intl/intl.dart';
 import 'package:maplibre_gl/maplibre_gl.dart' hide Circle;
 import 'package:reunicorn/tools/tools.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../data/models/circle.dart';
 import '../../data/models/coag_contact.dart';
@@ -23,9 +24,10 @@ import '../../data/models/profile_info.dart';
 import '../../data/repositories/contact_dht.dart';
 import '../../data/repositories/settings.dart';
 import '../../data/services/storage/base.dart';
+import '../../data/providers/geocoding/maptiler.dart';
+import '../../data/utils.dart';
 import '../contact_details/page.dart';
 import '../locations/schedule/widget.dart';
-import '../locations/share_location/widget.dart';
 import '../utils.dart';
 import 'cubit.dart';
 
@@ -328,19 +330,605 @@ Future<void> showModalTemporaryLocationDetails(
   ),
 );
 
-class AddLocationButton extends StatelessWidget {
-  const AddLocationButton({super.key});
+/// Bottom search bar widget for location search and GPS
+class MapLocationSearchBar extends StatefulWidget {
+  const MapLocationSearchBar({
+    required this.onLocationSelected,
+    required this.onGpsLocationRequested,
+    this.isGpsLoading = false,
+    super.key,
+  });
+
+  final void Function(SearchResult) onLocationSelected;
+  final VoidCallback onGpsLocationRequested;
+  final bool isGpsLoading;
 
   @override
-  Widget build(BuildContext context) => IconButton.filled(
-    onPressed: () => Navigator.push(
-      context,
-      MaterialPageRoute<ShareLocationWidget>(
-        builder: (_) => const ShareLocationWidget(),
+  State<MapLocationSearchBar> createState() => _MapLocationSearchBarState();
+}
+
+class _MapLocationSearchBarState extends State<MapLocationSearchBar> {
+  final _controller = TextEditingController();
+  final _focusNode = FocusNode();
+  List<SearchResult> _suggestions = [];
+  bool _showSuggestions = false;
+  String? _searchingQuery;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus) {
+      // Delay hiding to allow tap on suggestion
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted && !_focusNode.hasFocus) {
+          setState(() => _showSuggestions = false);
+        }
+      });
+    }
+  }
+
+  Future<void> _onSearchChanged(String query) async {
+    if (query.length < 2) {
+      setState(() {
+        _suggestions = [];
+        _showSuggestions = false;
+      });
+      return;
+    }
+
+    _searchingQuery = query;
+    final results = await searchLocation(
+      query: query,
+      apiKey: maptilerToken(),
+      limit: 5,
+    );
+
+    if (_searchingQuery != query || !mounted) return;
+
+    setState(() {
+      _suggestions = results;
+      _showSuggestions = results.isNotEmpty;
+    });
+  }
+
+  void _onSuggestionSelected(SearchResult result) {
+    _controller.text = result.placeName;
+    setState(() => _showSuggestions = false);
+    _focusNode.unfocus();
+    widget.onLocationSelected(result);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Suggestions list (appears above search bar)
+          // Always in tree to prevent focus loss when suggestions appear
+          AnimatedSize(
+            duration: const Duration(milliseconds: 150),
+            alignment: Alignment.bottomCenter,
+            child: (_showSuggestions && _suggestions.isNotEmpty)
+                ? Container(
+                    key: const ValueKey('suggestions'),
+                    constraints: const BoxConstraints(maxHeight: 200),
+                    margin: const EdgeInsets.only(bottom: 4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      itemCount: _suggestions.length,
+                      itemBuilder: (context, index) {
+                        final suggestion = _suggestions[index];
+                        return ListTile(
+                          dense: true,
+                          leading:
+                              const Icon(Icons.location_on_outlined, size: 20),
+                          title: Text(
+                            suggestion.placeName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          onTap: () => _onSuggestionSelected(suggestion),
+                        );
+                      },
+                    ),
+                  )
+                : const SizedBox.shrink(key: ValueKey('no-suggestions')),
+          ),
+          // Search bar row
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                // GPS button
+                IconButton(
+                  onPressed:
+                      widget.isGpsLoading ? null : widget.onGpsLocationRequested,
+                  icon: widget.isGpsLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.my_location),
+                  tooltip: 'Use current location',
+                ),
+                // Search field
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    decoration: const InputDecoration(
+                      hintText: 'Search for a location...',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    onChanged: _onSearchChanged,
+                  ),
+                ),
+                // Clear button
+                if (_controller.text.isNotEmpty)
+                  IconButton(
+                    onPressed: () {
+                      _controller.clear();
+                      setState(() {
+                        _suggestions = [];
+                        _showSuggestions = false;
+                      });
+                    },
+                    icon: const Icon(Icons.clear, size: 20),
+                  )
+                else
+                  const SizedBox(width: 8),
+              ],
+            ),
+          ),
+        ],
+      );
+}
+
+/// Bottom sheet for sharing a selected location
+class ShareLocationBottomSheet extends StatefulWidget {
+  const ShareLocationBottomSheet({
+    required this.location,
+    this.isGpsLocation = false,
+    this.onClose,
+    super.key,
+  });
+
+  final SearchResult location;
+  final bool isGpsLocation;
+  final VoidCallback? onClose;
+
+  @override
+  State<ShareLocationBottomSheet> createState() =>
+      _ShareLocationBottomSheetState();
+}
+
+class _ShareLocationBottomSheetState extends State<ShareLocationBottomSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+
+  DateTime? _startDate;
+  DateTime? _endDate;
+  List<(String, String, bool, int)> _circles = [];
+  bool _inProgress = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCircles();
+
+    // If GPS location, set start time to now
+    if (widget.isGpsLocation) {
+      final now = DateTime.now();
+      _startDate = now;
+      _endDate = now.add(const Duration(hours: 1));
+    }
+  }
+
+  Future<void> _loadCircles() async {
+    final circleStorage = context.read<Storage<Circle>>();
+    final circles = await circleStorage.getAll();
+
+    if (!mounted) return;
+    setState(() {
+      _circles = circles.values
+          .map((c) => (c.id, c.name, false, c.memberIds.length))
+          .toList();
+    });
+  }
+
+  bool get _isValid =>
+      _titleController.text.isNotEmpty &&
+      _startDate != null &&
+      _endDate != null &&
+      _circles.any((c) => c.$3);
+
+  void _updateCircleSelection(int index, bool selected) {
+    final circles = List<(String, String, bool, int)>.from(_circles);
+    circles[index] = (
+      circles[index].$1,
+      circles[index].$2,
+      selected,
+      circles[index].$4,
+    );
+    setState(() => _circles = circles);
+  }
+
+  Future<void> _selectDateRange() async {
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+      initialDateRange: DateTimeRange(
+        start: _startDate ?? DateTime.now(),
+        end: _endDate ?? DateTime.now().add(const Duration(days: 1)),
       ),
-    ),
-    icon: const Icon(Icons.add),
-  );
+    );
+
+    if (range != null && mounted) {
+      setState(() {
+        _startDate = DateTime(
+          range.start.year,
+          range.start.month,
+          range.start.day,
+          _startDate?.hour ?? 0,
+          _startDate?.minute ?? 0,
+        );
+        _endDate = DateTime(
+          range.end.year,
+          range.end.month,
+          range.end.day,
+          _endDate?.hour ?? 23,
+          _endDate?.minute ?? 59,
+        );
+      });
+    }
+  }
+
+  Future<void> _selectStartTime() async {
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_startDate ?? DateTime.now()),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+
+    if (time != null && mounted) {
+      setState(() {
+        final date = _startDate ?? DateTime.now();
+        _startDate = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          time.hour,
+          time.minute,
+        );
+      });
+    }
+  }
+
+  Future<void> _selectEndTime() async {
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(
+        _endDate ?? DateTime.now().add(const Duration(hours: 1)),
+      ),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+
+    if (time != null && mounted) {
+      setState(() {
+        final date = _endDate ?? DateTime.now();
+        _endDate = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          time.hour,
+          time.minute,
+        );
+      });
+    }
+  }
+
+  Future<void> _onShare() async {
+    if (!_formKey.currentState!.validate() || !_isValid) return;
+
+    setState(() => _inProgress = true);
+
+    try {
+      final profileStorage = context.read<Storage<ProfileInfo>>();
+      final profileInfo = await getProfileInfo(profileStorage);
+      if (profileInfo == null || !mounted) {
+        setState(() => _inProgress = false);
+        return;
+      }
+
+      final locationId = const Uuid().v4();
+      await profileStorage.set(
+        profileInfo.id,
+        profileInfo.copyWith(
+          temporaryLocations: Map.fromEntries([
+            ...profileInfo.temporaryLocations.entries
+                .map((l) => MapEntry(l.key, l.value.copyWith(checkedIn: false))),
+            MapEntry(
+              locationId,
+              ContactTemporaryLocation(
+                longitude: widget.location.longitude,
+                latitude: widget.location.latitude,
+                start: _startDate!,
+                end: _endDate!,
+                name: _titleController.text,
+                details: _descriptionController.text,
+                address: widget.location.placeName,
+                circles: _circles.where((c) => c.$3).map((c) => c.$1).toList(),
+                checkedIn: widget.isGpsLocation,
+              ),
+            ),
+          ]),
+        ),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                'Location "${_titleController.text}" successfully shared.',
+              ),
+            ),
+          );
+        widget.onClose?.call();
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(content: Text('Sharing location failed.')),
+          );
+        setState(() => _inProgress = false);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, scrollController) => Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Share Location',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          widget.onClose?.call();
+                          Navigator.of(context).pop();
+                        },
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Location preview
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          widget.isGpsLocation
+                              ? Icons.my_location
+                              : Icons.location_on,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            widget.location.placeName,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Title field
+                  TextFormField(
+                    controller: _titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Title',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) =>
+                        (v?.isEmpty ?? true) ? 'Please enter a title' : null,
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Description field
+                  TextFormField(
+                    controller: _descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Description (optional)',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Circles section
+                  Text(
+                    'Share with circles',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  if (_circles.isEmpty)
+                    const Text('No circles available')
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: _circles
+                          .asMap()
+                          .map(
+                            (i, c) => MapEntry(
+                              i,
+                              FilterChip(
+                                selected: c.$3,
+                                label: Text('${c.$2} (${c.$4})'),
+                                onSelected: (v) => _updateCircleSelection(i, v),
+                              ),
+                            ),
+                          )
+                          .values
+                          .toList(),
+                    ),
+                  const SizedBox(height: 16),
+
+                  // Date/Time section
+                  Text(
+                    'When',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Start date/time
+                  Row(
+                    children: [
+                      const Text('From: '),
+                      TextButton(
+                        onPressed: _selectDateRange,
+                        child: Text(
+                          _startDate != null
+                              ? DateFormat.yMd().format(_startDate!)
+                              : 'Select date',
+                        ),
+                      ),
+                      if (_startDate != null)
+                        TextButton(
+                          onPressed: _selectStartTime,
+                          child: Text(DateFormat.Hm().format(_startDate!)),
+                        ),
+                    ],
+                  ),
+
+                  // End date/time
+                  Row(
+                    children: [
+                      const Text('Until: '),
+                      TextButton(
+                        onPressed: _selectDateRange,
+                        child: Text(
+                          _endDate != null
+                              ? DateFormat.yMd().format(_endDate!)
+                              : 'Select date',
+                        ),
+                      ),
+                      if (_endDate != null)
+                        TextButton(
+                          onPressed: _selectEndTime,
+                          child: Text(DateFormat.Hm().format(_endDate!)),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Share button
+                  SizedBox(
+                    width: double.infinity,
+                    child: _inProgress
+                        ? const Center(child: CircularProgressIndicator())
+                        : FilledButton(
+                            onPressed: _isValid ? _onShare : null,
+                            child: const Text('Share Location'),
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 class TimeSelectionSlider extends StatelessWidget {
@@ -449,6 +1037,193 @@ class _MapPageState extends State<MapPage> {
   MapLibreMapController? _controller;
   Map<String, MarkerData> _markers = {};
   DateTime? _timeSelection;
+  bool _isGpsLoading = false;
+  Symbol? _selectedLocationSymbol;
+
+  Future<void> _useCurrentGpsLocation() async {
+    setState(() => _isGpsLoading = true);
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              const SnackBar(content: Text('Location services are disabled.')),
+            );
+        }
+        setState(() => _isGpsLoading = false);
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                const SnackBar(content: Text('Location permission denied.')),
+              );
+          }
+          setState(() => _isGpsLoading = false);
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              const SnackBar(
+                content: Text('Location permission permanently denied.'),
+              ),
+            );
+        }
+        setState(() => _isGpsLoading = false);
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          timeLimit: Duration(seconds: 30),
+        ),
+      );
+
+      final result = SearchResult(
+        longitude: position.longitude,
+        latitude: position.latitude,
+        placeName:
+            '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}',
+        id: '',
+      );
+
+      if (!mounted) return;
+      setState(() => _isGpsLoading = false);
+
+      await _onLocationSelected(result, isGpsLocation: true);
+    } on TimeoutException {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Could not determine GPS location (timeout).'),
+            ),
+          );
+      }
+      setState(() => _isGpsLoading = false);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(content: Text('Could not determine GPS location.')),
+          );
+      }
+      setState(() => _isGpsLoading = false);
+    }
+  }
+
+  Future<void> _onLocationSelected(
+    SearchResult location, {
+    bool isGpsLocation = false,
+  }) async {
+    // Move camera and add marker
+    final latLng = LatLng(location.latitude, location.longitude);
+    await _controller?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 14));
+
+    // Remove previous selected marker if exists
+    if (_selectedLocationSymbol != null) {
+      await _controller?.removeSymbol(_selectedLocationSymbol!);
+    }
+
+    // Add marker image if not exists
+    await _controller?.addImage(
+      'selected-marker',
+      await iconToUint8List(
+        Icons.location_on,
+        size: 64,
+        color: Colors.deepPurpleAccent,
+      ),
+    );
+
+    _selectedLocationSymbol = await _controller?.addSymbol(
+      SymbolOptions(
+        geometry: latLng,
+        iconImage: 'selected-marker',
+        iconSize: 2,
+      ),
+    );
+
+    if (!mounted) return;
+
+    // Show share dialog
+    await _showShareLocationDialog(location, isGpsLocation: isGpsLocation);
+  }
+
+  Future<void> _onMapLongPress(Point<double> point, LatLng latLng) async {
+    // Check if there's a marker nearby - if so, don't trigger
+    final currentZoom = _controller?.cameraPosition?.zoom ?? 10;
+    final thresholdMeters = calculateClusterThresholdMeters(
+      zoom: currentZoom,
+      latitude: latLng.latitude,
+      clusterPixelRadius: 30,
+    );
+
+    final hasNearbyMarker = _markers.values.any(
+      (marker) =>
+          Geolocator.distanceBetween(
+            marker.coordinates.latitude,
+            marker.coordinates.longitude,
+            latLng.latitude,
+            latLng.longitude,
+          ) <
+          thresholdMeters,
+    );
+
+    if (hasNearbyMarker) return;
+
+    final result = SearchResult(
+      longitude: latLng.longitude,
+      latitude: latLng.latitude,
+      placeName:
+          '${latLng.latitude.toStringAsFixed(4)}, ${latLng.longitude.toStringAsFixed(4)}',
+      id: '',
+    );
+
+    await _onLocationSelected(result);
+  }
+
+  Future<void> _showShareLocationDialog(
+    SearchResult location, {
+    bool isGpsLocation = false,
+  }) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (modalContext) => ShareLocationBottomSheet(
+        location: location,
+        isGpsLocation: isGpsLocation,
+        onClose: () async {
+          // Remove the selected marker when dialog closes
+          if (_selectedLocationSymbol != null) {
+            await _controller?.removeSymbol(_selectedLocationSymbol!);
+            _selectedLocationSymbol = null;
+          }
+        },
+      ),
+    );
+
+    // Also remove marker if bottom sheet dismissed without action
+    if (_selectedLocationSymbol != null) {
+      await _controller?.removeSymbol(_selectedLocationSymbol!);
+      _selectedLocationSymbol = null;
+    }
+  }
 
   Future<void> _showClusterMarkerList(List<String> markerIds) async {
     final defaultImageData = await DefaultAssetBundle.of(
@@ -827,10 +1602,11 @@ class _MapPageState extends State<MapPage> {
                         );
                       }
                     },
+                    onMapLongClick: _onMapLongPress,
                     attributionButtonMargins: const Point<num>(12, 12),
                     rotateGesturesEnabled: false,
                     tiltGesturesEnabled: false,
-                    dragEnabled: false,
+                    dragEnabled: true,
                   ),
                   Align(
                     alignment: AlignmentDirectional.bottomStart,
@@ -843,28 +1619,11 @@ class _MapPageState extends State<MapPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // TimeSelectionSlider(
-                          //   selection: _timeSelection,
-                          //   labels: <ContactTemporaryLocation>[
-                          //     ...filterTemporaryLocations(
-                          //       state.profileInfo?.temporaryLocations ?? {},
-                          //     ).values,
-                          //     ...state.contacts
-                          //         .map(
-                          //           (c) => filterTemporaryLocations(
-                          //             c.temporaryLocations,
-                          //           ).values,
-                          //         )
-                          //         .expand((l) => l),
-                          //   ].map((l) => l.end).sorted(),
-                          //   callback: (date) {
-                          //     setState(() {
-                          //       _timeSelection = date;
-                          //     });
-                          //   },
-                          // ),
-                          // const SizedBox(height: 4),
-                          const Center(child: AddLocationButton()),
+                          MapLocationSearchBar(
+                            onLocationSelected: _onLocationSelected,
+                            onGpsLocationRequested: _useCurrentGpsLocation,
+                            isGpsLoading: _isGpsLoading,
+                          ),
                         ],
                       ),
                     ),
