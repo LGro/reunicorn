@@ -412,111 +412,111 @@ class _MapLocationSearchBarState extends State<MapLocationSearchBar> {
 
   @override
   Widget build(BuildContext context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Suggestions list (appears above search bar)
-          // Always in tree to prevent focus loss when suggestions appear
-          AnimatedSize(
-            duration: const Duration(milliseconds: 150),
-            alignment: Alignment.bottomCenter,
-            child: (_showSuggestions && _suggestions.isNotEmpty)
-                ? Container(
-                    key: const ValueKey('suggestions'),
-                    constraints: const BoxConstraints(maxHeight: 200),
-                    margin: const EdgeInsets.only(bottom: 4),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, -2),
-                        ),
-                      ],
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      // Suggestions list (appears above search bar)
+      // Always in tree to prevent focus loss when suggestions appear
+      AnimatedSize(
+        duration: const Duration(milliseconds: 150),
+        alignment: Alignment.bottomCenter,
+        child: (_showSuggestions && _suggestions.isNotEmpty)
+            ? Container(
+                key: const ValueKey('suggestions'),
+                constraints: const BoxConstraints(maxHeight: 200),
+                margin: const EdgeInsets.only(bottom: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, -2),
                     ),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      padding: EdgeInsets.zero,
-                      itemCount: _suggestions.length,
-                      itemBuilder: (context, index) {
-                        final suggestion = _suggestions[index];
-                        return ListTile(
-                          dense: true,
-                          leading:
-                              const Icon(Icons.location_on_outlined, size: 20),
-                          title: Text(
-                            suggestion.placeName,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          onTap: () => _onSuggestionSelected(suggestion),
-                        );
-                      },
-                    ),
-                  )
-                : const SizedBox.shrink(key: ValueKey('no-suggestions')),
-          ),
-          // Search bar row
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  ],
                 ),
-              ],
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: _suggestions.length,
+                  itemBuilder: (context, index) {
+                    final suggestion = _suggestions[index];
+                    return ListTile(
+                      dense: true,
+                      leading: const Icon(Icons.location_on_outlined, size: 20),
+                      title: Text(
+                        suggestion.placeName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onTap: () => _onSuggestionSelected(suggestion),
+                    );
+                  },
+                ),
+              )
+            : const SizedBox.shrink(key: ValueKey('no-suggestions')),
+      ),
+      // Search bar row
+      Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            child: Row(
-              children: [
-                // GPS button
-                IconButton(
-                  onPressed:
-                      widget.isGpsLoading ? null : widget.onGpsLocationRequested,
-                  icon: widget.isGpsLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.my_location),
-                  tooltip: 'Use current location',
-                ),
-                // Search field
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    decoration: const InputDecoration(
-                      hintText: 'Search for a location...',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 8),
-                    ),
-                    onChanged: _onSearchChanged,
-                  ),
-                ),
-                // Clear button
-                if (_controller.text.isNotEmpty)
-                  IconButton(
-                    onPressed: () {
-                      _controller.clear();
-                      setState(() {
-                        _suggestions = [];
-                        _showSuggestions = false;
-                      });
-                    },
-                    icon: const Icon(Icons.clear, size: 20),
-                  )
-                else
-                  const SizedBox(width: 8),
-              ],
+          ],
+        ),
+        child: Row(
+          children: [
+            // GPS button
+            IconButton(
+              onPressed: widget.isGpsLoading
+                  ? null
+                  : widget.onGpsLocationRequested,
+              icon: widget.isGpsLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.my_location),
+              tooltip: 'Use current location',
             ),
-          ),
-        ],
-      );
+            // Search field
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                decoration: const InputDecoration(
+                  hintText: 'Search for a location...',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                ),
+                onChanged: _onSearchChanged,
+              ),
+            ),
+            // Clear button
+            if (_controller.text.isNotEmpty)
+              IconButton(
+                onPressed: () {
+                  _controller.clear();
+                  setState(() {
+                    _suggestions = [];
+                    _showSuggestions = false;
+                  });
+                },
+                icon: const Icon(Icons.clear, size: 20),
+              )
+            else
+              const SizedBox(width: 8),
+          ],
+        ),
+      ),
+    ],
+  );
 }
 
 /// Confirmation card shown after selecting a location, before sharing
@@ -536,89 +536,74 @@ class LocationConfirmationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    padding: const EdgeInsets.only(left: 12, right: 12, top: 6, bottom: 12),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.15),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+      ],
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primaryContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isGpsLocation ? Icons.my_location : Icons.location_on,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isGpsLocation ? 'Current Location' : 'Selected Location',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        location.placeName,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: onDismiss,
-                  icon: const Icon(Icons.close, size: 20),
-                  tooltip: 'Cancel',
-                ),
-              ],
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isGpsLocation ? Icons.my_location : Icons.location_on,
+                color: Theme.of(context).colorScheme.primary,
+                size: 20,
+              ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Text(
-                  '${location.latitude.toStringAsFixed(4)}, ${location.longitude.toStringAsFixed(4)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-                const Spacer(),
-                FilledButton.icon(
-                  onPressed: onShare,
-                  icon: const Icon(Icons.share, size: 18),
-                  label: const Text('Share'),
-                ),
-              ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isGpsLocation ? 'Current Location' : 'Selected Location',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    location.placeName,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: onDismiss,
+              icon: const Icon(Icons.close, size: 20),
+              tooltip: 'Cancel',
             ),
           ],
         ),
-      );
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            const Spacer(),
+            IconButton.filled(onPressed: onShare, icon: const Icon(Icons.add)),
+          ],
+        ),
+      ],
+    ),
+  );
 }
 
 /// Bottom sheet for sharing a selected location
@@ -790,8 +775,9 @@ class _ShareLocationBottomSheetState extends State<ShareLocationBottomSheet> {
         profileInfo.id,
         profileInfo.copyWith(
           temporaryLocations: Map.fromEntries([
-            ...profileInfo.temporaryLocations.entries
-                .map((l) => MapEntry(l.key, l.value.copyWith(checkedIn: false))),
+            ...profileInfo.temporaryLocations.entries.map(
+              (l) => MapEntry(l.key, l.value.copyWith(checkedIn: false)),
+            ),
             MapEntry(
               locationId,
               ContactTemporaryLocation(
@@ -844,193 +830,188 @@ class _ShareLocationBottomSheetState extends State<ShareLocationBottomSheet> {
 
   @override
   Widget build(BuildContext context) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (_, scrollController) => Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            controller: scrollController,
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 16,
-                bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+    expand: false,
+    initialChildSize: 0.7,
+    minChildSize: 0.5,
+    maxChildSize: 0.95,
+    builder: (_, scrollController) => Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        controller: scrollController,
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
                 children: [
-                  // Header
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Share Location',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          widget.onClose?.call();
-                          Navigator.of(context).pop();
-                        },
-                        icon: const Icon(Icons.close),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Location preview
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          widget.isGpsLocation
-                              ? Icons.my_location
-                              : Icons.location_on,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            widget.location.placeName,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                  Expanded(
+                    child: Text(
+                      'Share Location',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Title field
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Title',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (v) =>
-                        (v?.isEmpty ?? true) ? 'Please enter a title' : null,
-                    onChanged: (_) => setState(() {}),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Description field
-                  TextFormField(
-                    controller: _descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Description (optional)',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: 2,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Circles section
-                  Text(
-                    'Share with circles',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  if (_circles.isEmpty)
-                    const Text('No circles available')
-                  else
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      children: _circles
-                          .asMap()
-                          .map(
-                            (i, c) => MapEntry(
-                              i,
-                              FilterChip(
-                                selected: c.$3,
-                                label: Text('${c.$2} (${c.$4})'),
-                                onSelected: (v) => _updateCircleSelection(i, v),
-                              ),
-                            ),
-                          )
-                          .values
-                          .toList(),
-                    ),
-                  const SizedBox(height: 16),
-
-                  // Date/Time section
-                  Text(
-                    'When',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Start date/time
-                  Row(
-                    children: [
-                      const Text('From: '),
-                      TextButton(
-                        onPressed: _selectDateRange,
-                        child: Text(
-                          _startDate != null
-                              ? DateFormat.yMd().format(_startDate!)
-                              : 'Select date',
-                        ),
-                      ),
-                      if (_startDate != null)
-                        TextButton(
-                          onPressed: _selectStartTime,
-                          child: Text(DateFormat.Hm().format(_startDate!)),
-                        ),
-                    ],
-                  ),
-
-                  // End date/time
-                  Row(
-                    children: [
-                      const Text('Until: '),
-                      TextButton(
-                        onPressed: _selectDateRange,
-                        child: Text(
-                          _endDate != null
-                              ? DateFormat.yMd().format(_endDate!)
-                              : 'Select date',
-                        ),
-                      ),
-                      if (_endDate != null)
-                        TextButton(
-                          onPressed: _selectEndTime,
-                          child: Text(DateFormat.Hm().format(_endDate!)),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Share button
-                  SizedBox(
-                    width: double.infinity,
-                    child: _inProgress
-                        ? const Center(child: CircularProgressIndicator())
-                        : FilledButton(
-                            onPressed: _isValid ? _onShare : null,
-                            child: const Text('Share Location'),
-                          ),
+                  IconButton(
+                    onPressed: () {
+                      widget.onClose?.call();
+                      Navigator.of(context).pop();
+                    },
+                    icon: const Icon(Icons.close),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 8),
+
+              // Location preview
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      widget.isGpsLocation
+                          ? Icons.my_location
+                          : Icons.location_on,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        widget.location.placeName,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Title field
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Title',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) =>
+                    (v?.isEmpty ?? true) ? 'Please enter a title' : null,
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 12),
+
+              // Description field
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Description (optional)',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 16),
+
+              // Circles section
+              Text(
+                'Share with circles',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              if (_circles.isEmpty)
+                const Text('No circles available')
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: _circles
+                      .asMap()
+                      .map(
+                        (i, c) => MapEntry(
+                          i,
+                          FilterChip(
+                            selected: c.$3,
+                            label: Text('${c.$2} (${c.$4})'),
+                            onSelected: (v) => _updateCircleSelection(i, v),
+                          ),
+                        ),
+                      )
+                      .values
+                      .toList(),
+                ),
+              const SizedBox(height: 16),
+
+              // Date/Time section
+              Text('When', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+
+              // Start date/time
+              Row(
+                children: [
+                  const Text('From: '),
+                  TextButton(
+                    onPressed: _selectDateRange,
+                    child: Text(
+                      _startDate != null
+                          ? DateFormat.yMd().format(_startDate!)
+                          : 'Select date',
+                    ),
+                  ),
+                  if (_startDate != null)
+                    TextButton(
+                      onPressed: _selectStartTime,
+                      child: Text(DateFormat.Hm().format(_startDate!)),
+                    ),
+                ],
+              ),
+
+              // End date/time
+              Row(
+                children: [
+                  const Text('Until: '),
+                  TextButton(
+                    onPressed: _selectDateRange,
+                    child: Text(
+                      _endDate != null
+                          ? DateFormat.yMd().format(_endDate!)
+                          : 'Select date',
+                    ),
+                  ),
+                  if (_endDate != null)
+                    TextButton(
+                      onPressed: _selectEndTime,
+                      child: Text(DateFormat.Hm().format(_endDate!)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Share button
+              SizedBox(
+                width: double.infinity,
+                child: _inProgress
+                    ? const Center(child: CircularProgressIndicator())
+                    : FilledButton(
+                        onPressed: _isValid ? _onShare : null,
+                        child: const Text('Share Location'),
+                      ),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class TimeSelectionSlider extends StatelessWidget {
@@ -1599,178 +1580,221 @@ class _MapPageState extends State<MapPage> {
         }
       },
       builder: (context, state) => Scaffold(
+        resizeToAvoidBottomInset: false,
         body: (state.profileInfo == null)
             ? const Center(child: CircularProgressIndicator())
-            : Stack(
-                children: [
-                  MapLibreMap(
-                    styleString: context
-                        .read<SettingsRepository>()
-                        .mapStyleString,
-                    initialCameraPosition: CameraPosition(
-                      target:
-                          (widget.latitude != null && widget.longitude != null)
-                          ? LatLng(widget.latitude!, widget.longitude!)
-                          : initialLocation(
-                                  state.profileInfo?.addressLocations.values ??
-                                      [],
-                                  state
-                                          .profileInfo
-                                          ?.temporaryLocations
-                                          .values ??
-                                      [],
-                                  state.contacts
-                                      .map((c) => c.addressLocations.values)
-                                      .expand((l) => l),
-                                  state.contacts
-                                      .map((c) => c.temporaryLocations.values)
-                                      .expand((l) => l),
-                                ) ??
-                                const LatLng(20, 0),
-                      zoom:
-                          (widget.latitude != null && widget.longitude != null)
-                          ? 12
-                          : 2.5,
-                    ),
-                    trackCameraPosition: true,
-                    minMaxZoomPreference: const MinMaxZoomPreference(null, 22),
-                    onMapCreated: _onMapCreated,
-                    onStyleLoadedCallback: () async {
-                      final markers = _getMarkers(
-                        context,
-                        state,
-                        _timeSelection,
-                      );
-
-                      final clusterCircleColor = colorToHex(
-                        Theme.of(context).colorScheme.primary,
-                      );
-                      final clusterCircleTextColor = colorToHex(
-                        Theme.of(context).colorScheme.onPrimary,
-                      );
-
-                      await _addMarkerImages(markers);
-
-                      setState(() {
-                        _markers = markers.asMap().map(
-                          (i, marker) => MapEntry('marker-$i', marker),
-                        );
-                      });
-
-                      // Add GeoJSON source with clustering enabled
-                      await _controller?.addSource(
-                        'points',
-                        GeojsonSourceProperties(
-                          data: toGeoJson(
-                            markers.map((m) => m.coordinates).toList(),
-                          ),
-                          cluster: true,
-                          clusterMaxZoom: 22,
-                          clusterRadius: 50,
-                        ),
-                      );
-
-                      // Layer: individual unclustered points (add first)
-                      if (!(await _controller?.getLayerIds() ?? []).contains(
-                        'unclustered-points',
-                      )) {
-                        await _controller?.addLayer(
-                          'points',
-                          'unclustered-points',
-                          const SymbolLayerProperties(
-                            iconImage: ['get', 'icon'],
-                            iconSize: 1,
-                            iconAllowOverlap: true,
-                            iconIgnorePlacement: true,
-                          ),
-                          filter: [
-                            '!',
-                            ['has', 'point_count'],
-                          ],
-                        );
-                      }
-
-                      // Layer: cluster circles (simpler styling first)
-                      if (!(await _controller?.getLayerIds() ?? []).contains(
-                        'clusters',
-                      )) {
-                        await _controller?.addLayer(
-                          'points',
-                          'clusters',
-                          CircleLayerProperties(
-                            circleColor: clusterCircleColor,
-                            circleRadius: 25,
-                            circleStrokeWidth: 0,
-                            circleStrokeColor: '#ffffff',
-                          ),
-                          filter: ['has', 'point_count'],
-                        );
-                      }
-
-                      // Layer: cluster count text
-                      if (!(await _controller?.getLayerIds() ?? []).contains(
-                        'cluster-count',
-                      )) {
-                        await _controller?.addLayer(
-                          'points',
-                          'cluster-count',
-                          SymbolLayerProperties(
-                            textField: ['get', 'point_count_abbreviated'],
-                            textSize: 16,
-                            textColor: clusterCircleTextColor,
-                            textHaloColor: '#000000',
-                            textHaloWidth: 0,
-                          ),
-                          filter: ['has', 'point_count'],
-                        );
-                      }
-                    },
-                    onMapLongClick: _onMapLongPress,
-                    attributionButtonMargins: const Point<num>(12, 12),
-                    rotateGesturesEnabled: false,
-                    tiltGesturesEnabled: false,
-                    dragEnabled: true,
-                  ),
-                  Align(
-                    alignment: AlignmentDirectional.bottomStart,
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                        left: 8,
-                        right: 8,
-                        bottom: 8,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Show confirmation card when a location is pending
-                          if (_pendingLocation != null)
-                            LocationConfirmationCard(
-                              location: _pendingLocation!,
-                              isGpsLocation: _pendingIsGpsLocation,
-                              onShare: _confirmPendingLocation,
-                              onDismiss: _clearPendingLocation,
-                            )
-                          else
-                            MapLocationSearchBar(
-                              onLocationSelected: _onLocationSelected,
-                              onGpsLocationRequested: _useCurrentGpsLocation,
-                              isGpsLoading: _isGpsLoading,
+            // WORKAROUND: MapLibre native platform view resizes when
+            // the on-screen keyboard appears/disappears, causing the map
+            // to visually "jump". Flutter's resizeToAvoidBottomInset,
+            // MediaQuery overrides, and LayoutBuilder constraints don't
+            // prevent this because the native Android view receives
+            // viewport changes directly from the platform.
+            //
+            // Solution: Use the device's physical screen size (which never
+            // changes) with Positioned to place the map at fixed coordinates,
+            // and RepaintBoundary to isolate the render tree.
+            : Builder(
+                builder: (context) {
+                  final view = View.of(context);
+                  final physicalSize =
+                      view.physicalSize / view.devicePixelRatio;
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        width: physicalSize.width,
+                        height: physicalSize.height,
+                        child: RepaintBoundary(
+                          child: MapLibreMap(
+                            styleString: context
+                                .read<SettingsRepository>()
+                                .mapStyleString,
+                            initialCameraPosition: CameraPosition(
+                              target:
+                                  (widget.latitude != null &&
+                                      widget.longitude != null)
+                                  ? LatLng(widget.latitude!, widget.longitude!)
+                                  : initialLocation(
+                                          state
+                                                  .profileInfo
+                                                  ?.addressLocations
+                                                  .values ??
+                                              [],
+                                          state
+                                                  .profileInfo
+                                                  ?.temporaryLocations
+                                                  .values ??
+                                              [],
+                                          state.contacts
+                                              .map(
+                                                (c) =>
+                                                    c.addressLocations.values,
+                                              )
+                                              .expand((l) => l),
+                                          state.contacts
+                                              .map(
+                                                (c) =>
+                                                    c.temporaryLocations.values,
+                                              )
+                                              .expand((l) => l),
+                                        ) ??
+                                        const LatLng(20, 0),
+                              zoom:
+                                  (widget.latitude != null &&
+                                      widget.longitude != null)
+                                  ? 12
+                                  : 2.5,
                             ),
-                        ],
+                            trackCameraPosition: true,
+                            minMaxZoomPreference: const MinMaxZoomPreference(
+                              null,
+                              22,
+                            ),
+                            onMapCreated: _onMapCreated,
+                            onStyleLoadedCallback: () async {
+                              final markers = _getMarkers(
+                                context,
+                                state,
+                                _timeSelection,
+                              );
+
+                              final clusterCircleColor = colorToHex(
+                                Theme.of(context).colorScheme.primary,
+                              );
+                              final clusterCircleTextColor = colorToHex(
+                                Theme.of(context).colorScheme.onPrimary,
+                              );
+
+                              await _addMarkerImages(markers);
+
+                              setState(() {
+                                _markers = markers.asMap().map(
+                                  (i, marker) => MapEntry('marker-$i', marker),
+                                );
+                              });
+
+                              // Add GeoJSON source with clustering enabled
+                              await _controller?.addSource(
+                                'points',
+                                GeojsonSourceProperties(
+                                  data: toGeoJson(
+                                    markers.map((m) => m.coordinates).toList(),
+                                  ),
+                                  cluster: true,
+                                  clusterMaxZoom: 22,
+                                  clusterRadius: 50,
+                                ),
+                              );
+
+                              // Layer: individual unclustered points (add first)
+                              if (!(await _controller?.getLayerIds() ?? [])
+                                  .contains('unclustered-points')) {
+                                await _controller?.addLayer(
+                                  'points',
+                                  'unclustered-points',
+                                  const SymbolLayerProperties(
+                                    iconImage: ['get', 'icon'],
+                                    iconSize: 1,
+                                    iconAllowOverlap: true,
+                                    iconIgnorePlacement: true,
+                                  ),
+                                  filter: [
+                                    '!',
+                                    ['has', 'point_count'],
+                                  ],
+                                );
+                              }
+
+                              // Layer: cluster circles (simpler styling first)
+                              if (!(await _controller?.getLayerIds() ?? [])
+                                  .contains('clusters')) {
+                                await _controller?.addLayer(
+                                  'points',
+                                  'clusters',
+                                  CircleLayerProperties(
+                                    circleColor: clusterCircleColor,
+                                    circleRadius: 25,
+                                    circleStrokeWidth: 0,
+                                    circleStrokeColor: '#ffffff',
+                                  ),
+                                  filter: ['has', 'point_count'],
+                                );
+                              }
+
+                              // Layer: cluster count text
+                              if (!(await _controller?.getLayerIds() ?? [])
+                                  .contains('cluster-count')) {
+                                await _controller?.addLayer(
+                                  'points',
+                                  'cluster-count',
+                                  SymbolLayerProperties(
+                                    textField: [
+                                      'get',
+                                      'point_count_abbreviated',
+                                    ],
+                                    textSize: 16,
+                                    textColor: clusterCircleTextColor,
+                                    textHaloColor: '#000000',
+                                    textHaloWidth: 0,
+                                  ),
+                                  filter: ['has', 'point_count'],
+                                );
+                              }
+                            },
+                            onMapLongClick: _onMapLongPress,
+                            attributionButtonMargins: const Point<num>(12, 12),
+                            rotateGesturesEnabled: false,
+                            tiltGesturesEnabled: false,
+                            dragEnabled: true,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  Align(
-                    alignment: AlignmentDirectional.topEnd,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 32, right: 12),
-                      child: IconButton.filledTonal(
-                        onPressed: () => context.pushNamed('locationListPage'),
-                        icon: const Icon(Icons.list),
+                      Align(
+                        alignment: AlignmentDirectional.bottomStart,
+                        child: Padding(
+                          padding: const EdgeInsets.only(
+                            left: 8,
+                            right: 8,
+                            bottom: 8,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Show confirmation card when a location is pending
+                              if (_pendingLocation != null)
+                                LocationConfirmationCard(
+                                  location: _pendingLocation!,
+                                  isGpsLocation: _pendingIsGpsLocation,
+                                  onShare: _confirmPendingLocation,
+                                  onDismiss: _clearPendingLocation,
+                                )
+                              else
+                                MapLocationSearchBar(
+                                  onLocationSelected: _onLocationSelected,
+                                  onGpsLocationRequested:
+                                      _useCurrentGpsLocation,
+                                  isGpsLoading: _isGpsLoading,
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
+                      Align(
+                        alignment: AlignmentDirectional.topEnd,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 32, right: 12),
+                          child: IconButton.filledTonal(
+                            onPressed: () =>
+                                context.pushNamed('locationListPage'),
+                            icon: const Icon(Icons.list),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
       ),
     ),
