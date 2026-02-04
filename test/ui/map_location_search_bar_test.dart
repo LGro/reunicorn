@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:reunicorn/ui/map/page.dart';
+import 'package:reunicorn/ui/map/widgets/search_bar.dart';
 
 void main() {
   group('MapLocationSearchBar', () {
