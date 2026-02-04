@@ -519,6 +519,108 @@ class _MapLocationSearchBarState extends State<MapLocationSearchBar> {
       );
 }
 
+/// Confirmation card shown after selecting a location, before sharing
+class LocationConfirmationCard extends StatelessWidget {
+  const LocationConfirmationCard({
+    required this.location,
+    required this.isGpsLocation,
+    required this.onShare,
+    required this.onDismiss,
+    super.key,
+  });
+
+  final SearchResult location;
+  final bool isGpsLocation;
+  final VoidCallback onShare;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primaryContainer,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isGpsLocation ? Icons.my_location : Icons.location_on,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isGpsLocation ? 'Current Location' : 'Selected Location',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        location.placeName,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: onDismiss,
+                  icon: const Icon(Icons.close, size: 20),
+                  tooltip: 'Cancel',
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Text(
+                  '${location.latitude.toStringAsFixed(4)}, ${location.longitude.toStringAsFixed(4)}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                const Spacer(),
+                FilledButton.icon(
+                  onPressed: onShare,
+                  icon: const Icon(Icons.share, size: 18),
+                  label: const Text('Share'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+}
+
 /// Bottom sheet for sharing a selected location
 class ShareLocationBottomSheet extends StatefulWidget {
   const ShareLocationBottomSheet({
@@ -1039,6 +1141,8 @@ class _MapPageState extends State<MapPage> {
   DateTime? _timeSelection;
   bool _isGpsLoading = false;
   Symbol? _selectedLocationSymbol;
+  SearchResult? _pendingLocation;
+  bool _pendingIsGpsLocation = false;
 
   Future<void> _useCurrentGpsLocation() async {
     setState(() => _isGpsLoading = true);
@@ -1131,10 +1235,14 @@ class _MapPageState extends State<MapPage> {
   Future<void> _onLocationSelected(
     SearchResult location, {
     bool isGpsLocation = false,
+    bool animateCamera = true,
   }) async {
-    // Move camera and add marker
     final latLng = LatLng(location.latitude, location.longitude);
-    await _controller?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 14));
+
+    // Only animate camera for search/GPS selections, not long-press
+    if (animateCamera) {
+      await _controller?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 14));
+    }
 
     // Remove previous selected marker if exists
     if (_selectedLocationSymbol != null) {
@@ -1147,7 +1255,7 @@ class _MapPageState extends State<MapPage> {
       await iconToUint8List(
         Icons.location_on,
         size: 64,
-        color: Colors.deepPurpleAccent,
+        color: Theme.of(context).colorScheme.primary,
       ),
     );
 
@@ -1161,7 +1269,30 @@ class _MapPageState extends State<MapPage> {
 
     if (!mounted) return;
 
-    // Show share dialog
+    // Store pending location and show confirmation card
+    setState(() {
+      _pendingLocation = location;
+      _pendingIsGpsLocation = isGpsLocation;
+    });
+  }
+
+  void _clearPendingLocation() {
+    if (_selectedLocationSymbol != null) {
+      _controller?.removeSymbol(_selectedLocationSymbol!);
+      _selectedLocationSymbol = null;
+    }
+    setState(() {
+      _pendingLocation = null;
+      _pendingIsGpsLocation = false;
+    });
+  }
+
+  Future<void> _confirmPendingLocation() async {
+    if (_pendingLocation == null) return;
+
+    final location = _pendingLocation!;
+    final isGpsLocation = _pendingIsGpsLocation;
+
     await _showShareLocationDialog(location, isGpsLocation: isGpsLocation);
   }
 
@@ -1195,7 +1326,7 @@ class _MapPageState extends State<MapPage> {
       id: '',
     );
 
-    await _onLocationSelected(result);
+    await _onLocationSelected(result, animateCamera: false);
   }
 
   Future<void> _showShareLocationDialog(
@@ -1208,21 +1339,12 @@ class _MapPageState extends State<MapPage> {
       builder: (modalContext) => ShareLocationBottomSheet(
         location: location,
         isGpsLocation: isGpsLocation,
-        onClose: () async {
-          // Remove the selected marker when dialog closes
-          if (_selectedLocationSymbol != null) {
-            await _controller?.removeSymbol(_selectedLocationSymbol!);
-            _selectedLocationSymbol = null;
-          }
-        },
+        onClose: _clearPendingLocation,
       ),
     );
 
-    // Also remove marker if bottom sheet dismissed without action
-    if (_selectedLocationSymbol != null) {
-      await _controller?.removeSymbol(_selectedLocationSymbol!);
-      _selectedLocationSymbol = null;
-    }
+    // Also clear pending location if bottom sheet dismissed without action
+    _clearPendingLocation();
   }
 
   Future<void> _showClusterMarkerList(List<String> markerIds) async {
@@ -1619,11 +1741,20 @@ class _MapPageState extends State<MapPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          MapLocationSearchBar(
-                            onLocationSelected: _onLocationSelected,
-                            onGpsLocationRequested: _useCurrentGpsLocation,
-                            isGpsLoading: _isGpsLoading,
-                          ),
+                          // Show confirmation card when a location is pending
+                          if (_pendingLocation != null)
+                            LocationConfirmationCard(
+                              location: _pendingLocation!,
+                              isGpsLocation: _pendingIsGpsLocation,
+                              onShare: _confirmPendingLocation,
+                              onDismiss: _clearPendingLocation,
+                            )
+                          else
+                            MapLocationSearchBar(
+                              onLocationSelected: _onLocationSelected,
+                              onGpsLocationRequested: _useCurrentGpsLocation,
+                              isGpsLoading: _isGpsLoading,
+                            ),
                         ],
                       ),
                     ),
