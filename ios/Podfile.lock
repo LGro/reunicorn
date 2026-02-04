@@ -4,6 +4,8 @@ PODS:
   - Flutter (1.0.0)
   - flutter_contacts (0.0.1):
     - Flutter
+  - flutter_vodozemac (0.0.1):
+    - Flutter
   - permission_handler_apple (9.3.0):
     - Flutter
   - receive_sharing_intent (1.8.1):
@@ -17,6 +19,7 @@ DEPENDENCIES:
   - device_calendar (from `.symlinks/plugins/device_calendar/ios`)
   - Flutter (from `Flutter`)
   - flutter_contacts (from `.symlinks/plugins/flutter_contacts/ios`)
+  - flutter_vodozemac (from `.symlinks/plugins/flutter_vodozemac/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - receive_sharing_intent (from `.symlinks/plugins/receive_sharing_intent/ios`)
   - system_info_plus (from `.symlinks/plugins/system_info_plus/ios`)
@@ -29,6 +32,8 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_contacts:
     :path: ".symlinks/plugins/flutter_contacts/ios"
+  flutter_vodozemac:
+    :path: ".symlinks/plugins/flutter_vodozemac/ios"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   receive_sharing_intent:
@@ -42,6 +47,7 @@ SPEC CHECKSUMS:
   device_calendar: 9cb33f88a02e19652ec7b8b122ca778f751b1f7b
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_contacts: edb1c5ce76aa433e20e6cb14c615f4c0b66e0983
+  flutter_vodozemac: a13abe22ea9e3c4a518c88b0e91288ef7726e372
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
   receive_sharing_intent: 79c848f5b045674ad60b9fea3bafea59962ad2c1
   system_info_plus: 5393c8da281d899950d751713575fbf91c7709aa
