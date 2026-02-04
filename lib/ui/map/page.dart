@@ -1264,6 +1264,7 @@ class _MapPageState extends State<MapPage> {
         geometry: latLng,
         iconImage: 'selected-marker',
         iconSize: 2,
+        iconAnchor: 'bottom',
       ),
     );
 
