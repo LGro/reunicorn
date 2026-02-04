@@ -3,9 +3,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
-import 'package:reunicorn/data/providers/geocoding/maptiler.dart';
 import 'package:reunicorn/ui/map/page.dart';
 
 void main() {
@@ -13,15 +10,14 @@ void main() {
     testWidgets(
       'keyboard stays open when suggestions appear',
       (tester) async {
-        SearchResult? selectedLocation;
-        var gpsRequested = false;
-
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
               body: MapLocationSearchBar(
-                onLocationSelected: (result) => selectedLocation = result,
-                onGpsLocationRequested: () => gpsRequested = true,
+                onLocationSelected: (_) {},
+                onGpsLocationRequested: () {},
+                onAddLocation: () {},
+                onClearSelection: () {},
               ),
             ),
           ),
@@ -70,6 +66,8 @@ void main() {
               body: MapLocationSearchBar(
                 onLocationSelected: (_) {},
                 onGpsLocationRequested: () {},
+                onAddLocation: () {},
+                onClearSelection: () {},
               ),
             ),
           ),
@@ -116,6 +114,8 @@ void main() {
             body: MapLocationSearchBar(
               onLocationSelected: (_) {},
               onGpsLocationRequested: () {},
+              onAddLocation: () {},
+              onClearSelection: () {},
             ),
           ),
         ),
@@ -133,6 +133,8 @@ void main() {
             body: MapLocationSearchBar(
               onLocationSelected: (_) {},
               onGpsLocationRequested: () => gpsRequested = true,
+              onAddLocation: () {},
+              onClearSelection: () {},
             ),
           ),
         ),
@@ -151,6 +153,8 @@ void main() {
             body: MapLocationSearchBar(
               onLocationSelected: (_) {},
               onGpsLocationRequested: () {},
+              onAddLocation: () {},
+              onClearSelection: () {},
               isGpsLoading: true,
             ),
           ),
@@ -168,6 +172,8 @@ void main() {
             body: MapLocationSearchBar(
               onLocationSelected: (_) {},
               onGpsLocationRequested: () {},
+              onAddLocation: () {},
+              onClearSelection: () {},
             ),
           ),
         ),
@@ -191,6 +197,8 @@ void main() {
             body: MapLocationSearchBar(
               onLocationSelected: (_) {},
               onGpsLocationRequested: () {},
+              onAddLocation: () {},
+              onClearSelection: () {},
             ),
           ),
         ),
@@ -226,6 +234,8 @@ void main() {
               body: MapLocationSearchBar(
                 onLocationSelected: (_) {},
                 onGpsLocationRequested: () {},
+                onAddLocation: () {},
+                onClearSelection: () {},
               ),
             ),
           ),

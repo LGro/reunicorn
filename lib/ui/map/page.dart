@@ -335,12 +335,18 @@ class MapLocationSearchBar extends StatefulWidget {
   const MapLocationSearchBar({
     required this.onLocationSelected,
     required this.onGpsLocationRequested,
+    required this.onAddLocation,
+    required this.onClearSelection,
+    this.selectedLocation,
     this.isGpsLoading = false,
     super.key,
   });
 
   final void Function(SearchResult) onLocationSelected;
   final VoidCallback onGpsLocationRequested;
+  final VoidCallback onAddLocation;
+  final VoidCallback onClearSelection;
+  final SearchResult? selectedLocation;
   final bool isGpsLoading;
 
   @override
@@ -411,71 +417,82 @@ class _MapLocationSearchBarState extends State<MapLocationSearchBar> {
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      // Suggestions list (appears above search bar)
-      // Always in tree to prevent focus loss when suggestions appear
-      AnimatedSize(
-        duration: const Duration(milliseconds: 150),
-        alignment: Alignment.bottomCenter,
-        child: (_showSuggestions && _suggestions.isNotEmpty)
-            ? Container(
-                key: const ValueKey('suggestions'),
-                constraints: const BoxConstraints(maxHeight: 200),
-                margin: const EdgeInsets.only(bottom: 4),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  padding: EdgeInsets.zero,
-                  itemCount: _suggestions.length,
-                  itemBuilder: (context, index) {
-                    final suggestion = _suggestions[index];
-                    return ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.location_on_outlined, size: 20),
-                      title: Text(
-                        suggestion.placeName,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+  void didUpdateWidget(MapLocationSearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update text field when selected location changes
+    if (widget.selectedLocation != oldWidget.selectedLocation) {
+      if (widget.selectedLocation != null) {
+        _controller.text = widget.selectedLocation!.placeName;
+      }
+    }
+  }
+
+  void _clearField() {
+    _controller.clear();
+    setState(() {
+      _suggestions = [];
+      _showSuggestions = false;
+    });
+    widget.onClearSelection();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasSelection = widget.selectedLocation != null;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Suggestions list (appears above search bar)
+        // Always in tree to prevent focus loss when suggestions appear
+        AnimatedSize(
+          duration: const Duration(milliseconds: 150),
+          alignment: Alignment.bottomCenter,
+          child: (_showSuggestions && _suggestions.isNotEmpty)
+              ? Container(
+                  key: const ValueKey('suggestions'),
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  margin: const EdgeInsets.only(bottom: 4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, -2),
                       ),
-                      onTap: () => _onSuggestionSelected(suggestion),
-                    );
-                  },
-                ),
-              )
-            : const SizedBox.shrink(key: ValueKey('no-suggestions')),
-      ),
-      // Search bar row
-      Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+                    ],
+                  ),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    itemCount: _suggestions.length,
+                    itemBuilder: (context, index) {
+                      final suggestion = _suggestions[index];
+                      return ListTile(
+                        dense: true,
+                        leading:
+                            const Icon(Icons.location_on_outlined, size: 20),
+                        title: Text(
+                          suggestion.placeName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: () => _onSuggestionSelected(suggestion),
+                      );
+                    },
+                  ),
+                )
+              : const SizedBox.shrink(key: ValueKey('no-suggestions')),
         ),
-        child: Row(
+        // Main row: GPS button | Search field | Add button (when selected)
+        Row(
           children: [
-            // GPS button
-            IconButton(
-              onPressed: widget.isGpsLoading
-                  ? null
-                  : widget.onGpsLocationRequested,
+            // GPS button - separate from search field
+            IconButton.filledTonal(
+              onPressed:
+                  widget.isGpsLoading ? null : widget.onGpsLocationRequested,
               icon: widget.isGpsLoading
                   ? const SizedBox(
                       width: 20,
@@ -485,125 +502,62 @@ class _MapLocationSearchBarState extends State<MapLocationSearchBar> {
                   : const Icon(Icons.my_location),
               tooltip: 'Use current location',
             ),
+            const SizedBox(width: 8),
             // Search field
             Expanded(
-              child: TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                decoration: const InputDecoration(
-                  hintText: 'Search for a location...',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8),
-                ),
-                onChanged: _onSearchChanged,
-              ),
-            ),
-            // Clear button
-            if (_controller.text.isNotEmpty)
-              IconButton(
-                onPressed: () {
-                  _controller.clear();
-                  setState(() {
-                    _suggestions = [];
-                    _showSuggestions = false;
-                  });
-                },
-                icon: const Icon(Icons.clear, size: 20),
-              )
-            else
-              const SizedBox(width: 8),
-          ],
-        ),
-      ),
-    ],
-  );
-}
-
-/// Confirmation card shown after selecting a location, before sharing
-class LocationConfirmationCard extends StatelessWidget {
-  const LocationConfirmationCard({
-    required this.location,
-    required this.isGpsLocation,
-    required this.onShare,
-    required this.onDismiss,
-    super.key,
-  });
-
-  final SearchResult location;
-  final bool isGpsLocation;
-  final VoidCallback onShare;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.only(left: 12, right: 12, top: 6, bottom: 12),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.15),
-          blurRadius: 12,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isGpsLocation ? Icons.my_location : Icons.location_on,
-                color: Theme.of(context).colorScheme.primary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isGpsLocation ? 'Current Location' : 'Selected Location',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    location.placeName,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        decoration: const InputDecoration(
+                          hintText: 'Search for a location...',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        onChanged: _onSearchChanged,
+                      ),
+                    ),
+                    // Clear button
+                    if (_controller.text.isNotEmpty)
+                      IconButton(
+                        onPressed: _clearField,
+                        icon: const Icon(Icons.clear, size: 20),
+                      )
+                    else
+                      const SizedBox(width: 8),
+                  ],
+                ),
               ),
             ),
-            IconButton(
-              onPressed: onDismiss,
-              icon: const Icon(Icons.close, size: 20),
-              tooltip: 'Cancel',
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            const Spacer(),
-            IconButton.filled(onPressed: onShare, icon: const Icon(Icons.add)),
+            // Add button - appears when location is selected
+            if (hasSelection) ...[
+              const SizedBox(width: 8),
+              IconButton.filled(
+                onPressed: widget.onAddLocation,
+                icon: const Icon(Icons.add),
+                tooltip: 'Share this location',
+              ),
+            ],
           ],
         ),
       ],
-    ),
-  );
+    );
+  }
 }
 
 /// Bottom sheet for sharing a selected location
@@ -1759,25 +1713,13 @@ class _MapPageState extends State<MapPage> {
                             right: 8,
                             bottom: 8,
                           ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Show confirmation card when a location is pending
-                              if (_pendingLocation != null)
-                                LocationConfirmationCard(
-                                  location: _pendingLocation!,
-                                  isGpsLocation: _pendingIsGpsLocation,
-                                  onShare: _confirmPendingLocation,
-                                  onDismiss: _clearPendingLocation,
-                                )
-                              else
-                                MapLocationSearchBar(
-                                  onLocationSelected: _onLocationSelected,
-                                  onGpsLocationRequested:
-                                      _useCurrentGpsLocation,
-                                  isGpsLoading: _isGpsLoading,
-                                ),
-                            ],
+                          child: MapLocationSearchBar(
+                            onLocationSelected: _onLocationSelected,
+                            onGpsLocationRequested: _useCurrentGpsLocation,
+                            onAddLocation: _confirmPendingLocation,
+                            onClearSelection: _clearPendingLocation,
+                            selectedLocation: _pendingLocation,
+                            isGpsLoading: _isGpsLoading,
                           ),
                         ),
                       ),
