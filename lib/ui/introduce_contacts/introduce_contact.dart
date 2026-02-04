@@ -11,7 +11,9 @@ import '../utils.dart';
 import 'cubit.dart';
 
 class IntroduceContactsPage extends StatefulWidget {
-  const IntroduceContactsPage({super.key});
+  const IntroduceContactsPage(this.contact, {super.key});
+
+  final CoagContact contact;
 
   @override
   State<StatefulWidget> createState() => _IntroduceContactsPageState();
