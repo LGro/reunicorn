@@ -45,6 +45,7 @@ class SettingsRepository {
   bool _darkMode = false;
   String _customMapProviderUrl = '';
   String _mapStyleJson = '{}';
+  bool _autoAddressResolution = true;
 
   Future<void> _init() async {
     final sp = await SharedPreferences.getInstance();
@@ -53,6 +54,8 @@ class SettingsRepository {
     _darkMode = sp.getBool('darkMode') ?? _darkMode;
     _customMapProviderUrl =
         sp.getString('customMapProviderUrl') ?? _customMapProviderUrl;
+    _autoAddressResolution =
+        sp.getBool('autoAddressResolution') ?? _autoAddressResolution;
     // _mapStyleJson = await loadMapStyle(
     //     darkMode: _darkMode,
     //     spriteUrl: _darkMode
@@ -82,6 +85,14 @@ class SettingsRepository {
   }
 
   bool get darkMode => _darkMode;
+  bool get autoAddressResolution => _autoAddressResolution;
+
+  Future<void> setAutoAddressResolution(bool value) async {
+    _autoAddressResolution = value;
+    final sp = await SharedPreferences.getInstance();
+    await sp.setBool('autoAddressResolution', value);
+  }
+
   String get mapStyleString => (_customMapProviderUrl.isNotEmpty)
       ? _customMapProviderUrl
       // TODO: Replace by self hosted tile server compatible _mapStyleJson

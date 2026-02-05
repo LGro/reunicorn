@@ -625,21 +625,23 @@ class _MapPageState extends State<MapPage> {
     );
     await _onLocationSelected(coordsResult, animateCamera: false);
 
-    // Fetch address asynchronously and update when available
-    unawaited(
-      reverseGeocode(
-        longitude: latLng.longitude,
-        latitude: latLng.latitude,
-        apiKey: maptilerToken(),
-      ).then((reverseResult) {
-        if (reverseResult != null &&
-            mounted &&
-            _pendingLocation?.latitude == latLng.latitude &&
-            _pendingLocation?.longitude == latLng.longitude) {
-          setState(() => _pendingLocation = reverseResult);
-        }
-      }),
-    );
+    // Fetch address asynchronously and update when available (if enabled)
+    if (context.read<SettingsRepository>().autoAddressResolution) {
+      unawaited(
+        reverseGeocode(
+          longitude: latLng.longitude,
+          latitude: latLng.latitude,
+          apiKey: maptilerToken(),
+        ).then((reverseResult) {
+          if (reverseResult != null &&
+              mounted &&
+              _pendingLocation?.latitude == latLng.latitude &&
+              _pendingLocation?.longitude == latLng.longitude) {
+            setState(() => _pendingLocation = reverseResult);
+          }
+        }),
+      );
+    }
   }
 
   Future<void> _showShareLocationDialog(
@@ -1078,7 +1080,9 @@ class _MapPageState extends State<MapPage> {
                             onStyleLoadedCallback: () =>
                                 _onStyleLoaded(context, state),
                             onMapLongClick: _onMapLongPress,
-                            attributionButtonMargins: const Point<num>(12, 12),
+                            attributionButtonMargins: const Point<num>(12, 32),
+                            attributionButtonPosition:
+                                AttributionButtonPosition.topLeft,
                             rotateGesturesEnabled: false,
                             tiltGesturesEnabled: false,
                             dragEnabled: true,
