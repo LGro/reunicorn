@@ -566,7 +566,7 @@ class _MapPageState extends State<MapPage> {
 
     if (!mounted) return;
 
-    // Store pending location and show confirmation card
+    // Store pending location
     setState(() {
       _pendingLocation = location;
       _pendingIsGpsLocation = isGpsLocation;
@@ -615,15 +615,31 @@ class _MapPageState extends State<MapPage> {
 
     if (hasNearbyMarker) return;
 
-    final result = SearchResult(
+    // Show marker immediately with coordinates
+    final coordsResult = SearchResult(
       longitude: latLng.longitude,
       latitude: latLng.latitude,
       placeName:
           '${latLng.latitude.toStringAsFixed(4)}, ${latLng.longitude.toStringAsFixed(4)}',
       id: '',
     );
+    await _onLocationSelected(coordsResult, animateCamera: false);
 
-    await _onLocationSelected(result, animateCamera: false);
+    // Fetch address asynchronously and update when available
+    unawaited(
+      reverseGeocode(
+        longitude: latLng.longitude,
+        latitude: latLng.latitude,
+        apiKey: maptilerToken(),
+      ).then((reverseResult) {
+        if (reverseResult != null &&
+            mounted &&
+            _pendingLocation?.latitude == latLng.latitude &&
+            _pendingLocation?.longitude == latLng.longitude) {
+          setState(() => _pendingLocation = reverseResult);
+        }
+      }),
+    );
   }
 
   Future<void> _showShareLocationDialog(
@@ -733,14 +749,24 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
+  void _onSymbolTapped(Symbol symbol) {
+    // If tapped symbol is the pending location marker, open share dialog
+    if (_selectedLocationSymbol != null &&
+        symbol.id == _selectedLocationSymbol!.id) {
+      _confirmPendingLocation();
+    }
+  }
+
   Future<void> _onMapCreated(MapLibreMapController controller) async {
     _controller = controller;
     controller.onFeatureTapped.add(_onFeatureTapped);
+    controller.onSymbolTapped.add(_onSymbolTapped);
   }
 
   @override
   void dispose() {
     _controller?.onFeatureTapped.remove(_onFeatureTapped);
+    _controller?.onSymbolTapped.remove(_onSymbolTapped);
     _controller = null;
     super.dispose();
   }
@@ -867,6 +893,87 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
+  Future<void> _onStyleLoaded(BuildContext context, MapState state) async {
+    final markers = _getMarkers(context, state, _timeSelection);
+
+    final clusterCircleColor = colorToHex(
+      Theme.of(context).colorScheme.primary,
+    );
+    final clusterCircleTextColor = colorToHex(
+      Theme.of(context).colorScheme.onPrimary,
+    );
+
+    await _addMarkerImages(markers);
+
+    setState(() {
+      _markers = markers.asMap().map(
+        (i, marker) => MapEntry('marker-$i', marker),
+      );
+    });
+
+    // Add GeoJSON source with clustering enabled
+    await _controller?.addSource(
+      'points',
+      GeojsonSourceProperties(
+        data: toGeoJson(markers.map((m) => m.coordinates).toList()),
+        cluster: true,
+        clusterMaxZoom: 22,
+        clusterRadius: 50,
+      ),
+    );
+
+    // Layer: individual unclustered points (add first)
+    if (!(await _controller?.getLayerIds() ?? []).contains(
+      'unclustered-points',
+    )) {
+      await _controller?.addLayer(
+        'points',
+        'unclustered-points',
+        const SymbolLayerProperties(
+          iconImage: ['get', 'icon'],
+          iconSize: 1,
+          iconAllowOverlap: true,
+          iconIgnorePlacement: true,
+        ),
+        filter: [
+          '!',
+          ['has', 'point_count'],
+        ],
+      );
+    }
+
+    // Layer: cluster circles (simpler styling first)
+    if (!(await _controller?.getLayerIds() ?? []).contains('clusters')) {
+      await _controller?.addLayer(
+        'points',
+        'clusters',
+        CircleLayerProperties(
+          circleColor: clusterCircleColor,
+          circleRadius: 25,
+          circleStrokeWidth: 0,
+          circleStrokeColor: '#ffffff',
+        ),
+        filter: ['has', 'point_count'],
+      );
+    }
+
+    // Layer: cluster count text
+    if (!(await _controller?.getLayerIds() ?? []).contains('cluster-count')) {
+      await _controller?.addLayer(
+        'points',
+        'cluster-count',
+        SymbolLayerProperties(
+          textField: ['get', 'point_count_abbreviated'],
+          textSize: 16,
+          textColor: clusterCircleTextColor,
+          textHaloColor: '#000000',
+          textHaloWidth: 0,
+        ),
+        filter: ['has', 'point_count'],
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) => BlocProvider(
     create: (context) => MapCubit(
@@ -968,96 +1075,8 @@ class _MapPageState extends State<MapPage> {
                               22,
                             ),
                             onMapCreated: _onMapCreated,
-                            onStyleLoadedCallback: () async {
-                              final markers = _getMarkers(
-                                context,
-                                state,
-                                _timeSelection,
-                              );
-
-                              final clusterCircleColor = colorToHex(
-                                Theme.of(context).colorScheme.primary,
-                              );
-                              final clusterCircleTextColor = colorToHex(
-                                Theme.of(context).colorScheme.onPrimary,
-                              );
-
-                              await _addMarkerImages(markers);
-
-                              setState(() {
-                                _markers = markers.asMap().map(
-                                  (i, marker) => MapEntry('marker-$i', marker),
-                                );
-                              });
-
-                              // Add GeoJSON source with clustering enabled
-                              await _controller?.addSource(
-                                'points',
-                                GeojsonSourceProperties(
-                                  data: toGeoJson(
-                                    markers.map((m) => m.coordinates).toList(),
-                                  ),
-                                  cluster: true,
-                                  clusterMaxZoom: 22,
-                                  clusterRadius: 50,
-                                ),
-                              );
-
-                              // Layer: individual unclustered points (add first)
-                              if (!(await _controller?.getLayerIds() ?? [])
-                                  .contains('unclustered-points')) {
-                                await _controller?.addLayer(
-                                  'points',
-                                  'unclustered-points',
-                                  const SymbolLayerProperties(
-                                    iconImage: ['get', 'icon'],
-                                    iconSize: 1,
-                                    iconAllowOverlap: true,
-                                    iconIgnorePlacement: true,
-                                  ),
-                                  filter: [
-                                    '!',
-                                    ['has', 'point_count'],
-                                  ],
-                                );
-                              }
-
-                              // Layer: cluster circles (simpler styling first)
-                              if (!(await _controller?.getLayerIds() ?? [])
-                                  .contains('clusters')) {
-                                await _controller?.addLayer(
-                                  'points',
-                                  'clusters',
-                                  CircleLayerProperties(
-                                    circleColor: clusterCircleColor,
-                                    circleRadius: 25,
-                                    circleStrokeWidth: 0,
-                                    circleStrokeColor: '#ffffff',
-                                  ),
-                                  filter: ['has', 'point_count'],
-                                );
-                              }
-
-                              // Layer: cluster count text
-                              if (!(await _controller?.getLayerIds() ?? [])
-                                  .contains('cluster-count')) {
-                                await _controller?.addLayer(
-                                  'points',
-                                  'cluster-count',
-                                  SymbolLayerProperties(
-                                    textField: [
-                                      'get',
-                                      'point_count_abbreviated',
-                                    ],
-                                    textSize: 16,
-                                    textColor: clusterCircleTextColor,
-                                    textHaloColor: '#000000',
-                                    textHaloWidth: 0,
-                                  ),
-                                  filter: ['has', 'point_count'],
-                                );
-                              }
-                            },
+                            onStyleLoadedCallback: () =>
+                                _onStyleLoaded(context, state),
                             onMapLongClick: _onMapLongPress,
                             attributionButtonMargins: const Point<num>(12, 12),
                             rotateGesturesEnabled: false,
@@ -1087,7 +1106,7 @@ class _MapPageState extends State<MapPage> {
                       Align(
                         alignment: AlignmentDirectional.topEnd,
                         child: Padding(
-                          padding: const EdgeInsets.only(top: 32, right: 12),
+                          padding: const EdgeInsets.only(top: 32, right: 8),
                           child: IconButton.filledTonal(
                             onPressed: () =>
                                 context.pushNamed('locationListPage'),

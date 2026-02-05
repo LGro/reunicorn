@@ -238,8 +238,8 @@ class _ShareLocationBottomSheetState extends State<ShareLocationBottomSheet> {
   @override
   Widget build(BuildContext context) => DraggableScrollableSheet(
     expand: false,
-    initialChildSize: 0.7,
-    minChildSize: 0.5,
+    initialChildSize: 0.95,
+    minChildSize: 0.95,
     maxChildSize: 0.95,
     builder: (_, scrollController) => Form(
       key: _formKey,
@@ -249,7 +249,7 @@ class _ShareLocationBottomSheetState extends State<ShareLocationBottomSheet> {
           padding: EdgeInsets.only(
             left: 16,
             right: 16,
-            top: 16,
+            top: 8,
             bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
           ),
           child: Column(
@@ -329,35 +329,6 @@ class _ShareLocationBottomSheetState extends State<ShareLocationBottomSheet> {
               ),
               const SizedBox(height: 16),
 
-              // Circles section
-              Text(
-                'Share with circles',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              if (_circles.isEmpty)
-                const Text('No circles available')
-              else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: _circles
-                      .asMap()
-                      .map(
-                        (i, c) => MapEntry(
-                          i,
-                          FilterChip(
-                            selected: c.$3,
-                            label: Text('${c.$2} (${c.$4})'),
-                            onSelected: (v) => _updateCircleSelection(i, v),
-                          ),
-                        ),
-                      )
-                      .values
-                      .toList(),
-                ),
-              const SizedBox(height: 16),
-
               // Date/Time section
               Text('When', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
@@ -401,6 +372,35 @@ class _ShareLocationBottomSheetState extends State<ShareLocationBottomSheet> {
                     ),
                 ],
               ),
+              const SizedBox(height: 16),
+
+              // Circles section
+              Text(
+                'Share with circles',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              if (_circles.isEmpty)
+                const Text('No circles available')
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: _circles
+                      .asMap()
+                      .map(
+                        (i, c) => MapEntry(
+                          i,
+                          FilterChip(
+                            selected: c.$3,
+                            label: Text('${c.$2} (${c.$4})'),
+                            onSelected: (v) => _updateCircleSelection(i, v),
+                          ),
+                        ),
+                      )
+                      .values
+                      .toList(),
+                ),
               const SizedBox(height: 24),
 
               // Share button

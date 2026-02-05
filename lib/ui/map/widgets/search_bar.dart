@@ -148,8 +148,10 @@ class _MapLocationSearchBarState extends State<MapLocationSearchBar> {
                       final suggestion = _suggestions[index];
                       return ListTile(
                         dense: true,
-                        leading:
-                            const Icon(Icons.location_on_outlined, size: 20),
+                        leading: const Icon(
+                          Icons.location_on_outlined,
+                          size: 20,
+                        ),
                         title: Text(
                           suggestion.placeName,
                           maxLines: 2,
@@ -165,10 +167,11 @@ class _MapLocationSearchBarState extends State<MapLocationSearchBar> {
         // Main row: GPS button | Search field | Add button (when selected)
         Row(
           children: [
-            // GPS button - separate from search field
+            // GPS button
             IconButton.filledTonal(
-              onPressed:
-                  widget.isGpsLoading ? null : widget.onGpsLocationRequested,
+              onPressed: widget.isGpsLoading
+                  ? null
+                  : widget.onGpsLocationRequested,
               icon: widget.isGpsLoading
                   ? const SizedBox(
                       width: 20,
