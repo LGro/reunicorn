@@ -49,6 +49,17 @@ class SettingsPage extends StatelessWidget {
             // TODO: Move async things to cubit
             // if (Platform.isIOS) _backgroundPermissionStatus(),
             ListTile(
+              title: const Text('Auto address resolution'),
+              subtitle: const Text(
+                'Resolve addresses when selecting locations on map',
+              ),
+              trailing: Switch(
+                value: state.autoAddressResolution,
+                onChanged:
+                    blocContext.read<SettingsCubit>().setAutoAddressResolution,
+              ),
+            ),
+            ListTile(
               // TODO: Prettier format
               title: Text(
                 'Backup ${context.read<BackupRepository>().mostRecentBackupTime?.toIso8601String() ?? ''}',

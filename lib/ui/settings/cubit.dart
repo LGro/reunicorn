@@ -46,7 +46,7 @@ class SettingsCubit extends Cubit<SettingsState> {
           message: '',
           status: SettingsStatus.initial,
           darkMode: settingsRepository.darkMode,
-          autoAddressResolution: true,
+          autoAddressResolution: settingsRepository.autoAddressResolution,
         ),
       );
 
@@ -55,6 +55,11 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setDarkMode(bool v) async {
     emit(state.copyWith(darkMode: v));
     await settingsRepository.setDarkMode(v);
+  }
+
+  Future<void> setAutoAddressResolution(bool v) async {
+    emit(state.copyWith(autoAddressResolution: v));
+    await settingsRepository.setAutoAddressResolution(v);
   }
 
   // TODO: Move to demo / dev storage with initial set of contacts
