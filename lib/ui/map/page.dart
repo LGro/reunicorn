@@ -632,13 +632,37 @@ class _MapPageState extends State<MapPage> {
           longitude: latLng.longitude,
           latitude: latLng.latitude,
           apiKey: maptilerToken(),
-        ).then((reverseResult) {
-          if (reverseResult != null &&
-              mounted &&
-              _pendingLocation?.latitude == latLng.latitude &&
-              _pendingLocation?.longitude == latLng.longitude) {
-            setState(() => _pendingLocation = reverseResult);
+        ).then((reverseResult) async {
+          if (reverseResult == null || !mounted) return;
+          // Only accept if still showing the same original location
+          if (_pendingLocation?.latitude != latLng.latitude ||
+              _pendingLocation?.longitude != latLng.longitude) {
+            return;
           }
+          // Only accept if geocoded result is within range of original
+          final distance = Geolocator.distanceBetween(
+            latLng.latitude,
+            latLng.longitude,
+            reverseResult.latitude,
+            reverseResult.longitude,
+          );
+          if (distance > 20) return;
+
+          // Update marker position if coordinates differ
+          if (_selectedLocationSymbol != null &&
+              (reverseResult.latitude != latLng.latitude ||
+                  reverseResult.longitude != latLng.longitude)) {
+            await _controller?.updateSymbol(
+              _selectedLocationSymbol!,
+              SymbolOptions(
+                geometry: LatLng(
+                  reverseResult.latitude,
+                  reverseResult.longitude,
+                ),
+              ),
+            );
+          }
+          setState(() => _pendingLocation = reverseResult);
         }),
       );
     }
