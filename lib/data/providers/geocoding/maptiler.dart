@@ -30,6 +30,48 @@ class SearchResult {
   final String id;
 }
 
+/// Reverse geocoding - get address from coordinates
+Future<SearchResult?> reverseGeocode({
+  required double longitude,
+  required double latitude,
+  required String apiKey,
+  String userAgentHeader = 'social.coagulate.app',
+  String language = 'en',
+}) async {
+  final url = Uri(
+    scheme: 'https',
+    host: 'api.maptiler.com',
+    path: '/geocoding/$longitude,$latitude.json',
+    queryParameters: {
+      'language': language,
+      'key': apiKey,
+    },
+  );
+  try {
+    final response = await http.get(
+      url,
+      headers: {'User-Agent': userAgentHeader},
+    );
+
+    if (response.statusCode == 200) {
+      try {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        final features = data['features'] as List;
+        if (features.isNotEmpty) {
+          return SearchResult.fromJson(features.first as Map<String, dynamic>);
+        }
+        return null;
+      } on Exception {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  } catch (e) {
+    return null;
+  }
+}
+
 /// Search function
 Future<List<SearchResult>> searchLocation({
   required String query,
