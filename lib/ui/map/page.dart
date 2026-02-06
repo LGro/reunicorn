@@ -1104,7 +1104,9 @@ class _MapPageState extends State<MapPage> {
                             onStyleLoadedCallback: () =>
                                 _onStyleLoaded(context, state),
                             onMapLongClick: _onMapLongPress,
-                            attributionButtonMargins: const Point<num>(12, 32),
+                            attributionButtonMargins: isAndroid
+                                ? const Point<num>(12, 32)
+                                : const Point<num>(12, 12),
                             attributionButtonPosition:
                                 AttributionButtonPosition.topLeft,
                             rotateGesturesEnabled: false,
@@ -1134,7 +1136,9 @@ class _MapPageState extends State<MapPage> {
                       Align(
                         alignment: AlignmentDirectional.topEnd,
                         child: Padding(
-                          padding: const EdgeInsets.only(top: 32, right: 8),
+                          padding: isAndroid
+                              ? const EdgeInsets.only(top: 32, right: 8)
+                              : EdgeInsets.only(top: 48, right: 8),
                           child: IconButton.filledTonal(
                             onPressed: () =>
                                 context.pushNamed('locationListPage'),
