@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CloseByMatch {
 
- String get myLocationLabel; String get theirLocationId; String get theirLocationLabel; String get coagContactId; String get coagContactName; DateTime get start; DateTime get end; Duration get offset; bool get theyKnow;
+ String get myLocationLabel; String get theirLocationId; String get theirLocationLabel; CoagContact get contact; DateTime get start; DateTime get end; Duration get offset; bool get theyKnow;
 /// Create a copy of CloseByMatch
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $CloseByMatchCopyWith<CloseByMatch> get copyWith => _$CloseByMatchCopyWithImpl<C
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CloseByMatch&&(identical(other.myLocationLabel, myLocationLabel) || other.myLocationLabel == myLocationLabel)&&(identical(other.theirLocationId, theirLocationId) || other.theirLocationId == theirLocationId)&&(identical(other.theirLocationLabel, theirLocationLabel) || other.theirLocationLabel == theirLocationLabel)&&(identical(other.coagContactId, coagContactId) || other.coagContactId == coagContactId)&&(identical(other.coagContactName, coagContactName) || other.coagContactName == coagContactName)&&(identical(other.start, start) || other.start == start)&&(identical(other.end, end) || other.end == end)&&(identical(other.offset, offset) || other.offset == offset)&&(identical(other.theyKnow, theyKnow) || other.theyKnow == theyKnow));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CloseByMatch&&(identical(other.myLocationLabel, myLocationLabel) || other.myLocationLabel == myLocationLabel)&&(identical(other.theirLocationId, theirLocationId) || other.theirLocationId == theirLocationId)&&(identical(other.theirLocationLabel, theirLocationLabel) || other.theirLocationLabel == theirLocationLabel)&&(identical(other.contact, contact) || other.contact == contact)&&(identical(other.start, start) || other.start == start)&&(identical(other.end, end) || other.end == end)&&(identical(other.offset, offset) || other.offset == offset)&&(identical(other.theyKnow, theyKnow) || other.theyKnow == theyKnow));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,myLocationLabel,theirLocationId,theirLocationLabel,coagContactId,coagContactName,start,end,offset,theyKnow);
+int get hashCode => Object.hash(runtimeType,myLocationLabel,theirLocationId,theirLocationLabel,contact,start,end,offset,theyKnow);
 
 @override
 String toString() {
-  return 'CloseByMatch(myLocationLabel: $myLocationLabel, theirLocationId: $theirLocationId, theirLocationLabel: $theirLocationLabel, coagContactId: $coagContactId, coagContactName: $coagContactName, start: $start, end: $end, offset: $offset, theyKnow: $theyKnow)';
+  return 'CloseByMatch(myLocationLabel: $myLocationLabel, theirLocationId: $theirLocationId, theirLocationLabel: $theirLocationLabel, contact: $contact, start: $start, end: $end, offset: $offset, theyKnow: $theyKnow)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $CloseByMatchCopyWith<$Res>  {
   factory $CloseByMatchCopyWith(CloseByMatch value, $Res Function(CloseByMatch) _then) = _$CloseByMatchCopyWithImpl;
 @useResult
 $Res call({
- String myLocationLabel, String theirLocationId, String theirLocationLabel, String coagContactId, String coagContactName, DateTime start, DateTime end, Duration offset, bool theyKnow
+ String myLocationLabel, String theirLocationId, String theirLocationLabel, CoagContact contact, DateTime start, DateTime end, Duration offset, bool theyKnow
 });
 
 
@@ -65,14 +65,13 @@ class _$CloseByMatchCopyWithImpl<$Res>
 
 /// Create a copy of CloseByMatch
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? myLocationLabel = null,Object? theirLocationId = null,Object? theirLocationLabel = null,Object? coagContactId = null,Object? coagContactName = null,Object? start = null,Object? end = null,Object? offset = null,Object? theyKnow = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? myLocationLabel = null,Object? theirLocationId = null,Object? theirLocationLabel = null,Object? contact = null,Object? start = null,Object? end = null,Object? offset = null,Object? theyKnow = null,}) {
   return _then(_self.copyWith(
 myLocationLabel: null == myLocationLabel ? _self.myLocationLabel : myLocationLabel // ignore: cast_nullable_to_non_nullable
 as String,theirLocationId: null == theirLocationId ? _self.theirLocationId : theirLocationId // ignore: cast_nullable_to_non_nullable
 as String,theirLocationLabel: null == theirLocationLabel ? _self.theirLocationLabel : theirLocationLabel // ignore: cast_nullable_to_non_nullable
-as String,coagContactId: null == coagContactId ? _self.coagContactId : coagContactId // ignore: cast_nullable_to_non_nullable
-as String,coagContactName: null == coagContactName ? _self.coagContactName : coagContactName // ignore: cast_nullable_to_non_nullable
-as String,start: null == start ? _self.start : start // ignore: cast_nullable_to_non_nullable
+as String,contact: null == contact ? _self.contact : contact // ignore: cast_nullable_to_non_nullable
+as CoagContact,start: null == start ? _self.start : start // ignore: cast_nullable_to_non_nullable
 as DateTime,end: null == end ? _self.end : end // ignore: cast_nullable_to_non_nullable
 as DateTime,offset: null == offset ? _self.offset : offset // ignore: cast_nullable_to_non_nullable
 as Duration,theyKnow: null == theyKnow ? _self.theyKnow : theyKnow // ignore: cast_nullable_to_non_nullable
@@ -158,10 +157,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String myLocationLabel,  String theirLocationId,  String theirLocationLabel,  String coagContactId,  String coagContactName,  DateTime start,  DateTime end,  Duration offset,  bool theyKnow)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String myLocationLabel,  String theirLocationId,  String theirLocationLabel,  CoagContact contact,  DateTime start,  DateTime end,  Duration offset,  bool theyKnow)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CloseByMatch() when $default != null:
-return $default(_that.myLocationLabel,_that.theirLocationId,_that.theirLocationLabel,_that.coagContactId,_that.coagContactName,_that.start,_that.end,_that.offset,_that.theyKnow);case _:
+return $default(_that.myLocationLabel,_that.theirLocationId,_that.theirLocationLabel,_that.contact,_that.start,_that.end,_that.offset,_that.theyKnow);case _:
   return orElse();
 
 }
@@ -179,10 +178,10 @@ return $default(_that.myLocationLabel,_that.theirLocationId,_that.theirLocationL
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String myLocationLabel,  String theirLocationId,  String theirLocationLabel,  String coagContactId,  String coagContactName,  DateTime start,  DateTime end,  Duration offset,  bool theyKnow)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String myLocationLabel,  String theirLocationId,  String theirLocationLabel,  CoagContact contact,  DateTime start,  DateTime end,  Duration offset,  bool theyKnow)  $default,) {final _that = this;
 switch (_that) {
 case _CloseByMatch():
-return $default(_that.myLocationLabel,_that.theirLocationId,_that.theirLocationLabel,_that.coagContactId,_that.coagContactName,_that.start,_that.end,_that.offset,_that.theyKnow);}
+return $default(_that.myLocationLabel,_that.theirLocationId,_that.theirLocationLabel,_that.contact,_that.start,_that.end,_that.offset,_that.theyKnow);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -196,10 +195,10 @@ return $default(_that.myLocationLabel,_that.theirLocationId,_that.theirLocationL
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String myLocationLabel,  String theirLocationId,  String theirLocationLabel,  String coagContactId,  String coagContactName,  DateTime start,  DateTime end,  Duration offset,  bool theyKnow)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String myLocationLabel,  String theirLocationId,  String theirLocationLabel,  CoagContact contact,  DateTime start,  DateTime end,  Duration offset,  bool theyKnow)?  $default,) {final _that = this;
 switch (_that) {
 case _CloseByMatch() when $default != null:
-return $default(_that.myLocationLabel,_that.theirLocationId,_that.theirLocationLabel,_that.coagContactId,_that.coagContactName,_that.start,_that.end,_that.offset,_that.theyKnow);case _:
+return $default(_that.myLocationLabel,_that.theirLocationId,_that.theirLocationLabel,_that.contact,_that.start,_that.end,_that.offset,_that.theyKnow);case _:
   return null;
 
 }
@@ -211,14 +210,13 @@ return $default(_that.myLocationLabel,_that.theirLocationId,_that.theirLocationL
 @JsonSerializable()
 
 class _CloseByMatch implements CloseByMatch {
-   _CloseByMatch({required this.myLocationLabel, required this.theirLocationId, required this.theirLocationLabel, required this.coagContactId, required this.coagContactName, required this.start, required this.end, required this.offset, required this.theyKnow});
+   _CloseByMatch({required this.myLocationLabel, required this.theirLocationId, required this.theirLocationLabel, required this.contact, required this.start, required this.end, required this.offset, required this.theyKnow});
   factory _CloseByMatch.fromJson(Map<String, dynamic> json) => _$CloseByMatchFromJson(json);
 
 @override final  String myLocationLabel;
 @override final  String theirLocationId;
 @override final  String theirLocationLabel;
-@override final  String coagContactId;
-@override final  String coagContactName;
+@override final  CoagContact contact;
 @override final  DateTime start;
 @override final  DateTime end;
 @override final  Duration offset;
@@ -237,16 +235,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CloseByMatch&&(identical(other.myLocationLabel, myLocationLabel) || other.myLocationLabel == myLocationLabel)&&(identical(other.theirLocationId, theirLocationId) || other.theirLocationId == theirLocationId)&&(identical(other.theirLocationLabel, theirLocationLabel) || other.theirLocationLabel == theirLocationLabel)&&(identical(other.coagContactId, coagContactId) || other.coagContactId == coagContactId)&&(identical(other.coagContactName, coagContactName) || other.coagContactName == coagContactName)&&(identical(other.start, start) || other.start == start)&&(identical(other.end, end) || other.end == end)&&(identical(other.offset, offset) || other.offset == offset)&&(identical(other.theyKnow, theyKnow) || other.theyKnow == theyKnow));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CloseByMatch&&(identical(other.myLocationLabel, myLocationLabel) || other.myLocationLabel == myLocationLabel)&&(identical(other.theirLocationId, theirLocationId) || other.theirLocationId == theirLocationId)&&(identical(other.theirLocationLabel, theirLocationLabel) || other.theirLocationLabel == theirLocationLabel)&&(identical(other.contact, contact) || other.contact == contact)&&(identical(other.start, start) || other.start == start)&&(identical(other.end, end) || other.end == end)&&(identical(other.offset, offset) || other.offset == offset)&&(identical(other.theyKnow, theyKnow) || other.theyKnow == theyKnow));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,myLocationLabel,theirLocationId,theirLocationLabel,coagContactId,coagContactName,start,end,offset,theyKnow);
+int get hashCode => Object.hash(runtimeType,myLocationLabel,theirLocationId,theirLocationLabel,contact,start,end,offset,theyKnow);
 
 @override
 String toString() {
-  return 'CloseByMatch(myLocationLabel: $myLocationLabel, theirLocationId: $theirLocationId, theirLocationLabel: $theirLocationLabel, coagContactId: $coagContactId, coagContactName: $coagContactName, start: $start, end: $end, offset: $offset, theyKnow: $theyKnow)';
+  return 'CloseByMatch(myLocationLabel: $myLocationLabel, theirLocationId: $theirLocationId, theirLocationLabel: $theirLocationLabel, contact: $contact, start: $start, end: $end, offset: $offset, theyKnow: $theyKnow)';
 }
 
 
@@ -257,7 +255,7 @@ abstract mixin class _$CloseByMatchCopyWith<$Res> implements $CloseByMatchCopyWi
   factory _$CloseByMatchCopyWith(_CloseByMatch value, $Res Function(_CloseByMatch) _then) = __$CloseByMatchCopyWithImpl;
 @override @useResult
 $Res call({
- String myLocationLabel, String theirLocationId, String theirLocationLabel, String coagContactId, String coagContactName, DateTime start, DateTime end, Duration offset, bool theyKnow
+ String myLocationLabel, String theirLocationId, String theirLocationLabel, CoagContact contact, DateTime start, DateTime end, Duration offset, bool theyKnow
 });
 
 
@@ -274,14 +272,13 @@ class __$CloseByMatchCopyWithImpl<$Res>
 
 /// Create a copy of CloseByMatch
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? myLocationLabel = null,Object? theirLocationId = null,Object? theirLocationLabel = null,Object? coagContactId = null,Object? coagContactName = null,Object? start = null,Object? end = null,Object? offset = null,Object? theyKnow = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? myLocationLabel = null,Object? theirLocationId = null,Object? theirLocationLabel = null,Object? contact = null,Object? start = null,Object? end = null,Object? offset = null,Object? theyKnow = null,}) {
   return _then(_CloseByMatch(
 myLocationLabel: null == myLocationLabel ? _self.myLocationLabel : myLocationLabel // ignore: cast_nullable_to_non_nullable
 as String,theirLocationId: null == theirLocationId ? _self.theirLocationId : theirLocationId // ignore: cast_nullable_to_non_nullable
 as String,theirLocationLabel: null == theirLocationLabel ? _self.theirLocationLabel : theirLocationLabel // ignore: cast_nullable_to_non_nullable
-as String,coagContactId: null == coagContactId ? _self.coagContactId : coagContactId // ignore: cast_nullable_to_non_nullable
-as String,coagContactName: null == coagContactName ? _self.coagContactName : coagContactName // ignore: cast_nullable_to_non_nullable
-as String,start: null == start ? _self.start : start // ignore: cast_nullable_to_non_nullable
+as String,contact: null == contact ? _self.contact : contact // ignore: cast_nullable_to_non_nullable
+as CoagContact,start: null == start ? _self.start : start // ignore: cast_nullable_to_non_nullable
 as DateTime,end: null == end ? _self.end : end // ignore: cast_nullable_to_non_nullable
 as DateTime,offset: null == offset ? _self.offset : offset // ignore: cast_nullable_to_non_nullable
 as Duration,theyKnow: null == theyKnow ? _self.theyKnow : theyKnow // ignore: cast_nullable_to_non_nullable

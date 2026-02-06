@@ -51,12 +51,14 @@ class SettingsPage extends StatelessWidget {
             ListTile(
               title: const Text('Auto address resolution'),
               subtitle: const Text(
-                'Resolve addresses when selecting locations on map',
+                'Resolve addresses when selecting locations on map '
+                '(reverse geocoding)',
               ),
               trailing: Switch(
                 value: state.autoAddressResolution,
-                onChanged:
-                    blocContext.read<SettingsCubit>().setAutoAddressResolution,
+                onChanged: blocContext
+                    .read<SettingsCubit>()
+                    .setAutoAddressResolution,
               ),
             ),
             ListTile(

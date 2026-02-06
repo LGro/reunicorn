@@ -4,6 +4,7 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/models/circle.dart';
@@ -48,8 +49,7 @@ Widget contactsListView(
         circleMemberships[contact.coagContactId]?.contains(circleId) ?? false,
     title: GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () =>
-          Navigator.of(context).push(ContactPage.route(contact.coagContactId)),
+      onTap: () => context.goNamed('contactDetails', extra: contact),
       child: Row(
         children: [
           roundPictureOrPlaceholder(contact.details?.picture, radius: 18),

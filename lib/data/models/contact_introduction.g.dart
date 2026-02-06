@@ -6,11 +6,10 @@ part of 'contact_introduction.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-ContactIntroduction _$ContactIntroductionFromJson(Map<String, dynamic> json) =>
-    ContactIntroduction(
+_ContactIntroduction _$ContactIntroductionFromJson(Map<String, dynamic> json) =>
+    _ContactIntroduction(
       otherName: json['other_name'] as String,
-      otherPublicKey: Typed<BarePublicKey>.fromJson(json['other_public_key']),
-      publicKey: Typed<BarePublicKey>.fromJson(json['public_key']),
+      sharedSecret: Typed<BareSharedSecret>.fromJson(json['shared_secret']),
       dhtRecordKeyReceiving: RecordKey.fromJson(
         json['dht_record_key_receiving'],
       ),
@@ -20,13 +19,12 @@ ContactIntroduction _$ContactIntroductionFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$ContactIntroductionToJson(
-  ContactIntroduction instance,
+  _ContactIntroduction instance,
 ) => <String, dynamic>{
   'other_name': instance.otherName,
-  'other_public_key': instance.otherPublicKey.toJson(),
-  'public_key': instance.publicKey.toJson(),
-  'message': instance.message,
+  'shared_secret': instance.sharedSecret.toJson(),
   'dht_record_key_receiving': instance.dhtRecordKeyReceiving.toJson(),
   'dht_record_key_sharing': instance.dhtRecordKeySharing.toJson(),
   'dht_writer_sharing': instance.dhtWriterSharing.toJson(),
+  'message': instance.message,
 };

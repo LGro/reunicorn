@@ -9,6 +9,7 @@ class SearchableList<T> extends StatefulWidget {
     required this.matchesItem,
     required this.buildItemWidget,
     this.infoWidget,
+    this.bottomPadding = 0,
     super.key,
   });
 
@@ -23,6 +24,9 @@ class SearchableList<T> extends StatefulWidget {
 
   /// Optional widget to display between search bar and list entries
   final Widget? infoWidget;
+
+  /// Extra padding at the bottom of the list to avoid content being hidden
+  final double bottomPadding;
   @override
   State<SearchableList<T>> createState() => _SearchableListState<T>();
 }
@@ -85,6 +89,7 @@ class _SearchableListState<T> extends State<SearchableList<T>> {
       if (_filteredItems.isNotEmpty)
         Expanded(
           child: ListView.builder(
+            padding: EdgeInsets.only(bottom: widget.bottomPadding),
             itemCount: _filteredItems.length,
             itemBuilder: (context, index) =>
                 widget.buildItemWidget(_filteredItems[index]),
@@ -93,6 +98,7 @@ class _SearchableListState<T> extends State<SearchableList<T>> {
       if (!(_filteredItems.isNotEmpty || _query.isNotEmpty))
         Expanded(
           child: ListView.builder(
+            padding: EdgeInsets.only(bottom: widget.bottomPadding),
             itemCount: widget.items.length,
             itemBuilder: (context, index) =>
                 widget.buildItemWidget(widget.items[index]),

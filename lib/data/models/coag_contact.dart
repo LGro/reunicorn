@@ -30,7 +30,6 @@ class CoagContact extends Equatable implements JsonEncodable {
     required this.name,
     required this.connectionCrypto,
     required this.myIdentity,
-    required this.myIntroductionKeyPair,
     this.details,
     this.dhtConnection,
     this.theirIdentity,
@@ -40,8 +39,6 @@ class CoagContact extends Equatable implements JsonEncodable {
     this.temporaryLocations = const {},
     this.comment = '',
     this.profileSharingStatus = const ProfileSharingStatus(),
-    this.theirIntroductionKey,
-    this.myPreviousIntroductionKeyPairs = const [],
     this.introductionsForThem = const [],
     this.introductionsByThem = const [],
     this.origin,
@@ -55,7 +52,6 @@ class CoagContact extends Equatable implements JsonEncodable {
     required this.dhtConnection,
     required this.connectionCrypto,
     required this.myIdentity,
-    required this.myIntroductionKeyPair,
     required this.details,
     required this.theirIdentity,
     required this.connectionAttestations,
@@ -64,8 +60,6 @@ class CoagContact extends Equatable implements JsonEncodable {
     required this.temporaryLocations,
     required this.comment,
     required this.profileSharingStatus,
-    required this.theirIntroductionKey,
-    required this.myPreviousIntroductionKeyPairs,
     required this.introductionsForThem,
     required this.introductionsByThem,
     required this.origin,
@@ -110,18 +104,6 @@ class CoagContact extends Equatable implements JsonEncodable {
 
   /// Personalized selection of profile info that is shared with this contact
   final ProfileSharingStatus profileSharingStatus;
-
-  /// Current public key the app user can hand to others when introducing them
-  /// to this contact
-  final PublicKey? theirIntroductionKey;
-
-  /// Current key pair of which the app user has shared the public key with this
-  /// contact to facilitate encrypted communication for introductions
-  final KeyPair myIntroductionKeyPair;
-
-  /// List of app user's previous key pairs of which they have shared the public
-  /// key with this contact
-  final List<KeyPair> myPreviousIntroductionKeyPairs;
 
   /// Introductions the app user proposed them
   final List<ContactIntroduction> introductionsForThem;
@@ -179,9 +161,6 @@ class CoagContact extends Equatable implements JsonEncodable {
     DhtConnectionState? dhtConnection,
     CryptoState? connectionCrypto,
     ProfileSharingStatus? profileSharingStatus,
-    PublicKey? theirIntroductionKey,
-    KeyPair? myIntroductionKeyPair,
-    List<KeyPair>? myPreviousIntroductionKeyPairs,
     List<ContactIntroduction>? introductionsByThem,
     List<ContactIntroduction>? introductionsForThem,
     String? origin,
@@ -202,11 +181,6 @@ class CoagContact extends Equatable implements JsonEncodable {
       ...connectionAttestations ?? this.connectionAttestations,
     ],
     comment: comment ?? this.comment,
-    theirIntroductionKey: theirIntroductionKey ?? this.theirIntroductionKey,
-    myIntroductionKeyPair: myIntroductionKeyPair ?? this.myIntroductionKeyPair,
-    myPreviousIntroductionKeyPairs: [
-      ...myPreviousIntroductionKeyPairs ?? this.myPreviousIntroductionKeyPairs,
-    ],
     introductionsByThem: [...introductionsByThem ?? this.introductionsByThem],
     introductionsForThem: [
       ...introductionsForThem ?? this.introductionsForThem,
@@ -230,9 +204,6 @@ class CoagContact extends Equatable implements JsonEncodable {
     comment,
     addressLocations,
     temporaryLocations,
-    theirIntroductionKey,
-    myIntroductionKeyPair,
-    myPreviousIntroductionKeyPairs,
     introductionsByThem,
     introductionsForThem,
     origin,

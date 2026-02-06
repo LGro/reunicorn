@@ -44,9 +44,6 @@ _ContactSharingSchemaV3 _$ContactSharingSchemaV3FromJson(
   identityKey: json['identity_key'] == null
       ? null
       : Typed<BarePublicKey>.fromJson(json['identity_key']),
-  introductionKey: json['introduction_key'] == null
-      ? null
-      : Typed<BarePublicKey>.fromJson(json['introduction_key']),
   pushNotificationTopic: json['push_notification_topic'] as String?,
   schemaVersion: (json['schema_version'] as num?)?.toInt() ?? 3,
 );
@@ -65,7 +62,6 @@ Map<String, dynamic> _$ContactSharingSchemaV3ToJson(
   'introductions': instance.introductions.map((e) => e.toJson()).toList(),
   'records_to_pin': instance.recordsToPin.map((e) => e.toJson()).toList(),
   'identity_key': instance.identityKey?.toJson(),
-  'introduction_key': instance.introductionKey?.toJson(),
   'push_notification_topic': instance.pushNotificationTopic,
   'schema_version': instance.schemaVersion,
 };

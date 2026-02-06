@@ -45,10 +45,6 @@ sealed class ContactSharingSchemaV3
     /// attestation for enabling others to discover shared contacts
     PublicKey? identityKey,
 
-    /// Author's public key the recipient can use to securely introduce them to
-    /// others
-    PublicKey? introductionKey,
-
     /// Recipient specific push notification topic the recipient can use to
     /// trigger notifications for the author via the Reunicorn Veilid Push Bridge
     String? pushNotificationTopic,

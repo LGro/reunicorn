@@ -13,7 +13,6 @@ CoagContact _$CoagContactFromJson(Map<String, dynamic> json) => CoagContact(
     json['connection_crypto'] as Map<String, dynamic>,
   ),
   myIdentity: KeyPair.fromJson(json['my_identity']),
-  myIntroductionKeyPair: KeyPair.fromJson(json['my_introduction_key_pair']),
   details: json['details'] == null
       ? null
       : ContactDetails.fromJson(json['details'] as Map<String, dynamic>),
@@ -53,14 +52,6 @@ CoagContact _$CoagContactFromJson(Map<String, dynamic> json) => CoagContact(
       : ProfileSharingStatus.fromJson(
           json['profile_sharing_status'] as Map<String, dynamic>,
         ),
-  theirIntroductionKey: json['their_introduction_key'] == null
-      ? null
-      : Typed<BarePublicKey>.fromJson(json['their_introduction_key']),
-  myPreviousIntroductionKeyPairs:
-      (json['my_previous_introduction_key_pairs'] as List<dynamic>?)
-          ?.map(KeyPair.fromJson)
-          .toList() ??
-      const [],
   introductionsForThem:
       (json['introductions_for_them'] as List<dynamic>?)
           ?.map((e) => ContactIntroduction.fromJson(e as Map<String, dynamic>))
@@ -94,12 +85,6 @@ Map<String, dynamic> _$CoagContactToJson(CoagContact instance) =>
       'dht_connection': instance.dhtConnection?.toJson(),
       'connection_crypto': instance.connectionCrypto.toJson(),
       'profile_sharing_status': instance.profileSharingStatus.toJson(),
-      'their_introduction_key': instance.theirIntroductionKey?.toJson(),
-      'my_introduction_key_pair': instance.myIntroductionKeyPair.toJson(),
-      'my_previous_introduction_key_pairs': instance
-          .myPreviousIntroductionKeyPairs
-          .map((e) => e.toJson())
-          .toList(),
       'introductions_for_them': instance.introductionsForThem
           .map((e) => e.toJson())
           .toList(),

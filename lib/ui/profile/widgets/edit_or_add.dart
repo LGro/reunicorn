@@ -171,7 +171,7 @@ class _EditOrAddWidgetState extends State<EditOrAddWidget> {
   @override
   void initState() {
     super.initState();
-    _circles = [...widget.circles];
+    _circles = sortCirclesByNameAsc(widget.circles);
     _newCircleNameController = TextEditingController();
     _value = widget.value;
     _label = widget.label;
@@ -288,36 +288,34 @@ class _EditOrAddWidgetState extends State<EditOrAddWidget> {
         ),
 
         const SizedBox(height: 16),
+        // Circle selection
         Text(
           context.loc.profileAndShareWithHeadline,
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         const SizedBox(height: 8),
         // If we don't need wrapping but go for a list, use CheckboxListTile
-        Wrap(
-          spacing: 8,
-          runSpacing: -4,
-          children: List.generate(
-            _circles.length,
-            (index) => GestureDetector(
-              onTap: () => _updateCircleMembership(index, !_circles[index].$3),
-              behavior: HitTestBehavior.opaque,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Checkbox(
-                    value: _circles[index].$3,
-                    onChanged: (value) => (value == null)
-                        ? null
-                        : _updateCircleMembership(index, value),
+        if (_circles.isEmpty)
+          const Text('No circles available')
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: _circles
+                .asMap()
+                .map(
+                  (i, c) => MapEntry(
+                    i,
+                    FilterChip(
+                      selected: c.$3,
+                      label: Text('${c.$2} (${c.$4})'),
+                      onSelected: (v) => _updateCircleMembership(i, v),
+                    ),
                   ),
-                  Text('${_circles[index].$2} (${_circles[index].$4})'),
-                  const SizedBox(width: 4),
-                ],
-              ),
-            ),
+                )
+                .values
+                .toList(),
           ),
-        ),
         // const SizedBox(height: 8),
         // Row(children: [
         //   Expanded(

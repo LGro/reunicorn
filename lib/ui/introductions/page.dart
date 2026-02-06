@@ -24,7 +24,7 @@ class IntroductionListTile extends StatelessWidget {
   final String introducerName;
   final String otherName;
   final String? message;
-  final Future<String?> Function() acceptCallback;
+  final Future<CoagContact> Function() acceptCallback;
 
   @override
   Widget build(BuildContext context) => ListTile(
@@ -47,20 +47,11 @@ class IntroductionListTile extends StatelessWidget {
           Center(
             child: FilledButton(
               onPressed: () async {
-                final coagContactId = await acceptCallback();
-                if (context.mounted && coagContactId != null) {
-                  context.goNamed(
-                    'contactDetails',
-                    pathParameters: {'coagContactId': coagContactId},
-                  );
+                final contact = await acceptCallback();
+                if (context.mounted) {
+                  context.goNamed('contactDetails', extra: contact);
                   // FIXME: This doesn't seem to work correctly
                   alertContext.pop();
-                } else if (context.mounted && coagContactId == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Accepting introduction failed.'),
-                    ),
-                  );
                 }
               },
               child: const Text('Accept & configure sharing'),

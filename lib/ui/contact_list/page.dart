@@ -4,18 +4,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:veilid/veilid.dart';
 
 import '../../data/models/circle.dart';
 import '../../data/models/models.dart';
 import '../../data/services/storage/base.dart';
-import '../contact_details/page.dart';
 import '../create_new_contact/page.dart';
-import '../introductions/page.dart';
 import '../receive_request/page.dart';
-import '../updates/page.dart';
 import '../utils.dart';
-import '../widgets/dht_sharing_status/widget.dart';
 import '../widgets/introductions_summary.dart';
 import '../widgets/searchable_list.dart';
 import 'cubit.dart';
@@ -23,10 +18,12 @@ import 'cubit.dart';
 Widget contactsListView(
   BuildContext context,
   List<CoagContact> contacts,
-  Map<String, List<String>> circleMemberships,
-) => SearchableList(
+  Map<String, List<String>> circleMemberships, {
+  double bottomPadding = 0,
+}) => SearchableList(
   items: contacts,
   infoWidget: IntroductionsSummary([]),
+  bottomPadding: bottomPadding,
   buildItemWidget: (contact) => ListTile(
     leading: roundPictureOrPlaceholder(contact.details?.picture, radius: 18),
     title: Text(contact.name),
@@ -34,18 +31,21 @@ Widget contactsListView(
       contact,
       circleMemberships[contact.coagContactId]?.isNotEmpty ?? false,
     ),
-    onTap: () => context.goNamed(
-      'contactDetails',
-      pathParameters: {'coagContactId': contact.coagContactId},
-    ),
+    onTap: () => context.goNamed('contactDetails', extra: contact),
   ),
-  // TODO: Also allow searching shared locations?
+  // TODO: Rank matches by weighting name matches higher than temp loc
   matchesItem: (search, contact) =>
       contact.name.toLowerCase().contains(search.toLowerCase()) ||
       (contact.details != null &&
           extractAllValuesToString(
             contact.details!.toJson(),
-          ).toLowerCase().contains(search.toLowerCase())),
+          ).toLowerCase().contains(search.toLowerCase())) ||
+      (extractAllValuesToString(
+        contact.addressLocations.values.map((v) => v.toJson()),
+      ).toLowerCase().contains(search.toLowerCase())) ||
+      (extractAllValuesToString(
+        contact.temporaryLocations.values.map((v) => v.toJson()),
+      ).toLowerCase().contains(search.toLowerCase())),
 );
 
 class ContactListPage extends StatefulWidget {
@@ -114,68 +114,63 @@ class _ContactListPageState extends State<ContactListPage> {
             ),
           ],
         ),
+        SizedBox(height: 4),
       ],
     ),
   );
 
-  Widget _contactsBody(BuildContext context, ContactListState state) => Column(
+  Widget _contactsBody(BuildContext context, ContactListState state) => Stack(
     children: [
-      Expanded(
-        child: contactsListView(
-          context,
-          state.contacts.toList(),
-          state.circleMemberships,
+      contactsListView(
+        context,
+        state.contacts.toList(),
+        state.circleMemberships,
+        bottomPadding: 72,
+      ),
+      Positioned(
+        left: 0,
+        right: 0,
+        bottom: 4,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            FilledButton(
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // This could be qr_code_2_add if available, is that better?
+                  Icon(Icons.person_add),
+                  SizedBox(width: 8),
+                  Text('Create invite'),
+                ],
+              ),
+              onPressed: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<CreateNewContactPage>(
+                    builder: (_) => CreateNewContactPage(),
+                  ),
+                );
+              },
+            ),
+            FilledButton(
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.qr_code_scanner),
+                  SizedBox(width: 8),
+                  Text('Accept invite'),
+                ],
+              ),
+              onPressed: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<ReceiveRequestPage>(
+                    builder: (_) => const ReceiveRequestPage(),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
-      ),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          FilledButton(
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // This could be qr_code_2_add if available, is that better?
-                Icon(Icons.person_add),
-                SizedBox(width: 8),
-                Text('Create invite'),
-              ],
-            ),
-            onPressed: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute<CreateNewContactPage>(
-                  builder: (_) => CreateNewContactPage(),
-                ),
-              );
-            },
-          ),
-          FilledButton(
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.qr_code_scanner),
-                SizedBox(width: 8),
-                Text('Accept invite'),
-              ],
-            ),
-            onPressed: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute<ReceiveRequestPage>(
-                  builder: (_) => const ReceiveRequestPage(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          DhtSharingStatusWidget(
-            recordKeys: state.contacts
-                .map((c) => c.dhtConnection?.recordKeyMeSharingOrNull)
-                .whereType<RecordKey>(),
-          ),
-        ],
       ),
     ],
   );
@@ -208,38 +203,18 @@ class _ContactListPageState extends State<ContactListPage> {
       builder: (context, state) => Scaffold(
         appBar: AppBar(
           title: const Text('Contacts'),
-          actions: [
-            // badges.Badge(
-            //   showBadge: pendingIntroductions(state.contacts).isNotEmpty,
-            //   badgeContent: Text(
-            //       pendingIntroductions(state.contacts).length.toString()),
-            //   child: const Icon(Icons.inbox),
-            //   onTap: () async => Navigator.of(context).push(
-            //       MaterialPageRoute<IntroductionsPage>(
-            //           builder: (context) => const IntroductionsPage())),
-            // ),
-            IconButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<IntroductionsPage>(
-                  builder: (context) => const IntroductionsPage(),
-                ),
-              ),
-              // Or use Icons.group_add instead?
-              icon: const Icon(Icons.emoji_people),
-            ),
-            // TODO: Show badge for unread updates
-            IconButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<ContactPage>(
-                  builder: (context) => const UpdatesPage(),
-                ),
-              ),
-              icon: const Icon(Icons.notifications),
-            ),
-          ],
+          // badges.Badge(
+          //   showBadge: pendingIntroductions(state.contacts).isNotEmpty,
+          //   badgeContent: Text(
+          //       pendingIntroductions(state.contacts).length.toString()),
+          //   child: const Icon(Icons.inbox),
+          //   onTap: () async => Navigator.of(context).push(
+          //       MaterialPageRoute<IntroductionsPage>(
+          //           builder: (context) => const IntroductionsPage())),
+          // ),
         ),
         body: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.only(top: 10, left: 10, right: 10),
           child:
               (state.contacts.isEmpty &&
                   state.circles.keys
@@ -297,6 +272,12 @@ Widget? contactSharingReceivingStatus(
       contact.details != null) {
     // TODO: Does it confuse folks if we don't explain the difference between one and two checkmarks?
     return const Icon(Icons.done);
+  }
+  if (contact.dhtConnection?.recordKeyMeSharingOrNull != null) {
+    return const Icon(Icons.call_made);
+  }
+  if (contact.dhtConnection?.recordKeyThemSharing != null) {
+    return const Icon(Icons.call_received);
   }
   return const Icon(Icons.question_mark);
 }

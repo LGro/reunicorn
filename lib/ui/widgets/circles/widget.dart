@@ -52,7 +52,9 @@ class _CirclesFormState extends State<CirclesForm> {
             ..._state.circles,
           ];
     setState(() {
-      _state = _state.copyWith(circles: updatedCircles.asList());
+      _state = _state.copyWith(
+        circles: sortCirclesByNameAsc(updatedCircles.asList()),
+      );
     });
     _titleController.clear();
   }
@@ -61,7 +63,7 @@ class _CirclesFormState extends State<CirclesForm> {
     final circles = List<(String, String, bool, int)>.from(_state.circles);
     circles[i] = (circles[i].$1, circles[i].$2, state, circles[i].$4);
     setState(() {
-      _state = _state.copyWith(circles: circles);
+      _state = _state.copyWith(circles: sortCirclesByNameAsc(circles));
     });
   }
 
@@ -117,7 +119,7 @@ class _CirclesFormState extends State<CirclesForm> {
   @override
   void initState() {
     super.initState();
-    _state = CirclesFormState(circles: widget.circles);
+    _state = CirclesFormState(circles: sortCirclesByNameAsc(widget.circles));
     _titleController = TextEditingController(text: _state.newCircleName)
       ..addListener(_onTitleChanged);
   }
@@ -173,41 +175,27 @@ class _CirclesFormState extends State<CirclesForm> {
             ),
           ),
         // If we don't need wrapping but go for a list, use CheckboxListTile
-        Wrap(
-          spacing: 8,
-          runSpacing: 6,
-          children: _state.circles
-              .asMap()
-              .map(
-                (i, c) => MapEntry(
-                  i,
-                  GestureDetector(
-                    onTap: () => _updateCircleMembership(i, !c.$3),
-                    behavior: HitTestBehavior.opaque,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Checkbox(
-                          value: c.$3,
-                          onChanged: (value) => (value == null)
-                              ? null
-                              : _updateCircleMembership(i, value),
-                        ),
-                        Expanded(
-                          child: Text(
-                            '${c.$2} (${c.$4})',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                      ],
+        if (_state.circles.isEmpty)
+          const Text('No circles available')
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: _state.circles
+                .asMap()
+                .map(
+                  (i, c) => MapEntry(
+                    i,
+                    FilterChip(
+                      selected: c.$3,
+                      label: Text('${c.$2} (${c.$4})'),
+                      onSelected: (v) => _updateCircleMembership(i, v),
                     ),
                   ),
-                ),
-              )
-              .values
-              .asList(),
-        ),
+                )
+                .values
+                .toList(),
+          ),
         const SizedBox(height: 8, width: double.maxFinite),
       ],
     ),

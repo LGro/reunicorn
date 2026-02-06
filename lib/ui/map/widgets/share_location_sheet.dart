@@ -327,11 +327,11 @@ class _ShareLocationBottomSheetState extends State<ShareLocationBottomSheet> {
                 ),
                 maxLines: 2,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
               // Date/Time section
               Text('When', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
 
               // Start date/time
               Row(

@@ -181,7 +181,7 @@ class _MapLocationSearchBarState extends State<MapLocationSearchBar> {
                   : const Icon(Icons.my_location),
               tooltip: 'Use current location',
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             // Search field
             Expanded(
               child: Container(
@@ -223,15 +223,14 @@ class _MapLocationSearchBarState extends State<MapLocationSearchBar> {
                 ),
               ),
             ),
+            const SizedBox(width: 4),
             // Add button - appears when location is selected
-            if (hasSelection) ...[
-              const SizedBox(width: 8),
+            if (hasSelection)
               IconButton.filled(
                 onPressed: widget.onAddLocation,
                 icon: const Icon(Icons.add),
                 tooltip: 'Share this location',
               ),
-            ],
           ],
         ),
       ],

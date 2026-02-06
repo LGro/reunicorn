@@ -47,7 +47,6 @@ Future<CoagContact?> createContactFromDirectSharing(
     // TODO: localize default to language
     name: invite.name,
     myIdentity: await generateKeyPairBest(),
-    myIntroductionKeyPair: await generateKeyPairBest(),
     dhtConnection: DhtConnectionState.invited(
       recordKeyThemSharing: invite.recordKey,
     ),

@@ -172,8 +172,6 @@ class BackupRepository extends BaseDhtRepository {
             (c) => CoagContact.explicit(
               coagContactId: c.coagContactId,
               myIdentity: c.myIdentity,
-              myIntroductionKeyPair: c.myIntroductionKeyPair,
-              myPreviousIntroductionKeyPairs: c.myPreviousIntroductionKeyPairs,
               name: c.name,
               dhtConnection: c.dhtConnection,
               connectionCrypto: c.connectionCrypto,
@@ -188,7 +186,6 @@ class BackupRepository extends BaseDhtRepository {
               addressLocations: const {},
               temporaryLocations: const {},
               profileSharingStatus: const ProfileSharingStatus(),
-              theirIntroductionKey: null,
               introductionsByThem: const [],
             ),
           )

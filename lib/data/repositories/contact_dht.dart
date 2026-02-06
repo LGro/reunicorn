@@ -174,7 +174,6 @@ ContactSharingSchema filterAccordingToSharingProfile({
   required CryptoState connectionCrypto,
   required List<ContactIntroduction> introductions,
   required PublicKey? identityKey,
-  required PublicKey? introductionKey,
   List<String> connectionAttestations = const [],
   List<String> knownPersonalContactIds = const [],
   List<RecordKey> recordsToPin = const [],
@@ -198,7 +197,6 @@ ContactSharingSchema filterAccordingToSharingProfile({
   ),
   identityKey: identityKey,
   connectionAttestations: connectionAttestations,
-  introductionKey: introductionKey,
   introductions: introductions,
   recordsToPin: recordsToPin,
 );
@@ -228,7 +226,6 @@ Future<ContactSharingSchema> updateSharedProfile(
   connectionCrypto: contact.connectionCrypto,
   introductions: contact.introductionsForThem,
   identityKey: contact.myIdentity.key,
-  introductionKey: contact.myIntroductionKeyPair.key,
   // TODO: move to function arg
   connectionAttestations: await connectionAttestations(
     contact,
@@ -290,7 +287,6 @@ class NextContactPrep extends BaseDhtRepository {
         coagContactId: Uuid().v4(),
         name: '???',
         myIdentity: await generateKeyPairBest(),
-        myIntroductionKeyPair: await generateKeyPairBest(),
         connectionCrypto: updatedConnectionCrypto,
         dhtConnection: dhtConnection,
       );
@@ -444,7 +440,6 @@ class ContactDhtRepository {
           details: dhtContact.details,
           addressLocations: dhtContact.addressLocations,
           temporaryLocations: dhtContact.temporaryLocations,
-          theirIntroductionKey: dhtContact.introductionKey,
           introductionsByThem: dhtContact.introductions,
           dhtConnection: dhtConnection,
           connectionCrypto: connectionCrypto,
@@ -674,7 +669,6 @@ class ContactDhtRepository {
       coagContactId: Uuid().v4(),
       name: name,
       myIdentity: await generateKeyPairBest(),
-      myIntroductionKeyPair: await generateKeyPairBest(),
       connectionCrypto: connectionCrypto,
     );
     await _contactStorage.set(contact.coagContactId, contact);

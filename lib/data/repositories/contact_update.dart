@@ -42,9 +42,6 @@ class UpdateRepository {
           coagContactId: oldContact?.coagContactId ?? newContact.coagContactId,
           name: oldContact?.name ?? newContact.name,
           myIdentity: oldContact?.myIdentity ?? newContact.myIdentity,
-          myIntroductionKeyPair:
-              oldContact?.myIntroductionKeyPair ??
-              newContact.myIntroductionKeyPair,
           dhtConnection: oldContact?.dhtConnection ?? newContact.dhtConnection,
           connectionCrypto:
               oldContact?.connectionCrypto ?? newContact.connectionCrypto,
@@ -61,7 +58,6 @@ class UpdateRepository {
           coagContactId: newContact.coagContactId,
           name: newContact.name,
           myIdentity: newContact.myIdentity,
-          myIntroductionKeyPair: newContact.myIntroductionKeyPair,
           dhtConnection: newContact.dhtConnection,
           connectionCrypto: newContact.connectionCrypto,
           details: newContact.details?.copyWith(),
@@ -85,7 +81,7 @@ class UpdateRepository {
           ? update.oldContact.details!.names.values.join(' / ')
           : update.newContact.details!.names.values.join(' / ');
       if (_notificationCallback != null && updateSummary.isNotEmpty) {
-        await _notificationCallback!(
+        await _notificationCallback(
           0,
           notificationTitle,
           'Updated $updateSummary',

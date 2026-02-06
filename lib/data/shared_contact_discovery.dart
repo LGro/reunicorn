@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:convert';
@@ -18,8 +18,6 @@ bool alreadyKnowEachOther(CoagContact? c1, CoagContact? c2) =>
         1);
 
 bool introducible(CoagContact? c1, CoagContact? c2) =>
-    c1?.theirIntroductionKey != null &&
-    c2?.theirIntroductionKey != null &&
     alreadyKnowEachOther(c1, c2) == false;
 
 // TODO: Allow opt-out (per contact, for contact, or globally?)

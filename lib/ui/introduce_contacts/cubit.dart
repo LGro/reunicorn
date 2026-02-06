@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
@@ -8,6 +8,7 @@ import 'package:equatable/equatable.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:reunicorn/data/utils.dart';
 
 import '../../data/models/coag_contact.dart';
 import '../../data/models/contact_introduction.dart';
@@ -48,71 +49,63 @@ class IntroduceContactsCubit extends Cubit<IntroduceContactsState> {
     required String nameB,
     String? message,
   }) async {
-    // TODO: Can this fail? Do we need to try except this?
     try {
-      final (recordKeyA, writerA) = await VeilidDht().create();
-      final (recordKeyB, writerB) = await VeilidDht().create();
+      // TODO(LGro): Combine locks instead of two locks? Can this be more elegant?
+      return await _contactStorage.lock.synchronized(contactIdA, () async {
+        return await _contactStorage.lock.synchronized(contactIdB, () async {
+          final contactA = await _contactStorage.get(contactIdA);
+          final contactB = await _contactStorage.get(contactIdB);
 
-      // Get most up to date contacts since dht record creation might have taken
-      // a moment
-      final contactA = await _contactStorage.get(contactIdA);
-      final contactB = await _contactStorage.get(contactIdB);
+          // This should already have been prevented on the UI side, just checking
+          if (!introducible(contactA, contactB) ||
+              contactA == null ||
+              contactB == null) {
+            return false;
+          }
 
-      // This should already have been prevented on the UI side, just checking
-      if (!introducible(contactA, contactB)) {
-        return false;
-      }
+          final (recordKeyA, writerA) = await VeilidDht().create();
+          final (recordKeyB, writerB) = await VeilidDht().create();
 
-      final introForA = ContactIntroduction(
-        publicKey: contactA!.theirIntroductionKey!,
-        otherName: nameB,
-        otherPublicKey: contactB!.theirIntroductionKey!,
-        dhtRecordKeyReceiving: recordKeyB,
-        dhtRecordKeySharing: recordKeyA,
-        dhtWriterSharing: writerA,
-        message: message,
-      );
-      final introForB = ContactIntroduction(
-        publicKey: contactB.theirIntroductionKey!,
-        otherName: nameA,
-        otherPublicKey: contactA.theirIntroductionKey!,
-        dhtRecordKeyReceiving: recordKeyA,
-        dhtRecordKeySharing: recordKeyB,
-        dhtWriterSharing: writerB,
-        message: message,
-      );
+          final sharedSecret = await generateRandomSharedSecretBest();
 
-      await _contactStorage.set(
-        contactA.coagContactId,
-        contactA.copyWith(
-          introductionsForThem: [...contactA.introductionsForThem, introForA],
-        ),
-      );
-      await _contactStorage.set(
-        contactB.coagContactId,
-        contactB.copyWith(
-          introductionsForThem: [...contactB.introductionsForThem, introForB],
-        ),
-      );
+          await _contactStorage.set(
+            contactA.coagContactId,
+            contactA.copyWith(
+              introductionsForThem: [
+                ...contactA.introductionsForThem,
+                ContactIntroduction(
+                  otherName: nameB,
+                  sharedSecret: sharedSecret,
+                  dhtRecordKeyReceiving: recordKeyB,
+                  dhtRecordKeySharing: recordKeyA,
+                  dhtWriterSharing: writerA,
+                  message: message,
+                ),
+              ],
+            ),
+          );
+          await _contactStorage.set(
+            contactB.coagContactId,
+            contactB.copyWith(
+              introductionsForThem: [
+                ...contactB.introductionsForThem,
+                ContactIntroduction(
+                  otherName: nameA,
+                  sharedSecret: sharedSecret,
+                  dhtRecordKeyReceiving: recordKeyA,
+                  dhtRecordKeySharing: recordKeyB,
+                  dhtWriterSharing: writerB,
+                  message: message,
+                ),
+              ],
+            ),
+          );
 
-      //   final updateAndShareA = updateContactSharedProfile(
-      //     contactIdA,
-      //   ).then((_) => tryShareWithContactDHT(contactIdA));
-      //   final updateAndShareB = updateContactSharedProfile(
-      //     contactIdB,
-      //   ).then((_) => tryShareWithContactDHT(contactIdB));
-
-      //   if (awaitDhtOperations) {
-      //     return await updateAndShareA && await updateAndShareB;
-      //   } else {
-      //     // The try share with doesn't need to succeed now for the introductions
-      //     // to reach them later
-      //     unawaited(updateAndShareA);
-      //     unawaited(updateAndShareB);
-      //     return true;
-      //   }
-      return true;
-    } on Exception catch (e) {
+          return true;
+        });
+      });
+    } catch (e) {
+      // TODO: Can this fail? Do we need to try except this?
       debugPrint('Error preparing introduction: $e');
       return false;
     }

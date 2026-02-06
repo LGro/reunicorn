@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:reunicorn/ui/utils.dart';
 
 import '../../../data/models/circle.dart';
 import '../../../data/services/storage/base.dart';
@@ -17,17 +18,19 @@ part 'state.dart';
 List<(String, String, bool, int)> circlesWithMembership(
   String contactId,
   Map<String, Circle> circles,
-) => circles
-    .map(
-      (id, circle) => MapEntry(id, (
-        id,
-        circle.name,
-        circle.memberIds.contains(contactId),
-        circle.memberIds.length,
-      )),
-    )
-    .values
-    .toList();
+) => sortCirclesByNameAsc(
+  circles
+      .map(
+        (id, circle) => MapEntry(id, (
+          id,
+          circle.name,
+          circle.memberIds.contains(contactId),
+          circle.memberIds.length,
+        )),
+      )
+      .values
+      .toList(),
+);
 
 class CirclesCubit extends Cubit<CirclesState> {
   CirclesCubit(this._circleStorage, this.contactId)

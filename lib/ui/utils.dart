@@ -40,6 +40,10 @@ bool searchMatchesContact(String search, CoagContact contact) =>
           contact.details!.toJson(),
         ).toLowerCase().contains(search.toLowerCase()));
 
+List<(String, String, bool, int)> sortCirclesByNameAsc(
+  List<(String, String, bool, int)> circles,
+) => [...circles]..sort((a, b) => a.$2.compareTo(b.$2));
+
 Widget roundPictureOrPlaceholder(
   List<int>? picture, {
   double? radius,
@@ -47,7 +51,7 @@ Widget roundPictureOrPlaceholder(
 }) {
   final fallback = CircleAvatar(
     radius: radius,
-    child: const Icon(Icons.person),
+    child: Icon(Icons.person, size: radius),
   );
   if (picture == null || picture.isEmpty) {
     return fallback;

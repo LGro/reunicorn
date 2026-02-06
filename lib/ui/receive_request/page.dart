@@ -1,8 +1,9 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/models/coag_contact.dart';
 import '../../data/models/community.dart';
@@ -10,7 +11,6 @@ import '../../data/models/profile_info.dart';
 import '../../data/repositories/contact_dht.dart';
 import '../../data/services/storage/base.dart';
 import '../circle_details/page.dart';
-import '../contact_details/page.dart';
 import '../widgets/scan_qr_code.dart';
 import 'cubit.dart';
 
@@ -127,10 +127,7 @@ class ReceiveRequestPage extends StatelessWidget {
           ).showSnackBar(const SnackBar(content: Text('Invalid URL')));
           context.read<ReceiveRequestCubit>().scanQrCode();
         } else if (state.status.isSuccess && state.profile != null) {
-          await Navigator.of(context).pushAndRemoveUntil(
-            ContactPage.route(state.profile!.coagContactId),
-            (route) => route.isFirst,
-          );
+          context.goNamed('contactDetails', extra: state.profile);
         } else if (state.status.isBatchInviteSuccess) {
           // TODO: Remove redundancy by processing into state schema?
           final parts = state.fragment!.split('~');

@@ -45,7 +45,6 @@ final minimalBaseContact = CoagContact(
   coagContactId: 'dummy-id',
   name: 'dummy',
   myIdentity: fakeKeyPair(1000),
-  myIntroductionKeyPair: fakeKeyPair(2000),
   dhtConnection: DhtConnectionState.invited(
     recordKeyThemSharing: fakeDhtRecordKey(),
   ),

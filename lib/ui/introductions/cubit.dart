@@ -2,16 +2,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:veilid/veilid.dart';
+import 'package:vodozemac/vodozemac.dart' as vod;
 
 import '../../data/models/community.dart';
 import '../../data/models/contact_introduction.dart';
 import '../../data/models/models.dart';
-import '../../data/repositories/community_dht.dart';
 import '../../data/services/storage/base.dart';
 import '../../data/utils.dart';
 
@@ -41,66 +42,42 @@ class IntroductionsCubit extends Cubit<IntroductionsState> {
     }
   }
 
-  Future<String?> accept(
+  Future<CoagContact> accept(
     CoagContact introducer,
     ContactIntroduction introduction, {
     bool awaitUpdateFromDht = false,
   }) async {
-    // Find the key pair to use for encrypting communication with the introduced
-    final myKeyPair = [
-      introducer.myIntroductionKeyPair,
-      ...introducer.myPreviousIntroductionKeyPairs,
-    ].where((kp) => kp.key == introduction.publicKey).firstOrNull;
-    if (myKeyPair == null) {
-      return null;
-    }
+    final contact = CoagContact(
+      coagContactId: Uuid().v4(),
+      name: introduction.otherName,
+      myIdentity: await generateKeyPairBest(),
+      profileSharingStatus: const ProfileSharingStatus(),
+      dhtConnection: DhtConnectionState.established(
+        recordKeyMeSharing: introduction.dhtRecordKeySharing,
+        writerMeSharing: introduction.dhtWriterSharing,
+        recordKeyThemSharing: introduction.dhtRecordKeyReceiving,
+      ),
+      connectionCrypto: CryptoState.symmetric(
+        sharedSecret: introduction.sharedSecret,
+        accountVod: (vod.Account()..generateOneTimeKeys(1)).toPickleEncrypted(
+          Uint8List(32),
+        ),
+      ),
+    );
 
-    throw UnimplementedError();
+    await _contactStorage.set(contact.coagContactId, contact);
 
-    // Create new contact for the introduced
-    // final contact = CoagContact(
-    //   coagContactId: Uuid().v4(),
-    //   name: introduction.otherName,
-    //   myIdentity: await generateKeyPairBest(),
-    //   myIntroductionKeyPair: await generateKeyPairBest(),
-    //   profileSharingStatus: const ProfileSharingStatus(),
-    //   dhtConnection: DhtConnectionState.established(
-    //     recordKeyMeSharing: introduction.dhtRecordKeySharing,
-    //     writerMeSharing: introduction.dhtWriterSharing,
-    //     recordKeyThemSharing: introduction.dhtRecordKeyReceiving,
-    //   ),
-    //   connectionCrypto: CryptoState.symmetric(
-    //     theirNextPublicKey: introduction.otherPublicKey,
-    //     theirPublicKey: introduction.otherPublicKey,
-    //   ),
-    // );
-
-    // await _contactStorage.set(contact.coagContactId, contact);
-
-    // // Rotate introduction key pair for introducer
-    // // TODO: Can this cause issues when someone introduces multiple contacts at once?
-    // await _contactStorage.set(
-    //   introducer.coagContactId,
-    //   introducer.copyWith(
-    //     myIntroductionKeyPair: await generateKeyPairBest(),
-    //     myPreviousIntroductionKeyPairs: [
-    //       introducer.myIntroductionKeyPair,
-    //       ...introducer.myPreviousIntroductionKeyPairs,
-    //     ],
-    //   ),
-    // );
-
-    // return contact.coagContactId;
+    return contact;
   }
 
-  Future<String?> acceptCommunityMember(Member member) async {
+  Future<CoagContact> acceptCommunityMember(Member member) async {
     throw UnimplementedError();
+
     // final contact = CoagContact(
     //   coagContactId: Uuid().v4(),
     //   name: member.name,
     //   origin: CommunityOrigin.fromMember(member).toString(),
     //   myIdentity: await generateKeyPairBest(),
-    //   myIntroductionKeyPair: await generateKeyPairBest(),
     //   // TODO(LGro): or do we need to initialize sharing settings?
     //   dhtConnection: (member.recordKeyThemSharing == null)
     //       ? null
@@ -121,7 +98,7 @@ class IntroductionsCubit extends Cubit<IntroductionsState> {
 
     // await _contactStorage.set(contact.coagContactId, contact);
 
-    // return contact.coagContactId;
+    // return contact;
   }
 
   @override

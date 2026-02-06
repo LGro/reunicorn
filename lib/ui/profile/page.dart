@@ -201,18 +201,18 @@ class ProfileViewState extends State<ProfileView> {
 
                       // TODO: Do one of these per name and include the name? or allow customizing the name?
                       // TODO: Also feature this as an option on the create invite page?
-                      if (state.profileInfo?.mainKeyPair?.key != null)
-                        ProfileInviteLinkWidget(
-                          name:
-                              state
-                                  .profileInfo!
-                                  .details
-                                  .names
-                                  .values
-                                  .firstOrNull ??
-                              '???',
-                          profilePubKey: state.profileInfo!.mainKeyPair!.key,
-                        ),
+                      // if (state.profileInfo?.mainKeyPair?.key != null)
+                      //   ProfileInviteLinkWidget(
+                      //     name:
+                      //         state
+                      //             .profileInfo!
+                      //             .details
+                      //             .names
+                      //             .values
+                      //             .firstOrNull ??
+                      //         '???',
+                      //     profilePubKey: state.profileInfo!.mainKeyPair!.key,
+                      //   ),
                     ],
                   ),
                 ),

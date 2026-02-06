@@ -8,7 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mobile_scanner/mobile_scanner.dart' as mobile_scanner;
 import 'package:reunicorn/data/models/coag_contact.dart';
-import 'package:reunicorn/data/repositories/contacts.dart';
 import 'package:reunicorn/data/utils.dart';
 import 'package:reunicorn/ui/receive_request/cubit.dart';
 import 'package:reunicorn/ui/utils.dart';
@@ -55,15 +54,11 @@ void main() {
           coagContactId: '2',
           name: 'Existing Contact A',
           myIdentity: await generateKeyPairBest(),
-          myIntroductionKeyPair: await generateKeyPairBest(),
-          dhtSettings: DhtSettings(myNextKeyPair: await generateKeyPairBest()),
         ),
         CoagContact(
           coagContactId: '5',
           name: 'Existing Contact B',
           myIdentity: await generateKeyPairBest(),
-          myIntroductionKeyPair: await generateKeyPairBest(),
-          dhtSettings: DhtSettings(myNextKeyPair: await generateKeyPairBest()),
         ),
       ];
       initialDht = {

@@ -43,6 +43,7 @@ import 'contact_details/page.dart';
 import 'contact_list/page.dart';
 import 'dashboard/page.dart';
 import 'import_ics/page.dart';
+import 'introduce_contacts/page.dart';
 import 'introductions/page.dart';
 import 'locations/schedule/widget.dart';
 import 'locations/share_location/widget.dart';
@@ -161,11 +162,21 @@ GoRouter buildAppRouter(
           builder: (context, state) => const ContactListPage(),
           routes: [
             GoRoute(
-              path: 'details/:coagContactId',
+              path: 'details',
               name: 'contactDetails',
-              builder: (_, state) => ContactPage(
-                coagContactId: state.pathParameters['coagContactId']!,
-              ),
+              builder: (_, state) =>
+                  ContactPage(contact: state.extra! as CoagContact),
+              routes: [
+                GoRoute(
+                  path: 'introduction',
+                  name: 'contactIntroduction',
+                  builder: (_, state) => IntroduceContactsPage(
+                    contact: (state.extra == null)
+                        ? null
+                        : state.extra! as CoagContact,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -356,7 +367,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   void initState() {
     super.initState();
 
-    _lifecycleListener = AppLifecycleListener(onRestart: _handleAppRestart);
+    // _lifecycleListener = AppLifecycleListener(onRestart: _handleAppRestart);
 
     _appRouter = buildAppRouter(_rootNavigatorKey, widget.isFirstRun);
 

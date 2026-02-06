@@ -11,7 +11,9 @@ import '../utils.dart';
 import 'cubit.dart';
 
 class IntroduceContactsPage extends StatefulWidget {
-  const IntroduceContactsPage({super.key});
+  const IntroduceContactsPage({this.contact, super.key});
+
+  final CoagContact? contact;
 
   @override
   State<StatefulWidget> createState() => _IntroduceContactsPageState();
@@ -26,6 +28,12 @@ class _IntroduceContactsPageState extends State<IntroduceContactsPage> {
   CoagContact? _contactA;
   CoagContact? _contactB;
   String? _message;
+
+  @override
+  void initState() {
+    super.initState();
+    _contactA = widget.contact;
+  }
 
   @override
   void dispose() {
@@ -58,42 +66,48 @@ class _IntroduceContactsPageState extends State<IntroduceContactsPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: Autocomplete<CoagContact>(
-                          fieldViewBuilder:
-                              (
-                                context,
-                                textEditingController,
-                                focusNode,
-                                onFieldSubmitted,
-                              ) => TextFormField(
-                                controller: textEditingController,
-                                focusNode: focusNode,
-                                autocorrect: false,
-                                decoration: const InputDecoration(
-                                  isDense: true,
-                                  labelText: 'Contact',
-                                  border: OutlineInputBorder(),
-                                ),
-                                onFieldSubmitted: (_) => onFieldSubmitted(),
+                        child: (widget.contact != null)
+                            ? Text(
+                                widget.contact!.name,
+                                overflow: TextOverflow.ellipsis,
+                              )
+                            : Autocomplete<CoagContact>(
+                                fieldViewBuilder:
+                                    (
+                                      context,
+                                      textEditingController,
+                                      focusNode,
+                                      onFieldSubmitted,
+                                    ) => TextFormField(
+                                      controller: textEditingController,
+                                      focusNode: focusNode,
+                                      autocorrect: false,
+                                      decoration: const InputDecoration(
+                                        isDense: true,
+                                        labelText: 'Contact',
+                                        border: OutlineInputBorder(),
+                                      ),
+                                      onFieldSubmitted: (_) =>
+                                          onFieldSubmitted(),
+                                    ),
+                                optionsBuilder: (textEditingValue) =>
+                                    (textEditingValue.text == '')
+                                    ? []
+                                    : state.contacts.where(
+                                        (contact) =>
+                                            searchMatchesContact(
+                                              textEditingValue.text,
+                                              contact,
+                                            ) &&
+                                            contact.coagContactId !=
+                                                _contactB?.coagContactId,
+                                      ),
+                                onSelected: (c) => setState(() {
+                                  _contactA = c;
+                                  _asControllerA.text = c.name;
+                                }),
+                                displayStringForOption: (c) => c.name,
                               ),
-                          optionsBuilder: (textEditingValue) =>
-                              (textEditingValue.text == '')
-                              ? []
-                              : state.contacts.where(
-                                  (contact) =>
-                                      searchMatchesContact(
-                                        textEditingValue.text,
-                                        contact,
-                                      ) &&
-                                      contact.coagContactId !=
-                                          _contactB?.coagContactId,
-                                ),
-                          onSelected: (c) => setState(() {
-                            _contactA = c;
-                            _asControllerA.text = c.name;
-                          }),
-                          displayStringForOption: (c) => c.name,
-                        ),
                       ),
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),

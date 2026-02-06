@@ -25,21 +25,15 @@ import 'link_to_system_contact/page.dart';
 import 'widgets/circles.dart';
 import 'widgets/connecting.dart';
 import 'widgets/contact_details_and_locations.dart';
-import 'widgets/emoji_sas_verification.dart';
 import 'widgets/shared_profile/widget.dart';
 import 'widgets/temporary_locations.dart';
 
 String _shorten(String str) => str.substring(0, min(10, str.length));
 
 class ContactPage extends StatefulWidget {
-  const ContactPage({required this.coagContactId, super.key});
+  const ContactPage({required this.contact, super.key});
 
-  final String coagContactId;
-
-  static Route<void> route(String coagContactId) => MaterialPageRoute(
-    fullscreenDialog: true,
-    builder: (context) => ContactPage(coagContactId: coagContactId),
-  );
+  final CoagContact contact;
 
   @override
   State<ContactPage> createState() => _ContactPageState();
@@ -154,7 +148,7 @@ class _ContactPageState extends State<ContactPage> {
           context.read<Storage<CoagContact>>(),
           context.read<Storage<Circle>>(),
           context.read<ContactDhtRepository>(),
-          widget.coagContactId,
+          widget.contact,
         ),
       ),
       BlocProvider(
@@ -234,16 +228,66 @@ class _ContactPageState extends State<ContactPage> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (contact.details?.picture != null)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 12, top: 16, right: 12),
-              child: roundPictureOrPlaceholder(
-                contact.details?.picture,
-                radius: 64,
+        Padding(
+          padding: const EdgeInsets.only(left: 12, top: 16, right: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(width: 16 + 28),
+              roundPictureOrPlaceholder(contact.details?.picture, radius: 64),
+              const SizedBox(width: 16),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  IconButton(
+                    tooltip: contact.systemContactId == null
+                        ? 'Link to address book contact'
+                        : 'Unlink from address book contact',
+                    onPressed: contact.systemContactId == null
+                        ? () => Navigator.of(context).push(
+                            MaterialPageRoute<LinkToSystemContactPage>(
+                              builder: (_) => LinkToSystemContactPage(
+                                coagContactId: contact.coagContactId,
+                              ),
+                            ),
+                          )
+                        : () => context
+                              .read<ContactDetailsCubit>()
+                              .unlinkFromSystemContact(),
+                    icon: Icon(
+                      contact.systemContactId == null
+                          ? Icons.add_link
+                          : Icons.link_off,
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsetsGeometry.only(left: 2),
+                    child: IconButton(
+                      tooltip: 'Introduce them to someone',
+                      onPressed: () => context.goNamed(
+                        'contactIntroduction',
+                        extra: contact,
+                      ),
+                      icon: const Icon(Icons.group_add),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Remove from Reunicorn',
+                    onPressed: () => _showDeleteContactDialog(
+                      contact,
+                      context.read<ContactDetailsCubit>().delete,
+                    ),
+                    icon: Icon(
+                      Icons.delete,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
               ),
-            ),
+            ],
           ),
+        ),
 
         // Contact details
         ContactDetailsAndLocations(contact),
@@ -398,47 +442,6 @@ class _ContactPageState extends State<ContactPage> {
                 // former.
                 maxLines: 4,
               ),
-            ),
-          ),
-        ),
-
-        // TODO: Display note about which contact is linked?
-        Padding(
-          padding: const EdgeInsets.only(left: 16, top: 12, right: 16),
-          child: (contact.systemContactId == null)
-              ? FilledButton.tonal(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<LinkToSystemContactPage>(
-                      builder: (_) => LinkToSystemContactPage(
-                        coagContactId: contact.coagContactId,
-                      ),
-                    ),
-                  ),
-                  child: const Text('Link to address book contact'),
-                )
-              : FilledButton.tonal(
-                  onPressed: () => context
-                      .read<ContactDetailsCubit>()
-                      .unlinkFromSystemContact(),
-                  child: const Text('Unlink from address book contact'),
-                ),
-        ),
-
-        // Delete contact
-        Center(
-          child: TextButton(
-            onPressed: () => _showDeleteContactDialog(
-              contact,
-              context.read<ContactDetailsCubit>().delete,
-            ),
-            style: ButtonStyle(
-              backgroundColor: WidgetStatePropertyAll(
-                Theme.of(context).colorScheme.error,
-              ),
-            ),
-            child: Text(
-              'Remove from Reunicorn',
-              style: TextStyle(color: Theme.of(context).colorScheme.onError),
             ),
           ),
         ),

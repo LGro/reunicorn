@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
@@ -41,8 +41,7 @@ sealed class CloseByMatch with _$CloseByMatch implements JsonEncodable {
     required String myLocationLabel,
     required String theirLocationId,
     required String theirLocationLabel,
-    required String coagContactId,
-    required String coagContactName,
+    required CoagContact contact,
     required DateTime start,
     required DateTime end,
     required Duration offset,
@@ -59,8 +58,7 @@ Iterable<CloseByMatch> closeByAddressWithTemporary({
   required Duration timeThreshold,
   required double distanceThresholdKm,
   required Set<String> mySharedLocationIds,
-  required String coagContactId,
-  required String theirName,
+  required CoagContact contact,
 }) {
   final matches = <CloseByMatch>[];
   for (final my in myAddressLocations.entries) {
@@ -77,8 +75,7 @@ Iterable<CloseByMatch> closeByAddressWithTemporary({
             myLocationLabel: my.key,
             theirLocationId: their.key,
             theirLocationLabel: their.value.name,
-            coagContactId: coagContactId,
-            coagContactName: theirName,
+            contact: contact,
             start: their.value.start,
             end: their.value.end,
             offset: Duration.zero,
@@ -97,8 +94,7 @@ Iterable<CloseByMatch> closeByTemporaryWithTemporary({
   required Duration timeThreshold,
   required double distanceThresholdKm,
   required Set<String> mySharedLocationIds,
-  required String coagContactId,
-  required String theirName,
+  required CoagContact contact,
 }) {
   final matches = <CloseByMatch>[];
   for (final my in myTemporaryLocations.entries) {
@@ -122,8 +118,7 @@ Iterable<CloseByMatch> closeByTemporaryWithTemporary({
             myLocationLabel: my.value.name,
             theirLocationId: their.key,
             theirLocationLabel: their.value.name,
-            coagContactId: coagContactId,
-            coagContactName: theirName,
+            contact: contact,
             start: start,
             end: end,
             offset: offset,
@@ -142,8 +137,7 @@ Iterable<CloseByMatch> closeByTemporaryWithAddress({
   required Duration timeThreshold,
   required double distanceThresholdKm,
   required Set<String> mySharedLocationIds,
-  required String coagContactId,
-  required String theirName,
+  required CoagContact contact,
 }) {
   final matches = <CloseByMatch>[];
   for (final my in myTemporaryLocations.entries) {
@@ -160,8 +154,7 @@ Iterable<CloseByMatch> closeByTemporaryWithAddress({
             myLocationLabel: my.value.name,
             theirLocationId: their.key,
             theirLocationLabel: their.key,
-            coagContactId: coagContactId,
-            coagContactName: theirName,
+            contact: contact,
             start: my.value.start,
             end: my.value.end,
             offset: Duration.zero,
@@ -218,8 +211,7 @@ List<CloseByMatch> closeByMatchesForContact(
       timeThreshold: timeThreshold,
       distanceThresholdKm: distanceThresholdKm,
       mySharedLocationIds: mySharedAddressLocationIds,
-      coagContactId: contact.coagContactId,
-      theirName: contact.name,
+      contact: contact,
     ),
     ...closeByTemporaryWithTemporary(
       myTemporaryLocations: myTemporaryLocations,
@@ -227,8 +219,7 @@ List<CloseByMatch> closeByMatchesForContact(
       timeThreshold: timeThreshold,
       distanceThresholdKm: distanceThresholdKm,
       mySharedLocationIds: mySharedTemporaryLocationIds,
-      coagContactId: contact.coagContactId,
-      theirName: contact.name,
+      contact: contact,
     ),
     ...closeByTemporaryWithAddress(
       myTemporaryLocations: myTemporaryLocations,
@@ -236,8 +227,7 @@ List<CloseByMatch> closeByMatchesForContact(
       timeThreshold: timeThreshold,
       distanceThresholdKm: distanceThresholdKm,
       mySharedLocationIds: mySharedTemporaryLocationIds,
-      coagContactId: contact.coagContactId,
-      theirName: contact.name,
+      contact: contact,
     ),
   ];
 

@@ -56,8 +56,13 @@ class _GridCircleItem extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         clipBehavior: Clip.antiAlias,
         color: Theme.of(context).colorScheme.surfaceBright,
-        child: (images.isEmpty)
-            ? const Icon(Icons.group, size: 42)
+        child: (numCircleMembers == 0)
+            ? null
+            : (images.isEmpty)
+            ? Padding(
+                padding: EdgeInsetsGeometry.only(bottom: 24),
+                child: Icon(Icons.group, size: 64),
+              )
             : StaggeredGrid.count(
                 crossAxisCount: crossAxisCountFromNumPictures(images.length),
                 children: images,

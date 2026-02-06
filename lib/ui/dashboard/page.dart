@@ -1,4 +1,4 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:typed_data';
@@ -195,7 +195,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         // TODO: Can we speed this up by storing a map of contacts?
                         picture: state.contacts
                             .firstWhereOrNull(
-                              (c) => c.coagContactId == match.coagContactId,
+                              (c) =>
+                                  c.coagContactId ==
+                                  match.contact.coagContactId,
                             )
                             ?.details
                             ?.picture,
@@ -313,16 +315,13 @@ class _CloseByRow extends StatelessWidget {
       // titleAlignment: ListTileTitleAlignment.top,
       title: Text(
         [
-          '${match.coagContactName} will be near you at ',
+          '${match.contact.name} will be near you at ',
           '"${match.myLocationLabel}" between $start and $end',
           // TODO: Make the on-tap something that helps with letting them know
           if (!match.theyKnow) '\nThey do not know about this, let them know.',
         ].join(),
       ),
-      onTap: () => context.pushNamed(
-        'contactDetails',
-        pathParameters: {'coagContactId': match.coagContactId},
-      ),
+      onTap: () => context.pushNamed('contactDetails', extra: match.contact),
     );
   }
 }
@@ -339,10 +338,7 @@ class _ContactUpdateRow extends StatelessWidget {
     contactUpdateSummary(update.oldContact, update.newContact),
     onTap: (update.coagContactId == null)
         ? null
-        : () => context.pushNamed(
-            'contactDetails',
-            pathParameters: {'coagContactId': update.coagContactId!},
-          ),
+        : () => context.pushNamed('contactDetails', extra: update.newContact),
     picture: update.newContact.details?.picture,
   );
 }

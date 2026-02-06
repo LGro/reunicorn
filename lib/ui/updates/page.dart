@@ -142,10 +142,7 @@ class UpdatesPage extends StatelessWidget {
                                 ? null
                                 : () => context.goNamed(
                                     'contactDetails',
-                                    pathParameters: {
-                                      'coagContactId':
-                                          u.newContact.coagContactId,
-                                    },
+                                    extra: u.newContact,
                                   ),
                             picture: u.newContact.details?.picture,
                           ),

@@ -24,7 +24,6 @@ import '../../data/repositories/contact_dht.dart';
 import '../../data/repositories/settings.dart';
 import '../../data/services/storage/base.dart';
 import '../../data/providers/geocoding/maptiler.dart';
-import '../contact_details/page.dart';
 import '../locations/schedule/widget.dart';
 import '../utils.dart';
 import 'cubit.dart';
@@ -128,13 +127,15 @@ Future<void> showModalAddressLocationDetails(
               Center(
                 child: FilledButton.tonal(
                   child: const Text('Contact details'),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<ContactPage>(
-                      builder: (_) =>
-                          ContactPage(coagContactId: location.coagContactId!),
-                    ),
-                  ),
+                  onPressed: () async {
+                    final contact = await context
+                        .read<Storage<CoagContact>>()
+                        .get(location.coagContactId!);
+                    if (contact != null && context.mounted) {
+                      context.goNamed('contactDetails', extra: contact);
+                    }
+                    // TODO(LGro): Show snack bar if mounted but no contact?
+                  },
                 ),
               ),
             ],
@@ -259,13 +260,15 @@ Future<void> showModalTemporaryLocationDetails(
               Center(
                 child: FilledButton.tonal(
                   child: const Text('Contact details'),
-                  onPressed: () async => Navigator.push(
-                    context,
-                    MaterialPageRoute<ContactPage>(
-                      builder: (_) =>
-                          ContactPage(coagContactId: location.coagContactId!),
-                    ),
-                  ),
+                  onPressed: () async {
+                    final contact = await context
+                        .read<Storage<CoagContact>>()
+                        .get(location.coagContactId!);
+                    if (contact != null && context.mounted) {
+                      context.goNamed('contactDetails', extra: contact);
+                    }
+                    // TODO(LGro): Show snack bar if mounted but no contact?
+                  },
                 ),
               ),
               const SizedBox(height: 8),
@@ -1141,7 +1144,7 @@ class _MapPageState extends State<MapPage> {
                               : EdgeInsets.only(top: 48, right: 8),
                           child: IconButton.filledTonal(
                             onPressed: () =>
-                                context.pushNamed('locationListPage'),
+                                context.goNamed('locationListPage'),
                             icon: const Icon(Icons.list),
                           ),
                         ),

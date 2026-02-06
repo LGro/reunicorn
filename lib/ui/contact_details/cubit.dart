@@ -33,21 +33,23 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
     this._contactStorage,
     this._circleStorage,
     this._contactDhtRepository,
-    String coagContactId,
-  ) : super(const ContactDetailsState(ContactDetailsStatus.initial)) {
+    CoagContact contact,
+  ) : super(
+        ContactDetailsState(ContactDetailsStatus.initial, contact: contact),
+      ) {
     _circleSubscription = _circleStorage.changeEvents.listen((_) async {
       final circles = await _circleStorage.getAll();
       if (!isClosed) {
         emit(
           state.copyWith(
-            circles: circlesForContact(circles.values, coagContactId),
+            circles: circlesForContact(circles.values, contact.coagContactId),
           ),
         );
       }
     });
     _contactSubscription = _contactStorage.changeEvents.listen((e) async {
       if (e is SetEvent<CoagContact> &&
-          e.newValue.coagContactId == coagContactId) {
+          e.newValue.coagContactId == contact.coagContactId) {
         final contacts = await _contactStorage.getAll();
         final circles = await _circleStorage.getAll();
         if (!isClosed) {
@@ -55,9 +57,9 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
             state.copyWith(
               status: ContactDetailsStatus.success,
               contact: e.newValue,
-              knownContacts: knownContacts(coagContactId, contacts),
+              knownContacts: knownContacts(contact.coagContactId, contacts),
               allContacts: contacts,
-              circles: circlesForContact(circles.values, coagContactId),
+              circles: circlesForContact(circles.values, contact.coagContactId),
             ),
           );
         }
@@ -66,7 +68,7 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
       }
     });
 
-    unawaited(loadContact(coagContactId));
+    unawaited(loadContact(contact.coagContactId));
   }
 
   final Storage<CoagContact> _contactStorage;
@@ -152,7 +154,7 @@ class ContactDetailsCubit extends Cubit<ContactDetailsState> {
     }
     try {
       await _contactDhtRepository.updateContact(state.contact!.coagContactId);
-    } on VeilidAPIException catch (e) {
+    } on VeilidAPIException {
       return false;
     }
     return true;
