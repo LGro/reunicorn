@@ -3,6 +3,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:reunicorn/ui/utils.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:veilid/veilid.dart';
 
 import '../../../data/models/community.dart';
@@ -47,6 +49,14 @@ class MemberDetails extends StatelessWidget {
         // specify the visible ones? We need the latter not the
         // former.
         maxLines: 4,
+      ),
+      IconButton(
+        onPressed: () => SharePlus.instance.share(
+          ShareParams(
+            text: CommunityInvite(_member.recordKey, _writer).uri.toString(),
+          ),
+        ),
+        icon: Icon(Icons.link),
       ),
       // Save
       FilledButton(

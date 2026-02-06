@@ -121,7 +121,7 @@ class CommunityOverview extends StatelessWidget {
           spacing: 8,
           children: [
             FilledButton(onPressed: () {}, child: Text('Export Invites')),
-            FilledButton(onPressed: () {}, child: Text('Export Mangement')),
+            FilledButton(onPressed: () {}, child: Text('Export Management')),
           ],
         ),
       ],

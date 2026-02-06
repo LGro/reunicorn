@@ -48,6 +48,7 @@ class CommunityManagementCubit extends Cubit<CommunityManagementState> {
 
   Future<void> addMembers(String commaSeparatedNames) async {
     emit(state.copyWith(isProcessing: true));
+    // TODO(LGro): This can throw a DHTExceptionNotAvailable
     final newMembersWithWriters = await Future.wait(
       commaSeparatedNames
           .split(',')
@@ -66,10 +67,10 @@ class CommunityManagementCubit extends Cubit<CommunityManagementState> {
     // TODO(LGro): Handle failed member creation / report which missing
     // TODO(LGro): Enforce unique member names?
     final updatedCommunity = state.community?.copyWith(
-      membersWithWriters:
-          (state.community?.membersWithWriters
-            ?..addAll(newMembersWithWriters)) ??
-          [],
+      membersWithWriters: [
+        ...(state.community?.membersWithWriters ?? []),
+        ...newMembersWithWriters,
+      ],
     );
     emit(state.copyWith(community: updatedCommunity, isProcessing: false));
   }

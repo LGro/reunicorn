@@ -46,6 +46,9 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     if (initialState.status.isHandleSharingOffer) {
       unawaited(handleSharingOffer(initialState.fragment ?? ''));
     }
+    if (initialState.status.isHandleCommunityInvite) {
+      unawaited(handleCommunityInvite(initialState.fragment ?? ''));
+    }
   }
 
   final Storage<CoagContact> _contactStorage;
@@ -75,13 +78,8 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
         if (path.first == 'o') {
           return handleSharingOffer(url.fragment);
         }
-        if (path.first == 'b') {
-          return emit(
-            state.copyWith(
-              status: ReceiveRequestStatus.handleBatchInvite,
-              fragment: url.fragment,
-            ),
-          );
+        if (path.first == 'i') {
+          return handleCommunityInvite(url.fragment);
         }
       } on FormatException {
         // TODO: signal back faulty URL
@@ -130,13 +128,8 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
         if (path.first == 'o') {
           return handleSharingOffer(url.fragment);
         }
-        if (path.first == 'b') {
-          return emit(
-            state.copyWith(
-              status: ReceiveRequestStatus.handleBatchInvite,
-              fragment: url.fragment,
-            ),
-          );
+        if (path.first == 'i') {
+          return handleCommunityInvite(url.fragment);
         }
       }
       if (!isClosed) {
@@ -248,8 +241,8 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
   }
 
   // recordKey~writer
-  Future<void> handleBatchInvite() async {
-    if (state.fragment == null) {
+  Future<void> handleCommunityInvite(String fragment) async {
+    if (fragment.isEmpty) {
       // TODO: Emit error
       if (!isClosed) {
         emit(const ReceiveRequestState(ReceiveRequestStatus.qrcode));
@@ -257,7 +250,7 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
       return;
     }
 
-    final parts = state.fragment!.split('~');
+    final parts = fragment.split('~');
     if (parts.length != 2) {
       // TODO: Emit error notice
       if (!isClosed) {
@@ -292,7 +285,7 @@ class ReceiveRequestCubit extends Cubit<ReceiveRequestState> {
     await _communityStorage.set(community.recordKey.toString(), community);
 
     if (!isClosed) {
-      emit(state.copyWith(status: ReceiveRequestStatus.batchInviteSuccess));
+      emit(state.copyWith(status: ReceiveRequestStatus.communityInviteSuccess));
     }
   }
 }

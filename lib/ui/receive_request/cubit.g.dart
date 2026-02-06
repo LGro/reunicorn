@@ -24,14 +24,13 @@ Map<String, dynamic> _$ReceiveRequestStateToJson(
 };
 
 const _$ReceiveRequestStatusEnumMap = {
-  ReceiveRequestStatus.handleBatchInvite: 'handleBatchInvite',
+  ReceiveRequestStatus.handleCommunityInvite: 'handleCommunityInvite',
   ReceiveRequestStatus.handleDirectSharing: 'handleDirectSharing',
   ReceiveRequestStatus.handleProfileLink: 'handleProfileLink',
   ReceiveRequestStatus.handleSharingOffer: 'handleSharingOffer',
   ReceiveRequestStatus.qrcode: 'qrcode',
   ReceiveRequestStatus.processing: 'processing',
   ReceiveRequestStatus.success: 'success',
-  ReceiveRequestStatus.batchInviteConfirmed: 'batchInviteConfirmed',
-  ReceiveRequestStatus.batchInviteSuccess: 'batchInviteSuccess',
+  ReceiveRequestStatus.communityInviteSuccess: 'communityInviteSuccess',
   ReceiveRequestStatus.malformedUrl: 'malformedUrl',
 };

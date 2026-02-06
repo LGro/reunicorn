@@ -83,7 +83,7 @@ const navBarItems = [
       'handleDirectSharing',
       'handleProfileLink',
       'handleSharingOffer',
-      'handleBatchInvite',
+      'handleCommunityInvite',
       'contactDetails',
     ],
     BottomNavigationBarItem(icon: Icon(Icons.contacts), label: 'Contacts'),
@@ -271,11 +271,11 @@ GoRouter buildAppRouter(
           ),
         ),
         GoRoute(
-          path: '/b',
-          name: 'handleBatchInvite',
+          path: '/i',
+          name: 'handleCommunityInvite',
           builder: (_, state) => ReceiveRequestPage(
             initialState: ReceiveRequestState(
-              ReceiveRequestStatus.handleBatchInvite,
+              ReceiveRequestStatus.handleCommunityInvite,
               fragment: state.uri.fragment,
             ),
           ),

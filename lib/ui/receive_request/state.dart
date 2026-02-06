@@ -1,18 +1,17 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 part of 'cubit.dart';
 
 enum ReceiveRequestStatus {
-  handleBatchInvite,
+  handleCommunityInvite,
   handleDirectSharing,
   handleProfileLink,
   handleSharingOffer,
   qrcode,
   processing,
   success,
-  batchInviteConfirmed,
-  batchInviteSuccess,
+  communityInviteSuccess,
   malformedUrl,
 }
 
@@ -20,16 +19,16 @@ extension ReceiveRequestStatusX on ReceiveRequestStatus {
   bool get isQrcode => this == ReceiveRequestStatus.qrcode;
   bool get isProcessing => this == ReceiveRequestStatus.processing;
   bool get isSuccess => this == ReceiveRequestStatus.success;
-  bool get isBatchInviteSuccess =>
-      this == ReceiveRequestStatus.batchInviteSuccess;
+  bool get isCommunityInviteSuccess =>
+      this == ReceiveRequestStatus.communityInviteSuccess;
   bool get isHandleDirectSharing =>
       this == ReceiveRequestStatus.handleDirectSharing;
   bool get isHandleProfileLink =>
       this == ReceiveRequestStatus.handleProfileLink;
   bool get isHandleSharingOffer =>
       this == ReceiveRequestStatus.handleSharingOffer;
-  bool get isHandleBatchInvite =>
-      this == ReceiveRequestStatus.handleBatchInvite;
+  bool get isHandleCommunityInvite =>
+      this == ReceiveRequestStatus.handleCommunityInvite;
   bool get isMalformedUrl => this == ReceiveRequestStatus.malformedUrl;
 }
 

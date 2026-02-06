@@ -12,6 +12,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../data/models/community.dart';
 import '../../data/repositories/community_dht.dart';
+import '../widgets/veilid_status/widget.dart';
 import 'cubit.dart';
 import 'widgets/community_overview.dart';
 import 'widgets/import_community.dart';
@@ -55,6 +56,7 @@ class CommunityManagementPage extends StatelessWidget {
             spacing: 16,
             children: [
               // Just to establish full width
+              VeilidStatusWidget(statusWidgets: {}),
               const Row(),
               FilledButton(
                 onPressed: (state.isProcessing)
