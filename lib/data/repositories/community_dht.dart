@@ -3,9 +3,9 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:multiple_result/multiple_result.dart';
 import 'package:veilid_support/veilid_support.dart';
 
@@ -57,106 +57,18 @@ class CommunityOrigin {
       [prefix, communityRecordKey, memberInfoRecordKey].join(separator);
 }
 
-Future<CommunityInfo?> getCommunityInfo(
-  RecordKey recordKey,
-  KeyPair memberKeyPair,
+Future<HashDigest> generateMemberSecretHash(
+  PublicKey memberPublicKey,
+  SecretKey mySecretKey,
 ) async {
-  final memberCrypto = await VeilidCryptoPrivate.fromKeyPair(
-    memberKeyPair,
-    'community-info',
-  );
-
-  try {
-    final record = await DHTRecordPool.instance.openRecordRead(
-      recordKey,
-      debugName: 'rcrn-community-info-read',
-    );
-
-    final communityInfo = await getChunkedPayload(
-      record,
-      DHTRecordRefreshMode.network,
-      numChunks: communityInfoSubkeys,
-      crypto: memberCrypto,
-    );
-
-    return CommunityInfo.fromJson(
-      jsonDecode(utf8.decode(communityInfo)) as Map<String, dynamic>,
-    );
-  } on Exception catch (_) {
-    // TODO: log error
-    return null;
-  }
-}
-
-Future<Result<MemberInfo, Exception>> getMemberInfo(
-  RecordKey recordKey,
-  SharedSecret communitySecret,
-) async {
-  final communityCrypto = await VeilidCryptoPrivate.fromSharedSecret(
-    communitySecret.kind,
-    communitySecret,
-  );
-
-  try {
-    final record = await DHTRecordPool.instance.openRecordRead(
-      recordKey,
-      debugName: 'rcrn-community-member-read',
-    );
-
-    final memberInfo = await getChunkedPayload(
-      record,
-      DHTRecordRefreshMode.network,
-      chunkOffset: communityInfoSubkeys,
-      numChunks: memberInfoSubkeys,
-      crypto: communityCrypto,
-    );
-
-    return Success(
-      MemberInfo.fromJson(
-        jsonDecode(utf8.decode(memberInfo)) as Map<String, dynamic>,
-      ),
-    );
-  } on Exception catch (e) {
-    return Error(e);
-  }
-}
-
-Future<Result<MemberInfo, Exception>> setMemberInfo(
-  MemberInfo info,
-  RecordKey recordKey,
-  KeyPair recordWriter,
-  SharedSecret communitySecret,
-) async {
-  final communityCrypto = await VeilidCryptoPrivate.fromSharedSecret(
-    communitySecret.kind,
-    communitySecret,
-  );
-
-  try {
-    final record = await DHTRecordPool.instance.openRecordWrite(
-      recordKey,
-      recordWriter,
-      debugName: 'rcrn-community-member-write',
-    );
-
-    // TODO: Make this transactional so that either all or nothing
-    await Future.wait(
-      chopPayloadChunks(
-        utf8.encode(jsonEncode(info.toJson())),
-        numChunks: memberInfoSubkeys,
-      ).toList().asMap().entries.map(
-        (e) => record.eventualWriteBytes(
-          crypto: communityCrypto,
-          e.value,
-          subkey: communityInfoSubkeys + e.key,
-        ),
-      ),
-    );
-
-    return Success(info);
-  } on Exception catch (e) {
-    return Error(e);
-  }
+  final cryptoSystem = await Veilid.instance.getCryptoSystem(cryptoKindVLD0);
+  return cryptoSystem
+      .generateSharedSecret(
+        memberPublicKey,
+        mySecretKey,
+        utf8.encode('community-members-initial-sharing'),
+      )
+      .then((ourSecret) => cryptoSystem.generateHash(ourSecret.toBytes()));
 }
 
 // update member from my member record community info part
@@ -167,113 +79,6 @@ Member updateMemberComment(Member member, String? comment) => member.copyWith(
   comment: comment,
   mostRecentCommentUpdate: (member.comment != comment) ? DateTime.now() : null,
 );
-
-Future<HashDigest> generateMemberSecretHash(
-  PublicKey memberPublicKey,
-  SecretKey mySecretKey,
-) async {
-  final cryptoSystem = await DHTRecordPool.instance.veilid.getCryptoSystem(
-    cryptoKindVLD0,
-  );
-  return cryptoSystem
-      .generateSharedSecret(
-        memberPublicKey,
-        mySecretKey,
-        utf8.encode('community-members-initial-sharing'),
-      )
-      .then((ourSecret) => cryptoSystem.generateHash(ourSecret.toBytes()));
-}
-
-// -> set/update public key
-// -> contains hash of our derived key? save record key, optionally retrieve shared info
-Future<(PublicKey?, RecordKey?)> getMemberSharingPubAndRecordKey(
-  RecordKey memberRecord,
-  SharedSecret communitySecret,
-  SecretKey mySecretKey,
-) async {
-  final memberInfoResult = await getMemberInfo(memberRecord, communitySecret);
-  switch (memberInfoResult) {
-    case Error():
-      // TODO: log memberInfoResult.error
-      return (null, null);
-    case Success():
-      final memberInfo = memberInfoResult.success;
-
-      final memberSecretHash = await generateMemberSecretHash(
-        memberInfo.publicKey,
-        mySecretKey,
-      );
-
-      final memberSharingRecord = memberInfo.sharingOffers
-          .firstWhereOrNull((o) => o.$1 == memberSecretHash)
-          ?.$2;
-
-      return (memberInfo.publicKey, memberSharingRecord);
-  }
-}
-
-Future<Member> getMember(
-  Community community,
-  OrganizerProvidedMemberInfo memberInfo,
-) async {
-  // Find existing member instance or initialize a new one
-  var member = community.members.firstWhereOrNull(
-    // TODO: Do we need a UUID or is matching based on record keys fine?
-    (member) => member.infoRecordKey == memberInfo.recordKey,
-  );
-  member ??= Member(
-    communityRecordKey: community.recordKey,
-    infoRecordKey: memberInfo.recordKey,
-    name: memberInfo.name,
-  );
-
-  // Update member with organizer provided comment
-  member = updateMemberComment(member, memberInfo.comment);
-
-  if (community.info == null) {
-    return member;
-  }
-
-  // Update member public key and sharing record key if available
-  final (
-    memberPublicKey,
-    memberSharingRecordKey,
-  ) = await getMemberSharingPubAndRecordKey(
-    member.infoRecordKey,
-    community.info!.secret,
-    community.recordWriter.secret,
-  );
-  return member.copyWith(
-    theirPublicKey: memberPublicKey,
-    recordKeyThemSharing: memberSharingRecordKey,
-  );
-}
-
-Future<List<Member>> getMembers(Community community) => Future.wait(
-  (community.info?.membersInfo ?? []).map(
-    (memberInfo) => getMember(community, memberInfo),
-  ),
-);
-
-// TODO: figure out redudancy between this and updateCommunity below
-Future<Community?> getCommunityFromInvite(
-  RecordKey recordKey,
-  KeyPair recordWriter,
-) async {
-  final communityInfo = await getCommunityInfo(recordKey, recordWriter);
-
-  if (communityInfo == null) {
-    return null;
-  }
-
-  return Community(
-    recordKey: recordKey,
-    recordWriter: recordWriter,
-    info: communityInfo,
-    members: [],
-    mostRecentUpdate: DateTime.now(),
-  );
-}
 
 /// Generate sharing offers for my member info based for all community members
 Future<List<(HashDigest, RecordKey)>> sharingOffers(
@@ -290,48 +95,19 @@ Future<List<(HashDigest, RecordKey)>> sharingOffers(
       ),
 );
 
-Future<Community> updateCommunity(Community community) async {
-  if (community.isExpired()) {
-    return community;
-  }
-
-  // Update community info if available
-  community = community.copyWith(
-    info: await getCommunityInfo(community.recordKey, community.recordWriter),
-  );
-
-  // Update community members
-  community = community.copyWith(members: await getMembers(community));
-
-  // TODO: Do we do this here or elsewhere? Seems to only make sense when we add a new member as contact, right?
-  //       However, it might also not take super long and it's a nice place to ensure it's set up
-  if (community.info != null) {
-    await setMemberInfo(
-      MemberInfo(
-        publicKey: community.recordWriter.key,
-        sharingOffers: await sharingOffers(
-          community.members,
-          community.recordWriter.secret,
-        ),
-      ),
-      community.recordKey,
-      community.recordWriter,
-      community.info!.secret,
-    );
-  }
-
-  return community.copyWith(mostRecentUpdate: DateTime.now());
-}
-
 class CommunityDhtRepository extends BaseDhtRepository {
-  final _watchedRecords = <RecordKey>{};
+  final BaseDht _dhtStorage;
   final Storage<Community> _communityStorage;
   final Storage<CoagContact> _contactStorage;
   var veilidNetworkAvailable = false;
 
   // TODO: Add information about which community is currently being synced / was synced last
 
-  CommunityDhtRepository(this._communityStorage, this._contactStorage) {
+  CommunityDhtRepository(
+    this._communityStorage,
+    this._contactStorage,
+    this._dhtStorage,
+  ) {
     _communityStorage.changeEvents.listen((e) async {
       await e.when(
         set: (oldCommunity, newCommunity) =>
@@ -349,30 +125,13 @@ class CommunityDhtRepository extends BaseDhtRepository {
     });
   }
 
+  // TODO: What happens with watch if we're offline? does it watch as soon as we go online or fail?
+  // TODO: Do we need to build up a watch queue when offline to then start watch when online?
   /// Watch for community updates via the DHT
-  Future<void> _watchCommunity(RecordKey recordKey) async {
-    // TODO: What happens with watch if we're offline? does it watch as soon as we go online or fail?
-    // TODO: Do we need to build up a watch queue when offline to then start watch when online?
-    _watchedRecords.add(recordKey);
-
-    try {
-      final record = await DHTRecordPool.instance.openRecordRead(
-        recordKey,
-        debugName: 'coag::read-to-watch',
-      );
-
-      await record.watch(subkeys: [const ValueSubkeyRange(low: 0, high: 32)]);
-
-      await record.listen(
-        // TODO: If we want to make use of data here, we also likely need to pass crypto to decrypt it
-        (record, data, subkeys) =>
-            _updateCommunityFromDht(record.key, useLocalCache: true),
-        localChanges: false,
-      );
-    } catch (e) {
-      _watchedRecords.remove(recordKey);
-    }
-  }
+  Future<bool> _watchCommunity(RecordKey recordKey) => _dhtStorage.watch(
+    recordKey,
+    () => _updateCommunityFromDht(recordKey, useLocalCache: true),
+  );
 
   Future<void> _updateCommunityFromDht(
     RecordKey recordKey, {
@@ -450,25 +209,261 @@ class CommunityDhtRepository extends BaseDhtRepository {
     ),
   );
 
+  //// MEMBER COMMUNITY FEATURES ////
+
+  Future<Result<MemberInfo, Exception>> setMemberInfo(
+    MemberInfo info,
+    RecordKey recordKey,
+    KeyPair recordWriter,
+    SharedSecret communitySecret,
+  ) async {
+    final communityCrypto = await VeilidCryptoPrivate.fromSharedSecret(
+      communitySecret.kind,
+      communitySecret,
+    );
+
+    try {
+      // TODO: Make this transactional so that either all or nothing
+      await _dhtStorage.write(
+        recordKey,
+        recordWriter,
+        await communityCrypto.encrypt(utf8.encode(jsonEncode(info.toJson()))),
+        numChunks: memberInfoSubkeys,
+        chunkOffset: communityInfoSubkeys,
+      );
+
+      return Success(info);
+    } on Exception catch (e) {
+      return Error(e);
+    }
+  }
+
+  Future<Community> updateCommunity(Community community) async {
+    if (community.isExpired()) {
+      return community;
+    }
+
+    // Update community info if available
+    community = community.copyWith(
+      info: await getCommunityInfo(community.recordKey, community.recordWriter),
+    );
+
+    // Update community members
+    community = community.copyWith(members: await getMembers(community));
+
+    // TODO: Do we do this here or elsewhere? Seems to only make sense when we add a new member as contact, right?
+    //       However, it might also not take super long and it's a nice place to ensure it's set up
+    if (community.info != null) {
+      await setMemberInfo(
+        MemberInfo(
+          publicKey: community.recordWriter.key,
+          sharingOffers: await sharingOffers(
+            community.members,
+            community.recordWriter.secret,
+          ),
+        ),
+        community.recordKey,
+        community.recordWriter,
+        community.info!.secret,
+      );
+    }
+
+    return community.copyWith(mostRecentUpdate: DateTime.now());
+  }
+
+  // TODO: figure out redundancy between this and updateCommunity
+  Future<Community?> getCommunityFromInvite(
+    RecordKey recordKey,
+    KeyPair recordWriter,
+  ) async {
+    final communityInfo = await getCommunityInfo(recordKey, recordWriter);
+
+    if (communityInfo == null) {
+      return null;
+    }
+
+    return Community(
+      recordKey: recordKey,
+      recordWriter: recordWriter,
+      info: communityInfo,
+      members: [],
+      mostRecentUpdate: DateTime.now(),
+    );
+  }
+
+  Future<CommunityInfo?> getCommunityInfo(
+    RecordKey recordKey,
+    KeyPair memberKeyPair,
+  ) async {
+    final memberCrypto = await VeilidCryptoPrivate.fromKeyPair(
+      memberKeyPair,
+      'community-info',
+    );
+    try {
+      final value = await _dhtStorage.read(
+        recordKey,
+        numChunks: communityInfoSubkeys,
+        chunkOffset: 0,
+        local: false,
+      );
+      if (value == null) {
+        return null;
+      }
+      return CommunityInfo.fromJson(
+        jsonDecode(utf8.decode(await memberCrypto.decrypt(value)))
+            as Map<String, dynamic>,
+      );
+    } catch (_) {
+      // TODO: log error
+      return null;
+    }
+  }
+
+  Future<Result<MemberInfo, Exception>> getMemberInfo(
+    RecordKey recordKey,
+    SharedSecret communitySecret,
+  ) async {
+    final communityCrypto = await VeilidCryptoPrivate.fromSharedSecret(
+      communitySecret.kind,
+      communitySecret,
+    );
+    try {
+      final value = await _dhtStorage.read(
+        recordKey,
+        chunkOffset: communityInfoSubkeys,
+        numChunks: memberInfoSubkeys,
+        local: false,
+      );
+      if (value == null) {
+        return Error(Exception('Record empty after read'));
+      }
+      return Success(
+        MemberInfo.fromJson(
+          jsonDecode(utf8.decode(await communityCrypto.decrypt(value)))
+              as Map<String, dynamic>,
+        ),
+      );
+    } on Exception catch (e) {
+      return Error(e);
+    }
+  }
+
+  // -> set/update public key
+  // -> contains hash of our derived key? save record key, optionally retrieve shared info
+  Future<(PublicKey?, RecordKey?)> getMemberSharingPubAndRecordKey(
+    RecordKey memberRecord,
+    SharedSecret communitySecret,
+    SecretKey mySecretKey,
+  ) async {
+    final memberInfoResult = await getMemberInfo(memberRecord, communitySecret);
+    switch (memberInfoResult) {
+      case Error():
+        // TODO: log memberInfoResult.error
+        return (null, null);
+      case Success():
+        final memberInfo = memberInfoResult.success;
+
+        final memberSecretHash = await generateMemberSecretHash(
+          memberInfo.publicKey,
+          mySecretKey,
+        );
+
+        final memberSharingRecord = memberInfo.sharingOffers
+            .firstWhereOrNull((o) => o.$1 == memberSecretHash)
+            ?.$2;
+
+        return (memberInfo.publicKey, memberSharingRecord);
+    }
+  }
+
+  Future<Member> getMember(
+    Community community,
+    OrganizerProvidedMemberInfo memberInfo,
+  ) async {
+    // Find existing member instance or initialize a new one
+    var member = community.members.firstWhereOrNull(
+      // TODO: Do we need a UUID or is matching based on record keys fine?
+      (member) => member.infoRecordKey == memberInfo.recordKey,
+    );
+    member ??= Member(
+      communityRecordKey: community.recordKey,
+      infoRecordKey: memberInfo.recordKey,
+      name: memberInfo.name,
+    );
+
+    // Update member with organizer provided comment
+    member = updateMemberComment(member, memberInfo.comment);
+
+    if (community.info == null) {
+      return member;
+    }
+
+    // Update member public key and sharing record key if available
+    final (
+      memberPublicKey,
+      memberSharingRecordKey,
+    ) = await getMemberSharingPubAndRecordKey(
+      member.infoRecordKey,
+      community.info!.secret,
+      community.recordWriter.secret,
+    );
+    return member.copyWith(
+      theirPublicKey: memberPublicKey,
+      recordKeyThemSharing: memberSharingRecordKey,
+    );
+  }
+
+  Future<List<Member>> getMembers(Community community) => Future.wait(
+    (community.info?.membersInfo ?? []).map(
+      (memberInfo) => getMember(community, memberInfo),
+    ),
+  );
+
   //// COMMUNITY MANAGEMENT FEATURES ////
   // TODO(LGro): Do we separate them out from the regular member user facing?
 
   Future<bool> updateManagedCommunityToDht(ManagedCommunity community) async {
-    return false;
+    final membersInfo = community.membersWithWriters.map(
+      (m) => OrganizerProvidedMemberInfo(
+        recordKey: m.$1.recordKey,
+        name: m.$1.name,
+        comment: m.$1.comment,
+      ),
+    );
+    final communityInfo = CommunityInfo(
+      name: community.name,
+      secret: community.communitySecret,
+      expiresAt: community.expiresAt,
+      // Filter out member this belongs to or keep to enable comparison of
+      // members info hash to e.g. detect tampering?
+      membersInfo: membersInfo.toList(),
+    );
+    final statuses = await Future.wait<bool>(
+      community.membersWithWriters.map((m) async {
+        try {
+          final memberCrypto = await VeilidCryptoPrivate.fromKeyPair(
+            m.$2,
+            'community-info',
+          );
+          final value = await memberCrypto.encrypt(
+            utf8.encode(jsonEncode(communityInfo.toJson())),
+          );
+          await _dhtStorage.write(
+            m.$1.recordKey,
+            m.$2,
+            value,
+            numChunks: memberInfoSubkeys,
+            chunkOffset: 0,
+          );
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }),
+    );
+    return !statuses.anyIs(false);
   }
 
-  Future<(RecordKey, KeyPair)> createMemberRecord() async {
-    final record = await DHTRecordPool.instance.createRecord(
-      debugName: 'rcrn::create-member',
-    );
-    final opened = await DHTRecordPool.instance.openRecordWrite(
-      record.key,
-      record.writer!,
-      debugName: 'rcrn::open-write-member',
-    );
-    // TODO(LGro): do we need to write it once to be available on the network?
-    await opened.eventualWriteBytes(Uint8List(0));
-    // TODO(LGro): when don't we ge a writer?
-    return (record.key, record.writer!);
-  }
+  Future<(RecordKey, KeyPair)> createMemberRecord() async =>
+      _dhtStorage.create();
 }

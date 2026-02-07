@@ -21,6 +21,31 @@ Iterable<Uint8List> chopPayloadChunks(
       : Uint8List(0),
 );
 
+// TODO(LGro): Would it be preferable to encrypt then chunk instead of chunking and then encrypting?
+Future<void> writeChunkedPayload(
+  DHTRecord record,
+  Uint8List value, {
+  required int numChunks,
+  int chunkOffset = 0,
+  CryptoCodec? crypto,
+}) async => Future.wait(
+  chopPayloadChunks(value, numChunks: numChunks).toList().asMap().entries.map(
+    (e) => record.eventualWriteBytes(
+      e.value,
+      subkey: e.key + chunkOffset,
+      crypto: crypto ?? VeilidCryptoPublic(),
+    ),
+  ),
+  // final tx = await Veilid.instance.transactDHTRecords([record.key]);
+  // await Future.wait(
+  //   chopPayloadChunks(
+  //     value,
+  //     numChunks: 32,
+  //   ).toList().asMap().entries.map((e) => tx.set(record.key, e.key, e.value)),
+  // );
+  // await tx.commit();
+);
+
 Future<Uint8List> getChunkedPayload(
   DHTRecord record,
   DHTRecordRefreshMode refreshMode, {
@@ -31,7 +56,11 @@ Future<Uint8List> getChunkedPayload(
   // Combine the remaining subkeys into the picture
   final chunks = await Future.wait(
     List.generate(numChunks, (i) => i + chunkOffset).map(
-      (i) => record.get(crypto: crypto, refreshMode: refreshMode, subkey: i),
+      (i) => record.get(
+        crypto: crypto ?? VeilidCryptoPublic(),
+        refreshMode: refreshMode,
+        subkey: i,
+      ),
     ),
   );
   final payload = Uint8List.fromList(
@@ -42,8 +71,19 @@ Future<Uint8List> getChunkedPayload(
 
 abstract class BaseDht {
   Future<(RecordKey, KeyPair)> create();
-  Future<void> write(RecordKey recordKey, KeyPair writer, Uint8List value);
-  Future<Uint8List?> read(RecordKey recordKey, {bool local = false});
+  Future<void> write(
+    RecordKey recordKey,
+    KeyPair writer,
+    Uint8List value, {
+    int numChunks = 32,
+    int chunkOffset = 0,
+  });
+  Future<Uint8List?> read(
+    RecordKey recordKey, {
+    int numChunks = 32,
+    int chunkOffset = 0,
+    bool local = false,
+  });
   Future<bool> watch(RecordKey recordKey, VoidCallback callback);
 }
 
@@ -79,7 +119,12 @@ class VeilidDht implements BaseDht {
   }
 
   @override
-  Future<Uint8List?> read(RecordKey recordKey, {bool local = false}) {
+  Future<Uint8List?> read(
+    RecordKey recordKey, {
+    int numChunks = 32,
+    int chunkOffset = 0,
+    bool local = false,
+  }) {
     log.debug('RCRN-D READ $recordKey');
 
     return DHTRecordPool.instance
@@ -92,7 +137,9 @@ class VeilidDht implements BaseDht {
           final encryptedPayload = await getChunkedPayload(
             record,
             local ? DHTRecordRefreshMode.cached : DHTRecordRefreshMode.network,
-            numChunks: 32,
+            numChunks: numChunks,
+            chunkOffset: chunkOffset,
+            crypto: const VeilidCryptoPublic(),
           );
           await record.close();
           return encryptedPayload;
@@ -115,8 +162,10 @@ class VeilidDht implements BaseDht {
   Future<void> write(
     RecordKey recordKey,
     KeyPair writer,
-    Uint8List value,
-  ) async {
+    Uint8List value, {
+    int numChunks = 32,
+    int chunkOffset = 0,
+  }) async {
     log.debug('RCRN-D UPDT $recordKey');
 
     final record = await DHTRecordPool.instance.openRecordWrite(
@@ -126,18 +175,12 @@ class VeilidDht implements BaseDht {
       debugName: 'rcrn::update',
     );
     // TODO: handle VeilidAPIExceptionTryAgain
-    // final tx = await Veilid.instance.transactDHTRecords([record.key]);
-    // await Future.wait(
-    //   chopPayloadChunks(
-    //     value,
-    //     numChunks: 32,
-    //   ).toList().asMap().entries.map((e) => tx.set(record.key, e.key, e.value)),
-    // );
-    // await tx.commit();
-    await Future.wait(
-      chopPayloadChunks(value, numChunks: 32).toList().asMap().entries.map(
-        (e) => record.eventualWriteBytes(e.value, subkey: e.key),
-      ),
+    await writeChunkedPayload(
+      record,
+      value,
+      numChunks: numChunks,
+      chunkOffset: chunkOffset,
+      crypto: VeilidCryptoPublic(),
     );
     await record.close();
 
