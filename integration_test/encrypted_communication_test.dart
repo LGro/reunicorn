@@ -16,7 +16,6 @@ import 'package:reunicorn/data/utils.dart';
 import 'package:reunicorn/ui/utils.dart';
 import 'package:reunicorn/veilid_init.dart';
 import 'package:test/test.dart';
-import 'package:veilid_support/veilid_support.dart';
 import 'package:vodozemac/vodozemac.dart' as vod;
 import 'package:flutter_vodozemac/flutter_vodozemac.dart' as vod_flutter;
 
@@ -42,39 +41,6 @@ sealed class ExamplePayload
   factory ExamplePayload.fromBytes(Uint8List data) => ExamplePayload.fromJson(
     jsonDecode(utf8.decode(data)) as Map<String, dynamic>,
   );
-}
-
-class MockDht implements BaseDht {
-  final _storage = <RecordKey, Uint8List>{};
-  final _watchCallbacks = <RecordKey, VoidCallback>{};
-  var _recordCounter = 0;
-
-  @override
-  Future<(RecordKey, KeyPair)> create() async {
-    _recordCounter = _recordCounter + 1;
-    return (
-      fakeDhtRecordKey(_recordCounter),
-      fakeKeyPair(_recordCounter, _recordCounter + 1000),
-    );
-  }
-
-  @override
-  Future<void> write(RecordKey key, KeyPair writer, Uint8List value) async {
-    _storage[key] = value;
-    if (_watchCallbacks.containsKey(key)) {
-      _watchCallbacks[key]!();
-    }
-  }
-
-  @override
-  Future<Uint8List?> read(RecordKey key, {bool local = false}) async =>
-      _storage[key];
-
-  @override
-  Future<bool> watch(RecordKey key, VoidCallback callback) async {
-    _watchCallbacks[key] = callback;
-    return true;
-  }
 }
 
 Future<void> directSharingTestGoldenPathTakingTurns(BaseDht dht) async {

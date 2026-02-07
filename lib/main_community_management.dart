@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
+import 'package:reunicorn/data/services/dht/veilid_dht.dart';
 
 import 'bloc_observer.dart';
 import 'data/models/community.dart';
@@ -77,7 +78,11 @@ class CommunityManagementApp extends StatelessWidget {
       builder: (context, child) => (context.watch<AppGlobalInit?>() == null)
           ? const Center(child: CircularProgressIndicator())
           : RepositoryProvider.value(
-              value: CommunityDhtRepository(_communityStorage, _contactStorage),
+              value: CommunityDhtRepository(
+                _communityStorage,
+                _contactStorage,
+                VeilidDht(),
+              ),
               child: const CommunityManagementPage(),
             ),
     ),

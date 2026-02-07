@@ -271,8 +271,7 @@ class CommunityDhtRepository extends BaseDhtRepository {
     return community.copyWith(mostRecentUpdate: DateTime.now());
   }
 
-  // TODO: figure out redundancy between this and updateCommunity
-  Future<Community?> getCommunityFromInvite(
+  Future<Community?> acceptCommunityFromInvite(
     RecordKey recordKey,
     KeyPair recordWriter,
   ) async {
@@ -282,13 +281,17 @@ class CommunityDhtRepository extends BaseDhtRepository {
       return null;
     }
 
-    return Community(
+    final community = Community(
       recordKey: recordKey,
       recordWriter: recordWriter,
       info: communityInfo,
       members: [],
       mostRecentUpdate: DateTime.now(),
     );
+
+    await _communityStorage.set(community.recordKey.toString(), community);
+
+    return community;
   }
 
   Future<CommunityInfo?> getCommunityInfo(
@@ -313,7 +316,7 @@ class CommunityDhtRepository extends BaseDhtRepository {
         jsonDecode(utf8.decode(await memberCrypto.decrypt(value)))
             as Map<String, dynamic>,
       );
-    } catch (_) {
+    } catch (e) {
       // TODO: log error
       return null;
     }
