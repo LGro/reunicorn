@@ -111,7 +111,10 @@ class CommunityDhtRepository extends BaseDhtRepository {
     _communityStorage.changeEvents.listen((e) async {
       await e.when(
         set: (oldCommunity, newCommunity) =>
-            _updateCommunityFromDht(newCommunity.recordKey),
+            (oldCommunity?.copyWith(mostRecentUpdate: DateTime(0)) !=
+                newCommunity.copyWith(mostRecentUpdate: DateTime(0)))
+            ? _updateCommunityFromDht(newCommunity.recordKey)
+            : null,
         delete: _onDeleteCommunity,
       );
     });
@@ -142,12 +145,16 @@ class CommunityDhtRepository extends BaseDhtRepository {
       return;
     }
 
+    // TODO(LGro): pass on useLocalCache
     final updatedCommunity = await updateCommunity(community);
 
-    await _communityStorage.set(
-      community.recordKey.toString(),
-      updatedCommunity,
-    );
+    if (community.copyWith(mostRecentUpdate: DateTime(0)) !=
+        updatedCommunity.copyWith(mostRecentUpdate: DateTime(0))) {
+      await _communityStorage.set(
+        community.recordKey.toString(),
+        updatedCommunity,
+      );
+    }
   }
 
   Future<void> _onDeleteCommunity(Community community) async {
@@ -185,19 +192,22 @@ class CommunityDhtRepository extends BaseDhtRepository {
       return;
     }
 
+    final updatedMember = member.copyWith(
+      recordKeyMeSharing: (contact.dhtConnection as DhtConnectionEstablished)
+          .recordKeyMeSharing,
+    );
+    if (member.copyWith(mostRecentCommentUpdate: DateTime(0)) ==
+        updatedMember.copyWith(mostRecentCommentUpdate: DateTime(0))) {
+      return;
+    }
+
     // Add sharing settings to member and update community
     await _communityStorage.set(
       community.recordKey.toString(),
       community.copyWith(
         members: community.members
           ..remove(member)
-          ..add(
-            member.copyWith(
-              recordKeyMeSharing:
-                  (contact.dhtConnection as DhtConnectionEstablished)
-                      .recordKeyMeSharing,
-            ),
-          ),
+          ..add(updatedMember),
       ),
     );
   }
@@ -249,7 +259,13 @@ class CommunityDhtRepository extends BaseDhtRepository {
     );
 
     // Update community members
-    community = community.copyWith(members: await getMembers(community));
+    final allMembers = await getMembers(community);
+    community = community.copyWith(
+      // Filter out current user's member entry
+      members: allMembers
+          .where((m) => m.infoRecordKey != community.recordKey)
+          .toList(),
+    );
 
     // TODO: Do we do this here or elsewhere? Seems to only make sense when we add a new member as contact, right?
     //       However, it might also not take super long and it's a nice place to ensure it's set up
