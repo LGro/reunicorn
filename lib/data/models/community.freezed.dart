@@ -569,9 +569,7 @@ as DateTime?,
 /// @nodoc
 mixin _$MemberSharingOffer {
 
-/// Their one time key to set up the vodozemac / olm session for encryption
- String get oneTimeKey;/// Their identity key to set up the vodozemac / olm session for encryption
- String get identityKey;/// DHT record key where the member offers to share
+/// DHT record key where the member offers to share
  RecordKey? get recordKey;
 /// Create a copy of MemberSharingOffer
 /// with the given fields replaced by the non-null parameter values.
@@ -585,16 +583,16 @@ $MemberSharingOfferCopyWith<MemberSharingOffer> get copyWith => _$MemberSharingO
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MemberSharingOffer&&(identical(other.oneTimeKey, oneTimeKey) || other.oneTimeKey == oneTimeKey)&&(identical(other.identityKey, identityKey) || other.identityKey == identityKey)&&(identical(other.recordKey, recordKey) || other.recordKey == recordKey));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MemberSharingOffer&&(identical(other.recordKey, recordKey) || other.recordKey == recordKey));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,oneTimeKey,identityKey,recordKey);
+int get hashCode => Object.hash(runtimeType,recordKey);
 
 @override
 String toString() {
-  return 'MemberSharingOffer(oneTimeKey: $oneTimeKey, identityKey: $identityKey, recordKey: $recordKey)';
+  return 'MemberSharingOffer(recordKey: $recordKey)';
 }
 
 
@@ -605,7 +603,7 @@ abstract mixin class $MemberSharingOfferCopyWith<$Res>  {
   factory $MemberSharingOfferCopyWith(MemberSharingOffer value, $Res Function(MemberSharingOffer) _then) = _$MemberSharingOfferCopyWithImpl;
 @useResult
 $Res call({
- String oneTimeKey, String identityKey, RecordKey? recordKey
+ RecordKey? recordKey
 });
 
 
@@ -622,11 +620,9 @@ class _$MemberSharingOfferCopyWithImpl<$Res>
 
 /// Create a copy of MemberSharingOffer
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? oneTimeKey = null,Object? identityKey = null,Object? recordKey = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? recordKey = freezed,}) {
   return _then(_self.copyWith(
-oneTimeKey: null == oneTimeKey ? _self.oneTimeKey : oneTimeKey // ignore: cast_nullable_to_non_nullable
-as String,identityKey: null == identityKey ? _self.identityKey : identityKey // ignore: cast_nullable_to_non_nullable
-as String,recordKey: freezed == recordKey ? _self.recordKey : recordKey // ignore: cast_nullable_to_non_nullable
+recordKey: freezed == recordKey ? _self.recordKey : recordKey // ignore: cast_nullable_to_non_nullable
 as RecordKey?,
   ));
 }
@@ -709,10 +705,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String oneTimeKey,  String identityKey,  RecordKey? recordKey)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RecordKey? recordKey)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MemberSharingOffer() when $default != null:
-return $default(_that.oneTimeKey,_that.identityKey,_that.recordKey);case _:
+return $default(_that.recordKey);case _:
   return orElse();
 
 }
@@ -730,10 +726,10 @@ return $default(_that.oneTimeKey,_that.identityKey,_that.recordKey);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String oneTimeKey,  String identityKey,  RecordKey? recordKey)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RecordKey? recordKey)  $default,) {final _that = this;
 switch (_that) {
 case _MemberSharingOffer():
-return $default(_that.oneTimeKey,_that.identityKey,_that.recordKey);}
+return $default(_that.recordKey);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -747,10 +743,10 @@ return $default(_that.oneTimeKey,_that.identityKey,_that.recordKey);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String oneTimeKey,  String identityKey,  RecordKey? recordKey)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RecordKey? recordKey)?  $default,) {final _that = this;
 switch (_that) {
 case _MemberSharingOffer() when $default != null:
-return $default(_that.oneTimeKey,_that.identityKey,_that.recordKey);case _:
+return $default(_that.recordKey);case _:
   return null;
 
 }
@@ -762,13 +758,9 @@ return $default(_that.oneTimeKey,_that.identityKey,_that.recordKey);case _:
 @JsonSerializable()
 
 class _MemberSharingOffer implements MemberSharingOffer {
-  const _MemberSharingOffer({required this.oneTimeKey, required this.identityKey, this.recordKey});
+  const _MemberSharingOffer({this.recordKey});
   factory _MemberSharingOffer.fromJson(Map<String, dynamic> json) => _$MemberSharingOfferFromJson(json);
 
-/// Their one time key to set up the vodozemac / olm session for encryption
-@override final  String oneTimeKey;
-/// Their identity key to set up the vodozemac / olm session for encryption
-@override final  String identityKey;
 /// DHT record key where the member offers to share
 @override final  RecordKey? recordKey;
 
@@ -785,16 +777,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MemberSharingOffer&&(identical(other.oneTimeKey, oneTimeKey) || other.oneTimeKey == oneTimeKey)&&(identical(other.identityKey, identityKey) || other.identityKey == identityKey)&&(identical(other.recordKey, recordKey) || other.recordKey == recordKey));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MemberSharingOffer&&(identical(other.recordKey, recordKey) || other.recordKey == recordKey));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,oneTimeKey,identityKey,recordKey);
+int get hashCode => Object.hash(runtimeType,recordKey);
 
 @override
 String toString() {
-  return 'MemberSharingOffer(oneTimeKey: $oneTimeKey, identityKey: $identityKey, recordKey: $recordKey)';
+  return 'MemberSharingOffer(recordKey: $recordKey)';
 }
 
 
@@ -805,7 +797,7 @@ abstract mixin class _$MemberSharingOfferCopyWith<$Res> implements $MemberSharin
   factory _$MemberSharingOfferCopyWith(_MemberSharingOffer value, $Res Function(_MemberSharingOffer) _then) = __$MemberSharingOfferCopyWithImpl;
 @override @useResult
 $Res call({
- String oneTimeKey, String identityKey, RecordKey? recordKey
+ RecordKey? recordKey
 });
 
 
@@ -822,11 +814,9 @@ class __$MemberSharingOfferCopyWithImpl<$Res>
 
 /// Create a copy of MemberSharingOffer
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? oneTimeKey = null,Object? identityKey = null,Object? recordKey = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? recordKey = freezed,}) {
   return _then(_MemberSharingOffer(
-oneTimeKey: null == oneTimeKey ? _self.oneTimeKey : oneTimeKey // ignore: cast_nullable_to_non_nullable
-as String,identityKey: null == identityKey ? _self.identityKey : identityKey // ignore: cast_nullable_to_non_nullable
-as String,recordKey: freezed == recordKey ? _self.recordKey : recordKey // ignore: cast_nullable_to_non_nullable
+recordKey: freezed == recordKey ? _self.recordKey : recordKey // ignore: cast_nullable_to_non_nullable
 as RecordKey?,
   ));
 }
@@ -1668,13 +1658,10 @@ mixin _$Member {
 /// The community member record key of the current user
  RecordKey get communityRecordKey;/// The community member record key of this member
  RecordKey get infoRecordKey;/// Label or name for the member, could be email/name/nick
- String get name;/// My vodozemac / olm account for encrypted communication
- String get myVodozemacAccount;/// Comment by the organizer, e.g. to explain reason for expelling member
+ String get name;/// Comment by the organizer, e.g. to explain reason for expelling member
  MemberComment? get comment;/// Their public key to derive encrypted shared secret hash for sharing
 /// offer indexing
- PublicKey? get theirPublicKey;/// Their one time key to set up the vodozemac / olm session for encryption
- String? get theirOneTimeKey;/// Their identity key to set up the vodozemac / olm session for encryption
- String? get theirIdentityKey;/// The record key where they share information with me
+ PublicKey? get theirPublicKey;/// The record key where they share information with me
  RecordKey? get recordKeyThemSharing;/// After a community member was added as a contact, my sharing record key
 /// is stored here as well to allow construction of my `MemberInfo`
  RecordKey? get recordKeyMeSharing;
@@ -1690,16 +1677,16 @@ $MemberCopyWith<Member> get copyWith => _$MemberCopyWithImpl<Member>(this as Mem
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Member&&(identical(other.communityRecordKey, communityRecordKey) || other.communityRecordKey == communityRecordKey)&&(identical(other.infoRecordKey, infoRecordKey) || other.infoRecordKey == infoRecordKey)&&(identical(other.name, name) || other.name == name)&&(identical(other.myVodozemacAccount, myVodozemacAccount) || other.myVodozemacAccount == myVodozemacAccount)&&(identical(other.comment, comment) || other.comment == comment)&&(identical(other.theirPublicKey, theirPublicKey) || other.theirPublicKey == theirPublicKey)&&(identical(other.theirOneTimeKey, theirOneTimeKey) || other.theirOneTimeKey == theirOneTimeKey)&&(identical(other.theirIdentityKey, theirIdentityKey) || other.theirIdentityKey == theirIdentityKey)&&(identical(other.recordKeyThemSharing, recordKeyThemSharing) || other.recordKeyThemSharing == recordKeyThemSharing)&&(identical(other.recordKeyMeSharing, recordKeyMeSharing) || other.recordKeyMeSharing == recordKeyMeSharing));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Member&&(identical(other.communityRecordKey, communityRecordKey) || other.communityRecordKey == communityRecordKey)&&(identical(other.infoRecordKey, infoRecordKey) || other.infoRecordKey == infoRecordKey)&&(identical(other.name, name) || other.name == name)&&(identical(other.comment, comment) || other.comment == comment)&&(identical(other.theirPublicKey, theirPublicKey) || other.theirPublicKey == theirPublicKey)&&(identical(other.recordKeyThemSharing, recordKeyThemSharing) || other.recordKeyThemSharing == recordKeyThemSharing)&&(identical(other.recordKeyMeSharing, recordKeyMeSharing) || other.recordKeyMeSharing == recordKeyMeSharing));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,communityRecordKey,infoRecordKey,name,myVodozemacAccount,comment,theirPublicKey,theirOneTimeKey,theirIdentityKey,recordKeyThemSharing,recordKeyMeSharing);
+int get hashCode => Object.hash(runtimeType,communityRecordKey,infoRecordKey,name,comment,theirPublicKey,recordKeyThemSharing,recordKeyMeSharing);
 
 @override
 String toString() {
-  return 'Member(communityRecordKey: $communityRecordKey, infoRecordKey: $infoRecordKey, name: $name, myVodozemacAccount: $myVodozemacAccount, comment: $comment, theirPublicKey: $theirPublicKey, theirOneTimeKey: $theirOneTimeKey, theirIdentityKey: $theirIdentityKey, recordKeyThemSharing: $recordKeyThemSharing, recordKeyMeSharing: $recordKeyMeSharing)';
+  return 'Member(communityRecordKey: $communityRecordKey, infoRecordKey: $infoRecordKey, name: $name, comment: $comment, theirPublicKey: $theirPublicKey, recordKeyThemSharing: $recordKeyThemSharing, recordKeyMeSharing: $recordKeyMeSharing)';
 }
 
 
@@ -1710,7 +1697,7 @@ abstract mixin class $MemberCopyWith<$Res>  {
   factory $MemberCopyWith(Member value, $Res Function(Member) _then) = _$MemberCopyWithImpl;
 @useResult
 $Res call({
- RecordKey communityRecordKey, RecordKey infoRecordKey, String name, String myVodozemacAccount, MemberComment? comment, PublicKey? theirPublicKey, String? theirOneTimeKey, String? theirIdentityKey, RecordKey? recordKeyThemSharing, RecordKey? recordKeyMeSharing
+ RecordKey communityRecordKey, RecordKey infoRecordKey, String name, MemberComment? comment, PublicKey? theirPublicKey, RecordKey? recordKeyThemSharing, RecordKey? recordKeyMeSharing
 });
 
 
@@ -1727,17 +1714,14 @@ class _$MemberCopyWithImpl<$Res>
 
 /// Create a copy of Member
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? communityRecordKey = null,Object? infoRecordKey = null,Object? name = null,Object? myVodozemacAccount = null,Object? comment = freezed,Object? theirPublicKey = freezed,Object? theirOneTimeKey = freezed,Object? theirIdentityKey = freezed,Object? recordKeyThemSharing = freezed,Object? recordKeyMeSharing = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? communityRecordKey = null,Object? infoRecordKey = null,Object? name = null,Object? comment = freezed,Object? theirPublicKey = freezed,Object? recordKeyThemSharing = freezed,Object? recordKeyMeSharing = freezed,}) {
   return _then(_self.copyWith(
 communityRecordKey: null == communityRecordKey ? _self.communityRecordKey : communityRecordKey // ignore: cast_nullable_to_non_nullable
 as RecordKey,infoRecordKey: null == infoRecordKey ? _self.infoRecordKey : infoRecordKey // ignore: cast_nullable_to_non_nullable
 as RecordKey,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,myVodozemacAccount: null == myVodozemacAccount ? _self.myVodozemacAccount : myVodozemacAccount // ignore: cast_nullable_to_non_nullable
 as String,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
 as MemberComment?,theirPublicKey: freezed == theirPublicKey ? _self.theirPublicKey : theirPublicKey // ignore: cast_nullable_to_non_nullable
-as PublicKey?,theirOneTimeKey: freezed == theirOneTimeKey ? _self.theirOneTimeKey : theirOneTimeKey // ignore: cast_nullable_to_non_nullable
-as String?,theirIdentityKey: freezed == theirIdentityKey ? _self.theirIdentityKey : theirIdentityKey // ignore: cast_nullable_to_non_nullable
-as String?,recordKeyThemSharing: freezed == recordKeyThemSharing ? _self.recordKeyThemSharing : recordKeyThemSharing // ignore: cast_nullable_to_non_nullable
+as PublicKey?,recordKeyThemSharing: freezed == recordKeyThemSharing ? _self.recordKeyThemSharing : recordKeyThemSharing // ignore: cast_nullable_to_non_nullable
 as RecordKey?,recordKeyMeSharing: freezed == recordKeyMeSharing ? _self.recordKeyMeSharing : recordKeyMeSharing // ignore: cast_nullable_to_non_nullable
 as RecordKey?,
   ));
@@ -1833,10 +1817,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RecordKey communityRecordKey,  RecordKey infoRecordKey,  String name,  String myVodozemacAccount,  MemberComment? comment,  PublicKey? theirPublicKey,  String? theirOneTimeKey,  String? theirIdentityKey,  RecordKey? recordKeyThemSharing,  RecordKey? recordKeyMeSharing)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RecordKey communityRecordKey,  RecordKey infoRecordKey,  String name,  MemberComment? comment,  PublicKey? theirPublicKey,  RecordKey? recordKeyThemSharing,  RecordKey? recordKeyMeSharing)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Member() when $default != null:
-return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.myVodozemacAccount,_that.comment,_that.theirPublicKey,_that.theirOneTimeKey,_that.theirIdentityKey,_that.recordKeyThemSharing,_that.recordKeyMeSharing);case _:
+return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.comment,_that.theirPublicKey,_that.recordKeyThemSharing,_that.recordKeyMeSharing);case _:
   return orElse();
 
 }
@@ -1854,10 +1838,10 @@ return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.my
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RecordKey communityRecordKey,  RecordKey infoRecordKey,  String name,  String myVodozemacAccount,  MemberComment? comment,  PublicKey? theirPublicKey,  String? theirOneTimeKey,  String? theirIdentityKey,  RecordKey? recordKeyThemSharing,  RecordKey? recordKeyMeSharing)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RecordKey communityRecordKey,  RecordKey infoRecordKey,  String name,  MemberComment? comment,  PublicKey? theirPublicKey,  RecordKey? recordKeyThemSharing,  RecordKey? recordKeyMeSharing)  $default,) {final _that = this;
 switch (_that) {
 case _Member():
-return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.myVodozemacAccount,_that.comment,_that.theirPublicKey,_that.theirOneTimeKey,_that.theirIdentityKey,_that.recordKeyThemSharing,_that.recordKeyMeSharing);}
+return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.comment,_that.theirPublicKey,_that.recordKeyThemSharing,_that.recordKeyMeSharing);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -1871,10 +1855,10 @@ return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.my
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RecordKey communityRecordKey,  RecordKey infoRecordKey,  String name,  String myVodozemacAccount,  MemberComment? comment,  PublicKey? theirPublicKey,  String? theirOneTimeKey,  String? theirIdentityKey,  RecordKey? recordKeyThemSharing,  RecordKey? recordKeyMeSharing)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RecordKey communityRecordKey,  RecordKey infoRecordKey,  String name,  MemberComment? comment,  PublicKey? theirPublicKey,  RecordKey? recordKeyThemSharing,  RecordKey? recordKeyMeSharing)?  $default,) {final _that = this;
 switch (_that) {
 case _Member() when $default != null:
-return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.myVodozemacAccount,_that.comment,_that.theirPublicKey,_that.theirOneTimeKey,_that.theirIdentityKey,_that.recordKeyThemSharing,_that.recordKeyMeSharing);case _:
+return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.comment,_that.theirPublicKey,_that.recordKeyThemSharing,_that.recordKeyMeSharing);case _:
   return null;
 
 }
@@ -1886,7 +1870,7 @@ return $default(_that.communityRecordKey,_that.infoRecordKey,_that.name,_that.my
 @JsonSerializable()
 
 class _Member implements Member {
-  const _Member({required this.communityRecordKey, required this.infoRecordKey, required this.name, required this.myVodozemacAccount, this.comment, this.theirPublicKey, this.theirOneTimeKey, this.theirIdentityKey, this.recordKeyThemSharing, this.recordKeyMeSharing});
+  const _Member({required this.communityRecordKey, required this.infoRecordKey, required this.name, this.comment, this.theirPublicKey, this.recordKeyThemSharing, this.recordKeyMeSharing});
   factory _Member.fromJson(Map<String, dynamic> json) => _$MemberFromJson(json);
 
 /// The community member record key of the current user
@@ -1895,17 +1879,11 @@ class _Member implements Member {
 @override final  RecordKey infoRecordKey;
 /// Label or name for the member, could be email/name/nick
 @override final  String name;
-/// My vodozemac / olm account for encrypted communication
-@override final  String myVodozemacAccount;
 /// Comment by the organizer, e.g. to explain reason for expelling member
 @override final  MemberComment? comment;
 /// Their public key to derive encrypted shared secret hash for sharing
 /// offer indexing
 @override final  PublicKey? theirPublicKey;
-/// Their one time key to set up the vodozemac / olm session for encryption
-@override final  String? theirOneTimeKey;
-/// Their identity key to set up the vodozemac / olm session for encryption
-@override final  String? theirIdentityKey;
 /// The record key where they share information with me
 @override final  RecordKey? recordKeyThemSharing;
 /// After a community member was added as a contact, my sharing record key
@@ -1925,16 +1903,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Member&&(identical(other.communityRecordKey, communityRecordKey) || other.communityRecordKey == communityRecordKey)&&(identical(other.infoRecordKey, infoRecordKey) || other.infoRecordKey == infoRecordKey)&&(identical(other.name, name) || other.name == name)&&(identical(other.myVodozemacAccount, myVodozemacAccount) || other.myVodozemacAccount == myVodozemacAccount)&&(identical(other.comment, comment) || other.comment == comment)&&(identical(other.theirPublicKey, theirPublicKey) || other.theirPublicKey == theirPublicKey)&&(identical(other.theirOneTimeKey, theirOneTimeKey) || other.theirOneTimeKey == theirOneTimeKey)&&(identical(other.theirIdentityKey, theirIdentityKey) || other.theirIdentityKey == theirIdentityKey)&&(identical(other.recordKeyThemSharing, recordKeyThemSharing) || other.recordKeyThemSharing == recordKeyThemSharing)&&(identical(other.recordKeyMeSharing, recordKeyMeSharing) || other.recordKeyMeSharing == recordKeyMeSharing));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Member&&(identical(other.communityRecordKey, communityRecordKey) || other.communityRecordKey == communityRecordKey)&&(identical(other.infoRecordKey, infoRecordKey) || other.infoRecordKey == infoRecordKey)&&(identical(other.name, name) || other.name == name)&&(identical(other.comment, comment) || other.comment == comment)&&(identical(other.theirPublicKey, theirPublicKey) || other.theirPublicKey == theirPublicKey)&&(identical(other.recordKeyThemSharing, recordKeyThemSharing) || other.recordKeyThemSharing == recordKeyThemSharing)&&(identical(other.recordKeyMeSharing, recordKeyMeSharing) || other.recordKeyMeSharing == recordKeyMeSharing));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,communityRecordKey,infoRecordKey,name,myVodozemacAccount,comment,theirPublicKey,theirOneTimeKey,theirIdentityKey,recordKeyThemSharing,recordKeyMeSharing);
+int get hashCode => Object.hash(runtimeType,communityRecordKey,infoRecordKey,name,comment,theirPublicKey,recordKeyThemSharing,recordKeyMeSharing);
 
 @override
 String toString() {
-  return 'Member(communityRecordKey: $communityRecordKey, infoRecordKey: $infoRecordKey, name: $name, myVodozemacAccount: $myVodozemacAccount, comment: $comment, theirPublicKey: $theirPublicKey, theirOneTimeKey: $theirOneTimeKey, theirIdentityKey: $theirIdentityKey, recordKeyThemSharing: $recordKeyThemSharing, recordKeyMeSharing: $recordKeyMeSharing)';
+  return 'Member(communityRecordKey: $communityRecordKey, infoRecordKey: $infoRecordKey, name: $name, comment: $comment, theirPublicKey: $theirPublicKey, recordKeyThemSharing: $recordKeyThemSharing, recordKeyMeSharing: $recordKeyMeSharing)';
 }
 
 
@@ -1945,7 +1923,7 @@ abstract mixin class _$MemberCopyWith<$Res> implements $MemberCopyWith<$Res> {
   factory _$MemberCopyWith(_Member value, $Res Function(_Member) _then) = __$MemberCopyWithImpl;
 @override @useResult
 $Res call({
- RecordKey communityRecordKey, RecordKey infoRecordKey, String name, String myVodozemacAccount, MemberComment? comment, PublicKey? theirPublicKey, String? theirOneTimeKey, String? theirIdentityKey, RecordKey? recordKeyThemSharing, RecordKey? recordKeyMeSharing
+ RecordKey communityRecordKey, RecordKey infoRecordKey, String name, MemberComment? comment, PublicKey? theirPublicKey, RecordKey? recordKeyThemSharing, RecordKey? recordKeyMeSharing
 });
 
 
@@ -1962,17 +1940,14 @@ class __$MemberCopyWithImpl<$Res>
 
 /// Create a copy of Member
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? communityRecordKey = null,Object? infoRecordKey = null,Object? name = null,Object? myVodozemacAccount = null,Object? comment = freezed,Object? theirPublicKey = freezed,Object? theirOneTimeKey = freezed,Object? theirIdentityKey = freezed,Object? recordKeyThemSharing = freezed,Object? recordKeyMeSharing = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? communityRecordKey = null,Object? infoRecordKey = null,Object? name = null,Object? comment = freezed,Object? theirPublicKey = freezed,Object? recordKeyThemSharing = freezed,Object? recordKeyMeSharing = freezed,}) {
   return _then(_Member(
 communityRecordKey: null == communityRecordKey ? _self.communityRecordKey : communityRecordKey // ignore: cast_nullable_to_non_nullable
 as RecordKey,infoRecordKey: null == infoRecordKey ? _self.infoRecordKey : infoRecordKey // ignore: cast_nullable_to_non_nullable
 as RecordKey,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,myVodozemacAccount: null == myVodozemacAccount ? _self.myVodozemacAccount : myVodozemacAccount // ignore: cast_nullable_to_non_nullable
 as String,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
 as MemberComment?,theirPublicKey: freezed == theirPublicKey ? _self.theirPublicKey : theirPublicKey // ignore: cast_nullable_to_non_nullable
-as PublicKey?,theirOneTimeKey: freezed == theirOneTimeKey ? _self.theirOneTimeKey : theirOneTimeKey // ignore: cast_nullable_to_non_nullable
-as String?,theirIdentityKey: freezed == theirIdentityKey ? _self.theirIdentityKey : theirIdentityKey // ignore: cast_nullable_to_non_nullable
-as String?,recordKeyThemSharing: freezed == recordKeyThemSharing ? _self.recordKeyThemSharing : recordKeyThemSharing // ignore: cast_nullable_to_non_nullable
+as PublicKey?,recordKeyThemSharing: freezed == recordKeyThemSharing ? _self.recordKeyThemSharing : recordKeyThemSharing // ignore: cast_nullable_to_non_nullable
 as RecordKey?,recordKeyMeSharing: freezed == recordKeyMeSharing ? _self.recordKeyMeSharing : recordKeyMeSharing // ignore: cast_nullable_to_non_nullable
 as RecordKey?,
   ));

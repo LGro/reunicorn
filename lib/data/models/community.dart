@@ -73,12 +73,6 @@ sealed class CommunityInfo with _$CommunityInfo {
 @freezed
 sealed class MemberSharingOffer with _$MemberSharingOffer {
   const factory MemberSharingOffer({
-    /// Their one time key to set up the vodozemac / olm session for encryption
-    required String oneTimeKey,
-
-    /// Their identity key to set up the vodozemac / olm session for encryption
-    required String identityKey,
-
     /// DHT record key where the member offers to share
     RecordKey? recordKey,
   }) = _MemberSharingOffer;
@@ -172,21 +166,12 @@ sealed class Member with _$Member {
     /// Label or name for the member, could be email/name/nick
     required String name,
 
-    /// My vodozemac / olm account for encrypted communication
-    required String myVodozemacAccount,
-
     /// Comment by the organizer, e.g. to explain reason for expelling member
     MemberComment? comment,
 
     /// Their public key to derive encrypted shared secret hash for sharing
     /// offer indexing
     PublicKey? theirPublicKey,
-
-    /// Their one time key to set up the vodozemac / olm session for encryption
-    String? theirOneTimeKey,
-
-    /// Their identity key to set up the vodozemac / olm session for encryption
-    String? theirIdentityKey,
 
     /// The record key where they share information with me
     RecordKey? recordKeyThemSharing,

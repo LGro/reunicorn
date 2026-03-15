@@ -9,53 +9,80 @@ part 'crypto_state.g.dart';
 
 @freezed
 sealed class CryptoState with _$CryptoState {
-  /// Symmetric encryption to start with, e.g. in the context of a direct
-  /// sharing link / qr code based invite.
-  /// Since Veilid DHT records are encrypted by default, we could omit this, but
-  /// we manage the crypto on the app level consistently.
-  const factory CryptoState.symmetric({
-    required SharedSecret sharedSecret,
-    required String accountVod,
-  }) = CryptoSymmetric;
+  const factory CryptoState.initializedSymmetric({
+    /// Initial shared secret for symmetric cryptography
+    required SharedSecret initialSharedSecret,
 
-  /// Symmetric cryptography with a prepared vodozemac / olm session, ready to
-  /// transition to as soon as one roundtrip was confirmed.
-  const factory CryptoState.symToVod({
-    required SharedSecret sharedSecret,
-    required String theirIdentityKey,
-    required String myIdentityKey,
-    required String sessionVod,
-  }) = CryptoSymToVod;
+    /// My key pair for transition to asymmetric cryptography
+    required KeyPair myNextKeyPair,
+  }) = CryptoInitializedSymmetric;
 
-  /// Initial vodozemac / olm session that has not yet successfully seen a
-  /// roundtrip of encrypted communication; the account is still there to remedy
-  /// race conditions about two parties initializing vodozemac / olm crypto
-  /// at the same time, trying to both encrypt with outbound sessions.
-  const factory CryptoState.vodozemacInitial({
-    required String theirIdentityKey,
-    required String myIdentityKey,
-    required String accountVod,
-    required String sessionVod,
-  }) = CryptoVodozemacInitial;
+  const factory CryptoState.establishedSymmetric({
+    /// Initial shared secret for symmetric cryptography
+    required SharedSecret initialSharedSecret,
 
-  /// Established vodozemac / olm session
-  const factory CryptoState.vodozemac({
-    required String theirIdentityKey,
-    required String myIdentityKey,
-    required String sessionVod,
-  }) = CryptoVodozemac;
+    /// My key pair for transition to asymmetric cryptography
+    required KeyPair myNextKeyPair,
+
+    /// Their public key for transition to asymmetric cryptography
+    required PublicKey theirNextPublicKey,
+  }) = CryptoEstablishedSymmetric;
+
+  const factory CryptoState.pendingAsymmetric({
+    /// My key pair for asymmetric cryptography
+    required KeyPair myNextKeyPair,
+  }) = CryptoPendingAsymmetric;
+
+  const factory CryptoState.initializedAsymmetric({
+    /// Initial shared secret for symmetric cryptography
+    required SharedSecret initialSharedSecret,
+
+    /// My key pair, of which they used the public key successfully
+    required KeyPair myKeyPair,
+
+    /// My key pair for transition to asymmetric cryptography
+    required KeyPair myNextKeyPair,
+
+    /// Their public key for transition to asymmetric cryptography
+    required PublicKey theirNextPublicKey,
+  }) = CryptoInitializedAsymmetric;
+
+  const factory CryptoState.establishedAsymmetric({
+    /// My key pair, of which they used the public key successfully
+    required KeyPair myKeyPair,
+
+    /// My key pair for the next rotation
+    required KeyPair myNextKeyPair,
+
+    /// Their public key I used successfully
+    required PublicKey theirPublicKey,
+
+    /// Their public key for the next rotation
+    required PublicKey theirNextPublicKey,
+  }) = CryptoEstablishedAsymmetric;
 
   factory CryptoState.fromJson(Map<String, dynamic> json) =>
       _$CryptoStateFromJson(json);
 }
 
-// We use map instead of mapOrNull here, to make sure we don't miss adding
-// cases for new states
 extension CryptoStateMaybeGetters on CryptoState {
-  SharedSecret? get sharedSecretOrNull => map(
-    symmetric: (s) => s.sharedSecret,
-    symToVod: (s) => s.sharedSecret,
-    vodozemacInitial: (s) => null,
-    vodozemac: (s) => null,
+  SharedSecret? get initialSharedSecretOrNull => mapOrNull(
+    initializedSymmetric: (s) => s.initialSharedSecret,
+    establishedSymmetric: (s) => s.initialSharedSecret,
+    initializedAsymmetric: (s) => s.initialSharedSecret,
+  );
+
+  PublicKey? get theirPublicKeyOrNull =>
+      mapOrNull(establishedAsymmetric: (s) => s.theirPublicKey);
+
+  PublicKey? get theirNextPublicKeyOrNull => mapOrNull(
+    establishedSymmetric: (s) => s.theirNextPublicKey,
+    initializedAsymmetric: (s) => s.theirNextPublicKey,
+    establishedAsymmetric: (s) => s.theirNextPublicKey,
+  );
+
+  KeyPair? get myKeyPairOrNull => mapOrNull(
+    initializedAsymmetric: (s) => s.myKeyPair,
+    establishedAsymmetric: (s) => s.myKeyPair,
   );
 }

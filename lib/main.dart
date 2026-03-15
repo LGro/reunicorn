@@ -11,7 +11,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:reunicorn/config.dart';
 import 'package:reunicorn/data/services/storage/hive.dart';
-import 'package:flutter_vodozemac/flutter_vodozemac.dart' as vod_flutter;
 
 import 'bloc_observer.dart';
 import 'data/models/circle.dart';
@@ -54,9 +53,6 @@ void main() async {
       );
     }
     await Hive.initFlutter();
-
-    // Load the library, possibly provide the path to the wasm or native library
-    await vod_flutter.init();
 
     if (!isWeb) {
       // TODO(LGro): Check what it takes to enable notifications for web

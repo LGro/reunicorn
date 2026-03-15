@@ -15,7 +15,7 @@ class DirectSharingWidget extends StatelessWidget {
   DirectSharingWidget(
     CoagContact contact,
     DhtConnectionInitialized dhtConnection,
-    CryptoSymmetric connectionCrypto, {
+    CryptoInitializedSymmetric connectionCrypto, {
     super.key,
   }) {
     _contactName = contact.name;
@@ -29,7 +29,7 @@ class DirectSharingWidget extends StatelessWidget {
               .firstOrNull ??
           '???',
       dhtConnection.recordKeyMeSharing,
-      connectionCrypto.sharedSecret,
+      connectionCrypto.initialSharedSecret,
     ).uri;
   }
 

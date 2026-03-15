@@ -47,19 +47,13 @@ Map<String, dynamic> _$CommunityInfoToJson(_CommunityInfo instance) =>
 
 _MemberSharingOffer _$MemberSharingOfferFromJson(Map<String, dynamic> json) =>
     _MemberSharingOffer(
-      oneTimeKey: json['one_time_key'] as String,
-      identityKey: json['identity_key'] as String,
       recordKey: json['record_key'] == null
           ? null
           : RecordKey.fromJson(json['record_key']),
     );
 
 Map<String, dynamic> _$MemberSharingOfferToJson(_MemberSharingOffer instance) =>
-    <String, dynamic>{
-      'one_time_key': instance.oneTimeKey,
-      'identity_key': instance.identityKey,
-      'record_key': instance.recordKey?.toJson(),
-    };
+    <String, dynamic>{'record_key': instance.recordKey?.toJson()};
 
 _MemberInfo _$MemberInfoFromJson(Map<String, dynamic> json) => _MemberInfo(
   publicKey: Typed<BarePublicKey>.fromJson(json['public_key']),
@@ -135,15 +129,12 @@ _Member _$MemberFromJson(Map<String, dynamic> json) => _Member(
   communityRecordKey: RecordKey.fromJson(json['community_record_key']),
   infoRecordKey: RecordKey.fromJson(json['info_record_key']),
   name: json['name'] as String,
-  myVodozemacAccount: json['my_vodozemac_account'] as String,
   comment: json['comment'] == null
       ? null
       : MemberComment.fromJson(json['comment'] as Map<String, dynamic>),
   theirPublicKey: json['their_public_key'] == null
       ? null
       : Typed<BarePublicKey>.fromJson(json['their_public_key']),
-  theirOneTimeKey: json['their_one_time_key'] as String?,
-  theirIdentityKey: json['their_identity_key'] as String?,
   recordKeyThemSharing: json['record_key_them_sharing'] == null
       ? null
       : RecordKey.fromJson(json['record_key_them_sharing']),
@@ -156,11 +147,8 @@ Map<String, dynamic> _$MemberToJson(_Member instance) => <String, dynamic>{
   'community_record_key': instance.communityRecordKey.toJson(),
   'info_record_key': instance.infoRecordKey.toJson(),
   'name': instance.name,
-  'my_vodozemac_account': instance.myVodozemacAccount,
   'comment': instance.comment?.toJson(),
   'their_public_key': instance.theirPublicKey?.toJson(),
-  'their_one_time_key': instance.theirOneTimeKey,
-  'their_identity_key': instance.theirIdentityKey,
   'record_key_them_sharing': instance.recordKeyThemSharing?.toJson(),
   'record_key_me_sharing': instance.recordKeyMeSharing?.toJson(),
 };

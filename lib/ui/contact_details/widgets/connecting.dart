@@ -56,11 +56,11 @@ class ConnectingCard extends StatelessWidget {
         else if (showDirectSharing(contact) &&
             contact.dhtConnection != null &&
             contact.dhtConnection is DhtConnectionInitialized &&
-            contact.connectionCrypto is CryptoSymmetric)
+            contact.connectionCrypto is CryptoInitializedSymmetric)
           DirectSharingWidget(
             contact,
             contact.dhtConnection! as DhtConnectionInitialized,
-            contact.connectionCrypto as CryptoSymmetric,
+            contact.connectionCrypto as CryptoInitializedSymmetric,
           )
         else
           const Text(

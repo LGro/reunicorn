@@ -15,20 +15,24 @@ CryptoState _$CryptoStateFromJson(
   Map<String, dynamic> json
 ) {
         switch (json['runtimeType']) {
-                  case 'symmetric':
-          return CryptoSymmetric.fromJson(
+                  case 'initializedSymmetric':
+          return CryptoInitializedSymmetric.fromJson(
             json
           );
-                case 'symToVod':
-          return CryptoSymToVod.fromJson(
+                case 'establishedSymmetric':
+          return CryptoEstablishedSymmetric.fromJson(
             json
           );
-                case 'vodozemacInitial':
-          return CryptoVodozemacInitial.fromJson(
+                case 'pendingAsymmetric':
+          return CryptoPendingAsymmetric.fromJson(
             json
           );
-                case 'vodozemac':
-          return CryptoVodozemac.fromJson(
+                case 'initializedAsymmetric':
+          return CryptoInitializedAsymmetric.fromJson(
+            json
+          );
+                case 'establishedAsymmetric':
+          return CryptoEstablishedAsymmetric.fromJson(
             json
           );
         
@@ -46,7 +50,13 @@ CryptoState _$CryptoStateFromJson(
 /// @nodoc
 mixin _$CryptoState {
 
-
+/// My key pair for transition to asymmetric cryptography
+ KeyPair get myNextKeyPair;
+/// Create a copy of CryptoState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$CryptoStateCopyWith<CryptoState> get copyWith => _$CryptoStateCopyWithImpl<CryptoState>(this as CryptoState, _$identity);
 
   /// Serializes this CryptoState to a JSON map.
   Map<String, dynamic> toJson();
@@ -54,24 +64,50 @@ mixin _$CryptoState {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CryptoState);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CryptoState&&(identical(other.myNextKeyPair, myNextKeyPair) || other.myNextKeyPair == myNextKeyPair));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => runtimeType.hashCode;
+int get hashCode => Object.hash(runtimeType,myNextKeyPair);
 
 @override
 String toString() {
-  return 'CryptoState()';
+  return 'CryptoState(myNextKeyPair: $myNextKeyPair)';
 }
 
 
 }
 
 /// @nodoc
-class $CryptoStateCopyWith<$Res>  {
-$CryptoStateCopyWith(CryptoState _, $Res Function(CryptoState) __);
+abstract mixin class $CryptoStateCopyWith<$Res>  {
+  factory $CryptoStateCopyWith(CryptoState value, $Res Function(CryptoState) _then) = _$CryptoStateCopyWithImpl;
+@useResult
+$Res call({
+ KeyPair myNextKeyPair
+});
+
+
+
+
+}
+/// @nodoc
+class _$CryptoStateCopyWithImpl<$Res>
+    implements $CryptoStateCopyWith<$Res> {
+  _$CryptoStateCopyWithImpl(this._self, this._then);
+
+  final CryptoState _self;
+  final $Res Function(CryptoState) _then;
+
+/// Create a copy of CryptoState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? myNextKeyPair = null,}) {
+  return _then(_self.copyWith(
+myNextKeyPair: null == myNextKeyPair ? _self.myNextKeyPair : myNextKeyPair // ignore: cast_nullable_to_non_nullable
+as KeyPair,
+  ));
+}
+
 }
 
 
@@ -89,14 +125,15 @@ extension CryptoStatePatterns on CryptoState {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( CryptoSymmetric value)?  symmetric,TResult Function( CryptoSymToVod value)?  symToVod,TResult Function( CryptoVodozemacInitial value)?  vodozemacInitial,TResult Function( CryptoVodozemac value)?  vodozemac,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( CryptoInitializedSymmetric value)?  initializedSymmetric,TResult Function( CryptoEstablishedSymmetric value)?  establishedSymmetric,TResult Function( CryptoPendingAsymmetric value)?  pendingAsymmetric,TResult Function( CryptoInitializedAsymmetric value)?  initializedAsymmetric,TResult Function( CryptoEstablishedAsymmetric value)?  establishedAsymmetric,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case CryptoSymmetric() when symmetric != null:
-return symmetric(_that);case CryptoSymToVod() when symToVod != null:
-return symToVod(_that);case CryptoVodozemacInitial() when vodozemacInitial != null:
-return vodozemacInitial(_that);case CryptoVodozemac() when vodozemac != null:
-return vodozemac(_that);case _:
+case CryptoInitializedSymmetric() when initializedSymmetric != null:
+return initializedSymmetric(_that);case CryptoEstablishedSymmetric() when establishedSymmetric != null:
+return establishedSymmetric(_that);case CryptoPendingAsymmetric() when pendingAsymmetric != null:
+return pendingAsymmetric(_that);case CryptoInitializedAsymmetric() when initializedAsymmetric != null:
+return initializedAsymmetric(_that);case CryptoEstablishedAsymmetric() when establishedAsymmetric != null:
+return establishedAsymmetric(_that);case _:
   return orElse();
 
 }
@@ -114,14 +151,15 @@ return vodozemac(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( CryptoSymmetric value)  symmetric,required TResult Function( CryptoSymToVod value)  symToVod,required TResult Function( CryptoVodozemacInitial value)  vodozemacInitial,required TResult Function( CryptoVodozemac value)  vodozemac,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( CryptoInitializedSymmetric value)  initializedSymmetric,required TResult Function( CryptoEstablishedSymmetric value)  establishedSymmetric,required TResult Function( CryptoPendingAsymmetric value)  pendingAsymmetric,required TResult Function( CryptoInitializedAsymmetric value)  initializedAsymmetric,required TResult Function( CryptoEstablishedAsymmetric value)  establishedAsymmetric,}){
 final _that = this;
 switch (_that) {
-case CryptoSymmetric():
-return symmetric(_that);case CryptoSymToVod():
-return symToVod(_that);case CryptoVodozemacInitial():
-return vodozemacInitial(_that);case CryptoVodozemac():
-return vodozemac(_that);}
+case CryptoInitializedSymmetric():
+return initializedSymmetric(_that);case CryptoEstablishedSymmetric():
+return establishedSymmetric(_that);case CryptoPendingAsymmetric():
+return pendingAsymmetric(_that);case CryptoInitializedAsymmetric():
+return initializedAsymmetric(_that);case CryptoEstablishedAsymmetric():
+return establishedAsymmetric(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -135,14 +173,15 @@ return vodozemac(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( CryptoSymmetric value)?  symmetric,TResult? Function( CryptoSymToVod value)?  symToVod,TResult? Function( CryptoVodozemacInitial value)?  vodozemacInitial,TResult? Function( CryptoVodozemac value)?  vodozemac,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( CryptoInitializedSymmetric value)?  initializedSymmetric,TResult? Function( CryptoEstablishedSymmetric value)?  establishedSymmetric,TResult? Function( CryptoPendingAsymmetric value)?  pendingAsymmetric,TResult? Function( CryptoInitializedAsymmetric value)?  initializedAsymmetric,TResult? Function( CryptoEstablishedAsymmetric value)?  establishedAsymmetric,}){
 final _that = this;
 switch (_that) {
-case CryptoSymmetric() when symmetric != null:
-return symmetric(_that);case CryptoSymToVod() when symToVod != null:
-return symToVod(_that);case CryptoVodozemacInitial() when vodozemacInitial != null:
-return vodozemacInitial(_that);case CryptoVodozemac() when vodozemac != null:
-return vodozemac(_that);case _:
+case CryptoInitializedSymmetric() when initializedSymmetric != null:
+return initializedSymmetric(_that);case CryptoEstablishedSymmetric() when establishedSymmetric != null:
+return establishedSymmetric(_that);case CryptoPendingAsymmetric() when pendingAsymmetric != null:
+return pendingAsymmetric(_that);case CryptoInitializedAsymmetric() when initializedAsymmetric != null:
+return initializedAsymmetric(_that);case CryptoEstablishedAsymmetric() when establishedAsymmetric != null:
+return establishedAsymmetric(_that);case _:
   return null;
 
 }
@@ -159,13 +198,14 @@ return vodozemac(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( SharedSecret sharedSecret,  String accountVod)?  symmetric,TResult Function( SharedSecret sharedSecret,  String theirIdentityKey,  String myIdentityKey,  String sessionVod)?  symToVod,TResult Function( String theirIdentityKey,  String myIdentityKey,  String accountVod,  String sessionVod)?  vodozemacInitial,TResult Function( String theirIdentityKey,  String myIdentityKey,  String sessionVod)?  vodozemac,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair)?  initializedSymmetric,TResult Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)?  establishedSymmetric,TResult Function( KeyPair myNextKeyPair)?  pendingAsymmetric,TResult Function( SharedSecret initialSharedSecret,  KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)?  initializedAsymmetric,TResult Function( KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirPublicKey,  PublicKey theirNextPublicKey)?  establishedAsymmetric,required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case CryptoSymmetric() when symmetric != null:
-return symmetric(_that.sharedSecret,_that.accountVod);case CryptoSymToVod() when symToVod != null:
-return symToVod(_that.sharedSecret,_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);case CryptoVodozemacInitial() when vodozemacInitial != null:
-return vodozemacInitial(_that.theirIdentityKey,_that.myIdentityKey,_that.accountVod,_that.sessionVod);case CryptoVodozemac() when vodozemac != null:
-return vodozemac(_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);case _:
+case CryptoInitializedSymmetric() when initializedSymmetric != null:
+return initializedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair);case CryptoEstablishedSymmetric() when establishedSymmetric != null:
+return establishedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoPendingAsymmetric() when pendingAsymmetric != null:
+return pendingAsymmetric(_that.myNextKeyPair);case CryptoInitializedAsymmetric() when initializedAsymmetric != null:
+return initializedAsymmetric(_that.initialSharedSecret,_that.myKeyPair,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoEstablishedAsymmetric() when establishedAsymmetric != null:
+return establishedAsymmetric(_that.myKeyPair,_that.myNextKeyPair,_that.theirPublicKey,_that.theirNextPublicKey);case _:
   return orElse();
 
 }
@@ -183,13 +223,14 @@ return vodozemac(_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);ca
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( SharedSecret sharedSecret,  String accountVod)  symmetric,required TResult Function( SharedSecret sharedSecret,  String theirIdentityKey,  String myIdentityKey,  String sessionVod)  symToVod,required TResult Function( String theirIdentityKey,  String myIdentityKey,  String accountVod,  String sessionVod)  vodozemacInitial,required TResult Function( String theirIdentityKey,  String myIdentityKey,  String sessionVod)  vodozemac,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair)  initializedSymmetric,required TResult Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)  establishedSymmetric,required TResult Function( KeyPair myNextKeyPair)  pendingAsymmetric,required TResult Function( SharedSecret initialSharedSecret,  KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)  initializedAsymmetric,required TResult Function( KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirPublicKey,  PublicKey theirNextPublicKey)  establishedAsymmetric,}) {final _that = this;
 switch (_that) {
-case CryptoSymmetric():
-return symmetric(_that.sharedSecret,_that.accountVod);case CryptoSymToVod():
-return symToVod(_that.sharedSecret,_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);case CryptoVodozemacInitial():
-return vodozemacInitial(_that.theirIdentityKey,_that.myIdentityKey,_that.accountVod,_that.sessionVod);case CryptoVodozemac():
-return vodozemac(_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);}
+case CryptoInitializedSymmetric():
+return initializedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair);case CryptoEstablishedSymmetric():
+return establishedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoPendingAsymmetric():
+return pendingAsymmetric(_that.myNextKeyPair);case CryptoInitializedAsymmetric():
+return initializedAsymmetric(_that.initialSharedSecret,_that.myKeyPair,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoEstablishedAsymmetric():
+return establishedAsymmetric(_that.myKeyPair,_that.myNextKeyPair,_that.theirPublicKey,_that.theirNextPublicKey);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -203,13 +244,14 @@ return vodozemac(_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( SharedSecret sharedSecret,  String accountVod)?  symmetric,TResult? Function( SharedSecret sharedSecret,  String theirIdentityKey,  String myIdentityKey,  String sessionVod)?  symToVod,TResult? Function( String theirIdentityKey,  String myIdentityKey,  String accountVod,  String sessionVod)?  vodozemacInitial,TResult? Function( String theirIdentityKey,  String myIdentityKey,  String sessionVod)?  vodozemac,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair)?  initializedSymmetric,TResult? Function( SharedSecret initialSharedSecret,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)?  establishedSymmetric,TResult? Function( KeyPair myNextKeyPair)?  pendingAsymmetric,TResult? Function( SharedSecret initialSharedSecret,  KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirNextPublicKey)?  initializedAsymmetric,TResult? Function( KeyPair myKeyPair,  KeyPair myNextKeyPair,  PublicKey theirPublicKey,  PublicKey theirNextPublicKey)?  establishedAsymmetric,}) {final _that = this;
 switch (_that) {
-case CryptoSymmetric() when symmetric != null:
-return symmetric(_that.sharedSecret,_that.accountVod);case CryptoSymToVod() when symToVod != null:
-return symToVod(_that.sharedSecret,_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);case CryptoVodozemacInitial() when vodozemacInitial != null:
-return vodozemacInitial(_that.theirIdentityKey,_that.myIdentityKey,_that.accountVod,_that.sessionVod);case CryptoVodozemac() when vodozemac != null:
-return vodozemac(_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);case _:
+case CryptoInitializedSymmetric() when initializedSymmetric != null:
+return initializedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair);case CryptoEstablishedSymmetric() when establishedSymmetric != null:
+return establishedSymmetric(_that.initialSharedSecret,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoPendingAsymmetric() when pendingAsymmetric != null:
+return pendingAsymmetric(_that.myNextKeyPair);case CryptoInitializedAsymmetric() when initializedAsymmetric != null:
+return initializedAsymmetric(_that.initialSharedSecret,_that.myKeyPair,_that.myNextKeyPair,_that.theirNextPublicKey);case CryptoEstablishedAsymmetric() when establishedAsymmetric != null:
+return establishedAsymmetric(_that.myKeyPair,_that.myNextKeyPair,_that.theirPublicKey,_that.theirNextPublicKey);case _:
   return null;
 
 }
@@ -220,12 +262,14 @@ return vodozemac(_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);ca
 /// @nodoc
 @JsonSerializable()
 
-class CryptoSymmetric implements CryptoState {
-  const CryptoSymmetric({required this.sharedSecret, required this.accountVod, final  String? $type}): $type = $type ?? 'symmetric';
-  factory CryptoSymmetric.fromJson(Map<String, dynamic> json) => _$CryptoSymmetricFromJson(json);
+class CryptoInitializedSymmetric implements CryptoState {
+  const CryptoInitializedSymmetric({required this.initialSharedSecret, required this.myNextKeyPair, final  String? $type}): $type = $type ?? 'initializedSymmetric';
+  factory CryptoInitializedSymmetric.fromJson(Map<String, dynamic> json) => _$CryptoInitializedSymmetricFromJson(json);
 
- final  SharedSecret sharedSecret;
- final  String accountVod;
+/// Initial shared secret for symmetric cryptography
+ final  SharedSecret initialSharedSecret;
+/// My key pair for transition to asymmetric cryptography
+@override final  KeyPair myNextKeyPair;
 
 @JsonKey(name: 'runtimeType')
 final String $type;
@@ -233,38 +277,38 @@ final String $type;
 
 /// Create a copy of CryptoState
 /// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
+@override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$CryptoSymmetricCopyWith<CryptoSymmetric> get copyWith => _$CryptoSymmetricCopyWithImpl<CryptoSymmetric>(this, _$identity);
+$CryptoInitializedSymmetricCopyWith<CryptoInitializedSymmetric> get copyWith => _$CryptoInitializedSymmetricCopyWithImpl<CryptoInitializedSymmetric>(this, _$identity);
 
 @override
 Map<String, dynamic> toJson() {
-  return _$CryptoSymmetricToJson(this, );
+  return _$CryptoInitializedSymmetricToJson(this, );
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CryptoSymmetric&&(identical(other.sharedSecret, sharedSecret) || other.sharedSecret == sharedSecret)&&(identical(other.accountVod, accountVod) || other.accountVod == accountVod));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CryptoInitializedSymmetric&&(identical(other.initialSharedSecret, initialSharedSecret) || other.initialSharedSecret == initialSharedSecret)&&(identical(other.myNextKeyPair, myNextKeyPair) || other.myNextKeyPair == myNextKeyPair));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,sharedSecret,accountVod);
+int get hashCode => Object.hash(runtimeType,initialSharedSecret,myNextKeyPair);
 
 @override
 String toString() {
-  return 'CryptoState.symmetric(sharedSecret: $sharedSecret, accountVod: $accountVod)';
+  return 'CryptoState.initializedSymmetric(initialSharedSecret: $initialSharedSecret, myNextKeyPair: $myNextKeyPair)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $CryptoSymmetricCopyWith<$Res> implements $CryptoStateCopyWith<$Res> {
-  factory $CryptoSymmetricCopyWith(CryptoSymmetric value, $Res Function(CryptoSymmetric) _then) = _$CryptoSymmetricCopyWithImpl;
-@useResult
+abstract mixin class $CryptoInitializedSymmetricCopyWith<$Res> implements $CryptoStateCopyWith<$Res> {
+  factory $CryptoInitializedSymmetricCopyWith(CryptoInitializedSymmetric value, $Res Function(CryptoInitializedSymmetric) _then) = _$CryptoInitializedSymmetricCopyWithImpl;
+@override @useResult
 $Res call({
- SharedSecret sharedSecret, String accountVod
+ SharedSecret initialSharedSecret, KeyPair myNextKeyPair
 });
 
 
@@ -272,20 +316,20 @@ $Res call({
 
 }
 /// @nodoc
-class _$CryptoSymmetricCopyWithImpl<$Res>
-    implements $CryptoSymmetricCopyWith<$Res> {
-  _$CryptoSymmetricCopyWithImpl(this._self, this._then);
+class _$CryptoInitializedSymmetricCopyWithImpl<$Res>
+    implements $CryptoInitializedSymmetricCopyWith<$Res> {
+  _$CryptoInitializedSymmetricCopyWithImpl(this._self, this._then);
 
-  final CryptoSymmetric _self;
-  final $Res Function(CryptoSymmetric) _then;
+  final CryptoInitializedSymmetric _self;
+  final $Res Function(CryptoInitializedSymmetric) _then;
 
 /// Create a copy of CryptoState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? sharedSecret = null,Object? accountVod = null,}) {
-  return _then(CryptoSymmetric(
-sharedSecret: null == sharedSecret ? _self.sharedSecret : sharedSecret // ignore: cast_nullable_to_non_nullable
-as SharedSecret,accountVod: null == accountVod ? _self.accountVod : accountVod // ignore: cast_nullable_to_non_nullable
-as String,
+@override @pragma('vm:prefer-inline') $Res call({Object? initialSharedSecret = null,Object? myNextKeyPair = null,}) {
+  return _then(CryptoInitializedSymmetric(
+initialSharedSecret: null == initialSharedSecret ? _self.initialSharedSecret : initialSharedSecret // ignore: cast_nullable_to_non_nullable
+as SharedSecret,myNextKeyPair: null == myNextKeyPair ? _self.myNextKeyPair : myNextKeyPair // ignore: cast_nullable_to_non_nullable
+as KeyPair,
   ));
 }
 
@@ -295,14 +339,16 @@ as String,
 /// @nodoc
 @JsonSerializable()
 
-class CryptoSymToVod implements CryptoState {
-  const CryptoSymToVod({required this.sharedSecret, required this.theirIdentityKey, required this.myIdentityKey, required this.sessionVod, final  String? $type}): $type = $type ?? 'symToVod';
-  factory CryptoSymToVod.fromJson(Map<String, dynamic> json) => _$CryptoSymToVodFromJson(json);
+class CryptoEstablishedSymmetric implements CryptoState {
+  const CryptoEstablishedSymmetric({required this.initialSharedSecret, required this.myNextKeyPair, required this.theirNextPublicKey, final  String? $type}): $type = $type ?? 'establishedSymmetric';
+  factory CryptoEstablishedSymmetric.fromJson(Map<String, dynamic> json) => _$CryptoEstablishedSymmetricFromJson(json);
 
- final  SharedSecret sharedSecret;
- final  String theirIdentityKey;
- final  String myIdentityKey;
- final  String sessionVod;
+/// Initial shared secret for symmetric cryptography
+ final  SharedSecret initialSharedSecret;
+/// My key pair for transition to asymmetric cryptography
+@override final  KeyPair myNextKeyPair;
+/// Their public key for transition to asymmetric cryptography
+ final  PublicKey theirNextPublicKey;
 
 @JsonKey(name: 'runtimeType')
 final String $type;
@@ -310,38 +356,38 @@ final String $type;
 
 /// Create a copy of CryptoState
 /// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
+@override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$CryptoSymToVodCopyWith<CryptoSymToVod> get copyWith => _$CryptoSymToVodCopyWithImpl<CryptoSymToVod>(this, _$identity);
+$CryptoEstablishedSymmetricCopyWith<CryptoEstablishedSymmetric> get copyWith => _$CryptoEstablishedSymmetricCopyWithImpl<CryptoEstablishedSymmetric>(this, _$identity);
 
 @override
 Map<String, dynamic> toJson() {
-  return _$CryptoSymToVodToJson(this, );
+  return _$CryptoEstablishedSymmetricToJson(this, );
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CryptoSymToVod&&(identical(other.sharedSecret, sharedSecret) || other.sharedSecret == sharedSecret)&&(identical(other.theirIdentityKey, theirIdentityKey) || other.theirIdentityKey == theirIdentityKey)&&(identical(other.myIdentityKey, myIdentityKey) || other.myIdentityKey == myIdentityKey)&&(identical(other.sessionVod, sessionVod) || other.sessionVod == sessionVod));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CryptoEstablishedSymmetric&&(identical(other.initialSharedSecret, initialSharedSecret) || other.initialSharedSecret == initialSharedSecret)&&(identical(other.myNextKeyPair, myNextKeyPair) || other.myNextKeyPair == myNextKeyPair)&&(identical(other.theirNextPublicKey, theirNextPublicKey) || other.theirNextPublicKey == theirNextPublicKey));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,sharedSecret,theirIdentityKey,myIdentityKey,sessionVod);
+int get hashCode => Object.hash(runtimeType,initialSharedSecret,myNextKeyPair,theirNextPublicKey);
 
 @override
 String toString() {
-  return 'CryptoState.symToVod(sharedSecret: $sharedSecret, theirIdentityKey: $theirIdentityKey, myIdentityKey: $myIdentityKey, sessionVod: $sessionVod)';
+  return 'CryptoState.establishedSymmetric(initialSharedSecret: $initialSharedSecret, myNextKeyPair: $myNextKeyPair, theirNextPublicKey: $theirNextPublicKey)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $CryptoSymToVodCopyWith<$Res> implements $CryptoStateCopyWith<$Res> {
-  factory $CryptoSymToVodCopyWith(CryptoSymToVod value, $Res Function(CryptoSymToVod) _then) = _$CryptoSymToVodCopyWithImpl;
-@useResult
+abstract mixin class $CryptoEstablishedSymmetricCopyWith<$Res> implements $CryptoStateCopyWith<$Res> {
+  factory $CryptoEstablishedSymmetricCopyWith(CryptoEstablishedSymmetric value, $Res Function(CryptoEstablishedSymmetric) _then) = _$CryptoEstablishedSymmetricCopyWithImpl;
+@override @useResult
 $Res call({
- SharedSecret sharedSecret, String theirIdentityKey, String myIdentityKey, String sessionVod
+ SharedSecret initialSharedSecret, KeyPair myNextKeyPair, PublicKey theirNextPublicKey
 });
 
 
@@ -349,22 +395,21 @@ $Res call({
 
 }
 /// @nodoc
-class _$CryptoSymToVodCopyWithImpl<$Res>
-    implements $CryptoSymToVodCopyWith<$Res> {
-  _$CryptoSymToVodCopyWithImpl(this._self, this._then);
+class _$CryptoEstablishedSymmetricCopyWithImpl<$Res>
+    implements $CryptoEstablishedSymmetricCopyWith<$Res> {
+  _$CryptoEstablishedSymmetricCopyWithImpl(this._self, this._then);
 
-  final CryptoSymToVod _self;
-  final $Res Function(CryptoSymToVod) _then;
+  final CryptoEstablishedSymmetric _self;
+  final $Res Function(CryptoEstablishedSymmetric) _then;
 
 /// Create a copy of CryptoState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? sharedSecret = null,Object? theirIdentityKey = null,Object? myIdentityKey = null,Object? sessionVod = null,}) {
-  return _then(CryptoSymToVod(
-sharedSecret: null == sharedSecret ? _self.sharedSecret : sharedSecret // ignore: cast_nullable_to_non_nullable
-as SharedSecret,theirIdentityKey: null == theirIdentityKey ? _self.theirIdentityKey : theirIdentityKey // ignore: cast_nullable_to_non_nullable
-as String,myIdentityKey: null == myIdentityKey ? _self.myIdentityKey : myIdentityKey // ignore: cast_nullable_to_non_nullable
-as String,sessionVod: null == sessionVod ? _self.sessionVod : sessionVod // ignore: cast_nullable_to_non_nullable
-as String,
+@override @pragma('vm:prefer-inline') $Res call({Object? initialSharedSecret = null,Object? myNextKeyPair = null,Object? theirNextPublicKey = null,}) {
+  return _then(CryptoEstablishedSymmetric(
+initialSharedSecret: null == initialSharedSecret ? _self.initialSharedSecret : initialSharedSecret // ignore: cast_nullable_to_non_nullable
+as SharedSecret,myNextKeyPair: null == myNextKeyPair ? _self.myNextKeyPair : myNextKeyPair // ignore: cast_nullable_to_non_nullable
+as KeyPair,theirNextPublicKey: null == theirNextPublicKey ? _self.theirNextPublicKey : theirNextPublicKey // ignore: cast_nullable_to_non_nullable
+as PublicKey,
   ));
 }
 
@@ -374,14 +419,12 @@ as String,
 /// @nodoc
 @JsonSerializable()
 
-class CryptoVodozemacInitial implements CryptoState {
-  const CryptoVodozemacInitial({required this.theirIdentityKey, required this.myIdentityKey, required this.accountVod, required this.sessionVod, final  String? $type}): $type = $type ?? 'vodozemacInitial';
-  factory CryptoVodozemacInitial.fromJson(Map<String, dynamic> json) => _$CryptoVodozemacInitialFromJson(json);
+class CryptoPendingAsymmetric implements CryptoState {
+  const CryptoPendingAsymmetric({required this.myNextKeyPair, final  String? $type}): $type = $type ?? 'pendingAsymmetric';
+  factory CryptoPendingAsymmetric.fromJson(Map<String, dynamic> json) => _$CryptoPendingAsymmetricFromJson(json);
 
- final  String theirIdentityKey;
- final  String myIdentityKey;
- final  String accountVod;
- final  String sessionVod;
+/// My key pair for asymmetric cryptography
+@override final  KeyPair myNextKeyPair;
 
 @JsonKey(name: 'runtimeType')
 final String $type;
@@ -389,38 +432,38 @@ final String $type;
 
 /// Create a copy of CryptoState
 /// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
+@override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$CryptoVodozemacInitialCopyWith<CryptoVodozemacInitial> get copyWith => _$CryptoVodozemacInitialCopyWithImpl<CryptoVodozemacInitial>(this, _$identity);
+$CryptoPendingAsymmetricCopyWith<CryptoPendingAsymmetric> get copyWith => _$CryptoPendingAsymmetricCopyWithImpl<CryptoPendingAsymmetric>(this, _$identity);
 
 @override
 Map<String, dynamic> toJson() {
-  return _$CryptoVodozemacInitialToJson(this, );
+  return _$CryptoPendingAsymmetricToJson(this, );
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CryptoVodozemacInitial&&(identical(other.theirIdentityKey, theirIdentityKey) || other.theirIdentityKey == theirIdentityKey)&&(identical(other.myIdentityKey, myIdentityKey) || other.myIdentityKey == myIdentityKey)&&(identical(other.accountVod, accountVod) || other.accountVod == accountVod)&&(identical(other.sessionVod, sessionVod) || other.sessionVod == sessionVod));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CryptoPendingAsymmetric&&(identical(other.myNextKeyPair, myNextKeyPair) || other.myNextKeyPair == myNextKeyPair));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,theirIdentityKey,myIdentityKey,accountVod,sessionVod);
+int get hashCode => Object.hash(runtimeType,myNextKeyPair);
 
 @override
 String toString() {
-  return 'CryptoState.vodozemacInitial(theirIdentityKey: $theirIdentityKey, myIdentityKey: $myIdentityKey, accountVod: $accountVod, sessionVod: $sessionVod)';
+  return 'CryptoState.pendingAsymmetric(myNextKeyPair: $myNextKeyPair)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $CryptoVodozemacInitialCopyWith<$Res> implements $CryptoStateCopyWith<$Res> {
-  factory $CryptoVodozemacInitialCopyWith(CryptoVodozemacInitial value, $Res Function(CryptoVodozemacInitial) _then) = _$CryptoVodozemacInitialCopyWithImpl;
-@useResult
+abstract mixin class $CryptoPendingAsymmetricCopyWith<$Res> implements $CryptoStateCopyWith<$Res> {
+  factory $CryptoPendingAsymmetricCopyWith(CryptoPendingAsymmetric value, $Res Function(CryptoPendingAsymmetric) _then) = _$CryptoPendingAsymmetricCopyWithImpl;
+@override @useResult
 $Res call({
- String theirIdentityKey, String myIdentityKey, String accountVod, String sessionVod
+ KeyPair myNextKeyPair
 });
 
 
@@ -428,22 +471,19 @@ $Res call({
 
 }
 /// @nodoc
-class _$CryptoVodozemacInitialCopyWithImpl<$Res>
-    implements $CryptoVodozemacInitialCopyWith<$Res> {
-  _$CryptoVodozemacInitialCopyWithImpl(this._self, this._then);
+class _$CryptoPendingAsymmetricCopyWithImpl<$Res>
+    implements $CryptoPendingAsymmetricCopyWith<$Res> {
+  _$CryptoPendingAsymmetricCopyWithImpl(this._self, this._then);
 
-  final CryptoVodozemacInitial _self;
-  final $Res Function(CryptoVodozemacInitial) _then;
+  final CryptoPendingAsymmetric _self;
+  final $Res Function(CryptoPendingAsymmetric) _then;
 
 /// Create a copy of CryptoState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? theirIdentityKey = null,Object? myIdentityKey = null,Object? accountVod = null,Object? sessionVod = null,}) {
-  return _then(CryptoVodozemacInitial(
-theirIdentityKey: null == theirIdentityKey ? _self.theirIdentityKey : theirIdentityKey // ignore: cast_nullable_to_non_nullable
-as String,myIdentityKey: null == myIdentityKey ? _self.myIdentityKey : myIdentityKey // ignore: cast_nullable_to_non_nullable
-as String,accountVod: null == accountVod ? _self.accountVod : accountVod // ignore: cast_nullable_to_non_nullable
-as String,sessionVod: null == sessionVod ? _self.sessionVod : sessionVod // ignore: cast_nullable_to_non_nullable
-as String,
+@override @pragma('vm:prefer-inline') $Res call({Object? myNextKeyPair = null,}) {
+  return _then(CryptoPendingAsymmetric(
+myNextKeyPair: null == myNextKeyPair ? _self.myNextKeyPair : myNextKeyPair // ignore: cast_nullable_to_non_nullable
+as KeyPair,
   ));
 }
 
@@ -453,13 +493,18 @@ as String,
 /// @nodoc
 @JsonSerializable()
 
-class CryptoVodozemac implements CryptoState {
-  const CryptoVodozemac({required this.theirIdentityKey, required this.myIdentityKey, required this.sessionVod, final  String? $type}): $type = $type ?? 'vodozemac';
-  factory CryptoVodozemac.fromJson(Map<String, dynamic> json) => _$CryptoVodozemacFromJson(json);
+class CryptoInitializedAsymmetric implements CryptoState {
+  const CryptoInitializedAsymmetric({required this.initialSharedSecret, required this.myKeyPair, required this.myNextKeyPair, required this.theirNextPublicKey, final  String? $type}): $type = $type ?? 'initializedAsymmetric';
+  factory CryptoInitializedAsymmetric.fromJson(Map<String, dynamic> json) => _$CryptoInitializedAsymmetricFromJson(json);
 
- final  String theirIdentityKey;
- final  String myIdentityKey;
- final  String sessionVod;
+/// Initial shared secret for symmetric cryptography
+ final  SharedSecret initialSharedSecret;
+/// My key pair, of which they used the public key successfully
+ final  KeyPair myKeyPair;
+/// My key pair for transition to asymmetric cryptography
+@override final  KeyPair myNextKeyPair;
+/// Their public key for transition to asymmetric cryptography
+ final  PublicKey theirNextPublicKey;
 
 @JsonKey(name: 'runtimeType')
 final String $type;
@@ -467,38 +512,38 @@ final String $type;
 
 /// Create a copy of CryptoState
 /// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
+@override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$CryptoVodozemacCopyWith<CryptoVodozemac> get copyWith => _$CryptoVodozemacCopyWithImpl<CryptoVodozemac>(this, _$identity);
+$CryptoInitializedAsymmetricCopyWith<CryptoInitializedAsymmetric> get copyWith => _$CryptoInitializedAsymmetricCopyWithImpl<CryptoInitializedAsymmetric>(this, _$identity);
 
 @override
 Map<String, dynamic> toJson() {
-  return _$CryptoVodozemacToJson(this, );
+  return _$CryptoInitializedAsymmetricToJson(this, );
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CryptoVodozemac&&(identical(other.theirIdentityKey, theirIdentityKey) || other.theirIdentityKey == theirIdentityKey)&&(identical(other.myIdentityKey, myIdentityKey) || other.myIdentityKey == myIdentityKey)&&(identical(other.sessionVod, sessionVod) || other.sessionVod == sessionVod));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CryptoInitializedAsymmetric&&(identical(other.initialSharedSecret, initialSharedSecret) || other.initialSharedSecret == initialSharedSecret)&&(identical(other.myKeyPair, myKeyPair) || other.myKeyPair == myKeyPair)&&(identical(other.myNextKeyPair, myNextKeyPair) || other.myNextKeyPair == myNextKeyPair)&&(identical(other.theirNextPublicKey, theirNextPublicKey) || other.theirNextPublicKey == theirNextPublicKey));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,theirIdentityKey,myIdentityKey,sessionVod);
+int get hashCode => Object.hash(runtimeType,initialSharedSecret,myKeyPair,myNextKeyPair,theirNextPublicKey);
 
 @override
 String toString() {
-  return 'CryptoState.vodozemac(theirIdentityKey: $theirIdentityKey, myIdentityKey: $myIdentityKey, sessionVod: $sessionVod)';
+  return 'CryptoState.initializedAsymmetric(initialSharedSecret: $initialSharedSecret, myKeyPair: $myKeyPair, myNextKeyPair: $myNextKeyPair, theirNextPublicKey: $theirNextPublicKey)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $CryptoVodozemacCopyWith<$Res> implements $CryptoStateCopyWith<$Res> {
-  factory $CryptoVodozemacCopyWith(CryptoVodozemac value, $Res Function(CryptoVodozemac) _then) = _$CryptoVodozemacCopyWithImpl;
-@useResult
+abstract mixin class $CryptoInitializedAsymmetricCopyWith<$Res> implements $CryptoStateCopyWith<$Res> {
+  factory $CryptoInitializedAsymmetricCopyWith(CryptoInitializedAsymmetric value, $Res Function(CryptoInitializedAsymmetric) _then) = _$CryptoInitializedAsymmetricCopyWithImpl;
+@override @useResult
 $Res call({
- String theirIdentityKey, String myIdentityKey, String sessionVod
+ SharedSecret initialSharedSecret, KeyPair myKeyPair, KeyPair myNextKeyPair, PublicKey theirNextPublicKey
 });
 
 
@@ -506,21 +551,105 @@ $Res call({
 
 }
 /// @nodoc
-class _$CryptoVodozemacCopyWithImpl<$Res>
-    implements $CryptoVodozemacCopyWith<$Res> {
-  _$CryptoVodozemacCopyWithImpl(this._self, this._then);
+class _$CryptoInitializedAsymmetricCopyWithImpl<$Res>
+    implements $CryptoInitializedAsymmetricCopyWith<$Res> {
+  _$CryptoInitializedAsymmetricCopyWithImpl(this._self, this._then);
 
-  final CryptoVodozemac _self;
-  final $Res Function(CryptoVodozemac) _then;
+  final CryptoInitializedAsymmetric _self;
+  final $Res Function(CryptoInitializedAsymmetric) _then;
 
 /// Create a copy of CryptoState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? theirIdentityKey = null,Object? myIdentityKey = null,Object? sessionVod = null,}) {
-  return _then(CryptoVodozemac(
-theirIdentityKey: null == theirIdentityKey ? _self.theirIdentityKey : theirIdentityKey // ignore: cast_nullable_to_non_nullable
-as String,myIdentityKey: null == myIdentityKey ? _self.myIdentityKey : myIdentityKey // ignore: cast_nullable_to_non_nullable
-as String,sessionVod: null == sessionVod ? _self.sessionVod : sessionVod // ignore: cast_nullable_to_non_nullable
-as String,
+@override @pragma('vm:prefer-inline') $Res call({Object? initialSharedSecret = null,Object? myKeyPair = null,Object? myNextKeyPair = null,Object? theirNextPublicKey = null,}) {
+  return _then(CryptoInitializedAsymmetric(
+initialSharedSecret: null == initialSharedSecret ? _self.initialSharedSecret : initialSharedSecret // ignore: cast_nullable_to_non_nullable
+as SharedSecret,myKeyPair: null == myKeyPair ? _self.myKeyPair : myKeyPair // ignore: cast_nullable_to_non_nullable
+as KeyPair,myNextKeyPair: null == myNextKeyPair ? _self.myNextKeyPair : myNextKeyPair // ignore: cast_nullable_to_non_nullable
+as KeyPair,theirNextPublicKey: null == theirNextPublicKey ? _self.theirNextPublicKey : theirNextPublicKey // ignore: cast_nullable_to_non_nullable
+as PublicKey,
+  ));
+}
+
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class CryptoEstablishedAsymmetric implements CryptoState {
+  const CryptoEstablishedAsymmetric({required this.myKeyPair, required this.myNextKeyPair, required this.theirPublicKey, required this.theirNextPublicKey, final  String? $type}): $type = $type ?? 'establishedAsymmetric';
+  factory CryptoEstablishedAsymmetric.fromJson(Map<String, dynamic> json) => _$CryptoEstablishedAsymmetricFromJson(json);
+
+/// My key pair, of which they used the public key successfully
+ final  KeyPair myKeyPair;
+/// My key pair for the next rotation
+@override final  KeyPair myNextKeyPair;
+/// Their public key I used successfully
+ final  PublicKey theirPublicKey;
+/// Their public key for the next rotation
+ final  PublicKey theirNextPublicKey;
+
+@JsonKey(name: 'runtimeType')
+final String $type;
+
+
+/// Create a copy of CryptoState
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$CryptoEstablishedAsymmetricCopyWith<CryptoEstablishedAsymmetric> get copyWith => _$CryptoEstablishedAsymmetricCopyWithImpl<CryptoEstablishedAsymmetric>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$CryptoEstablishedAsymmetricToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CryptoEstablishedAsymmetric&&(identical(other.myKeyPair, myKeyPair) || other.myKeyPair == myKeyPair)&&(identical(other.myNextKeyPair, myNextKeyPair) || other.myNextKeyPair == myNextKeyPair)&&(identical(other.theirPublicKey, theirPublicKey) || other.theirPublicKey == theirPublicKey)&&(identical(other.theirNextPublicKey, theirNextPublicKey) || other.theirNextPublicKey == theirNextPublicKey));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,myKeyPair,myNextKeyPair,theirPublicKey,theirNextPublicKey);
+
+@override
+String toString() {
+  return 'CryptoState.establishedAsymmetric(myKeyPair: $myKeyPair, myNextKeyPair: $myNextKeyPair, theirPublicKey: $theirPublicKey, theirNextPublicKey: $theirNextPublicKey)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $CryptoEstablishedAsymmetricCopyWith<$Res> implements $CryptoStateCopyWith<$Res> {
+  factory $CryptoEstablishedAsymmetricCopyWith(CryptoEstablishedAsymmetric value, $Res Function(CryptoEstablishedAsymmetric) _then) = _$CryptoEstablishedAsymmetricCopyWithImpl;
+@override @useResult
+$Res call({
+ KeyPair myKeyPair, KeyPair myNextKeyPair, PublicKey theirPublicKey, PublicKey theirNextPublicKey
+});
+
+
+
+
+}
+/// @nodoc
+class _$CryptoEstablishedAsymmetricCopyWithImpl<$Res>
+    implements $CryptoEstablishedAsymmetricCopyWith<$Res> {
+  _$CryptoEstablishedAsymmetricCopyWithImpl(this._self, this._then);
+
+  final CryptoEstablishedAsymmetric _self;
+  final $Res Function(CryptoEstablishedAsymmetric) _then;
+
+/// Create a copy of CryptoState
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? myKeyPair = null,Object? myNextKeyPair = null,Object? theirPublicKey = null,Object? theirNextPublicKey = null,}) {
+  return _then(CryptoEstablishedAsymmetric(
+myKeyPair: null == myKeyPair ? _self.myKeyPair : myKeyPair // ignore: cast_nullable_to_non_nullable
+as KeyPair,myNextKeyPair: null == myNextKeyPair ? _self.myNextKeyPair : myNextKeyPair // ignore: cast_nullable_to_non_nullable
+as KeyPair,theirPublicKey: null == theirPublicKey ? _self.theirPublicKey : theirPublicKey // ignore: cast_nullable_to_non_nullable
+as PublicKey,theirNextPublicKey: null == theirNextPublicKey ? _self.theirNextPublicKey : theirNextPublicKey // ignore: cast_nullable_to_non_nullable
+as PublicKey,
   ));
 }
 

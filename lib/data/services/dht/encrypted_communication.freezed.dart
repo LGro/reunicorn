@@ -13,53 +13,52 @@ part of 'encrypted_communication.dart';
 T _$identity<T>(T value) => value;
 
 /// @nodoc
-mixin _$MessageWithEncryptionMetaData implements DiagnosticableTreeMixin {
+mixin _$EncryptionMetaData implements DiagnosticableTreeMixin {
 
 /// DHT record key for recipient to share back
  RecordKey? get shareBackDHTKey;/// DHT record writer for recipient to share back
- KeyPair? get shareBackDHTWriter;/// DHT record writer of sender to support deniability of shared info
- KeyPair? get deniabilitySharingWriter;/// Base64 encoded vodozemac curve25519 one-time-key
- String? get oneTimeKey;/// JSON message
- Map<String, dynamic>? get message;
-/// Create a copy of MessageWithEncryptionMetaData
+ KeyPair? get shareBackDHTWriter;/// The next author public key for the recipient to use when encrypting
+/// their shared back information and to try when decrypting the next update
+ PublicKey? get shareBackPubKey; bool get ackHandshakeComplete;
+/// Create a copy of EncryptionMetaData
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$MessageWithEncryptionMetaDataCopyWith<MessageWithEncryptionMetaData> get copyWith => _$MessageWithEncryptionMetaDataCopyWithImpl<MessageWithEncryptionMetaData>(this as MessageWithEncryptionMetaData, _$identity);
+$EncryptionMetaDataCopyWith<EncryptionMetaData> get copyWith => _$EncryptionMetaDataCopyWithImpl<EncryptionMetaData>(this as EncryptionMetaData, _$identity);
 
-  /// Serializes this MessageWithEncryptionMetaData to a JSON map.
+  /// Serializes this EncryptionMetaData to a JSON map.
   Map<String, dynamic> toJson();
 
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
-    ..add(DiagnosticsProperty('type', 'MessageWithEncryptionMetaData'))
-    ..add(DiagnosticsProperty('shareBackDHTKey', shareBackDHTKey))..add(DiagnosticsProperty('shareBackDHTWriter', shareBackDHTWriter))..add(DiagnosticsProperty('deniabilitySharingWriter', deniabilitySharingWriter))..add(DiagnosticsProperty('oneTimeKey', oneTimeKey))..add(DiagnosticsProperty('message', message));
+    ..add(DiagnosticsProperty('type', 'EncryptionMetaData'))
+    ..add(DiagnosticsProperty('shareBackDHTKey', shareBackDHTKey))..add(DiagnosticsProperty('shareBackDHTWriter', shareBackDHTWriter))..add(DiagnosticsProperty('shareBackPubKey', shareBackPubKey))..add(DiagnosticsProperty('ackHandshakeComplete', ackHandshakeComplete));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageWithEncryptionMetaData&&(identical(other.shareBackDHTKey, shareBackDHTKey) || other.shareBackDHTKey == shareBackDHTKey)&&(identical(other.shareBackDHTWriter, shareBackDHTWriter) || other.shareBackDHTWriter == shareBackDHTWriter)&&(identical(other.deniabilitySharingWriter, deniabilitySharingWriter) || other.deniabilitySharingWriter == deniabilitySharingWriter)&&(identical(other.oneTimeKey, oneTimeKey) || other.oneTimeKey == oneTimeKey)&&const DeepCollectionEquality().equals(other.message, message));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EncryptionMetaData&&(identical(other.shareBackDHTKey, shareBackDHTKey) || other.shareBackDHTKey == shareBackDHTKey)&&(identical(other.shareBackDHTWriter, shareBackDHTWriter) || other.shareBackDHTWriter == shareBackDHTWriter)&&(identical(other.shareBackPubKey, shareBackPubKey) || other.shareBackPubKey == shareBackPubKey)&&(identical(other.ackHandshakeComplete, ackHandshakeComplete) || other.ackHandshakeComplete == ackHandshakeComplete));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,shareBackDHTKey,shareBackDHTWriter,deniabilitySharingWriter,oneTimeKey,const DeepCollectionEquality().hash(message));
+int get hashCode => Object.hash(runtimeType,shareBackDHTKey,shareBackDHTWriter,shareBackPubKey,ackHandshakeComplete);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'MessageWithEncryptionMetaData(shareBackDHTKey: $shareBackDHTKey, shareBackDHTWriter: $shareBackDHTWriter, deniabilitySharingWriter: $deniabilitySharingWriter, oneTimeKey: $oneTimeKey, message: $message)';
+  return 'EncryptionMetaData(shareBackDHTKey: $shareBackDHTKey, shareBackDHTWriter: $shareBackDHTWriter, shareBackPubKey: $shareBackPubKey, ackHandshakeComplete: $ackHandshakeComplete)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $MessageWithEncryptionMetaDataCopyWith<$Res>  {
-  factory $MessageWithEncryptionMetaDataCopyWith(MessageWithEncryptionMetaData value, $Res Function(MessageWithEncryptionMetaData) _then) = _$MessageWithEncryptionMetaDataCopyWithImpl;
+abstract mixin class $EncryptionMetaDataCopyWith<$Res>  {
+  factory $EncryptionMetaDataCopyWith(EncryptionMetaData value, $Res Function(EncryptionMetaData) _then) = _$EncryptionMetaDataCopyWithImpl;
 @useResult
 $Res call({
- RecordKey? shareBackDHTKey, KeyPair? shareBackDHTWriter, KeyPair? deniabilitySharingWriter, String? oneTimeKey, Map<String, dynamic>? message
+ RecordKey? shareBackDHTKey, KeyPair? shareBackDHTWriter, PublicKey? shareBackPubKey, bool ackHandshakeComplete
 });
 
 
@@ -67,31 +66,30 @@ $Res call({
 
 }
 /// @nodoc
-class _$MessageWithEncryptionMetaDataCopyWithImpl<$Res>
-    implements $MessageWithEncryptionMetaDataCopyWith<$Res> {
-  _$MessageWithEncryptionMetaDataCopyWithImpl(this._self, this._then);
+class _$EncryptionMetaDataCopyWithImpl<$Res>
+    implements $EncryptionMetaDataCopyWith<$Res> {
+  _$EncryptionMetaDataCopyWithImpl(this._self, this._then);
 
-  final MessageWithEncryptionMetaData _self;
-  final $Res Function(MessageWithEncryptionMetaData) _then;
+  final EncryptionMetaData _self;
+  final $Res Function(EncryptionMetaData) _then;
 
-/// Create a copy of MessageWithEncryptionMetaData
+/// Create a copy of EncryptionMetaData
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? shareBackDHTKey = freezed,Object? shareBackDHTWriter = freezed,Object? deniabilitySharingWriter = freezed,Object? oneTimeKey = freezed,Object? message = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? shareBackDHTKey = freezed,Object? shareBackDHTWriter = freezed,Object? shareBackPubKey = freezed,Object? ackHandshakeComplete = null,}) {
   return _then(_self.copyWith(
 shareBackDHTKey: freezed == shareBackDHTKey ? _self.shareBackDHTKey : shareBackDHTKey // ignore: cast_nullable_to_non_nullable
 as RecordKey?,shareBackDHTWriter: freezed == shareBackDHTWriter ? _self.shareBackDHTWriter : shareBackDHTWriter // ignore: cast_nullable_to_non_nullable
-as KeyPair?,deniabilitySharingWriter: freezed == deniabilitySharingWriter ? _self.deniabilitySharingWriter : deniabilitySharingWriter // ignore: cast_nullable_to_non_nullable
-as KeyPair?,oneTimeKey: freezed == oneTimeKey ? _self.oneTimeKey : oneTimeKey // ignore: cast_nullable_to_non_nullable
-as String?,message: freezed == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>?,
+as KeyPair?,shareBackPubKey: freezed == shareBackPubKey ? _self.shareBackPubKey : shareBackPubKey // ignore: cast_nullable_to_non_nullable
+as PublicKey?,ackHandshakeComplete: null == ackHandshakeComplete ? _self.ackHandshakeComplete : ackHandshakeComplete // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
 }
 
 
-/// Adds pattern-matching-related methods to [MessageWithEncryptionMetaData].
-extension MessageWithEncryptionMetaDataPatterns on MessageWithEncryptionMetaData {
+/// Adds pattern-matching-related methods to [EncryptionMetaData].
+extension EncryptionMetaDataPatterns on EncryptionMetaData {
 /// A variant of `map` that fallback to returning `orElse`.
 ///
 /// It is equivalent to doing:
@@ -104,10 +102,10 @@ extension MessageWithEncryptionMetaDataPatterns on MessageWithEncryptionMetaData
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _MessageWithEncryptionMetaData value)?  $default,{required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _EncryptionMetaData value)?  $default,{required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case _MessageWithEncryptionMetaData() when $default != null:
+case _EncryptionMetaData() when $default != null:
 return $default(_that);case _:
   return orElse();
 
@@ -126,10 +124,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _MessageWithEncryptionMetaData value)  $default,){
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _EncryptionMetaData value)  $default,){
 final _that = this;
 switch (_that) {
-case _MessageWithEncryptionMetaData():
+case _EncryptionMetaData():
 return $default(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
@@ -144,10 +142,10 @@ return $default(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _MessageWithEncryptionMetaData value)?  $default,){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _EncryptionMetaData value)?  $default,){
 final _that = this;
 switch (_that) {
-case _MessageWithEncryptionMetaData() when $default != null:
+case _EncryptionMetaData() when $default != null:
 return $default(_that);case _:
   return null;
 
@@ -165,10 +163,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RecordKey? shareBackDHTKey,  KeyPair? shareBackDHTWriter,  KeyPair? deniabilitySharingWriter,  String? oneTimeKey,  Map<String, dynamic>? message)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RecordKey? shareBackDHTKey,  KeyPair? shareBackDHTWriter,  PublicKey? shareBackPubKey,  bool ackHandshakeComplete)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case _MessageWithEncryptionMetaData() when $default != null:
-return $default(_that.shareBackDHTKey,_that.shareBackDHTWriter,_that.deniabilitySharingWriter,_that.oneTimeKey,_that.message);case _:
+case _EncryptionMetaData() when $default != null:
+return $default(_that.shareBackDHTKey,_that.shareBackDHTWriter,_that.shareBackPubKey,_that.ackHandshakeComplete);case _:
   return orElse();
 
 }
@@ -186,10 +184,10 @@ return $default(_that.shareBackDHTKey,_that.shareBackDHTWriter,_that.deniability
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RecordKey? shareBackDHTKey,  KeyPair? shareBackDHTWriter,  KeyPair? deniabilitySharingWriter,  String? oneTimeKey,  Map<String, dynamic>? message)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RecordKey? shareBackDHTKey,  KeyPair? shareBackDHTWriter,  PublicKey? shareBackPubKey,  bool ackHandshakeComplete)  $default,) {final _that = this;
 switch (_that) {
-case _MessageWithEncryptionMetaData():
-return $default(_that.shareBackDHTKey,_that.shareBackDHTWriter,_that.deniabilitySharingWriter,_that.oneTimeKey,_that.message);}
+case _EncryptionMetaData():
+return $default(_that.shareBackDHTKey,_that.shareBackDHTWriter,_that.shareBackPubKey,_that.ackHandshakeComplete);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -203,10 +201,10 @@ return $default(_that.shareBackDHTKey,_that.shareBackDHTWriter,_that.deniability
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RecordKey? shareBackDHTKey,  KeyPair? shareBackDHTWriter,  KeyPair? deniabilitySharingWriter,  String? oneTimeKey,  Map<String, dynamic>? message)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RecordKey? shareBackDHTKey,  KeyPair? shareBackDHTWriter,  PublicKey? shareBackPubKey,  bool ackHandshakeComplete)?  $default,) {final _that = this;
 switch (_that) {
-case _MessageWithEncryptionMetaData() when $default != null:
-return $default(_that.shareBackDHTKey,_that.shareBackDHTWriter,_that.deniabilitySharingWriter,_that.oneTimeKey,_that.message);case _:
+case _EncryptionMetaData() when $default != null:
+return $default(_that.shareBackDHTKey,_that.shareBackDHTWriter,_that.shareBackPubKey,_that.ackHandshakeComplete);case _:
   return null;
 
 }
@@ -217,70 +215,59 @@ return $default(_that.shareBackDHTKey,_that.shareBackDHTWriter,_that.deniability
 /// @nodoc
 @JsonSerializable()
 
-class _MessageWithEncryptionMetaData extends MessageWithEncryptionMetaData with DiagnosticableTreeMixin {
-  const _MessageWithEncryptionMetaData({this.shareBackDHTKey, this.shareBackDHTWriter, this.deniabilitySharingWriter, this.oneTimeKey, final  Map<String, dynamic>? message}): _message = message,super._();
-  factory _MessageWithEncryptionMetaData.fromJson(Map<String, dynamic> json) => _$MessageWithEncryptionMetaDataFromJson(json);
+class _EncryptionMetaData extends EncryptionMetaData with DiagnosticableTreeMixin {
+  const _EncryptionMetaData({this.shareBackDHTKey, this.shareBackDHTWriter, this.shareBackPubKey, this.ackHandshakeComplete = false}): super._();
+  factory _EncryptionMetaData.fromJson(Map<String, dynamic> json) => _$EncryptionMetaDataFromJson(json);
 
 /// DHT record key for recipient to share back
 @override final  RecordKey? shareBackDHTKey;
 /// DHT record writer for recipient to share back
 @override final  KeyPair? shareBackDHTWriter;
-/// DHT record writer of sender to support deniability of shared info
-@override final  KeyPair? deniabilitySharingWriter;
-/// Base64 encoded vodozemac curve25519 one-time-key
-@override final  String? oneTimeKey;
-/// JSON message
- final  Map<String, dynamic>? _message;
-/// JSON message
-@override Map<String, dynamic>? get message {
-  final value = _message;
-  if (value == null) return null;
-  if (_message is EqualUnmodifiableMapView) return _message;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableMapView(value);
-}
+/// The next author public key for the recipient to use when encrypting
+/// their shared back information and to try when decrypting the next update
+@override final  PublicKey? shareBackPubKey;
+@override@JsonKey() final  bool ackHandshakeComplete;
 
-
-/// Create a copy of MessageWithEncryptionMetaData
+/// Create a copy of EncryptionMetaData
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-_$MessageWithEncryptionMetaDataCopyWith<_MessageWithEncryptionMetaData> get copyWith => __$MessageWithEncryptionMetaDataCopyWithImpl<_MessageWithEncryptionMetaData>(this, _$identity);
+_$EncryptionMetaDataCopyWith<_EncryptionMetaData> get copyWith => __$EncryptionMetaDataCopyWithImpl<_EncryptionMetaData>(this, _$identity);
 
 @override
 Map<String, dynamic> toJson() {
-  return _$MessageWithEncryptionMetaDataToJson(this, );
+  return _$EncryptionMetaDataToJson(this, );
 }
 @override
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
-    ..add(DiagnosticsProperty('type', 'MessageWithEncryptionMetaData'))
-    ..add(DiagnosticsProperty('shareBackDHTKey', shareBackDHTKey))..add(DiagnosticsProperty('shareBackDHTWriter', shareBackDHTWriter))..add(DiagnosticsProperty('deniabilitySharingWriter', deniabilitySharingWriter))..add(DiagnosticsProperty('oneTimeKey', oneTimeKey))..add(DiagnosticsProperty('message', message));
+    ..add(DiagnosticsProperty('type', 'EncryptionMetaData'))
+    ..add(DiagnosticsProperty('shareBackDHTKey', shareBackDHTKey))..add(DiagnosticsProperty('shareBackDHTWriter', shareBackDHTWriter))..add(DiagnosticsProperty('shareBackPubKey', shareBackPubKey))..add(DiagnosticsProperty('ackHandshakeComplete', ackHandshakeComplete));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageWithEncryptionMetaData&&(identical(other.shareBackDHTKey, shareBackDHTKey) || other.shareBackDHTKey == shareBackDHTKey)&&(identical(other.shareBackDHTWriter, shareBackDHTWriter) || other.shareBackDHTWriter == shareBackDHTWriter)&&(identical(other.deniabilitySharingWriter, deniabilitySharingWriter) || other.deniabilitySharingWriter == deniabilitySharingWriter)&&(identical(other.oneTimeKey, oneTimeKey) || other.oneTimeKey == oneTimeKey)&&const DeepCollectionEquality().equals(other._message, _message));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EncryptionMetaData&&(identical(other.shareBackDHTKey, shareBackDHTKey) || other.shareBackDHTKey == shareBackDHTKey)&&(identical(other.shareBackDHTWriter, shareBackDHTWriter) || other.shareBackDHTWriter == shareBackDHTWriter)&&(identical(other.shareBackPubKey, shareBackPubKey) || other.shareBackPubKey == shareBackPubKey)&&(identical(other.ackHandshakeComplete, ackHandshakeComplete) || other.ackHandshakeComplete == ackHandshakeComplete));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,shareBackDHTKey,shareBackDHTWriter,deniabilitySharingWriter,oneTimeKey,const DeepCollectionEquality().hash(_message));
+int get hashCode => Object.hash(runtimeType,shareBackDHTKey,shareBackDHTWriter,shareBackPubKey,ackHandshakeComplete);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'MessageWithEncryptionMetaData(shareBackDHTKey: $shareBackDHTKey, shareBackDHTWriter: $shareBackDHTWriter, deniabilitySharingWriter: $deniabilitySharingWriter, oneTimeKey: $oneTimeKey, message: $message)';
+  return 'EncryptionMetaData(shareBackDHTKey: $shareBackDHTKey, shareBackDHTWriter: $shareBackDHTWriter, shareBackPubKey: $shareBackPubKey, ackHandshakeComplete: $ackHandshakeComplete)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class _$MessageWithEncryptionMetaDataCopyWith<$Res> implements $MessageWithEncryptionMetaDataCopyWith<$Res> {
-  factory _$MessageWithEncryptionMetaDataCopyWith(_MessageWithEncryptionMetaData value, $Res Function(_MessageWithEncryptionMetaData) _then) = __$MessageWithEncryptionMetaDataCopyWithImpl;
+abstract mixin class _$EncryptionMetaDataCopyWith<$Res> implements $EncryptionMetaDataCopyWith<$Res> {
+  factory _$EncryptionMetaDataCopyWith(_EncryptionMetaData value, $Res Function(_EncryptionMetaData) _then) = __$EncryptionMetaDataCopyWithImpl;
 @override @useResult
 $Res call({
- RecordKey? shareBackDHTKey, KeyPair? shareBackDHTWriter, KeyPair? deniabilitySharingWriter, String? oneTimeKey, Map<String, dynamic>? message
+ RecordKey? shareBackDHTKey, KeyPair? shareBackDHTWriter, PublicKey? shareBackPubKey, bool ackHandshakeComplete
 });
 
 
@@ -288,23 +275,22 @@ $Res call({
 
 }
 /// @nodoc
-class __$MessageWithEncryptionMetaDataCopyWithImpl<$Res>
-    implements _$MessageWithEncryptionMetaDataCopyWith<$Res> {
-  __$MessageWithEncryptionMetaDataCopyWithImpl(this._self, this._then);
+class __$EncryptionMetaDataCopyWithImpl<$Res>
+    implements _$EncryptionMetaDataCopyWith<$Res> {
+  __$EncryptionMetaDataCopyWithImpl(this._self, this._then);
 
-  final _MessageWithEncryptionMetaData _self;
-  final $Res Function(_MessageWithEncryptionMetaData) _then;
+  final _EncryptionMetaData _self;
+  final $Res Function(_EncryptionMetaData) _then;
 
-/// Create a copy of MessageWithEncryptionMetaData
+/// Create a copy of EncryptionMetaData
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? shareBackDHTKey = freezed,Object? shareBackDHTWriter = freezed,Object? deniabilitySharingWriter = freezed,Object? oneTimeKey = freezed,Object? message = freezed,}) {
-  return _then(_MessageWithEncryptionMetaData(
+@override @pragma('vm:prefer-inline') $Res call({Object? shareBackDHTKey = freezed,Object? shareBackDHTWriter = freezed,Object? shareBackPubKey = freezed,Object? ackHandshakeComplete = null,}) {
+  return _then(_EncryptionMetaData(
 shareBackDHTKey: freezed == shareBackDHTKey ? _self.shareBackDHTKey : shareBackDHTKey // ignore: cast_nullable_to_non_nullable
 as RecordKey?,shareBackDHTWriter: freezed == shareBackDHTWriter ? _self.shareBackDHTWriter : shareBackDHTWriter // ignore: cast_nullable_to_non_nullable
-as KeyPair?,deniabilitySharingWriter: freezed == deniabilitySharingWriter ? _self.deniabilitySharingWriter : deniabilitySharingWriter // ignore: cast_nullable_to_non_nullable
-as KeyPair?,oneTimeKey: freezed == oneTimeKey ? _self.oneTimeKey : oneTimeKey // ignore: cast_nullable_to_non_nullable
-as String?,message: freezed == message ? _self._message : message // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>?,
+as KeyPair?,shareBackPubKey: freezed == shareBackPubKey ? _self.shareBackPubKey : shareBackPubKey // ignore: cast_nullable_to_non_nullable
+as PublicKey?,ackHandshakeComplete: null == ackHandshakeComplete ? _self.ackHandshakeComplete : ackHandshakeComplete // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

@@ -251,11 +251,11 @@ bool showSharingInitializing(DhtConnectionState? connectionState) =>
     connectionState?.recordKeyMeSharingOrNull == null;
 
 bool showSharingOffer(CoagContact contact) =>
-    contact.connectionCrypto.sharedSecretOrNull == null &&
+    contact.connectionCrypto.initialSharedSecretOrNull == null &&
     contact.details == null;
 
 bool showDirectSharing(CoagContact contact) =>
-    contact.connectionCrypto.sharedSecretOrNull != null &&
+    contact.connectionCrypto.initialSharedSecretOrNull != null &&
     contact.details == null;
 
 /// Returns introducer and introduction for pending introductions

@@ -2,13 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:veilid/veilid.dart';
-import 'package:vodozemac/vodozemac.dart' as vod;
 
 import '../../data/models/community.dart';
 import '../../data/models/contact_introduction.dart';
@@ -57,11 +55,9 @@ class IntroductionsCubit extends Cubit<IntroductionsState> {
         writerMeSharing: introduction.dhtWriterSharing,
         recordKeyThemSharing: introduction.dhtRecordKeyReceiving,
       ),
-      connectionCrypto: CryptoState.symmetric(
-        sharedSecret: introduction.sharedSecret,
-        accountVod: (vod.Account()..generateOneTimeKeys(1)).toPickleEncrypted(
-          Uint8List(32),
-        ),
+      connectionCrypto: CryptoState.initializedSymmetric(
+        initialSharedSecret: introduction.sharedSecret,
+        myNextKeyPair: await generateKeyPairBest(),
       ),
     );
 

@@ -264,7 +264,7 @@ Widget? contactSharingReceivingStatus(
   }
   // Me and them are sharing
   if (contact.details != null &&
-      (contact.connectionCrypto is CryptoVodozemac)) {
+      (contact.connectionCrypto is CryptoEstablishedAsymmetric)) {
     return const Icon(Icons.done_all);
   }
   // We're both sharing, but haven't received the ack

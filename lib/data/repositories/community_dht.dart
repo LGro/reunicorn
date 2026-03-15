@@ -11,7 +11,6 @@ import 'package:multiple_result/multiple_result.dart';
 import 'package:reunicorn/data/utils.dart';
 import 'package:uuid/uuid.dart';
 import 'package:veilid_support/veilid_support.dart';
-import 'package:vodozemac/vodozemac.dart' as vod;
 
 import '../models/community.dart';
 import '../models/models.dart';
@@ -140,16 +139,10 @@ Future<Map<String, MemberSharingOffer>> generateSharingOffers(
         m.theirPublicKey!,
         mySecretKey,
       );
-      final account = vod.Account.fromPickleEncrypted(
-        pickle: m.myVodozemacAccount,
-        pickleKey: Uint8List(32),
-      );
       return MapEntry(
         offerId,
         MemberSharingOffer(
           recordKey: m.recordKeyMeSharing,
-          oneTimeKey: account.oneTimeKeys.values.first.toBase64(),
-          identityKey: account.identityKeys.curve25519.toBase64(),
         ),
       );
     }),
@@ -467,8 +460,8 @@ class CommunityDhtRepository extends BaseDhtRepository {
         );
 
         debugPrint(
-          'member sharing record identity key '
-          '${memberSharingOffer?.identityKey.toString().substring(0, 12)} for '
+          'member sharing record key '
+          '${memberSharingOffer?.recordKey.toString().substring(0, 12)} for '
           '${memberRecord.toString().substring(0, 12)}',
         );
 
@@ -489,8 +482,6 @@ class CommunityDhtRepository extends BaseDhtRepository {
       communityRecordKey: community.recordKey,
       infoRecordKey: memberInfo.recordKey,
       name: memberInfo.name,
-      myVodozemacAccount: (vod.Account()..generateOneTimeKeys(1))
-          .toPickleEncrypted(Uint8List(32)),
     );
 
     // Update member with organizer provided comment
@@ -513,9 +504,6 @@ class CommunityDhtRepository extends BaseDhtRepository {
       theirPublicKey: memberPublicKey ?? member.theirPublicKey,
       recordKeyThemSharing:
           memberSharingOffer?.recordKey ?? member.recordKeyThemSharing,
-      theirIdentityKey:
-          memberSharingOffer?.identityKey ?? member.theirIdentityKey,
-      theirOneTimeKey: memberSharingOffer?.oneTimeKey ?? member.theirOneTimeKey,
     );
   }
 
@@ -526,10 +514,6 @@ class CommunityDhtRepository extends BaseDhtRepository {
   );
 
   Future<CoagContact?> addContactForMember(Member member) async {
-    final account = vod.Account.fromPickleEncrypted(
-      pickle: member.myVodozemacAccount,
-      pickleKey: Uint8List(32),
-    );
     final origin = CommunityOrigin(
       communityRecordKey: member.communityRecordKey,
       memberInfoRecordKey: member.infoRecordKey,
@@ -538,25 +522,29 @@ class CommunityDhtRepository extends BaseDhtRepository {
     // Check if they have already started sharing with us
     if (member.recordKeyThemSharing != null) {
       debugPrint(
-        'Attempting to read (inbound session) for community member '
+        'Attempting to read for community member '
         '${member.infoRecordKey.toString().substring(0, 12)}',
       );
-      // TODO: Could we also just use any share back dht record they sent us?
       var dhtConnection = DhtConnectionState.invited(
         recordKeyThemSharing: member.recordKeyThemSharing!,
       );
-      var connectionCrypto = CryptoState.symmetric(
-        accountVod: member.myVodozemacAccount,
-        // This is just a placeholder, since we expect readEncrypted to
-        // initialize an inbound session straight away
-        sharedSecret: await generateRandomSharedSecretBest(),
-      );
+      final myNextKeyPair = await generateKeyPairBest();
+      var connectionCrypto = (member.theirPublicKey != null)
+          ? CryptoState.establishedAsymmetric(
+              myKeyPair: myNextKeyPair,
+              myNextKeyPair: myNextKeyPair,
+              theirPublicKey: member.theirPublicKey!,
+              theirNextPublicKey: member.theirPublicKey!,
+            ) as CryptoState
+          : CryptoState.pendingAsymmetric(
+              myNextKeyPair: myNextKeyPair,
+            );
       final ContactSharingSchema? dhtContact;
       (dhtContact, dhtConnection, connectionCrypto) = await readEncrypted(
         _dhtStorage,
         dhtConnection,
         connectionCrypto,
-        ContactSharingSchema.fromJson,
+        ContactSharingSchema.fromBytes,
       );
       if (dhtContact != null) {
         final contact = CoagContact(
@@ -578,33 +566,25 @@ class CommunityDhtRepository extends BaseDhtRepository {
       }
     }
 
-    if (member.theirIdentityKey == null) {
-      debugPrint('${member.name} is missing vod identity key');
+    if (member.theirPublicKey == null) {
+      debugPrint('${member.name} is missing public key');
       return null;
     }
     debugPrint(
-      'Adding contact with outbound session for community member '
+      'Adding contact with DH asymmetric crypto for community member '
       '${member.infoRecordKey.toString().substring(0, 12)}',
     );
-    final session = account.createOutboundSession(
-      identityKey: account.identityKeys.curve25519,
-      oneTimeKey: account.oneTimeKeys.values.first,
-    );
     try {
-      final (recordKeyMeSharing, writerMeSharing) = await _dhtStorage.create();
-      final (recordKeyThemSharing, writerThemSharing) = await _dhtStorage
-          .create();
-      final dhtConnection = DhtConnectionState.initialized(
-        recordKeyMeSharing: recordKeyMeSharing,
-        writerMeSharing: writerMeSharing,
-        recordKeyThemSharing: recordKeyThemSharing,
-        writerThemSharing: writerThemSharing,
+      final myNextKeyPair = await generateKeyPairBest();
+      final connectionCrypto = CryptoState.establishedAsymmetric(
+        myKeyPair: myNextKeyPair,
+        myNextKeyPair: myNextKeyPair,
+        theirPublicKey: member.theirPublicKey!,
+        theirNextPublicKey: member.theirPublicKey!,
       );
-      final connectionCrypto = CryptoState.vodozemacInitial(
-        theirIdentityKey: member.theirIdentityKey!,
-        myIdentityKey: account.identityKeys.curve25519.toBase64(),
-        accountVod: member.myVodozemacAccount,
-        sessionVod: session.toPickleEncrypted(Uint8List(32)),
+      final dhtConnection = await initializeEncryptedDhtConnection(
+        _dhtStorage,
+        connectionCrypto,
       );
       final contact = CoagContact(
         coagContactId: Uuid().v4(),

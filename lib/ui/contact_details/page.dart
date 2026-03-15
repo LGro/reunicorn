@@ -484,10 +484,11 @@ class _ContactPageState extends State<ContactPage> {
             _paddedDivider(),
             Text(
               contact.connectionCrypto.map(
-                symmetric: (_) => 'symmetric',
-                symToVod: (_) => 'symToVod',
-                vodozemacInitial: (_) => 'vodozemacInitial',
-                vodozemac: (_) => 'vodozemac',
+                initializedSymmetric: (_) => 'initializedSymmetric',
+                establishedSymmetric: (_) => 'establishedSymmetric',
+                pendingAsymmetric: (_) => 'pendingAsymmetric',
+                initializedAsymmetric: (_) => 'initializedAsymmetric',
+                establishedAsymmetric: (_) => 'establishedAsymmetric',
               ),
             ),
             if (contact.profileSharingStatus.mostRecentAttempt != null &&
@@ -510,7 +511,7 @@ class _ContactPageState extends State<ContactPage> {
               'TheirDhtKey: ${_shorten(contact.dhtConnection?.recordKeyThemSharing.toString() ?? '')}...',
             ),
             Text(
-              'InitSec: ${_shorten(contact.connectionCrypto.sharedSecretOrNull.toString())}...',
+              'InitSec: ${_shorten(contact.connectionCrypto.initialSharedSecretOrNull.toString())}...',
             ),
             const SizedBox(height: 16),
           ],

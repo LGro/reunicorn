@@ -128,7 +128,7 @@ class _IntroduceContactsPageState extends State<IntroduceContactsPage> {
                   ),
                   // TODO: Move into validator instead
                   if (_contactA != null &&
-                      _contactA!.connectionCrypto is! CryptoVodozemac)
+                      _contactA!.connectionCrypto is! CryptoEstablishedAsymmetric)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Text(
@@ -200,7 +200,7 @@ class _IntroduceContactsPageState extends State<IntroduceContactsPage> {
                   ),
                   // TODO: Move into validator instead
                   if (_contactB != null &&
-                      _contactB!.connectionCrypto is! CryptoVodozemac)
+                      _contactB!.connectionCrypto is! CryptoEstablishedAsymmetric)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Text(

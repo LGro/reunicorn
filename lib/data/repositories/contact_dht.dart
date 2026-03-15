@@ -12,7 +12,6 @@ import 'package:pointycastle/pointycastle.dart' show Digest;
 import 'package:reunicorn/data/repositories/base_dht.dart';
 import 'package:uuid/uuid.dart';
 import 'package:veilid_support/veilid_support.dart';
-import 'package:vodozemac/vodozemac.dart' as vod;
 
 import '../../veilid_processor/models/processor_connection_state.dart';
 import '../../veilid_processor/repository/processor_repository.dart';
@@ -276,19 +275,18 @@ class NextContactPrep extends BaseDhtRepository {
     _isPreparing = true;
     try {
       final connectionCrypto =
-          CryptoState.symmetric(
-                sharedSecret: await generateRandomSharedSecretBest(),
-                accountVod: (vod.Account()..generateOneTimeKeys(1))
-                    .toPickleEncrypted(Uint8List(32)),
+          CryptoState.initializedSymmetric(
+                initialSharedSecret: await generateRandomSharedSecretBest(),
+                myNextKeyPair: await generateKeyPairBest(),
               )
-              as CryptoSymmetric;
-      final (dhtConnection, updatedConnectionCrypto) = await dht_comm
+              as CryptoInitializedSymmetric;
+      final dhtConnection = await dht_comm
           .initializeEncryptedDhtConnection(_dhtStorage, connectionCrypto);
       _nextContact = CoagContact(
         coagContactId: Uuid().v4(),
         name: '???',
         myIdentity: await generateKeyPairBest(),
-        connectionCrypto: updatedConnectionCrypto,
+        connectionCrypto: connectionCrypto,
         dhtConnection: dhtConnection,
       );
     } on VeilidAPIException {}
@@ -405,7 +403,7 @@ class ContactDhtRepository {
       }
 
       if (contact.dhtConnection == null) {
-        final (dhtConnection, updatedConnectionCrypto) = await dht_comm
+        final dhtConnection = await dht_comm
             .initializeEncryptedDhtConnection(
               _dhtStorage,
               contact.connectionCrypto,
@@ -414,7 +412,6 @@ class ContactDhtRepository {
           contactId,
           contact.copyWith(
             dhtConnection: dhtConnection,
-            connectionCrypto: updatedConnectionCrypto,
           ),
         );
       }
@@ -424,7 +421,7 @@ class ContactDhtRepository {
             _dhtStorage,
             contact.dhtConnection!,
             contact.connectionCrypto,
-            ContactSharingSchema.fromJson,
+            ContactSharingSchema.fromBytes,
           );
       await _watchContact(contact.coagContactId, dhtConnection);
       if (dhtContact != null) {
@@ -450,24 +447,12 @@ class ContactDhtRepository {
             'rcrn-dht-on-update | ${contact.coagContactId.substring(0, 5)} | '
             'share-changed',
           );
-          if ((contact.connectionCrypto is CryptoSymmetric &&
-                  updatedContact.connectionCrypto is CryptoSymToVod) ||
-              (contact.connectionCrypto is CryptoSymToVod &&
-                  updatedContact.connectionCrypto is CryptoVodozemac)) {
-            // If also the connection crypto evolved, make sure to continue
-            // forcing an update even if the shared profile did not change, to
-            // ensure we help the contact advance crypto evolution as fast as
-            // possible
-            contact = updatedContact;
-            onlyUpdatedOnProfileChange = false;
-          } else {
-            // Otherwise, save updated contact and return, knowing that will
-            // trigger this method again
-            await _contactStorage.set(contact.coagContactId, updatedContact);
-            // TODO(LGRo): Doing another read attempt until we don't receive
-            //             updates seems slow to get a write in
-            return;
-          }
+          await _contactStorage.set(contact.coagContactId, updatedContact);
+          // If we've had changes here, save and return; Set will trigger this
+          // updateContact callback again
+          // TODO(LGRo): Doing another read attempt until we don't receive
+          //             updates seems slow to get a write in
+          return;
         }
       }
 
@@ -505,7 +490,7 @@ class ContactDhtRepository {
       );
       try {
         // TODO: do we ever use the shared profile = null to empty the record?
-        final updatedConnectionCrypto = await dht_comm.writeEncrypted(
+        final isWriteSuccess = await dht_comm.writeEncrypted(
           _dhtStorage,
           updatedSharedProfile,
           contact.dhtConnection!,
@@ -515,17 +500,14 @@ class ContactDhtRepository {
         return _contactStorage.set(
           contact.coagContactId,
           contact.copyWith(
-            connectionCrypto: (updatedConnectionCrypto == null)
-                ? contact.connectionCrypto
-                : updatedConnectionCrypto,
             profileSharingStatus: contact.profileSharingStatus.copyWith(
               mostRecentAttempt: now,
-              sharedProfile: (updatedConnectionCrypto == null)
-                  ? contact.profileSharingStatus.sharedProfile
-                  : updatedSharedProfile,
-              mostRecentSuccess: (updatedConnectionCrypto == null)
-                  ? contact.profileSharingStatus.mostRecentSuccess
-                  : now,
+              sharedProfile: isWriteSuccess
+                  ? updatedSharedProfile
+                  : contact.profileSharingStatus.sharedProfile,
+              mostRecentSuccess: isWriteSuccess
+                  ? now
+                  : contact.profileSharingStatus.mostRecentSuccess,
             ),
           ),
         );
@@ -660,12 +642,11 @@ class ContactDhtRepository {
     }
 
     final connectionCrypto =
-        CryptoState.symmetric(
-              sharedSecret: await generateRandomSharedSecretBest(),
-              accountVod: (vod.Account()..generateOneTimeKeys(1))
-                  .toPickleEncrypted(Uint8List(32)),
+        CryptoState.initializedSymmetric(
+              initialSharedSecret: await generateRandomSharedSecretBest(),
+              myNextKeyPair: await generateKeyPairBest(),
             )
-            as CryptoSymmetric;
+            as CryptoInitializedSymmetric;
     final contact = CoagContact(
       coagContactId: Uuid().v4(),
       name: name,
