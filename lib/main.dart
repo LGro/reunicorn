@@ -25,6 +25,7 @@ import 'data/repositories/contact_system.dart';
 import 'data/repositories/notifications.dart';
 import 'data/services/dht/veilid_dht.dart';
 import 'data/utils.dart';
+import 'foreground_service.dart';
 import 'notification_service.dart';
 import 'tools/tools.dart';
 import 'ui/app.dart';
@@ -57,6 +58,12 @@ void main() async {
     if (!isWeb) {
       // TODO(LGro): Check what it takes to enable notifications for web
       await NotificationService().init();
+
+      // Start Android foreground service for private push-free notifications
+      final fgService = ForegroundService();
+      if (fgService.isSupported && await fgService.isEnabled()) {
+        await fgService.start();
+      }
     }
 
     final profileStorage = HiveStorage<ProfileInfo>(

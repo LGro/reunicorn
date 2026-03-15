@@ -388,19 +388,20 @@ class ContactDhtRepository {
   }
 
   /// Update shared profile for contact to DHT, fetch update from them and watch
-  Future<void> updateContact(String contactId) async {
+  /// Returns contact if updated, in case of failure or no change, returns null
+  Future<CoagContact?> updateContact(String contactId) async {
     debugPrint(
       'rcrn-dht-on-update | ${contactId.substring(0, 5)} | '
       'called',
     );
-    await _contactStorage.lock.synchronized(contactId, () async {
+    return _contactStorage.lock.synchronized(contactId, () async {
       debugPrint(
         'rcrn-dht-on-update | ${contactId.substring(0, 5)} | '
         'started-sync',
       );
       var contact = await _contactStorage.get(contactId);
       if (contact == null) {
-        return;
+        return null;
       }
 
       if (contact.dhtConnection == null) {
@@ -408,10 +409,9 @@ class ContactDhtRepository {
           _dhtStorage,
           contact.connectionCrypto,
         );
-        return _contactStorage.set(
-          contactId,
-          contact.copyWith(dhtConnection: dhtConnection),
-        );
+        final updatedContact = contact.copyWith(dhtConnection: dhtConnection);
+        await _contactStorage.set(contactId, updatedContact);
+        return updatedContact;
       }
 
       final (dhtContact, dhtConnection, connectionCrypto) = await dht_comm
@@ -450,13 +450,13 @@ class ContactDhtRepository {
           // updateContact callback again
           // TODO(LGRo): Doing another read attempt until we don't receive
           //             updates seems slow to get a write in
-          return;
+          return updatedContact;
         }
       }
 
       final profileInfo = await getProfileInfo(_profileStorage);
       if (profileInfo == null) {
-        return;
+        return null;
       }
       final contacts = await _contactStorage.getAll();
       contacts[contact.coagContactId] = contact;
@@ -477,7 +477,7 @@ class ContactDhtRepository {
           'rcrn-dht-on-update | ${contact.coagContactId.substring(0, 5)} | '
           'skip-no-change',
         );
-        return;
+        return null;
       }
 
       // Update information shared with them second
@@ -494,20 +494,19 @@ class ContactDhtRepository {
           contact.connectionCrypto,
         );
         final now = DateTime.now();
-        return _contactStorage.set(
-          contact.coagContactId,
-          contact.copyWith(
-            profileSharingStatus: contact.profileSharingStatus.copyWith(
-              mostRecentAttempt: now,
-              sharedProfile: isWriteSuccess
-                  ? updatedSharedProfile
-                  : contact.profileSharingStatus.sharedProfile,
-              mostRecentSuccess: isWriteSuccess
-                  ? now
-                  : contact.profileSharingStatus.mostRecentSuccess,
-            ),
+        final updatedContact = contact.copyWith(
+          profileSharingStatus: contact.profileSharingStatus.copyWith(
+            mostRecentAttempt: now,
+            sharedProfile: isWriteSuccess
+                ? updatedSharedProfile
+                : contact.profileSharingStatus.sharedProfile,
+            mostRecentSuccess: isWriteSuccess
+                ? now
+                : contact.profileSharingStatus.mostRecentSuccess,
           ),
         );
+        await _contactStorage.set(contact.coagContactId, updatedContact);
+        return updatedContact;
       } on DHTExceptionNotAvailable {
         // TODO: When do we try next time? Can this cause outdated shared info?
         debugPrint(
@@ -529,6 +528,7 @@ class ContactDhtRepository {
           ),
         ),
       );
+      return null;
     });
   }
 
@@ -597,7 +597,9 @@ class ContactDhtRepository {
     }
   }
 
-  Future<bool> updateAndWatchReceivingDHT({bool shuffle = false}) async {
+  Future<Iterable<CoagContact>?> updateAndWatchReceivingDHT({
+    bool shuffle = false,
+  }) async {
     if (!ProcessorRepository
         .instance
         .processorConnectionState
@@ -605,7 +607,7 @@ class ContactDhtRepository {
         .publicInternetReady) {
       veilidNetworkAvailable = false;
       logDebug('Veilid attachment not public internet ready');
-      return false;
+      return null;
     }
     veilidNetworkAvailable = true;
     final contacts = await _contactStorage.getAll().then(
@@ -616,7 +618,7 @@ class ContactDhtRepository {
     }
 
     // Check for incoming updates
-    await Future.wait(
+    final updatedContacts = await Future.wait(
       contacts
           .where(
             (c) =>
@@ -626,7 +628,8 @@ class ContactDhtRepository {
           .map((c) => updateContact(c.coagContactId)),
     );
 
-    return true;
+    // Return only the contacts that changed
+    return updatedContacts.whereType<CoagContact>();
   }
 
   /// Creating contact from just a name or from a profile link, i.e. with name

@@ -2,10 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:background_fetch/background_fetch.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,7 +12,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loggy/loggy.dart';
 import 'package:provider/provider.dart';
-import 'package:reunicorn/data/services/storage/hive.dart';
 
 import '../data/models/circle.dart';
 import '../data/models/coag_contact.dart';
@@ -26,15 +23,12 @@ import '../data/models/setting.dart';
 import '../data/repositories/backup_dht.dart';
 import '../data/repositories/contact_dht.dart';
 import '../data/repositories/contact_system.dart';
-import '../data/repositories/contact_update.dart';
 import '../data/repositories/notifications.dart';
 import '../data/repositories/settings.dart';
-import '../data/services/dht/veilid_dht.dart';
 import '../data/services/storage/base.dart';
 import '../l10n/app_localizations.dart';
-import '../notification_service.dart';
+import '../background_change_checker.dart';
 import '../tick.dart';
-import '../tools/tools.dart';
 import '../veilid_init.dart';
 import '../veilid_processor/views/developer.dart';
 import 'account_restore/page.dart';
@@ -373,134 +367,15 @@ class _AppState extends State<App> with WidgetsBindingObserver {
 
     unawaited(_initAPNs());
 
-    if (isiOS) {
-      // Do not configure background fetch for iOS to test if that helps with
-      // Veilid ending up uninitialized
-      return;
-    }
-
-    // Configure background fetch
-    // unawaited(
-    //   BackgroundFetch.configure(
-    //         BackgroundFetchConfig(
-    //           minimumFetchInterval: 15,
-    //           stopOnTerminate: false,
-    //           enableHeadless: true,
-    //           requiredNetworkType: NetworkType.ANY,
-    //           requiresBatteryNotLow: true,
-    //         ),
-    //         (String taskId) async {
-    //           // This is the callback function that will be called periodically
-    //           logDebug('[BackgroundFetch] Event received: $taskId');
-
-    //           final log = <String>[];
-    //           final startTime = DateTime.now();
-    //           log.add('Start update to and from DHT at $startTime');
-
-    //           final contactStorage = HiveStorage<CoagContact>(
-    //             'contact',
-    //             (v) => jsonEncode(v.toJson()),
-    //             contactMigrateFromJson,
-    //           );
-    //           // ignore: unused_local_variable we just need init and listen
-    //           final contactRepo = ContactDhtRepository(
-    //             contactStorage,
-    //             HiveStorage<Circle>(
-    //               'circle',
-    //               (v) => jsonEncode(v.toJson()),
-    //               circleMigrateFromJson,
-    //             ),
-    //             HiveStorage<ProfileInfo>(
-    //               'profile',
-    //               (v) => jsonEncode(v.toJson()),
-    //               profileMigrateFromJson,
-    //             ),
-    //             HiveStorage<Setting>(
-    //               'setting',
-    //               (v) => jsonEncode(v.toJson()),
-    //               (v) async => Setting(jsonDecode(v) as Map<String, dynamic>),
-    //             ),
-    //             VeilidDht(),
-    //           );
-    //           // ignore: unused_local_variable we just need init and listen
-    //           final updateRepo = UpdateRepository(
-    //             contactStorage,
-    //             HiveStorage<ContactUpdate>(
-    //               'update',
-    //               (v) => jsonEncode(v.toJson()),
-    //               contactUpdateMigrateFromJson,
-    //             ),
-    //             notificationCallback: NotificationService().showNotification,
-    //           );
-
-    //           // Await initialization with potential initial DHT updates unless
-    //           // it exceeds 25s to respect the 30s background task limit on iOS
-    //           await Future<void>.delayed(const Duration(seconds: 25));
-
-    //           log.add('Initialization finished at at ${DateTime.now()}');
-
-    //           await Future<void>.delayed(
-    //             const Duration(seconds: 25) -
-    //                 DateTime.now().difference(startTime),
-    //           );
-
-    //           log.add(
-    //             'Returning successfully after waiting until ${DateTime.now()}',
-    //           );
-
-    //           logDebug('[BackgroundFetch] $log');
-
-    //           // Signal completion of your task
-    //           await BackgroundFetch.finish(taskId);
-    //           return;
-    //         },
-    //       )
-    //       .then((status) {
-    //         logDebug('[BackgroundFetch] configure success: $status');
-    //       })
-    //       .catchError((e) {
-    //         logDebug('[BackgroundFetch] configure ERROR: $e');
-    //       }),
-    // );
-
-    // BackgroundFetch.scheduleTask(TaskConfig(
-    //     taskId: 'com.foo.customtask',
-    //     delay: 60000, // milliseconds
-    //     forceAlarmManager: true));
+    BackgroundChangeChecker().start(widget.contactDhtRepository);
   }
 
   @override
   void dispose() {
+    BackgroundChangeChecker().stop();
     _lifecycleListener.dispose();
     super.dispose();
   }
-
-  // @override
-  // void didChangeAppLifecycleState(AppLifecycleState state) {
-  //   if (state == AppLifecycleState.paused) {
-  //     // App goes to background
-  //     unawaited(
-  //       BackgroundFetch.start()
-  //           .then((int status) {
-  //             logDebug('[BackgroundFetch] start success: $status');
-  //           })
-  //           .catchError((e) {
-  //             logDebug('[BackgroundFetch] start ERROR: $e');
-  //           }),
-  //     );
-  //   } else if (state == AppLifecycleState.resumed) {
-  //     // App comes to foreground
-  //     unawaited(
-  //       BackgroundFetch.stop()
-  //           .then((int status) {
-  //             logDebug('[BackgroundFetch] stop success: $status');
-  //           })
-  //           .catchError((e) {
-  //             logDebug('[BackgroundFetch] stop ERROR: $e');
-  //           }),
-  //     );
-  //   }
-  // }
 
   Future<void> onDidReceiveNotificationResponse(
     NotificationResponse notificationResponse,

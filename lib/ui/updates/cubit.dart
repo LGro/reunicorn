@@ -44,7 +44,10 @@ class UpdatesCubit extends Cubit<UpdatesState> {
     }
   }
 
-  Future<bool> refresh() => _contactDhtRepository.updateAndWatchReceivingDHT();
+  Future<bool> refresh() async {
+    final updates = await _contactDhtRepository.updateAndWatchReceivingDHT();
+    return updates != null;
+  }
 
   @override
   Future<void> close() {
