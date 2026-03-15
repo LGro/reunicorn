@@ -280,8 +280,10 @@ class NextContactPrep extends BaseDhtRepository {
                 myNextKeyPair: await generateKeyPairBest(),
               )
               as CryptoInitializedSymmetric;
-      final dhtConnection = await dht_comm
-          .initializeEncryptedDhtConnection(_dhtStorage, connectionCrypto);
+      final dhtConnection = await dht_comm.initializeEncryptedDhtConnection(
+        _dhtStorage,
+        connectionCrypto,
+      );
       _nextContact = CoagContact(
         coagContactId: Uuid().v4(),
         name: '???',
@@ -396,23 +398,19 @@ class ContactDhtRepository {
         'rcrn-dht-on-update | ${contactId.substring(0, 5)} | '
         'started-sync',
       );
-      var onlyUpdatedOnProfileChange = true;
       var contact = await _contactStorage.get(contactId);
       if (contact == null) {
         return;
       }
 
       if (contact.dhtConnection == null) {
-        final dhtConnection = await dht_comm
-            .initializeEncryptedDhtConnection(
-              _dhtStorage,
-              contact.connectionCrypto,
-            );
+        final dhtConnection = await dht_comm.initializeEncryptedDhtConnection(
+          _dhtStorage,
+          contact.connectionCrypto,
+        );
         return _contactStorage.set(
           contactId,
-          contact.copyWith(
-            dhtConnection: dhtConnection,
-          ),
+          contact.copyWith(dhtConnection: dhtConnection),
         );
       }
 
@@ -474,8 +472,7 @@ class ContactDhtRepository {
         recordsToPin.whereType<RecordKey>().toList(),
       );
       // If we already have shared the most recent profile version, stop here
-      if (onlyUpdatedOnProfileChange &&
-          updatedSharedProfile == contact.profileSharingStatus.sharedProfile) {
+      if (updatedSharedProfile == contact.profileSharingStatus.sharedProfile) {
         debugPrint(
           'rcrn-dht-on-update | ${contact.coagContactId.substring(0, 5)} | '
           'skip-no-change',
