@@ -486,6 +486,7 @@ class _ContactPageState extends State<ContactPage> {
               contact.connectionCrypto.map(
                 symmetric: (_) => 'symmetric',
                 symToVod: (_) => 'symToVod',
+                vodozemacInitial: (_) => 'vodozemacInitial',
                 vodozemac: (_) => 'vodozemac',
               ),
             ),

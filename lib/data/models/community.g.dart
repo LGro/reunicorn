@@ -45,32 +45,37 @@ Map<String, dynamic> _$CommunityInfoToJson(_CommunityInfo instance) =>
       'expires_at': instance.expiresAt?.toIso8601String(),
     };
 
+_MemberSharingOffer _$MemberSharingOfferFromJson(Map<String, dynamic> json) =>
+    _MemberSharingOffer(
+      oneTimeKey: json['one_time_key'] as String,
+      identityKey: json['identity_key'] as String,
+      recordKey: json['record_key'] == null
+          ? null
+          : RecordKey.fromJson(json['record_key']),
+    );
+
+Map<String, dynamic> _$MemberSharingOfferToJson(_MemberSharingOffer instance) =>
+    <String, dynamic>{
+      'one_time_key': instance.oneTimeKey,
+      'identity_key': instance.identityKey,
+      'record_key': instance.recordKey?.toJson(),
+    };
+
 _MemberInfo _$MemberInfoFromJson(Map<String, dynamic> json) => _MemberInfo(
   publicKey: Typed<BarePublicKey>.fromJson(json['public_key']),
-  sharingOffers: (json['sharing_offers'] as List<dynamic>)
-      .map(
-        (e) => _$recordConvert(
-          e,
-          ($jsonValue) => (
-            Typed<BareHashDigest>.fromJson($jsonValue[r'$1']),
-            RecordKey.fromJson($jsonValue[r'$2']),
-          ),
-        ),
-      )
-      .toList(),
+  sharingOffers: (json['sharing_offers'] as Map<String, dynamic>).map(
+    (k, e) =>
+        MapEntry(k, MemberSharingOffer.fromJson(e as Map<String, dynamic>)),
+  ),
 );
 
-Map<String, dynamic> _$MemberInfoToJson(
-  _MemberInfo instance,
-) => <String, dynamic>{
-  'public_key': instance.publicKey.toJson(),
-  'sharing_offers': instance.sharingOffers
-      .map((e) => <String, dynamic>{r'$1': e.$1.toJson(), r'$2': e.$2.toJson()})
-      .toList(),
-};
-
-$Rec _$recordConvert<$Rec>(Object? value, $Rec Function(Map) convert) =>
-    convert(value as Map<String, dynamic>);
+Map<String, dynamic> _$MemberInfoToJson(_MemberInfo instance) =>
+    <String, dynamic>{
+      'public_key': instance.publicKey.toJson(),
+      'sharing_offers': instance.sharingOffers.map(
+        (k, e) => MapEntry(k, e.toJson()),
+      ),
+    };
 
 _ManagedCommunity _$ManagedCommunityFromJson(Map<String, dynamic> json) =>
     _ManagedCommunity(
@@ -111,17 +116,34 @@ Map<String, dynamic> _$ManagedCommunityToJson(
       .toList(),
 };
 
+$Rec _$recordConvert<$Rec>(Object? value, $Rec Function(Map) convert) =>
+    convert(value as Map<String, dynamic>);
+
+_MemberComment _$MemberCommentFromJson(Map<String, dynamic> json) =>
+    _MemberComment(
+      comment: json['comment'] as String,
+      mostRecentUpdate: DateTime.parse(json['most_recent_update'] as String),
+    );
+
+Map<String, dynamic> _$MemberCommentToJson(_MemberComment instance) =>
+    <String, dynamic>{
+      'comment': instance.comment,
+      'most_recent_update': instance.mostRecentUpdate.toIso8601String(),
+    };
+
 _Member _$MemberFromJson(Map<String, dynamic> json) => _Member(
   communityRecordKey: RecordKey.fromJson(json['community_record_key']),
   infoRecordKey: RecordKey.fromJson(json['info_record_key']),
   name: json['name'] as String,
-  comment: json['comment'] as String?,
-  mostRecentCommentUpdate: json['most_recent_comment_update'] == null
+  myVodozemacAccount: json['my_vodozemac_account'] as String,
+  comment: json['comment'] == null
       ? null
-      : DateTime.parse(json['most_recent_comment_update'] as String),
+      : MemberComment.fromJson(json['comment'] as Map<String, dynamic>),
   theirPublicKey: json['their_public_key'] == null
       ? null
       : Typed<BarePublicKey>.fromJson(json['their_public_key']),
+  theirOneTimeKey: json['their_one_time_key'] as String?,
+  theirIdentityKey: json['their_identity_key'] as String?,
   recordKeyThemSharing: json['record_key_them_sharing'] == null
       ? null
       : RecordKey.fromJson(json['record_key_them_sharing']),
@@ -134,10 +156,11 @@ Map<String, dynamic> _$MemberToJson(_Member instance) => <String, dynamic>{
   'community_record_key': instance.communityRecordKey.toJson(),
   'info_record_key': instance.infoRecordKey.toJson(),
   'name': instance.name,
-  'comment': instance.comment,
-  'most_recent_comment_update': instance.mostRecentCommentUpdate
-      ?.toIso8601String(),
+  'my_vodozemac_account': instance.myVodozemacAccount,
+  'comment': instance.comment?.toJson(),
   'their_public_key': instance.theirPublicKey?.toJson(),
+  'their_one_time_key': instance.theirOneTimeKey,
+  'their_identity_key': instance.theirIdentityKey,
   'record_key_them_sharing': instance.recordKeyThemSharing?.toJson(),
   'record_key_me_sharing': instance.recordKeyMeSharing?.toJson(),
 };

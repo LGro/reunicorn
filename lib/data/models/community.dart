@@ -3,6 +3,7 @@
 
 import 'dart:convert';
 
+import 'package:collection/equality.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:veilid_support/veilid_support.dart';
 
@@ -70,6 +71,22 @@ sealed class CommunityInfo with _$CommunityInfo {
 }
 
 @freezed
+sealed class MemberSharingOffer with _$MemberSharingOffer {
+  const factory MemberSharingOffer({
+    /// Their one time key to set up the vodozemac / olm session for encryption
+    required String oneTimeKey,
+
+    /// Their identity key to set up the vodozemac / olm session for encryption
+    required String identityKey,
+
+    /// DHT record key where the member offers to share
+    RecordKey? recordKey,
+  }) = _MemberSharingOffer;
+  factory MemberSharingOffer.fromJson(Map<String, dynamic> json) =>
+      _$MemberSharingOfferFromJson(json);
+}
+
+@freezed
 sealed class MemberInfo with _$MemberInfo {
   const factory MemberInfo({
     /// The public key other community members are supposed to use for
@@ -78,14 +95,13 @@ sealed class MemberInfo with _$MemberInfo {
     required PublicKey publicKey,
 
     /// For each other community member a hash of the shared secret derived from
-    /// the public key's corresponding private key and their public key, along
-    /// with a DHT record key where the matching member can find information
-    /// that is shared with them.
+    /// the public key's corresponding private key and their public key, and is
+    /// encrypted with that secret to indicate which sharing offer is for them.
     ///
-    /// Using the hash here instead of e.g. the other member's member record key
-    /// prevents community members or organizers from discovering who is
-    /// offering to connect with whom.
-    required List<(HashDigest, RecordKey)> sharingOffers,
+    /// Using the encrypted hash here instead of e.g. the other member's member
+    /// record key or the plain hash, prevents community members or organizers
+    /// from discovering who is offering to connect with whom.
+    required Map<String, MemberSharingOffer> sharingOffers,
   }) = _MemberInfo;
   factory MemberInfo.fromJson(Map<String, dynamic> json) =>
       _$MemberInfoFromJson(json);
@@ -118,26 +134,59 @@ sealed class ManagedCommunity with _$ManagedCommunity {
 
 /// REPO LAYER
 
+@Freezed(equal: false)
+sealed class MemberComment with _$MemberComment {
+  const factory MemberComment({
+    required String comment,
+    required DateTime mostRecentUpdate,
+  }) = _MemberComment;
+
+  const MemberComment._();
+
+  factory MemberComment.fromJson(Map<String, dynamic> json) =>
+      _$MemberCommentFromJson(json);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MemberComment &&
+          runtimeType == other.runtimeType &&
+          comment == other.comment);
+
+  @override
+  int get hashCode => comment.hashCode;
+}
+
 // The member itself does not contain my sharing record and writer info,
 // because as soon as that happens, a contact exists which has this member as
 // origin an all relevant info. So just including the sharing record is enough.
 @freezed
 sealed class Member with _$Member {
   const factory Member({
+    /// The community member record key of the current user
     required RecordKey communityRecordKey,
+
+    /// The community member record key of this member
     required RecordKey infoRecordKey,
 
     /// Label or name for the member, could be email/name/nick
     required String name,
 
+    /// My vodozemac / olm account for encrypted communication
+    required String myVodozemacAccount,
+
     /// Comment by the organizer, e.g. to explain reason for expelling member
-    String? comment,
+    MemberComment? comment,
 
-    /// Timestamp of the most recent comment change
-    DateTime? mostRecentCommentUpdate,
-
-    /// Their public key for initial sharing encryption
+    /// Their public key to derive encrypted shared secret hash for sharing
+    /// offer indexing
     PublicKey? theirPublicKey,
+
+    /// Their one time key to set up the vodozemac / olm session for encryption
+    String? theirOneTimeKey,
+
+    /// Their identity key to set up the vodozemac / olm session for encryption
+    String? theirIdentityKey,
 
     /// The record key where they share information with me
     RecordKey? recordKeyThemSharing,
@@ -150,7 +199,7 @@ sealed class Member with _$Member {
   factory Member.fromJson(Map<String, dynamic> json) => _$MemberFromJson(json);
 }
 
-@freezed
+@Freezed(equal: false)
 sealed class Community with _$Community implements JsonEncodable {
   const factory Community({
     /// Key of my community member DHT record
@@ -169,8 +218,24 @@ sealed class Community with _$Community implements JsonEncodable {
     CommunityInfo? info,
   }) = _Community;
 
+  const Community._();
+
   factory Community.fromJson(Map<String, dynamic> json) =>
       _$CommunityFromJson(json);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Community &&
+          runtimeType == other.runtimeType &&
+          recordKey == other.recordKey &&
+          recordWriter == other.recordWriter &&
+          ListEquality().equals(members, other.members) &&
+          info == other.info);
+
+  @override
+  int get hashCode =>
+      Object.hash(recordKey, recordWriter, Object.hashAll(members), info);
 }
 
 Future<Community> communityMigrateFromJson(String json) async =>

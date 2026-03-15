@@ -9,12 +9,17 @@ part 'crypto_state.g.dart';
 
 @freezed
 sealed class CryptoState with _$CryptoState {
-  // TODO(LGro): Can we get rid of this because DHT records are encrypted by default?
+  /// Symmetric encryption to start with, e.g. in the context of a direct
+  /// sharing link / qr code based invite.
+  /// Since Veilid DHT records are encrypted by default, we could omit this, but
+  /// we manage the crypto on the app level consistently.
   const factory CryptoState.symmetric({
     required SharedSecret sharedSecret,
     required String accountVod,
   }) = CryptoSymmetric;
 
+  /// Symmetric cryptography with a prepared vodozemac / olm session, ready to
+  /// transition to as soon as one roundtrip was confirmed.
   const factory CryptoState.symToVod({
     required SharedSecret sharedSecret,
     required String theirIdentityKey,
@@ -22,6 +27,18 @@ sealed class CryptoState with _$CryptoState {
     required String sessionVod,
   }) = CryptoSymToVod;
 
+  /// Initial vodozemac / olm session that has not yet successfully seen a
+  /// roundtrip of encrypted communication; the account is still there to remedy
+  /// race conditions about two parties initializing vodozemac / olm crypto
+  /// at the same time, trying to both encrypt with outbound sessions.
+  const factory CryptoState.vodozemacInitial({
+    required String theirIdentityKey,
+    required String myIdentityKey,
+    required String accountVod,
+    required String sessionVod,
+  }) = CryptoVodozemacInitial;
+
+  /// Established vodozemac / olm session
   const factory CryptoState.vodozemac({
     required String theirIdentityKey,
     required String myIdentityKey,
@@ -38,6 +55,7 @@ extension CryptoStateMaybeGetters on CryptoState {
   SharedSecret? get sharedSecretOrNull => map(
     symmetric: (s) => s.sharedSecret,
     symToVod: (s) => s.sharedSecret,
+    vodozemacInitial: (s) => null,
     vodozemac: (s) => null,
   );
 }

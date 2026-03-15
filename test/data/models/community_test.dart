@@ -39,14 +39,66 @@ void main() {
     );
   });
 
+  test('equals ignores updated timestamps', () {
+    final c1 = Community(
+      recordKey: fakeDhtRecordKey(1),
+      recordWriter: fakeKeyPair(0, 1),
+      members: [
+        Member(
+          communityRecordKey: fakeDhtRecordKey(10),
+          infoRecordKey: fakeDhtRecordKey(11),
+          name: 'm1',
+          myVodozemacAccount: '',
+          comment: MemberComment(
+            comment: 'commi',
+            mostRecentUpdate: DateTime(0),
+          ),
+        ),
+      ],
+      mostRecentUpdate: DateTime(0),
+    );
+    final c2 = Community(
+      recordKey: fakeDhtRecordKey(1),
+      recordWriter: fakeKeyPair(0, 1),
+      members: [
+        Member(
+          communityRecordKey: fakeDhtRecordKey(10),
+          infoRecordKey: fakeDhtRecordKey(11),
+          name: 'm1',
+          myVodozemacAccount: '',
+          comment: MemberComment(
+            comment: 'commi',
+            mostRecentUpdate: DateTime(1),
+          ),
+        ),
+      ],
+      mostRecentUpdate: DateTime(0),
+    );
+    expect(c1, equals(c1));
+    expect(c1, equals(c1.copyWith(mostRecentUpdate: DateTime(1))));
+    expect(c1, equals(c2));
+  });
+
   test('test member record my info for members size limit', () {
     final recordKey = fakeDhtRecordKey().toString();
     final info = MemberInfo(
       publicKey: PublicKey.fromString('VLD0:'),
-      sharingOffers: List.filled(communityMaxMembers - 1, (
-        HashDigest.fromString(recordKey),
-        RecordKey.fromString(recordKey),
-      )),
+      sharingOffers: Map.fromEntries(
+        List.filled(
+          communityMaxMembers - 1,
+          (
+          // This is missing the encryption step, which might influence the byte size
+          MapEntry(
+            base64Encode(HashDigest.fromString(recordKey).toBytes()),
+            // TODO: What length a vodozemac identity and onetime keys
+            MemberSharingOffer(
+              identityKey: '',
+              recordKey: RecordKey.fromString(recordKey),
+              oneTimeKey: '',
+            ),
+          )),
+        ),
+      ),
     );
 
     final utf8Bytes = utf8.encode(jsonEncode(info.toJson()));

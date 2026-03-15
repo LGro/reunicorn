@@ -120,7 +120,7 @@ class IntroductionsPage extends StatelessWidget {
               (e) => IntroductionListTile(
                 introducerName: e.$1 ?? 'Unknown Community',
                 otherName: e.$2.name,
-                message: e.$2.comment,
+                message: e.$2.comment?.comment,
                 // TODO(LGro): Implement community member add callback,
                 // community dht repo might already have something to use
                 acceptCallback: () => context

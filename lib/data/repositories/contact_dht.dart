@@ -68,8 +68,9 @@ List<int>? selectPicture(
 /// Hash the contactId together with the label to create a unique label to avoid
 /// leaking a global, intra-contact identifier that could be used by malicious
 /// contacts to reconstruct the social net
-String personalizedLabelHash(String contactId, String label) =>
-    Digest('SHA-512').process(utf8.encode('$label$contactId')).toString();
+/// TODO: Test that this outputs what we think it does; consider cropping to short hash
+String personalizedLabelHash(String contactId, String label) => Base64Encoder()
+    .convert(Digest('SHA-512').process(utf8.encode('$label$contactId')));
 
 ContactDetails filterDetails(
   String contactId,

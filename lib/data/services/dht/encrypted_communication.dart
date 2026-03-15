@@ -104,6 +104,7 @@ MessageWithEncryptionMetaData encryptionMetaData(
   );
   return crypto.map(
     vodozemac: (s) => metaData,
+    vodozemacInitial: (s) => metaData,
     symToVod: (s) => metaData,
     symmetric: (s) {
       final account = vod.Account.fromPickleEncrypted(
@@ -139,6 +140,7 @@ Future<CryptoState> evolveCryptoState(
     );
   },
   symToVod: (s) => s,
+  vodozemacInitial: (s) => s,
   vodozemac: (s) => s,
 );
 
@@ -309,6 +311,59 @@ Future<(String?, CryptoState, String?)> decrypt(
       return (plaintextSym, s, theirIdentityKey?.toBase64());
     },
 
+    // Initial vodozemac crypto
+    vodozemacInitial: (s) async {
+      _debugPrint('trying decrypt initial vodozemac');
+      // Try if the existing session works
+      final (plaintextVod, session) = await decryptVodozemacEstablished(
+        messageType,
+        ciphertext,
+        s.sessionVod,
+      );
+      if (plaintextVod != null) {
+        return (
+          plaintextVod,
+          s.copyWith(sessionVod: session),
+          s.theirIdentityKey,
+        );
+      }
+
+      // If not, try if an inbound session works
+      try {
+        final myAccount = vod.Account.fromPickleEncrypted(
+          pickle: s.accountVod,
+          pickleKey: Uint8List(32),
+        );
+        final decrypted = myAccount.createInboundSession(
+          theirIdentityKey: vod.Curve25519PublicKey.fromBase64(
+            s.theirIdentityKey,
+          ),
+          // TODO(LGro): What about base64?
+          preKeyMessageBase64: utf8.decode(ciphertext),
+        );
+        final updatedCryptoState = CryptoState.vodozemac(
+          theirIdentityKey: s.theirIdentityKey,
+          myIdentityKey: myAccount.identityKeys.curve25519.toBase64(),
+          sessionVod: decrypted.session.toPickleEncrypted(Uint8List(32)),
+        );
+        _debugPrint(
+          'successfully decrypted with initial vodozemac for the first time',
+        );
+        // Only if our identity key is the lexicographically larger than theirs
+        // do we switch out our session, to avoid both switching out sessions
+        if (s.myIdentityKey.compareTo(s.theirIdentityKey) > 0) {
+          return (decrypted.plaintext, updatedCryptoState, s.theirIdentityKey);
+        } else {
+          return (null, s, s.theirIdentityKey);
+        }
+      } catch (e) {
+        _debugPrint(
+          'failed to decrypt with initial vodozemac for the first time: $e',
+        );
+      }
+      return (null, s.copyWith(sessionVod: session), s.theirIdentityKey);
+    },
+
     // Established vodozemac crypto
     vodozemac: (s) async {
       _debugPrint('trying decrypt established vodozemac');
@@ -435,8 +490,26 @@ Future<(Uint8List, CryptoState)> encryptAndPrependVodInfo(
       cryptoState,
     );
   },
+  // TODO: Remove redundancy between following three
   symToVod: (s) async {
     _debugPrint('encrypting symToVod with vod');
+    final session = vod.Session.fromPickleEncrypted(
+      pickle: s.sessionVod,
+      pickleKey: Uint8List(32),
+    );
+    final encrypted = session.encrypt(payload);
+    return (
+      Uint8List.fromList([
+        encrypted.messageType,
+        ...vod.Curve25519PublicKey.fromBase64(s.myIdentityKey).toBytes(),
+        ...utf8.encode(encrypted.ciphertext),
+      ]),
+      s.copyWith(sessionVod: session.toPickleEncrypted(Uint8List(32))),
+    );
+  },
+
+  vodozemacInitial: (s) async {
+    _debugPrint('encrypting initial vod');
     final session = vod.Session.fromPickleEncrypted(
       pickle: s.sessionVod,
       pickleKey: Uint8List(32),

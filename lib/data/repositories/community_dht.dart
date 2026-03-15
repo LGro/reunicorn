@@ -6,11 +6,16 @@ import 'dart:convert';
 
 import 'package:collection/collection.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:flutter/foundation.dart';
 import 'package:multiple_result/multiple_result.dart';
+import 'package:reunicorn/data/utils.dart';
+import 'package:uuid/uuid.dart';
 import 'package:veilid_support/veilid_support.dart';
+import 'package:vodozemac/vodozemac.dart' as vod;
 
 import '../models/community.dart';
 import '../models/models.dart';
+import '../services/dht/encrypted_communication.dart';
 import '../services/dht/veilid_dht.dart';
 import '../services/storage/base.dart';
 import 'base_dht.dart';
@@ -57,18 +62,56 @@ class CommunityOrigin {
       [prefix, communityRecordKey, memberInfoRecordKey].join(separator);
 }
 
-Future<HashDigest> generateMemberSecretHash(
-  PublicKey memberPublicKey,
+Future<(HashDigest, VeilidCryptoPrivate)> generateMemberHashAndCrypto(
+  PublicKey theirPublicKey,
   SecretKey mySecretKey,
 ) async {
   final cryptoSystem = await Veilid.instance.getCryptoSystem(cryptoKindVLD0);
-  return cryptoSystem
-      .generateSharedSecret(
-        memberPublicKey,
-        mySecretKey,
-        utf8.encode('community-members-initial-sharing'),
-      )
-      .then((ourSecret) => cryptoSystem.generateHash(ourSecret.toBytes()));
+  final sharedSecret = await cryptoSystem.generateSharedSecret(
+    theirPublicKey,
+    mySecretKey,
+    utf8.encode('community-member-sharing-offer-matching'),
+  );
+  final hashedSecret = await cryptoSystem.generateHash(sharedSecret.toBytes());
+  final crypto = await VeilidCryptoPrivate.fromSharedSecret(
+    sharedSecret.kind,
+    sharedSecret,
+  );
+  return (hashedSecret, crypto);
+}
+
+Future<String> generateMemberEncryptedSecretHashB64(
+  PublicKey theirPublicKey,
+  SecretKey mySecretKey,
+) async {
+  final (hashedSecret, crypto) = await generateMemberHashAndCrypto(
+    theirPublicKey,
+    mySecretKey,
+  );
+  return base64Encode(await crypto.encrypt(hashedSecret.toBytes()));
+}
+
+Future<MemberSharingOffer?> getMemberSharingOffer(
+  MemberInfo memberInfo,
+  SecretKey mySecretKey,
+) async {
+  final (memberHash, crypto) = await generateMemberHashAndCrypto(
+    memberInfo.publicKey,
+    mySecretKey,
+  );
+
+  final sharingOffersWithDecryptedKeys = Map.fromEntries(
+    await Future.wait(
+      memberInfo.sharingOffers.entries.map(
+        (e) async => MapEntry(
+          base64Encode(await crypto.decrypt(base64Decode(e.key))),
+          e.value,
+        ),
+      ),
+    ),
+  );
+
+  return sharingOffersWithDecryptedKeys[base64Encode(memberHash.toBytes())];
 }
 
 // update member from my member record community info part
@@ -76,23 +119,41 @@ Future<HashDigest> generateMemberSecretHash(
 // update member from their member record
 // TODO: Should this be part of Member.copyWith()?
 Member updateMemberComment(Member member, String? comment) => member.copyWith(
-  comment: comment,
-  mostRecentCommentUpdate: (member.comment != comment) ? DateTime.now() : null,
+  comment: (comment == null)
+      ? null
+      : MemberComment(
+          comment: comment,
+          mostRecentUpdate: (member.comment?.comment != comment)
+              ? DateTime.now()
+              : member.comment!.mostRecentUpdate,
+        ),
 );
 
 /// Generate sharing offers for my member info based for all community members
-Future<List<(HashDigest, RecordKey)>> sharingOffers(
+Future<Map<String, MemberSharingOffer>> generateSharingOffers(
   List<Member> members,
   SecretKey mySecretKey,
-) => Future.wait(
-  members
-      .where((m) => m.theirPublicKey != null && m.recordKeyMeSharing != null)
-      .map(
-        (m) async => (
-          await generateMemberSecretHash(m.theirPublicKey!, mySecretKey),
-          m.recordKeyMeSharing!,
+) async => Map.fromEntries(
+  await Future.wait(
+    members.where((m) => m.theirPublicKey != null).map((m) async {
+      final offerId = await generateMemberEncryptedSecretHashB64(
+        m.theirPublicKey!,
+        mySecretKey,
+      );
+      final account = vod.Account.fromPickleEncrypted(
+        pickle: m.myVodozemacAccount,
+        pickleKey: Uint8List(32),
+      );
+      return MapEntry(
+        offerId,
+        MemberSharingOffer(
+          recordKey: m.recordKeyMeSharing,
+          oneTimeKey: account.oneTimeKeys.values.first.toBase64(),
+          identityKey: account.identityKeys.curve25519.toBase64(),
         ),
-      ),
+      );
+    }),
+  ),
 );
 
 class CommunityDhtRepository extends BaseDhtRepository {
@@ -110,10 +171,8 @@ class CommunityDhtRepository extends BaseDhtRepository {
   ) {
     _communityStorage.changeEvents.listen((e) async {
       await e.when(
-        set: (oldCommunity, newCommunity) =>
-            (oldCommunity?.copyWith(mostRecentUpdate: DateTime(0)) !=
-                newCommunity.copyWith(mostRecentUpdate: DateTime(0)))
-            ? _updateCommunityFromDht(newCommunity.recordKey)
+        set: (oldCommunity, newCommunity) => (oldCommunity != newCommunity)
+            ? updateCommunityFromDht(newCommunity.recordKey)
             : null,
         delete: _onDeleteCommunity,
       );
@@ -133,28 +192,29 @@ class CommunityDhtRepository extends BaseDhtRepository {
   /// Watch for community updates via the DHT
   Future<bool> _watchCommunity(RecordKey recordKey) => _dhtStorage.watch(
     recordKey,
-    () => _updateCommunityFromDht(recordKey, useLocalCache: true),
+    () => updateCommunityFromDht(recordKey, useLocalCache: true),
   );
 
-  Future<void> _updateCommunityFromDht(
+  Future<void> updateCommunityFromDht(
     RecordKey recordKey, {
     bool useLocalCache = false,
   }) async {
-    final community = await _communityStorage.get(recordKey.toString());
-    if (community == null) {
-      return;
-    }
+    await _communityStorage.lock.synchronized(recordKey.toString(), () async {
+      final community = await _communityStorage.get(recordKey.toString());
+      if (community == null) {
+        return;
+      }
 
-    // TODO(LGro): pass on useLocalCache
-    final updatedCommunity = await updateCommunity(community);
+      // TODO(LGro): pass on useLocalCache
+      final updatedCommunity = await updateCommunity(community);
 
-    if (community.copyWith(mostRecentUpdate: DateTime(0)) !=
-        updatedCommunity.copyWith(mostRecentUpdate: DateTime(0))) {
-      await _communityStorage.set(
-        community.recordKey.toString(),
-        updatedCommunity,
-      );
-    }
+      if (community != updatedCommunity) {
+        await _communityStorage.set(
+          community.recordKey.toString(),
+          updatedCommunity,
+        );
+      }
+    });
   }
 
   Future<void> _onDeleteCommunity(Community community) async {
@@ -172,7 +232,7 @@ class CommunityDhtRepository extends BaseDhtRepository {
     }
 
     // Only if sharing settings are available, does it make sense to continue
-    if (contact.dhtConnection is DhtConnectionInvited) {
+    if (contact.dhtConnection?.recordKeyMeSharingOrNull == null) {
       return;
     }
 
@@ -193,11 +253,11 @@ class CommunityDhtRepository extends BaseDhtRepository {
     }
 
     final updatedMember = member.copyWith(
-      recordKeyMeSharing: (contact.dhtConnection as DhtConnectionEstablished)
-          .recordKeyMeSharing,
+      recordKeyMeSharing:
+          contact.dhtConnection?.recordKeyMeSharingOrNull ??
+          member.recordKeyMeSharing,
     );
-    if (member.copyWith(mostRecentCommentUpdate: DateTime(0)) ==
-        updatedMember.copyWith(mostRecentCommentUpdate: DateTime(0))) {
+    if (member == updatedMember) {
       return;
     }
 
@@ -205,7 +265,7 @@ class CommunityDhtRepository extends BaseDhtRepository {
     await _communityStorage.set(
       community.recordKey.toString(),
       community.copyWith(
-        members: community.members
+        members: [...community.members]
           ..remove(member)
           ..add(updatedMember),
       ),
@@ -215,7 +275,7 @@ class CommunityDhtRepository extends BaseDhtRepository {
   @override
   Future<void> dhtBecameAvailableCallback() => _communityStorage.getAll().then(
     (communities) => communities.values.map(
-      (community) => _updateCommunityFromDht(community.recordKey),
+      (community) => updateCommunityFromDht(community.recordKey),
     ),
   );
 
@@ -241,9 +301,15 @@ class CommunityDhtRepository extends BaseDhtRepository {
         numChunks: memberInfoSubkeys,
         chunkOffset: communityInfoSubkeys,
       );
+      debugPrint(
+        'set member info succeeded for ${recordKey.toString().substring(0, 12)}',
+      );
 
       return Success(info);
     } on Exception catch (e) {
+      debugPrint(
+        'set member info failed for ${recordKey.toString().substring(0, 12)} with $e',
+      );
       return Error(e);
     }
   }
@@ -253,12 +319,20 @@ class CommunityDhtRepository extends BaseDhtRepository {
       return community;
     }
 
-    // Update community info if available
+    // Update community info if available, otherwise keep previous info
     community = community.copyWith(
-      info: await getCommunityInfo(community.recordKey, community.recordWriter),
+      info:
+          (await getCommunityInfo(
+            community.recordKey,
+            community.recordWriter,
+          )) ??
+          community.info,
     );
 
     // Update community members
+    // TODO(LGro): Should we in case of partial success only override members
+    // instead of all, causing temporarily missing members? Would require
+    // deactivating rather than deleting members.
     final allMembers = await getMembers(community);
     community = community.copyWith(
       // Filter out current user's member entry
@@ -270,13 +344,15 @@ class CommunityDhtRepository extends BaseDhtRepository {
     // TODO: Do we do this here or elsewhere? Seems to only make sense when we add a new member as contact, right?
     //       However, it might also not take super long and it's a nice place to ensure it's set up
     if (community.info != null) {
+      final sharingOffers = await generateSharingOffers(
+        community.members,
+        community.recordWriter.secret,
+      );
+      debugPrint('Generated ${sharingOffers.length} sharing offers');
       await setMemberInfo(
         MemberInfo(
           publicKey: community.recordWriter.key,
-          sharingOffers: await sharingOffers(
-            community.members,
-            community.recordWriter.secret,
-          ),
+          sharingOffers: sharingOffers,
         ),
         community.recordKey,
         community.recordWriter,
@@ -287,15 +363,12 @@ class CommunityDhtRepository extends BaseDhtRepository {
     return community.copyWith(mostRecentUpdate: DateTime.now());
   }
 
-  Future<Community?> acceptCommunityFromInvite(
+  // Light weight adding of a new community, might only be fully populated later
+  Future<Community> acceptCommunityFromInvite(
     RecordKey recordKey,
     KeyPair recordWriter,
   ) async {
     final communityInfo = await getCommunityInfo(recordKey, recordWriter);
-
-    if (communityInfo == null) {
-      return null;
-    }
 
     final community = Community(
       recordKey: recordKey,
@@ -306,6 +379,8 @@ class CommunityDhtRepository extends BaseDhtRepository {
     );
 
     await _communityStorage.set(community.recordKey.toString(), community);
+
+    await _watchCommunity(community.recordKey);
 
     return community;
   }
@@ -334,6 +409,7 @@ class CommunityDhtRepository extends BaseDhtRepository {
       );
     } catch (e) {
       // TODO: log error
+      debugPrint('get community info failed with $e for $recordKey');
       return null;
     }
   }
@@ -369,7 +445,7 @@ class CommunityDhtRepository extends BaseDhtRepository {
 
   // -> set/update public key
   // -> contains hash of our derived key? save record key, optionally retrieve shared info
-  Future<(PublicKey?, RecordKey?)> getMemberSharingPubAndRecordKey(
+  Future<(PublicKey?, MemberSharingOffer?)> getMemberSharingPubAndOffer(
     RecordKey memberRecord,
     SharedSecret communitySecret,
     SecretKey mySecretKey,
@@ -378,20 +454,25 @@ class CommunityDhtRepository extends BaseDhtRepository {
     switch (memberInfoResult) {
       case Error():
         // TODO: log memberInfoResult.error
+        debugPrint(
+          'failed to get member info result: ${memberInfoResult.error}',
+        );
         return (null, null);
       case Success():
         final memberInfo = memberInfoResult.success;
 
-        final memberSecretHash = await generateMemberSecretHash(
-          memberInfo.publicKey,
+        final memberSharingOffer = await getMemberSharingOffer(
+          memberInfo,
           mySecretKey,
         );
 
-        final memberSharingRecord = memberInfo.sharingOffers
-            .firstWhereOrNull((o) => o.$1 == memberSecretHash)
-            ?.$2;
+        debugPrint(
+          'member sharing record identity key '
+          '${memberSharingOffer?.identityKey.toString().substring(0, 12)} for '
+          '${memberRecord.toString().substring(0, 12)}',
+        );
 
-        return (memberInfo.publicKey, memberSharingRecord);
+        return (memberInfo.publicKey, memberSharingOffer);
     }
   }
 
@@ -408,6 +489,8 @@ class CommunityDhtRepository extends BaseDhtRepository {
       communityRecordKey: community.recordKey,
       infoRecordKey: memberInfo.recordKey,
       name: memberInfo.name,
+      myVodozemacAccount: (vod.Account()..generateOneTimeKeys(1))
+          .toPickleEncrypted(Uint8List(32)),
     );
 
     // Update member with organizer provided comment
@@ -420,15 +503,19 @@ class CommunityDhtRepository extends BaseDhtRepository {
     // Update member public key and sharing record key if available
     final (
       memberPublicKey,
-      memberSharingRecordKey,
-    ) = await getMemberSharingPubAndRecordKey(
+      memberSharingOffer,
+    ) = await getMemberSharingPubAndOffer(
       member.infoRecordKey,
       community.info!.secret,
       community.recordWriter.secret,
     );
     return member.copyWith(
-      theirPublicKey: memberPublicKey,
-      recordKeyThemSharing: memberSharingRecordKey,
+      theirPublicKey: memberPublicKey ?? member.theirPublicKey,
+      recordKeyThemSharing:
+          memberSharingOffer?.recordKey ?? member.recordKeyThemSharing,
+      theirIdentityKey:
+          memberSharingOffer?.identityKey ?? member.theirIdentityKey,
+      theirOneTimeKey: memberSharingOffer?.oneTimeKey ?? member.theirOneTimeKey,
     );
   }
 
@@ -437,6 +524,103 @@ class CommunityDhtRepository extends BaseDhtRepository {
       (memberInfo) => getMember(community, memberInfo),
     ),
   );
+
+  Future<CoagContact?> addContactForMember(Member member) async {
+    final account = vod.Account.fromPickleEncrypted(
+      pickle: member.myVodozemacAccount,
+      pickleKey: Uint8List(32),
+    );
+    final origin = CommunityOrigin(
+      communityRecordKey: member.communityRecordKey,
+      memberInfoRecordKey: member.infoRecordKey,
+    );
+
+    // Check if they have already started sharing with us
+    if (member.recordKeyThemSharing != null) {
+      debugPrint(
+        'Attempting to read (inbound session) for community member '
+        '${member.infoRecordKey.toString().substring(0, 12)}',
+      );
+      // TODO: Could we also just use any share back dht record they sent us?
+      var dhtConnection = DhtConnectionState.invited(
+        recordKeyThemSharing: member.recordKeyThemSharing!,
+      );
+      var connectionCrypto = CryptoState.symmetric(
+        accountVod: member.myVodozemacAccount,
+        // This is just a placeholder, since we expect readEncrypted to
+        // initialize an inbound session straight away
+        sharedSecret: await generateRandomSharedSecretBest(),
+      );
+      final ContactSharingSchema? dhtContact;
+      (dhtContact, dhtConnection, connectionCrypto) = await readEncrypted(
+        _dhtStorage,
+        dhtConnection,
+        connectionCrypto,
+        ContactSharingSchema.fromJson,
+      );
+      if (dhtContact != null) {
+        final contact = CoagContact(
+          coagContactId: Uuid().v4(),
+          myIdentity: await generateKeyPairBest(),
+          origin: origin.toString(),
+          name: dhtContact.details.names.values.firstOrNull ?? '???',
+          theirIdentity: dhtContact.identityKey,
+          connectionAttestations: dhtContact.connectionAttestations,
+          details: dhtContact.details,
+          addressLocations: dhtContact.addressLocations,
+          temporaryLocations: dhtContact.temporaryLocations,
+          introductionsByThem: dhtContact.introductions,
+          dhtConnection: dhtConnection,
+          connectionCrypto: connectionCrypto,
+        );
+        await _contactStorage.set(contact.coagContactId, contact);
+        return contact;
+      }
+    }
+
+    if (member.theirIdentityKey == null) {
+      debugPrint('${member.name} is missing vod identity key');
+      return null;
+    }
+    debugPrint(
+      'Adding contact with outbound session for community member '
+      '${member.infoRecordKey.toString().substring(0, 12)}',
+    );
+    final session = account.createOutboundSession(
+      identityKey: account.identityKeys.curve25519,
+      oneTimeKey: account.oneTimeKeys.values.first,
+    );
+    try {
+      final (recordKeyMeSharing, writerMeSharing) = await _dhtStorage.create();
+      final (recordKeyThemSharing, writerThemSharing) = await _dhtStorage
+          .create();
+      final dhtConnection = DhtConnectionState.initialized(
+        recordKeyMeSharing: recordKeyMeSharing,
+        writerMeSharing: writerMeSharing,
+        recordKeyThemSharing: recordKeyThemSharing,
+        writerThemSharing: writerThemSharing,
+      );
+      final connectionCrypto = CryptoState.vodozemacInitial(
+        theirIdentityKey: member.theirIdentityKey!,
+        myIdentityKey: account.identityKeys.curve25519.toBase64(),
+        accountVod: member.myVodozemacAccount,
+        sessionVod: session.toPickleEncrypted(Uint8List(32)),
+      );
+      final contact = CoagContact(
+        coagContactId: Uuid().v4(),
+        name: member.name,
+        origin: origin.toString(),
+        dhtConnection: dhtConnection,
+        connectionCrypto: connectionCrypto,
+        myIdentity: await generateKeyPairBest(),
+      );
+      await _contactStorage.set(contact.coagContactId, contact);
+      return contact;
+    } catch (e) {
+      debugPrint('${member.name} failed with $e');
+      return null;
+    }
+  }
 
   //// COMMUNITY MANAGEMENT FEATURES ////
   // TODO(LGro): Do we separate them out from the regular member user facing?

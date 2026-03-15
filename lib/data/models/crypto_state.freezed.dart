@@ -23,6 +23,10 @@ CryptoState _$CryptoStateFromJson(
           return CryptoSymToVod.fromJson(
             json
           );
+                case 'vodozemacInitial':
+          return CryptoVodozemacInitial.fromJson(
+            json
+          );
                 case 'vodozemac':
           return CryptoVodozemac.fromJson(
             json
@@ -85,12 +89,13 @@ extension CryptoStatePatterns on CryptoState {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( CryptoSymmetric value)?  symmetric,TResult Function( CryptoSymToVod value)?  symToVod,TResult Function( CryptoVodozemac value)?  vodozemac,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( CryptoSymmetric value)?  symmetric,TResult Function( CryptoSymToVod value)?  symToVod,TResult Function( CryptoVodozemacInitial value)?  vodozemacInitial,TResult Function( CryptoVodozemac value)?  vodozemac,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case CryptoSymmetric() when symmetric != null:
 return symmetric(_that);case CryptoSymToVod() when symToVod != null:
-return symToVod(_that);case CryptoVodozemac() when vodozemac != null:
+return symToVod(_that);case CryptoVodozemacInitial() when vodozemacInitial != null:
+return vodozemacInitial(_that);case CryptoVodozemac() when vodozemac != null:
 return vodozemac(_that);case _:
   return orElse();
 
@@ -109,12 +114,13 @@ return vodozemac(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( CryptoSymmetric value)  symmetric,required TResult Function( CryptoSymToVod value)  symToVod,required TResult Function( CryptoVodozemac value)  vodozemac,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( CryptoSymmetric value)  symmetric,required TResult Function( CryptoSymToVod value)  symToVod,required TResult Function( CryptoVodozemacInitial value)  vodozemacInitial,required TResult Function( CryptoVodozemac value)  vodozemac,}){
 final _that = this;
 switch (_that) {
 case CryptoSymmetric():
 return symmetric(_that);case CryptoSymToVod():
-return symToVod(_that);case CryptoVodozemac():
+return symToVod(_that);case CryptoVodozemacInitial():
+return vodozemacInitial(_that);case CryptoVodozemac():
 return vodozemac(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
@@ -129,12 +135,13 @@ return vodozemac(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( CryptoSymmetric value)?  symmetric,TResult? Function( CryptoSymToVod value)?  symToVod,TResult? Function( CryptoVodozemac value)?  vodozemac,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( CryptoSymmetric value)?  symmetric,TResult? Function( CryptoSymToVod value)?  symToVod,TResult? Function( CryptoVodozemacInitial value)?  vodozemacInitial,TResult? Function( CryptoVodozemac value)?  vodozemac,}){
 final _that = this;
 switch (_that) {
 case CryptoSymmetric() when symmetric != null:
 return symmetric(_that);case CryptoSymToVod() when symToVod != null:
-return symToVod(_that);case CryptoVodozemac() when vodozemac != null:
+return symToVod(_that);case CryptoVodozemacInitial() when vodozemacInitial != null:
+return vodozemacInitial(_that);case CryptoVodozemac() when vodozemac != null:
 return vodozemac(_that);case _:
   return null;
 
@@ -152,11 +159,12 @@ return vodozemac(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( SharedSecret sharedSecret,  String accountVod)?  symmetric,TResult Function( SharedSecret sharedSecret,  String theirIdentityKey,  String myIdentityKey,  String sessionVod)?  symToVod,TResult Function( String theirIdentityKey,  String myIdentityKey,  String sessionVod)?  vodozemac,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( SharedSecret sharedSecret,  String accountVod)?  symmetric,TResult Function( SharedSecret sharedSecret,  String theirIdentityKey,  String myIdentityKey,  String sessionVod)?  symToVod,TResult Function( String theirIdentityKey,  String myIdentityKey,  String accountVod,  String sessionVod)?  vodozemacInitial,TResult Function( String theirIdentityKey,  String myIdentityKey,  String sessionVod)?  vodozemac,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case CryptoSymmetric() when symmetric != null:
 return symmetric(_that.sharedSecret,_that.accountVod);case CryptoSymToVod() when symToVod != null:
-return symToVod(_that.sharedSecret,_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);case CryptoVodozemac() when vodozemac != null:
+return symToVod(_that.sharedSecret,_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);case CryptoVodozemacInitial() when vodozemacInitial != null:
+return vodozemacInitial(_that.theirIdentityKey,_that.myIdentityKey,_that.accountVod,_that.sessionVod);case CryptoVodozemac() when vodozemac != null:
 return vodozemac(_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);case _:
   return orElse();
 
@@ -175,11 +183,12 @@ return vodozemac(_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);ca
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( SharedSecret sharedSecret,  String accountVod)  symmetric,required TResult Function( SharedSecret sharedSecret,  String theirIdentityKey,  String myIdentityKey,  String sessionVod)  symToVod,required TResult Function( String theirIdentityKey,  String myIdentityKey,  String sessionVod)  vodozemac,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( SharedSecret sharedSecret,  String accountVod)  symmetric,required TResult Function( SharedSecret sharedSecret,  String theirIdentityKey,  String myIdentityKey,  String sessionVod)  symToVod,required TResult Function( String theirIdentityKey,  String myIdentityKey,  String accountVod,  String sessionVod)  vodozemacInitial,required TResult Function( String theirIdentityKey,  String myIdentityKey,  String sessionVod)  vodozemac,}) {final _that = this;
 switch (_that) {
 case CryptoSymmetric():
 return symmetric(_that.sharedSecret,_that.accountVod);case CryptoSymToVod():
-return symToVod(_that.sharedSecret,_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);case CryptoVodozemac():
+return symToVod(_that.sharedSecret,_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);case CryptoVodozemacInitial():
+return vodozemacInitial(_that.theirIdentityKey,_that.myIdentityKey,_that.accountVod,_that.sessionVod);case CryptoVodozemac():
 return vodozemac(_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -194,11 +203,12 @@ return vodozemac(_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( SharedSecret sharedSecret,  String accountVod)?  symmetric,TResult? Function( SharedSecret sharedSecret,  String theirIdentityKey,  String myIdentityKey,  String sessionVod)?  symToVod,TResult? Function( String theirIdentityKey,  String myIdentityKey,  String sessionVod)?  vodozemac,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( SharedSecret sharedSecret,  String accountVod)?  symmetric,TResult? Function( SharedSecret sharedSecret,  String theirIdentityKey,  String myIdentityKey,  String sessionVod)?  symToVod,TResult? Function( String theirIdentityKey,  String myIdentityKey,  String accountVod,  String sessionVod)?  vodozemacInitial,TResult? Function( String theirIdentityKey,  String myIdentityKey,  String sessionVod)?  vodozemac,}) {final _that = this;
 switch (_that) {
 case CryptoSymmetric() when symmetric != null:
 return symmetric(_that.sharedSecret,_that.accountVod);case CryptoSymToVod() when symToVod != null:
-return symToVod(_that.sharedSecret,_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);case CryptoVodozemac() when vodozemac != null:
+return symToVod(_that.sharedSecret,_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);case CryptoVodozemacInitial() when vodozemacInitial != null:
+return vodozemacInitial(_that.theirIdentityKey,_that.myIdentityKey,_that.accountVod,_that.sessionVod);case CryptoVodozemac() when vodozemac != null:
 return vodozemac(_that.theirIdentityKey,_that.myIdentityKey,_that.sessionVod);case _:
   return null;
 
@@ -353,6 +363,85 @@ class _$CryptoSymToVodCopyWithImpl<$Res>
 sharedSecret: null == sharedSecret ? _self.sharedSecret : sharedSecret // ignore: cast_nullable_to_non_nullable
 as SharedSecret,theirIdentityKey: null == theirIdentityKey ? _self.theirIdentityKey : theirIdentityKey // ignore: cast_nullable_to_non_nullable
 as String,myIdentityKey: null == myIdentityKey ? _self.myIdentityKey : myIdentityKey // ignore: cast_nullable_to_non_nullable
+as String,sessionVod: null == sessionVod ? _self.sessionVod : sessionVod // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class CryptoVodozemacInitial implements CryptoState {
+  const CryptoVodozemacInitial({required this.theirIdentityKey, required this.myIdentityKey, required this.accountVod, required this.sessionVod, final  String? $type}): $type = $type ?? 'vodozemacInitial';
+  factory CryptoVodozemacInitial.fromJson(Map<String, dynamic> json) => _$CryptoVodozemacInitialFromJson(json);
+
+ final  String theirIdentityKey;
+ final  String myIdentityKey;
+ final  String accountVod;
+ final  String sessionVod;
+
+@JsonKey(name: 'runtimeType')
+final String $type;
+
+
+/// Create a copy of CryptoState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$CryptoVodozemacInitialCopyWith<CryptoVodozemacInitial> get copyWith => _$CryptoVodozemacInitialCopyWithImpl<CryptoVodozemacInitial>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$CryptoVodozemacInitialToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CryptoVodozemacInitial&&(identical(other.theirIdentityKey, theirIdentityKey) || other.theirIdentityKey == theirIdentityKey)&&(identical(other.myIdentityKey, myIdentityKey) || other.myIdentityKey == myIdentityKey)&&(identical(other.accountVod, accountVod) || other.accountVod == accountVod)&&(identical(other.sessionVod, sessionVod) || other.sessionVod == sessionVod));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,theirIdentityKey,myIdentityKey,accountVod,sessionVod);
+
+@override
+String toString() {
+  return 'CryptoState.vodozemacInitial(theirIdentityKey: $theirIdentityKey, myIdentityKey: $myIdentityKey, accountVod: $accountVod, sessionVod: $sessionVod)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $CryptoVodozemacInitialCopyWith<$Res> implements $CryptoStateCopyWith<$Res> {
+  factory $CryptoVodozemacInitialCopyWith(CryptoVodozemacInitial value, $Res Function(CryptoVodozemacInitial) _then) = _$CryptoVodozemacInitialCopyWithImpl;
+@useResult
+$Res call({
+ String theirIdentityKey, String myIdentityKey, String accountVod, String sessionVod
+});
+
+
+
+
+}
+/// @nodoc
+class _$CryptoVodozemacInitialCopyWithImpl<$Res>
+    implements $CryptoVodozemacInitialCopyWith<$Res> {
+  _$CryptoVodozemacInitialCopyWithImpl(this._self, this._then);
+
+  final CryptoVodozemacInitial _self;
+  final $Res Function(CryptoVodozemacInitial) _then;
+
+/// Create a copy of CryptoState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? theirIdentityKey = null,Object? myIdentityKey = null,Object? accountVod = null,Object? sessionVod = null,}) {
+  return _then(CryptoVodozemacInitial(
+theirIdentityKey: null == theirIdentityKey ? _self.theirIdentityKey : theirIdentityKey // ignore: cast_nullable_to_non_nullable
+as String,myIdentityKey: null == myIdentityKey ? _self.myIdentityKey : myIdentityKey // ignore: cast_nullable_to_non_nullable
+as String,accountVod: null == accountVod ? _self.accountVod : accountVod // ignore: cast_nullable_to_non_nullable
 as String,sessionVod: null == sessionVod ? _self.sessionVod : sessionVod // ignore: cast_nullable_to_non_nullable
 as String,
   ));

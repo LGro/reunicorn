@@ -38,6 +38,26 @@ Map<String, dynamic> _$CryptoSymToVodToJson(CryptoSymToVod instance) =>
       'runtimeType': instance.$type,
     };
 
+CryptoVodozemacInitial _$CryptoVodozemacInitialFromJson(
+  Map<String, dynamic> json,
+) => CryptoVodozemacInitial(
+  theirIdentityKey: json['their_identity_key'] as String,
+  myIdentityKey: json['my_identity_key'] as String,
+  accountVod: json['account_vod'] as String,
+  sessionVod: json['session_vod'] as String,
+  $type: json['runtimeType'] as String?,
+);
+
+Map<String, dynamic> _$CryptoVodozemacInitialToJson(
+  CryptoVodozemacInitial instance,
+) => <String, dynamic>{
+  'their_identity_key': instance.theirIdentityKey,
+  'my_identity_key': instance.myIdentityKey,
+  'account_vod': instance.accountVod,
+  'session_vod': instance.sessionVod,
+  'runtimeType': instance.$type,
+};
+
 CryptoVodozemac _$CryptoVodozemacFromJson(Map<String, dynamic> json) =>
     CryptoVodozemac(
       theirIdentityKey: json['their_identity_key'] as String,
