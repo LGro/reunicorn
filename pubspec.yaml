@@ -5,7 +5,7 @@ version: "0.2.8+75"
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
-  flutter: ">=3.38.0"
+  flutter: ">=3.41.0"
 
 dependencies:
   ansicolor: ^2.0.3
@@ -53,7 +53,7 @@ dependencies:
   flutter_staggered_grid_view: ^0.7.0
   http: ^1.5.0
   faker: ^2.2.0
-  flutter_local_notifications: ^19.4.2
+  flutter_local_notifications: ^21.0.0
   phone_numbers_parser: ^9.0.15
   badges: ^3.1.2
   http_cache_file_store: ^2.0.1
@@ -64,7 +64,9 @@ dependencies:
       ref: 2cea396843cd3ab1b5ec4334be4233864637874e
   # TODO: Switch to official release once https://github.com/builttoroam/device_calendar/pull/590 is in
   device_calendar:
-    git: https://github.com/bardram/device_calendar
+    git:
+      url: https://github.com/bardram/device_calendar
+      ref: 32f9eac659731b6f0f941fab88fa4c749c75f716
   file_picker: ^10.3.3
   maplibre_gl: ^0.24.0
   multiple_result: ^5.2.0

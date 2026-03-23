@@ -16,13 +16,13 @@ Future<Map<String, dynamic>> getDefaultVeilidPlatformConfig(
   bool isWeb,
   String appName,
 ) async {
-  final ignoreLogTargetsStr =
+  final directivesStr =
       // Allowed to change settings
       // ignore: do_not_use_environment
       const String.fromEnvironment('IGNORE_LOG_TARGETS').trim();
-  final ignoreLogTargets = ignoreLogTargetsStr.isEmpty
+  final directives = directivesStr.isEmpty
       ? <String>[]
-      : ignoreLogTargetsStr.split(',').map((e) => e.trim()).toList();
+      : directivesStr.split(',').map((e) => e.trim()).toList();
 
   // Allowed to change settings
   // ignore: do_not_use_environment
@@ -45,14 +45,13 @@ Future<Map<String, dynamic>> getDefaultVeilidPlatformConfig(
           level: kIsDebugMode
               ? VeilidConfigLogLevel.debug
               : VeilidConfigLogLevel.info,
-          logsInTimings: true,
-          logsInConsole: VeilidWASMConfigLoggingLogsInConsole.off,
-          ignoreLogTargets: ignoreLogTargets,
+          timings: true,
+          directives: directives,
         ),
         api: VeilidWASMConfigLoggingApi(
           enabled: true,
           level: VeilidConfigLogLevel.info,
-          ignoreLogTargets: ignoreLogTargets,
+          directives: directives,
         ),
       ),
     ).toJson();
@@ -64,19 +63,19 @@ Future<Map<String, dynamic>> getDefaultVeilidPlatformConfig(
         level: kIsDebugMode
             ? VeilidConfigLogLevel.debug
             : VeilidConfigLogLevel.info,
-        ignoreLogTargets: ignoreLogTargets,
+        directives: directives,
       ),
       otlp: VeilidFFIConfigLoggingOtlp(
         enabled: false,
         level: VeilidConfigLogLevel.trace,
         grpcEndpoint: '127.0.0.1:4317',
         serviceName: appName,
-        ignoreLogTargets: ignoreLogTargets,
+        directives: directives,
       ),
       api: VeilidFFIConfigLoggingApi(
         enabled: true,
         level: VeilidConfigLogLevel.info,
-        ignoreLogTargets: ignoreLogTargets,
+        directives: directives,
       ),
       flame: VeilidFFIConfigLoggingFlame(
         enabled: flamePathStr.isNotEmpty,
