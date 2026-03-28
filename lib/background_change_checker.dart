@@ -16,7 +16,7 @@ class BackgroundChangeChecker {
   static final BackgroundChangeChecker _instance =
       BackgroundChangeChecker._internal();
 
-  static const _checkInterval = Duration(seconds: kIsDebugMode ? 15 : 60);
+  static const _checkInterval = Duration(seconds: kIsDebugMode ? 15 : 60 * 5);
 
   Timer? _timer;
   bool _checking = false;
@@ -68,6 +68,7 @@ class BackgroundChangeChecker {
 
   Future<ChangeResult?> checkForPendingChanges() async {
     debugPrint('rncrn-bg: start checking for pending changes in background');
+    // Only bring up veilid here and shut down afterwards to reduce background load?
     // TODO: Add timeout?
     final updatedContacts = await _contactDhtRepository
         ?.updateAndWatchReceivingDHT(shuffle: true);

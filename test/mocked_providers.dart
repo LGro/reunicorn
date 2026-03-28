@@ -48,8 +48,8 @@ final minimalBaseContact = CoagContact(
   dhtConnection: DhtConnectionState.invited(
     recordKeyThemSharing: fakeDhtRecordKey(),
   ),
-  connectionCrypto: CryptoState.symmetric(
-    sharedSecret: fakePsk(3),
-    accountVod: '',
+  connectionCrypto: CryptoState.initializedSymmetric(
+    initialSharedSecret: fakePsk(3),
+    myNextKeyPair: fakeKeyPair(),
   ),
 );

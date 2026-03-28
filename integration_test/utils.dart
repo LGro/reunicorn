@@ -1,10 +1,12 @@
 // Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:reunicorn/data/services/dht/veilid_dht.dart';
+import 'package:reunicorn/data/utils.dart';
 import 'package:veilid/veilid.dart';
 
 import '../test/mocked_providers.dart';
@@ -20,6 +22,7 @@ Future<void> retryUntilTimeout(
   while (DateTime.now().isBefore(end)) {
     try {
       await callable();
+      return;
     } on Exception {}
     await Future<void>.delayed(const Duration(milliseconds: 100));
   }
@@ -29,15 +32,25 @@ Future<void> retryUntilTimeout(
 class MockDht implements BaseDht {
   final _storage = <RecordKey, Map<int, Uint8List>>{};
   final _watchCallbacks = <RecordKey, VoidCallback>{};
-  var _recordCounter = 0;
+  final _dhtConnections = <MockDht>[];
+
+  bool useVeilidKeyPairWriter;
+
+  MockDht({this.useVeilidKeyPairWriter = false});
+
+  void connect(MockDht dht) {
+    _dhtConnections.add(dht);
+  }
 
   @override
   Future<(RecordKey, KeyPair)> create() async {
-    _recordCounter = _recordCounter + 1;
-    return (
-      fakeDhtRecordKey(_recordCounter),
-      fakeKeyPair(_recordCounter, _recordCounter + 1000),
-    );
+    final recordSeed = Random.secure().nextInt(2048);
+    final key = fakeDhtRecordKey(recordSeed);
+    final writer = useVeilidKeyPairWriter
+        ? await generateKeyPairBest()
+        : fakeKeyPair(recordSeed, recordSeed + 1000);
+    print('DHT create ${key.toString().substring(0, 12)}');
+    return (key, writer);
   }
 
   @override
@@ -47,9 +60,29 @@ class MockDht implements BaseDht {
     Uint8List value, {
     int numChunks = 32,
     int chunkOffset = 0,
+    bool local = true,
   }) async {
-    _storage[key]![chunkOffset] = value;
-    if (_watchCallbacks.containsKey(key)) {
+    print('DHT write ${key.toString().substring(0, 12)}');
+    if (_storage.containsKey(key)) {
+      _storage[key]![chunkOffset] = value;
+    } else {
+      _storage[key] = {chunkOffset: value};
+    }
+    if (local) {
+      Future.wait(
+        _dhtConnections.map(
+          (dht) => dht.write(
+            key,
+            writer,
+            value,
+            numChunks: numChunks,
+            chunkOffset: chunkOffset,
+            local: false,
+          ),
+        ),
+      );
+    }
+    if (!local && _watchCallbacks.containsKey(key)) {
       _watchCallbacks[key]!();
     }
   }
@@ -60,11 +93,17 @@ class MockDht implements BaseDht {
     int numChunks = 32,
     int chunkOffset = 0,
     bool local = false,
-  }) async => _storage[key]?[chunkOffset];
+  }) async {
+    print('DHT read ${key.toString().substring(0, 12)}');
+    return _storage[key]?[chunkOffset];
+  }
 
   @override
   Future<bool> watch(RecordKey key, VoidCallback callback) async {
-    _watchCallbacks[key] = callback;
+    if (!_watchCallbacks.containsKey(key)) {
+      print('DHT watch ${key.toString().substring(0, 12)}');
+      _watchCallbacks[key] = callback;
+    }
     return true;
   }
 }

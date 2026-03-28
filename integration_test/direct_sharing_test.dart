@@ -7,9 +7,8 @@ import 'package:integration_test/integration_test.dart';
 import 'package:reunicorn/data/models/circle.dart';
 import 'package:reunicorn/data/models/models.dart';
 import 'package:reunicorn/data/models/profile_info.dart';
-import 'package:reunicorn/data/models/profile_sharing_settings.dart';
+import 'package:reunicorn/data/models/setting.dart';
 import 'package:reunicorn/data/repositories/contact_dht.dart';
-import 'package:reunicorn/data/services/dht/veilid_dht.dart';
 import 'package:reunicorn/data/services/storage/memory.dart';
 import 'package:reunicorn/ui/receive_request/utils/direct_sharing.dart';
 import 'package:reunicorn/ui/utils.dart';
@@ -29,16 +28,22 @@ void main() {
     // SETUP
     final contactStorageA = MemoryStorage<CoagContact>();
     final circleStorageA = MemoryStorage<Circle>();
+    final profileStorageA = MemoryStorage<ProfileInfo>();
     final contactStorageB = MemoryStorage<CoagContact>();
     final circleStorageB = MemoryStorage<Circle>();
     final profileStorageB = MemoryStorage<ProfileInfo>();
-    final dhtStorage = VeilidDht(watchLocalChanges: true);
+
+    // Setup interconnected mock DHTs
+    final dhtA = MockDht(useVeilidKeyPairWriter: true);
+    final dhtB = MockDht(useVeilidKeyPairWriter: true);
+    dhtA.connect(dhtB);
+    dhtB.connect(dhtA);
 
     // Initialize Alice's repository
     final _cRepoA = ContactDhtRepository(
       contactStorageA,
       circleStorageA,
-      MemoryStorage<ProfileInfo>()..addToMemory(
+      profileStorageA..addToMemory(
         'pA1',
         const ProfileInfo(
           'pA1',
@@ -50,7 +55,8 @@ void main() {
           ),
         ),
       ),
-      dhtStorage,
+      MemoryStorage<Setting>(),
+      dhtA,
     );
 
     // Initialize Bob's repository
@@ -69,14 +75,14 @@ void main() {
           ),
         ),
       ),
-      dhtStorage,
+      MemoryStorage<Setting>(),
+      dhtB,
     );
 
     // Alice prepares invite for Bob and shares via default circle
-    debugPrint('ALICE ACTING');
+    debugPrint('ALICE ACTING (prep invite)');
     var contactBobInvitedByA = await _cRepoA.createContactForInvite(
       'Bob Invite',
-      pubKey: null,
     );
     await contactStorageA.set(
       contactBobInvitedByA.coagContactId,
@@ -90,101 +96,109 @@ void main() {
         memberIds: [contactBobInvitedByA.coagContactId],
       ),
     );
+    expect(
+      contactBobInvitedByA.connectionCrypto,
+      isA<CryptoInitializedSymmetric>(),
+      reason: "Expect initialized symmetric for initial invite",
+    );
 
-    await retryUntilTimeout(20, () async {
+    // Wait until sharing connection is set up and populated
+    await retryUntilTimeout(10, () async {
       contactBobInvitedByA =
           await contactStorageA.get(contactBobInvitedByA.coagContactId) ??
           contactBobInvitedByA;
       expect(
-        contactBobInvitedByA.dhtSettings.recordKeyMeSharing,
-        isNotNull,
-        reason: 'Sharing record prepared',
-      );
-      expect(
-        contactBobInvitedByA.dhtSettings.recordKeyThemSharing,
-        isNotNull,
-        reason: 'Receiving record prepared',
-      );
-      expect(
-        contactBobInvitedByA.dhtSettings.initialSecret,
-        isNotNull,
-        reason: 'Initial secret for symmetric encryption ready',
-      );
-      expect(
-        contactBobInvitedByA.dhtSettings.theirPublicKey,
-        isNull,
-        reason: 'We have not seen any public keys from them yet',
-      );
-      expect(
-        contactBobInvitedByA.dhtSettings.theirNextPublicKey,
-        isNull,
-        reason: 'We have not seen any public keys from them yet',
+        contactBobInvitedByA.dhtConnection,
+        isA<DhtConnectionInitialized>(),
       );
       // TODO: Can those be used as matchers?
-      expect(showSharingInitializing(contactBobInvitedByA), false);
+      expect(
+        showSharingInitializing(contactBobInvitedByA.dhtConnection),
+        false,
+      );
       expect(showSharingOffer(contactBobInvitedByA), false);
       expect(showDirectSharing(contactBobInvitedByA), true);
     });
+    // Generate direct sharing invite
     final directSharingLinkFromAliceForBob = DirectSharingInvite(
       'Alice Sharing',
-      contactBobInvitedByA.dhtSettings.recordKeyMeSharing!,
-      contactBobInvitedByA.dhtSettings.initialSecret!,
+      contactBobInvitedByA.dhtConnection!.recordKeyMeSharingOrNull!,
+      contactBobInvitedByA.connectionCrypto.initialSharedSecretOrNull!,
     ).uri;
 
     // Bob accepts invite from Alice and shares via default circle
     debugPrint('---');
-    debugPrint('BOB ACTING');
-    await createContactFromDirectSharing(
+    debugPrint('BOB ACTING (accept invite)');
+    var contactAliceFromBobsRepo = await createContactFromDirectSharing(
       directSharingLinkFromAliceForBob.fragment,
       contactStorageB,
-    );
-    var contactAliceFromBobsRepo = await contactStorageB.getAll().then(
-      (contacts) => contacts.values.first,
     );
     await circleStorageB.set(
       _defaultCircleId,
       Circle(
         id: _defaultCircleId,
         name: 'circle1',
-        memberIds: [contactAliceFromBobsRepo.coagContactId],
+        memberIds: [contactAliceFromBobsRepo!.coagContactId],
       ),
     );
+    expect(
+      contactAliceFromBobsRepo.connectionCrypto,
+      isA<CryptoInitializedSymmetric>(),
+      reason:
+          'Just from the link we are missing their next public key, '
+          'so it is just initialized instead of established symmetric until '
+          'first successful read',
+    );
 
-    await retryUntilTimeout(20, () async {
-      contactAliceFromBobsRepo = (await contactStorageB.get(
-        contactAliceFromBobsRepo.coagContactId,
-      ))!;
+    // Wait until shared information was read successfully once
+    await retryUntilTimeout(10, () async {
+      contactAliceFromBobsRepo = await contactStorageB.get(
+        contactAliceFromBobsRepo!.coagContactId,
+      );
       expect(
-        contactAliceFromBobsRepo.name,
+        contactAliceFromBobsRepo!.name,
         'Alice Sharing',
         reason: 'Name from invite URL',
       );
       expect(
-        contactAliceFromBobsRepo.details?.names.values.firstOrNull,
+        contactAliceFromBobsRepo!.details?.names.values.firstOrNull,
         'UserA',
         reason: 'Name from sharing profile',
       );
       expect(
-        contactAliceFromBobsRepo.dhtSettings.initialSecret,
-        isNotNull,
+        contactAliceFromBobsRepo!.connectionCrypto,
+        isA<CryptoEstablishedSymmetric>(),
         reason:
-            'Initial secret still in place because no full pub key cycle yet',
+            'After successful read, we have established the symmetric channel',
       );
       expect(
-        contactAliceFromBobsRepo.dhtSettings.theirNextPublicKey,
+        contactAliceFromBobsRepo?.profileSharingStatus.mostRecentSuccess,
         isNotNull,
-        reason: 'Public key is expected to be available after first read',
       );
-      expect(showSharingInitializing(contactAliceFromBobsRepo), false);
-      expect(showSharingOffer(contactAliceFromBobsRepo), false);
-      expect(showDirectSharing(contactAliceFromBobsRepo), false);
+      expect(
+        contactAliceFromBobsRepo
+            ?.profileSharingStatus
+            .sharedProfile
+            ?.details
+            .names
+            .values
+            .first,
+        "UserB",
+        reason: "Bob sharing the right name with Alice",
+      );
+      expect(
+        showSharingInitializing(contactAliceFromBobsRepo!.dhtConnection),
+        false,
+      );
+      expect(showSharingOffer(contactAliceFromBobsRepo!), false);
+      expect(showDirectSharing(contactAliceFromBobsRepo!), false);
     });
 
     // Alice checks for Bob sharing back
     debugPrint('---');
-    debugPrint('ALICE ACTING');
+    debugPrint('ALICE ACTING (check Bob shares back)');
 
-    await retryUntilTimeout(20, () async {
+    await retryUntilTimeout(10, () async {
       contactBobInvitedByA = (await contactStorageA.get(
         contactBobInvitedByA.coagContactId,
       ))!;
@@ -194,33 +208,61 @@ void main() {
         reason: 'Name from sharing profile',
       );
       expect(
-        contactBobInvitedByA.dhtSettings.theyAckHandshakeComplete,
-        true,
-        reason: 'Bob indicated handshake complete',
+        contactBobInvitedByA.connectionCrypto,
+        isA<CryptoInitializedAsymmetric>(),
+        reason:
+            "Expect initialized asymmetric after Alice read what Bob shared",
       );
+    });
+
+    // Alice shares something else for Bob
+    final profileA = await profileStorageA.getAll().then(
+      (p) => p.values.firstOrNull,
+    );
+    profileStorageA.set(
+      profileA!.id,
+      profileA.copyWith(
+        details: profileA.details.copyWith(phones: {'p123': '123'}),
+        sharingSettings: profileA.sharingSettings.copyWith(
+          phones: {
+            'p123': [_defaultCircleId],
+          },
+        ),
+      ),
+    );
+    await retryUntilTimeout(10, () async {
+      contactBobInvitedByA = (await contactStorageA.get(
+        contactBobInvitedByA.coagContactId,
+      ))!;
       expect(
-        contactBobInvitedByA.dhtSettings.initialSecret,
-        isNull,
-        reason: 'Initial secret discarded due to switch to public key crypto',
+        contactBobInvitedByA
+            .profileSharingStatus
+            .sharedProfile
+            ?.details
+            .phones
+            .values
+            .firstOrNull,
+        '123',
+        reason: 'Shared new phone number',
       );
     });
 
     // Bob checks for completed handshake after updating receive and share
     debugPrint('---');
-    debugPrint('BOB ACTING');
-    await retryUntilTimeout(20, () async {
+    debugPrint('BOB ACTING (check handshake completed)');
+    await retryUntilTimeout(10, () async {
       contactAliceFromBobsRepo = (await contactStorageB.get(
-        contactAliceFromBobsRepo.coagContactId,
+        contactAliceFromBobsRepo!.coagContactId,
       ))!;
       expect(
-        contactAliceFromBobsRepo.dhtSettings.theyAckHandshakeComplete,
-        true,
-        reason: 'Handshake accepted as complete by Alice',
+        contactAliceFromBobsRepo!.details?.phones.values.firstOrNull,
+        '123',
+        reason: 'Also expect the new phone number',
       );
       expect(
-        contactAliceFromBobsRepo.dhtSettings.initialSecret,
-        isNull,
-        reason: 'Initial secret removed after pub keys exchanged and handshake',
+        contactAliceFromBobsRepo!.connectionCrypto,
+        isA<CryptoInitializedAsymmetric>(),
+        reason: 'Handshake accepted as complete by Alice',
       );
     });
 
@@ -229,7 +271,7 @@ void main() {
 
     // Bob shares update, testing key rotation
     debugPrint('---');
-    debugPrint('BOB ACTING');
+    debugPrint('BOB ACTING (share update)');
     final profileB = await profileStorageB.getAll().then((p) => p.values.first);
     await profileStorageB.set(
       profileB.id,
@@ -244,33 +286,33 @@ void main() {
         ),
       ),
     );
+    await retryUntilTimeout(10, () async {
+      contactAliceFromBobsRepo = (await contactStorageB.get(
+        contactAliceFromBobsRepo!.coagContactId,
+      ))!;
+      expect(
+        contactAliceFromBobsRepo!
+            .profileSharingStatus
+            .sharedProfile
+            ?.addressLocations
+            .values
+            .firstOrNull
+            ?.latitude,
+        0,
+        reason: 'New address is shared',
+      );
+    });
 
     // Alice receives new location
     debugPrint('---');
-    debugPrint('ALICE ACTING');
-    await retryUntilTimeout(20, () async {
+    debugPrint('ALICE ACTING (receive update)');
+    await retryUntilTimeout(10, () async {
       final contactBobFromAlicesRepo = (await contactStorageA.get(
         contactBobInvitedByA.coagContactId,
       ))!;
       expect(
-        contactBobFromAlicesRepo.dhtSettings.theirPublicKey,
-        isNotNull,
-        reason: 'Public key is marked as working',
-      );
-      expect(
-        contactBobFromAlicesRepo.dhtSettings.theirNextPublicKey,
-        isNotNull,
-        reason: 'Follow up public key has been transmitted',
-      );
-      expect(
-        contactBobFromAlicesRepo.dhtSettings.theirPublicKey,
-        isNot(equals(contactBobFromAlicesRepo.dhtSettings.theirNextPublicKey)),
-        reason: 'Follow up key differs',
-      );
-      expect(
-        contactBobFromAlicesRepo.dhtSettings.theirNextPublicKey,
-        contactAliceFromBobsRepo.dhtSettings.myNextKeyPair?.key,
-        reason: 'Next key matches source next key pair public key',
+        contactBobFromAlicesRepo.connectionCrypto,
+        isA<CryptoEstablishedAsymmetric>(),
       );
     });
   });

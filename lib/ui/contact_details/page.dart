@@ -478,9 +478,6 @@ class _ContactPageState extends State<ContactPage> {
                   ),
               ],
             ),
-            // const SizedBox(height: 8),
-            // Text('Updated: ${contact.mostRecentUpdate}'),
-            // Text('Changed: ${contact.mostRecentChange}'),
             _paddedDivider(),
             Text(
               contact.connectionCrypto.map(
@@ -503,9 +500,20 @@ class _ContactPageState extends State<ContactPage> {
                   contact.profileSharingStatus.mostRecentAttempt!,
                 ))
               const Text('Pending changes not shared yet'),
-            // TODO(LGro): show diff above between shared profile and pending changes in shared profile
+            Text(
+              'MyPubKey: ${_shorten(contact.connectionCrypto.myKeyPairOrNull?.key.toString() ?? 'null')}...',
+            ),
+            Text(
+              'MyNextPubKey: ${_shorten(contact.connectionCrypto.myNextKeyPair.key.toString())}...',
+            ),
             Text(
               'MyDhtKey: ${_shorten(contact.dhtConnection?.recordKeyMeSharingOrNull.toString() ?? '')}...',
+            ),
+            Text(
+              'TheirPubKey: ${_shorten(contact.connectionCrypto.theirPublicKeyOrNull.toString())}...',
+            ),
+            Text(
+              'TheirNextPubKey: ${_shorten(contact.connectionCrypto.theirNextPublicKeyOrNull.toString())}...',
             ),
             Text(
               'TheirDhtKey: ${_shorten(contact.dhtConnection?.recordKeyThemSharing.toString() ?? '')}...',
