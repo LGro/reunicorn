@@ -9,14 +9,52 @@ import 'package:reunicorn/data/models/models.dart';
 import 'package:reunicorn/data/models/profile_info.dart';
 import 'package:reunicorn/data/models/setting.dart';
 import 'package:reunicorn/data/repositories/contact_dht.dart';
+import 'package:reunicorn/data/services/storage/base.dart';
 import 'package:reunicorn/data/services/storage/memory.dart';
 import 'package:reunicorn/ui/receive_request/utils/direct_sharing.dart';
 import 'package:reunicorn/ui/utils.dart';
 import 'package:reunicorn/veilid_init.dart';
+import 'package:uuid/uuid.dart';
 
 import 'utils.dart';
 
 const _defaultCircleId = 'c1';
+
+Future<String> _sharePhone(
+  Storage<ProfileInfo> profileStorage,
+  Storage<CoagContact> contactStorage, {
+  required String contactId,
+  required String number,
+}) async {
+  final profileA = await profileStorage.getAll().then(
+    (p) => p.values.firstOrNull,
+  );
+  final phoneId = Uuid().v4();
+  profileStorage.set(
+    profileA!.id,
+    profileA.copyWith(
+      details: profileA.details.copyWith(
+        phones: {...profileA.details.phones, phoneId: number},
+      ),
+      sharingSettings: profileA.sharingSettings.copyWith(
+        phones: {
+          ...profileA.sharingSettings.phones,
+          phoneId: [_defaultCircleId],
+        },
+      ),
+    ),
+  );
+  await retryUntilTimeout(10, () async {
+    final contact = (await contactStorage.get(contactId))!;
+    expect(
+      contact.profileSharingStatus.sharedProfile?.details.phones.keys ?? [],
+      contains(phoneId),
+      reason: 'Shared new phone number',
+    );
+  });
+  return phoneId;
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -216,36 +254,22 @@ void main() {
     });
 
     // Alice shares something else for Bob
-    final profileA = await profileStorageA.getAll().then(
-      (p) => p.values.firstOrNull,
+    // Leave this here, since sharing two things used to break the crypto until
+    // the other contact shared back.
+    debugPrint('DBG: Share phone 1');
+    final phoneId1 = await _sharePhone(
+      profileStorageA,
+      contactStorageA,
+      contactId: contactBobInvitedByA.coagContactId,
+      number: '123',
     );
-    profileStorageA.set(
-      profileA!.id,
-      profileA.copyWith(
-        details: profileA.details.copyWith(phones: {'p123': '123'}),
-        sharingSettings: profileA.sharingSettings.copyWith(
-          phones: {
-            'p123': [_defaultCircleId],
-          },
-        ),
-      ),
+    debugPrint('DBG: Share phone 2');
+    final phoneId2 = await _sharePhone(
+      profileStorageA,
+      contactStorageA,
+      contactId: contactBobInvitedByA.coagContactId,
+      number: '312',
     );
-    await retryUntilTimeout(10, () async {
-      contactBobInvitedByA = (await contactStorageA.get(
-        contactBobInvitedByA.coagContactId,
-      ))!;
-      expect(
-        contactBobInvitedByA
-            .profileSharingStatus
-            .sharedProfile
-            ?.details
-            .phones
-            .values
-            .firstOrNull,
-        '123',
-        reason: 'Shared new phone number',
-      );
-    });
 
     // Bob checks for completed handshake after updating receive and share
     debugPrint('---');
@@ -255,13 +279,18 @@ void main() {
         contactAliceFromBobsRepo!.coagContactId,
       ))!;
       expect(
-        contactAliceFromBobsRepo!.details?.phones.values.firstOrNull,
-        '123',
-        reason: 'Also expect the new phone number',
+        contactAliceFromBobsRepo!.details?.phones.keys ?? [],
+        contains(phoneId1),
+        reason: 'Also expect the new phone number 1',
+      );
+      expect(
+        contactAliceFromBobsRepo!.details?.phones.keys ?? [],
+        contains(phoneId2),
+        reason: 'Also expect the new phone number 2',
       );
       expect(
         contactAliceFromBobsRepo!.connectionCrypto,
-        isA<CryptoInitializedAsymmetric>(),
+        isA<CryptoEstablishedAsymmetric>(),
         reason: 'Handshake accepted as complete by Alice',
       );
     });

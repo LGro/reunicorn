@@ -399,6 +399,7 @@ class ContactDhtRepository {
         'rcrn-dht-on-update | ${contactId.substring(0, 5)} | '
         'started-sync',
       );
+      var onlyUpdatedOnProfileChange = true;
       var contact = await _contactStorage.get(contactId);
       if (contact == null) {
         return null;
@@ -445,12 +446,30 @@ class ContactDhtRepository {
             'rcrn-dht-on-update | ${contact.coagContactId.substring(0, 5)} | '
             'share-changed',
           );
-          await _contactStorage.set(contact.coagContactId, updatedContact);
-          // If we've had changes here, save and return; Set will trigger this
-          // updateContact callback again
-          // TODO(LGRo): Doing another read attempt until we don't receive
-          //             updates seems slow to get a write in
-          return updatedContact;
+          // TODO: Can this be simplified to they differ?
+          if ((contact.connectionCrypto is CryptoInitializedSymmetric &&
+                  updatedContact.connectionCrypto
+                      is CryptoEstablishedSymmetric) ||
+              (contact.connectionCrypto is CryptoEstablishedSymmetric &&
+                  updatedContact.connectionCrypto
+                      is CryptoInitializedAsymmetric) ||
+              (contact.connectionCrypto is CryptoInitializedAsymmetric &&
+                  updatedContact.connectionCrypto
+                      is CryptoEstablishedAsymmetric)) {
+            // If also the connection crypto evolved, make sure to continue
+            // forcing an update even if the shared profile did not change, to
+            // ensure we help the contact advance crypto evolution as fast as
+            // possible
+            contact = updatedContact;
+            onlyUpdatedOnProfileChange = false;
+          } else {
+            // Otherwise, save updated contact and return, knowing that will
+            // trigger this method again
+            await _contactStorage.set(contact.coagContactId, updatedContact);
+            // TODO(LGRo): Doing another read attempt until we don't receive
+            //             updates seems slow to get a write in
+            return updatedContact;
+          }
         }
       }
 
@@ -472,7 +491,8 @@ class ContactDhtRepository {
         recordsToPin.whereType<RecordKey>().toList(),
       );
       // If we already have shared the most recent profile version, stop here
-      if (updatedSharedProfile == contact.profileSharingStatus.sharedProfile) {
+      if (onlyUpdatedOnProfileChange &&
+          updatedSharedProfile == contact.profileSharingStatus.sharedProfile) {
         debugPrint(
           'rcrn-dht-on-update | ${contact.coagContactId.substring(0, 5)} | '
           'skip-no-change',
