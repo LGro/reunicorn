@@ -36,6 +36,11 @@ class MockDht implements BaseDht {
 
   bool useVeilidKeyPairWriter;
 
+  /// When true, writes still succeed locally but do not propagate to connected
+  /// DHTs, simulating a scenario where the remote side never receives the
+  /// update (e.g. DHT propagation delay or loss).
+  bool propagationPaused = false;
+
   MockDht({this.useVeilidKeyPairWriter = false});
 
   void connect(MockDht dht) {
@@ -68,7 +73,7 @@ class MockDht implements BaseDht {
     } else {
       _storage[key] = {chunkOffset: value};
     }
-    if (local) {
+    if (local && !propagationPaused) {
       Future.wait(
         _dhtConnections.map(
           (dht) => dht.write(

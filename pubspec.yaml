@@ -1,7 +1,7 @@
 name: reunicorn
 description: Where & how to get in contact, shared securely and privately.
 publish_to: 'none'
-version: "0.2.8+75"
+version: "0.2.8+77"
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
@@ -68,7 +68,7 @@ dependencies:
       url: https://github.com/bardram/device_calendar
       ref: 32f9eac659731b6f0f941fab88fa4c749c75f716
   file_picker: ^10.3.3
-  maplibre_gl: ^0.24.0
+  maplibre_gl: ^0.25.0
   multiple_result: ^5.2.0
   xterm: ^4.0.0
   animated_custom_dropdown: ^3.1.1
