@@ -364,20 +364,30 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   void initState() {
     super.initState();
 
+    WidgetsBinding.instance.addObserver(this);
     // _lifecycleListener = AppLifecycleListener(onRestart: _handleAppRestart);
 
     _appRouter = buildAppRouter(_rootNavigatorKey, widget.isFirstRun);
 
     unawaited(_initAPNs());
-
-    BackgroundChangeChecker().start(widget.contactDhtRepository);
   }
 
   @override
   void dispose() {
     BackgroundChangeChecker().stop();
+    WidgetsBinding.instance.removeObserver(this);
     _lifecycleListener.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final checker = BackgroundChangeChecker();
+    if (state == AppLifecycleState.resumed) {
+      checker.stop();
+    } else if (state == AppLifecycleState.paused) {
+      checker.start(widget.contactDhtRepository);
+    }
   }
 
   Future<void> onDidReceiveNotificationResponse(
