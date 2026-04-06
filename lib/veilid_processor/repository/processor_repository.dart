@@ -128,7 +128,15 @@ class ProcessorRepository {
   Future<void> attach() async {
     if (!startedUp) return;
     log.debug('Veilid attach');
-    await Veilid.instance.attach();
+    try {
+      await Veilid.instance.attach();
+    } on VeilidAPIExceptionGeneric catch (e) {
+      if (e.message.contains('Already attached')) {
+        log.debug('Veilid already attached');
+      } else {
+        rethrow;
+      }
+    }
   }
 
   Future<void> detach() async {

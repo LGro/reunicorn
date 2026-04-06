@@ -93,11 +93,17 @@ String getContactNameForUpdate(CoagContact oldContact, CoagContact newContact) {
   if (oldContact.name.isNotEmpty && oldContact.name != '???') {
     return oldContact.name;
   }
-  final sharedName = (oldContact.details?.names.isNotEmpty ?? false)
-      ? oldContact.details!.names.values.join(' / ')
-      : newContact.details!.names.values.join(' / ');
-  if (sharedName.isNotEmpty) {
-    return sharedName;
+  if (oldContact.details?.names.isNotEmpty ?? false) {
+    final oldName = oldContact.details!.names.values.join(' / ');
+    if (oldName.isNotEmpty) {
+      return oldName;
+    }
+  }
+  if (newContact.details?.names.isNotEmpty ?? false) {
+    final newName = newContact.details!.names.values.join(' / ');
+    if (newName.isNotEmpty) {
+      return newName;
+    }
   }
   return '???';
 }
