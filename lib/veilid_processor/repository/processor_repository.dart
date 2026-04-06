@@ -1,3 +1,4 @@
+// Contains code from VeilidChat MPL-2.0 licensed and changes from Reunicorn authors under AGPL
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -124,6 +125,34 @@ class ProcessorRepository {
     startedUp = false;
   }
 
+  Future<void> attach() async {
+    if (!startedUp) return;
+    log.debug('Veilid attach');
+    await Veilid.instance.attach();
+  }
+
+  Future<void> detach() async {
+    if (!startedUp) return;
+    log.debug('Veilid detach');
+    await Veilid.instance.detach();
+  }
+
+  Future<bool> waitForPublicInternet({
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    if (processorConnectionState.isPublicInternetReady) return true;
+    try {
+      await _controllerConnectionState.stream
+          .where((s) => s.isPublicInternetReady)
+          .first
+          .timeout(timeout);
+      return true;
+    } on TimeoutException {
+      log.warning('Timed out waiting for public internet');
+      return false;
+    }
+  }
+
   Stream<ProcessorConnectionState> streamProcessorConnectionState() =>
       _controllerConnectionState.stream;
 
@@ -138,6 +167,7 @@ class ProcessorRepository {
         attachedUptime: updateAttachment.attachedUptime,
       ),
     );
+    _controllerConnectionState.add(processorConnectionState);
   }
 
   void processUpdateConfig(VeilidUpdateConfig updateConfig) {

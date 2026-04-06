@@ -31,6 +31,7 @@ import '../l10n/app_localizations.dart';
 import '../background_change_checker.dart';
 import '../tick.dart';
 import '../veilid_init.dart';
+import '../veilid_processor/veilid_processor.dart';
 import '../veilid_processor/views/developer.dart';
 import 'account_restore/page.dart';
 import 'circles_list/page.dart';
@@ -382,11 +383,19 @@ class _AppState extends State<App> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!Platform.isAndroid) return;
+
     final checker = BackgroundChangeChecker();
-    if (state == AppLifecycleState.resumed) {
-      checker.stop();
-    } else if (state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.paused) {
+      // Detach Veilid to save battery; the background checker will
+      // briefly re-attach for each periodic DHT poll.
+      debugPrint('rncrn-lifecycle: paused - detaching veilid, starting checker');
+      unawaited(ProcessorRepository.instance.detach());
       checker.start(widget.contactDhtRepository);
+    } else if (state == AppLifecycleState.resumed) {
+      debugPrint('rncrn-lifecycle: resumed - stopping checker, attaching veilid');
+      checker.stop();
+      unawaited(ProcessorRepository.instance.attach());
     }
   }
 

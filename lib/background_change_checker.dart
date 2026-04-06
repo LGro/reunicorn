@@ -40,34 +40,56 @@ class BackgroundChangeChecker {
       return;
     }
 
-    // Only check when Veilid network is ready
-    if (!ProcessorRepository
-        .instance
-        .processorConnectionState
-        .isPublicInternetReady) {
-      debugPrint('rncrn-bg: skip because veilid offline');
+    if (!ProcessorRepository.instance.startedUp) {
+      debugPrint('rncrn-bg: skip because veilid not started');
       return;
     }
 
     _checking = true;
     try {
+      debugPrint('rncrn-bg: attaching veilid for background check');
+      await ProcessorRepository.instance.attach();
+
+      final ready = await ProcessorRepository.instance.waitForPublicInternet(
+        timeout: const Duration(seconds: 30),
+      );
+      if (!ready) {
+        debugPrint('rncrn-bg: timed out waiting for public internet');
+        if (_timer != null) {
+          await ProcessorRepository.instance.detach();
+        }
+        return;
+      }
+
       await checkForPendingChanges();
     } catch (e) {
       debugPrint('rncrn-bg: error during check - $e');
     } finally {
+      // Only detach if the checker is still running. If stop() was called
+      // (i.e. the app resumed) while a check was in flight, the lifecycle
+      // handler already re-attached Veilid for foreground use — detaching
+      // here would kill that connection.
+      if (_timer != null) {
+        debugPrint('rncrn-bg: detaching veilid after background check');
+        try {
+          await ProcessorRepository.instance.detach();
+        } catch (e) {
+          debugPrint('rncrn-bg: error detaching - $e');
+        }
+      } else {
+        debugPrint('rncrn-bg: checker was stopped during check, skipping detach');
+      }
       _checking = false;
     }
   }
 
   Future<void> checkForPendingChanges() async {
-    debugPrint('rncrn-bg: start checking for pending changes in background');
-    // Only bring up veilid here and shut down afterwards to reduce background load?
-    // TODO: Add timeout?
+    debugPrint('rncrn-bg: start checking for pending changes');
     final updates = await _contactDhtRepository?.updateAndWatchReceivingDHT(
       shuffle: true,
     );
     debugPrint(
-      'rncrn-bg: finished checking for pending changes in background (${updates?.length ?? 'null'})',
+      'rncrn-bg: finished checking (${updates?.length ?? 'null'})',
     );
     // Notifications are handled downstream by UpdateRepository, which
     // listens to contact storage change events triggered by the DHT sync.
