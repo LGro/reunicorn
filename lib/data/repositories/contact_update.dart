@@ -76,10 +76,10 @@ class UpdateRepository {
         update.oldContact,
         update.newContact,
       );
-      final notificationTitle =
-          (update.oldContact.details?.names.isNotEmpty ?? false)
-          ? update.oldContact.details!.names.values.join(' / ')
-          : update.newContact.details!.names.values.join(' / ');
+      final notificationTitle = getContactNameForUpdate(
+        update.oldContact,
+        update.newContact,
+      );
       if (_notificationCallback != null && updateSummary.isNotEmpty) {
         await _notificationCallback(
           0,

@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:typed_data';
@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../data/models/coag_contact.dart';
 import '../../data/models/contact_update.dart';
 import '../../data/repositories/contact_dht.dart';
 import '../../data/services/storage/base.dart';
@@ -25,22 +24,6 @@ String formatTimeDifference(Duration d) {
     return '${d.inHours}h';
   }
   return '${d.inDays}d';
-}
-
-String getContactNameForUpdate(CoagContact oldContact, CoagContact newContact) {
-  if (newContact.name.isNotEmpty && newContact.name != '???') {
-    return newContact.name;
-  }
-  if (oldContact.name.isNotEmpty && oldContact.name != '???') {
-    return oldContact.name;
-  }
-  final sharedName = (oldContact.details?.names.isNotEmpty ?? false)
-      ? oldContact.details!.names.values.join(' / ')
-      : newContact.details!.names.values.join(' / ');
-  if (sharedName.isNotEmpty) {
-    return sharedName;
-  }
-  return '???';
 }
 
 Widget updateTile(

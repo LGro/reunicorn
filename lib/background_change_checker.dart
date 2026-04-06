@@ -1,10 +1,11 @@
-// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
+// Copyright 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:reunicorn/data/repositories/contact_dht.dart';
+import 'package:reunicorn/ui/utils.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import 'notification_service.dart';
@@ -70,24 +71,45 @@ class BackgroundChangeChecker {
     debugPrint('rncrn-bg: start checking for pending changes in background');
     // Only bring up veilid here and shut down afterwards to reduce background load?
     // TODO: Add timeout?
-    final updatedContacts = await _contactDhtRepository
-        ?.updateAndWatchReceivingDHT(shuffle: true);
-    debugPrint(
-      'rncrn-bg: finished checking for pending changes in background (${updatedContacts?.length ?? 'null'})',
+    final updates = await _contactDhtRepository?.updateAndWatchReceivingDHT(
+      shuffle: true,
     );
-    if (updatedContacts == null) {
+    debugPrint(
+      'rncrn-bg: finished checking for pending changes in background (${updates?.length ?? 'null'})',
+    );
+    if (updates == null) {
       return null;
     }
-    if (updatedContacts.length == 1) {
+    if (updates.length == 1) {
+      // Trigger notification
+      final updateSummary = contactUpdateSummary(
+        updates.first.oldContact,
+        updates.first.newContact,
+      );
+      if (updateSummary.isEmpty) {
+        return null;
+      }
+      final updatedName = getContactNameForUpdate(
+        updates.first.oldContact,
+        updates.first.newContact,
+      );
       return ChangeResult(
-        title: 'Update from ${updatedContacts.first.name}',
-        body: 'Check the app for more details...',
+        title: 'Update from $updatedName',
+        body: updateSummary,
       );
     }
-    if (updatedContacts.length > 1) {
+    if (updates.length > 1) {
+      final updatedNames = updates
+          .where(
+            (u) => contactUpdateSummary(u.oldContact, u.newContact).isNotEmpty,
+          )
+          .map((u) => getContactNameForUpdate(u.oldContact, u.newContact));
+      if (updatedNames.isEmpty) {
+        return null;
+      }
       return ChangeResult(
-        title: 'Update from multiple contacts',
-        body: updatedContacts.map((c) => c.name).toString(),
+        title: 'Updates from multiple contacts',
+        body: updatedNames.toString(),
       );
     }
     return null;

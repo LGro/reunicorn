@@ -86,6 +86,22 @@ bool addedOrUpdatedValue(
     ) !=
     null;
 
+String getContactNameForUpdate(CoagContact oldContact, CoagContact newContact) {
+  if (newContact.name.isNotEmpty && newContact.name != '???') {
+    return newContact.name;
+  }
+  if (oldContact.name.isNotEmpty && oldContact.name != '???') {
+    return oldContact.name;
+  }
+  final sharedName = (oldContact.details?.names.isNotEmpty ?? false)
+      ? oldContact.details!.names.values.join(' / ')
+      : newContact.details!.names.values.join(' / ');
+  if (sharedName.isNotEmpty) {
+    return sharedName;
+  }
+  return '???';
+}
+
 String contactUpdateSummary(CoagContact oldContact, CoagContact newContact) {
   final results = <String>[];
 

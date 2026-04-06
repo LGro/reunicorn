@@ -9,6 +9,7 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:loggy/loggy.dart';
 import 'package:pointycastle/pointycastle.dart' show Digest;
+import 'package:reunicorn/data/models/contact_update.dart';
 import 'package:reunicorn/data/repositories/base_dht.dart';
 import 'package:uuid/uuid.dart';
 import 'package:veilid_support/veilid_support.dart';
@@ -389,7 +390,7 @@ class ContactDhtRepository {
 
   /// Update shared profile for contact to DHT, fetch update from them and watch
   /// Returns contact if updated, in case of failure or no change, returns null
-  Future<CoagContact?> updateContact(String contactId) async {
+  Future<ContactUpdate?> updateContact(String contactId) async {
     debugPrint(
       'rcrn-dht-on-update | ${contactId.substring(0, 5)} | '
       'called',
@@ -400,38 +401,49 @@ class ContactDhtRepository {
         'started-sync',
       );
       var onlyUpdatedOnProfileChange = true;
-      var contact = await _contactStorage.get(contactId);
-      if (contact == null) {
+      final originalContact = await _contactStorage.get(contactId);
+      if (originalContact == null) {
         return null;
       }
 
-      if (contact.dhtConnection == null) {
+      if (originalContact.dhtConnection == null) {
         final dhtConnection = await dht_comm.initializeEncryptedDhtConnection(
           _dhtStorage,
-          contact.connectionCrypto,
+          originalContact.connectionCrypto,
         );
-        final updatedContact = contact.copyWith(dhtConnection: dhtConnection);
+        final updatedContact = originalContact.copyWith(
+          dhtConnection: dhtConnection,
+        );
         await _contactStorage.set(contactId, updatedContact);
-        return updatedContact;
+        return ContactUpdate(
+          coagContactId: contactId,
+          oldContact: originalContact,
+          newContact: updatedContact,
+          timestamp: DateTime.now(),
+        );
       }
 
       final (dhtContact, dhtConnection, connectionCrypto) = await dht_comm
           .readEncrypted(
             _dhtStorage,
-            contact.dhtConnection!,
-            contact.connectionCrypto,
+            originalContact.dhtConnection!,
+            originalContact.connectionCrypto,
             ContactSharingSchema.fromBytes,
           );
-      await _watchContact(contact.coagContactId, dhtConnection);
-      if (dhtContact != null) {
+      await _watchContact(originalContact.coagContactId, dhtConnection);
+      final CoagContact contact;
+      if (dhtContact == null) {
+        contact = originalContact;
+      } else {
         // Pin first 10 of the records the contact asked us to pin
         for (final toPin in dhtContact.recordsToPin.take(10)) {
           await _dhtStorage.watch(toPin, () {});
         }
-        final updatedContact = contact.copyWith(
-          name: (contact.name == '???')
-              ? dhtContact.details.names.values.firstOrNull ?? contact.name
-              : contact.name,
+        final updatedContact = originalContact.copyWith(
+          name: (originalContact.name == '???')
+              ? dhtContact.details.names.values.firstOrNull ??
+                    originalContact.name
+              : originalContact.name,
           theirIdentity: dhtContact.identityKey,
           connectionAttestations: dhtContact.connectionAttestations,
           details: dhtContact.details,
@@ -441,19 +453,22 @@ class ContactDhtRepository {
           dhtConnection: dhtConnection,
           connectionCrypto: connectionCrypto,
         );
-        if (updatedContact.hashCode != contact.hashCode) {
+        if (updatedContact.hashCode == originalContact.hashCode) {
+          contact = originalContact;
+        } else {
           debugPrint(
-            'rcrn-dht-on-update | ${contact.coagContactId.substring(0, 5)} | '
+            'rcrn-dht-on-update | ${originalContact.coagContactId.substring(0, 5)} | '
             'share-changed',
           );
           // TODO: Can this be simplified to they differ?
-          if ((contact.connectionCrypto is CryptoInitializedSymmetric &&
+          if ((originalContact.connectionCrypto is CryptoInitializedSymmetric &&
                   updatedContact.connectionCrypto
                       is CryptoEstablishedSymmetric) ||
-              (contact.connectionCrypto is CryptoEstablishedSymmetric &&
+              (originalContact.connectionCrypto is CryptoEstablishedSymmetric &&
                   updatedContact.connectionCrypto
                       is CryptoInitializedAsymmetric) ||
-              (contact.connectionCrypto is CryptoInitializedAsymmetric &&
+              (originalContact.connectionCrypto
+                      is CryptoInitializedAsymmetric &&
                   updatedContact.connectionCrypto
                       is CryptoEstablishedAsymmetric)) {
             // If also the connection crypto evolved, make sure to continue
@@ -465,10 +480,15 @@ class ContactDhtRepository {
           } else {
             // Otherwise, save updated contact and return, knowing that will
             // trigger this method again
-            await _contactStorage.set(contact.coagContactId, updatedContact);
+            await _contactStorage.set(contactId, updatedContact);
             // TODO(LGRo): Doing another read attempt until we don't receive
             //             updates seems slow to get a write in
-            return updatedContact;
+            return ContactUpdate(
+              coagContactId: contactId,
+              oldContact: originalContact,
+              newContact: updatedContact,
+              timestamp: DateTime.now(),
+            );
           }
         }
       }
@@ -526,7 +546,12 @@ class ContactDhtRepository {
           ),
         );
         await _contactStorage.set(contact.coagContactId, updatedContact);
-        return updatedContact;
+        return ContactUpdate(
+          coagContactId: contactId,
+          oldContact: originalContact,
+          newContact: updatedContact,
+          timestamp: DateTime.now(),
+        );
       } on DHTExceptionNotAvailable {
         // TODO: When do we try next time? Can this cause outdated shared info?
         debugPrint(
@@ -617,7 +642,7 @@ class ContactDhtRepository {
     }
   }
 
-  Future<Iterable<CoagContact>?> updateAndWatchReceivingDHT({
+  Future<Iterable<ContactUpdate>?> updateAndWatchReceivingDHT({
     bool shuffle = false,
   }) async {
     if (!ProcessorRepository
@@ -649,7 +674,7 @@ class ContactDhtRepository {
     );
 
     // Return only the contacts that changed
-    return updatedContacts.whereType<CoagContact>();
+    return updatedContacts.whereType<ContactUpdate>();
   }
 
   /// Creating contact from just a name or from a profile link, i.e. with name

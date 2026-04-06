@@ -174,7 +174,7 @@ class VeilidDht implements BaseDht {
       crypto: const VeilidCryptoPublic(),
       debugName: 'rcrn::update',
     );
-    // TODO: handle VeilidAPIExceptionTryAgain
+    // TODO: handle VeilidAPIExceptionTryAgain; VeilidAPIExceptionInternal is also possible
     await writeChunkedPayload(
       record,
       value,
