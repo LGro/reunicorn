@@ -4,33 +4,29 @@ import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
-private let channelName = "apns_token"
-private var methodChannel: FlutterMethodChannel?
+  var methodChannel: FlutterMethodChannel?
+
+  func setupMethodChannel(binaryMessenger: FlutterBinaryMessenger) {
+    methodChannel = FlutterMethodChannel(name: channelName, binaryMessenger: binaryMessenger)
+    methodChannel?.setMethodCallHandler { [weak self] (call, result) in
+      if call.method == "register" {
+        self?.requestPushPermissions(application: UIApplication.shared)
+        result(true)
+      } else {
+        result(FlutterMethodNotImplemented)
+      }
+    }
+  }
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-   let controller = window?.rootViewController as! FlutterViewController
-    
-    // 1. Initialize the channel immediately
-    methodChannel = FlutterMethodChannel(name: channelName, binaryMessenger: controller.binaryMessenger)
-
-    methodChannel?.setMethodCallHandler { [weak self] (call, result) in
-        if call.method == "register" {
-            self?.requestPushPermissions(application: application)
-            // Acknowledge request started
-            result(true)
-        } else {
-            result(FlutterMethodNotImplemented)
-        }
-    }
-
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
-  private func requestPushPermissions(application: UIApplication) {
+  func requestPushPermissions(application: UIApplication) {
     UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
         if granted {
             DispatchQueue.main.async {
