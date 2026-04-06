@@ -97,7 +97,7 @@ void main() async {
       (v) async => Setting(jsonDecode(v) as Map<String, dynamic>),
     );
     final notificationStorage = HiveStorage<String>(
-      'setting',
+      'notification',
       (v) => v,
       (v) async => v,
     );
