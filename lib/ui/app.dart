@@ -12,6 +12,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loggy/loggy.dart';
 import 'package:provider/provider.dart';
+import 'package:reunicorn/data/repositories/contact_update.dart';
 
 import '../data/models/circle.dart';
 import '../data/models/coag_contact.dart';
@@ -288,6 +289,7 @@ class App extends StatefulWidget {
     this.communityStorage,
     this.settingStorage,
     this.contactDhtRepository,
+    this.updateRepository,
     this.systemContactRepository,
     this.backupRepository, {
     required this.isFirstRun,
@@ -301,6 +303,7 @@ class App extends StatefulWidget {
   final Storage<Community> communityStorage;
   final Storage<Setting> settingStorage;
   final ContactDhtRepository contactDhtRepository;
+  final UpdateRepository updateRepository;
   final SystemContactRepository systemContactRepository;
   final BackupRepository backupRepository;
   final bool isFirstRun;
@@ -454,6 +457,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
               create: (_) => widget.communityStorage,
             ),
             RepositoryProvider(create: (_) => widget.contactDhtRepository),
+            RepositoryProvider(create: (_) => widget.updateRepository),
             RepositoryProvider(create: (_) => widget.systemContactRepository),
             RepositoryProvider(create: (_) => widget.backupRepository),
             RepositoryProvider(

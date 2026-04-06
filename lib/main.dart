@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:reunicorn/config.dart';
+import 'package:reunicorn/data/repositories/contact_update.dart';
 import 'package:reunicorn/data/services/storage/hive.dart';
 
 import 'bloc_observer.dart';
@@ -109,6 +110,11 @@ void main() async {
       settingStorage,
       VeilidDht(),
     );
+    final updateRepository = UpdateRepository(
+      contactStorage,
+      updateStorage,
+      notificationCallback: NotificationService().showNotification,
+    );
     final systemContactRepository = SystemContactRepository(contactStorage);
     // ignore: unused_local_variable we just need it to listen
     final pushNotificationRepository = PushNotificationRepository(
@@ -134,6 +140,7 @@ void main() async {
         communityStorage,
         settingStorage,
         contactDhtRepository,
+        updateRepository,
         systemContactRepository,
         backupRepository,
         isFirstRun: profile == null,

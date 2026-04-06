@@ -45,6 +45,11 @@ class NotificationService {
     String body, {
     String? payload,
   }) async {
+    if (!_isInitialized) {
+      // TODO: Log
+      return;
+    }
+
     const androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'reunicorn_channel_id',
       'Reunicorn Notifications',

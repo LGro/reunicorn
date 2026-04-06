@@ -5,10 +5,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:reunicorn/data/repositories/contact_dht.dart';
-import 'package:reunicorn/ui/utils.dart';
-import 'package:veilid_support/veilid_support.dart';
-
-import 'notification_service.dart';
 import 'veilid_processor/veilid_processor.dart';
 
 class BackgroundChangeChecker {
@@ -17,11 +13,10 @@ class BackgroundChangeChecker {
   static final BackgroundChangeChecker _instance =
       BackgroundChangeChecker._internal();
 
-  static const _checkInterval = Duration(seconds: kIsDebugMode ? 15 : 60 * 5);
+  static const _checkInterval = Duration(seconds: kDebugMode ? 15 : 60 * 5);
 
   Timer? _timer;
   bool _checking = false;
-  int _notificationIdCounter = 2000;
   ContactDhtRepository? _contactDhtRepository;
 
   void start(ContactDhtRepository contactDhtRepository) {
@@ -56,10 +51,7 @@ class BackgroundChangeChecker {
 
     _checking = true;
     try {
-      final result = await checkForPendingChanges();
-      if (result != null) {
-        await _showNotification(result);
-      }
+      await checkForPendingChanges();
     } catch (e) {
       debugPrint('rncrn-bg: error during check - $e');
     } finally {
@@ -67,7 +59,7 @@ class BackgroundChangeChecker {
     }
   }
 
-  Future<ChangeResult?> checkForPendingChanges() async {
+  Future<void> checkForPendingChanges() async {
     debugPrint('rncrn-bg: start checking for pending changes in background');
     // Only bring up veilid here and shut down afterwards to reduce background load?
     // TODO: Add timeout?
@@ -77,61 +69,7 @@ class BackgroundChangeChecker {
     debugPrint(
       'rncrn-bg: finished checking for pending changes in background (${updates?.length ?? 'null'})',
     );
-    if (updates == null) {
-      return null;
-    }
-    if (updates.length == 1) {
-      // Trigger notification
-      final updateSummary = contactUpdateSummary(
-        updates.first.oldContact,
-        updates.first.newContact,
-      );
-      if (updateSummary.isEmpty) {
-        return null;
-      }
-      final updatedName = getContactNameForUpdate(
-        updates.first.oldContact,
-        updates.first.newContact,
-      );
-      return ChangeResult(
-        title: 'Update from $updatedName',
-        body: updateSummary,
-      );
-    }
-    if (updates.length > 1) {
-      final updatedNames = updates
-          .where(
-            (u) => contactUpdateSummary(u.oldContact, u.newContact).isNotEmpty,
-          )
-          .map((u) => getContactNameForUpdate(u.oldContact, u.newContact));
-      if (updatedNames.isEmpty) {
-        return null;
-      }
-      return ChangeResult(
-        title: 'Updates from multiple contacts',
-        body: updatedNames.toString(),
-      );
-    }
-    return null;
+    // Notifications are handled downstream by UpdateRepository, which
+    // listens to contact storage change events triggered by the DHT sync.
   }
-
-  Future<void> _showNotification(ChangeResult result) async {
-    final notificationService = NotificationService();
-    if (!notificationService.isInitialized) return;
-
-    await notificationService.showNotification(
-      _notificationIdCounter++,
-      result.title,
-      result.body,
-      payload: result.payload,
-    );
-  }
-}
-
-class ChangeResult {
-  const ChangeResult({required this.title, required this.body, this.payload});
-
-  final String title;
-  final String body;
-  final String? payload;
 }
