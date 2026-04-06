@@ -72,7 +72,7 @@ class _ContactPageState extends State<ContactPage> {
             AlertDialog(
               titlePadding: const EdgeInsets.only(left: 16, right: 16, top: 16),
               title: Text(
-                'Delete ${contact.name}',
+                'Remove ${contact.name}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -82,7 +82,7 @@ class _ContactPageState extends State<ContactPage> {
                   Text(
                     [
                       // ignore: no_adjacent_strings_in_list
-                      'Deleting this contact from Reunicorn can not guarantee '
+                      'Removing this contact from Reunicorn can not guarantee '
                           'that all information that you shared with them is '
                           'removed on their side, because they might have '
                           'taken a screenshot or retain your info otherwise. '
@@ -132,7 +132,7 @@ class _ContactPageState extends State<ContactPage> {
                             context.pop();
                           }
                         },
-                        child: const Text('Delete'),
+                        child: const Text('Remove'),
                       ),
                     ],
             ),
@@ -270,17 +270,6 @@ class _ContactPageState extends State<ContactPage> {
                         extra: contact,
                       ),
                       icon: const Icon(Icons.group_add),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Remove from Reunicorn',
-                    onPressed: () => _showDeleteContactDialog(
-                      contact,
-                      context.read<ContactDetailsCubit>().delete,
-                    ),
-                    icon: Icon(
-                      Icons.delete,
-                      color: Theme.of(context).colorScheme.error,
                     ),
                   ),
                 ],
@@ -477,6 +466,18 @@ class _ContactPageState extends State<ContactPage> {
                     statusWidgets: const {},
                   ),
               ],
+            ),
+            _paddedDivider(),
+            FilledButton.tonal(
+              onPressed: () => _showDeleteContactDialog(
+                contact,
+                context.read<ContactDetailsCubit>().delete,
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+              ),
+              child: Text('Remove from Reunicorn'),
             ),
             _paddedDivider(),
             Text(
