@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:flutter_contacts/flutter_contacts.dart';
@@ -10,34 +10,30 @@ void main() {
     final json = {
       'phones': [
         Phone(
-          '123',
-          label: PhoneLabel.custom,
-          customLabel: 'bananaphone',
+          number: '123',
+          label: Label(PhoneLabel.custom, 'bananaphone'),
         ).toJson(),
       ],
       'emails': [
         Email(
-          'hi@test.local',
-          label: EmailLabel.custom,
-          customLabel: 'custom-email',
+          address: 'hi@test.local',
+          label: Label(EmailLabel.custom, 'custom-email'),
         ).toJson(),
       ],
       'addresses': [
         Address(
-          'Home Sweet Home',
-          label: AddressLabel.custom,
-          customLabel: 'custom-address',
+          formatted: 'Home Sweet Home',
+          label: Label(AddressLabel.custom, 'custom-address'),
         ).toJson(),
       ],
       'websites': [
         Website(
-          'awesomesite',
-          label: WebsiteLabel.custom,
-          customLabel: 'custom-website',
+          url: 'awesomesite',
+          label: Label(WebsiteLabel.custom, 'custom-website'),
         ).toJson(),
       ],
       'social_medias': [
-        SocialMedia('@coag', label: SocialMediaLabel.discord).toJson(),
+        SocialMedia(username: '@coag', label: Label(SocialMediaLabel.icq)).toJson(),
       ],
     };
     final details = ContactDetails.fromJson(
@@ -46,6 +42,6 @@ void main() {
     expect(details.phones, {'bananaphone': '123'});
     expect(details.emails, {'custom-email': 'hi@test.local'});
     expect(details.websites, {'custom-website': 'awesomesite'});
-    expect(details.socialMedias, {'discord': '@coag'});
+    expect(details.socialMedias, {'icq': '@coag'});
   });
 }

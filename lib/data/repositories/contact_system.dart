@@ -12,22 +12,22 @@ const appManagedLabelSuffix = '🦄';
 
 bool noAppLabelSuffix<T>(T detail) {
   if (detail is Phone) {
-    return !detail.customLabel.endsWith(appManagedLabelSuffix);
+    return !(detail.label.customLabel ?? '').endsWith(appManagedLabelSuffix);
   }
   if (detail is Email) {
-    return !detail.customLabel.endsWith(appManagedLabelSuffix);
+    return !(detail.label.customLabel ?? '').endsWith(appManagedLabelSuffix);
   }
   if (detail is Address) {
-    return !detail.customLabel.endsWith(appManagedLabelSuffix);
+    return !(detail.label.customLabel ?? '').endsWith(appManagedLabelSuffix);
   }
   if (detail is Website) {
-    return !detail.customLabel.endsWith(appManagedLabelSuffix);
+    return !(detail.label.customLabel ?? '').endsWith(appManagedLabelSuffix);
   }
   if (detail is SocialMedia) {
-    return !detail.customLabel.endsWith(appManagedLabelSuffix);
+    return !(detail.label.customLabel ?? '').endsWith(appManagedLabelSuffix);
   }
   if (detail is Event) {
-    return !detail.customLabel.endsWith(appManagedLabelSuffix);
+    return !(detail.label.customLabel ?? '').endsWith(appManagedLabelSuffix);
   }
   if (detail is Note) {
     return !detail.note.endsWith(appManagedLabelSuffix);
@@ -41,9 +41,11 @@ T updateContactDetailLabel<T>(
 ) {
   if (detail is Phone) {
     return Phone(
-          detail.number,
-          label: PhoneLabel.custom,
-          customLabel: updateFunction(detail.customLabel),
+          number: detail.number,
+          label: Label(
+            PhoneLabel.custom,
+            updateFunction(detail.label.customLabel ?? ''),
+          ),
           normalizedNumber: detail.normalizedNumber,
           isPrimary: detail.isPrimary,
         )
@@ -51,44 +53,52 @@ T updateContactDetailLabel<T>(
   }
   if (detail is Email) {
     return Email(
-          detail.address,
-          label: EmailLabel.custom,
-          customLabel: updateFunction(detail.customLabel),
+          address: detail.address,
+          label: Label(
+            EmailLabel.custom,
+            updateFunction(detail.label.customLabel ?? ''),
+          ),
           isPrimary: detail.isPrimary,
         )
         as T;
   }
   if (detail is Address) {
     return Address(
-          detail.address,
-          label: detail.label = AddressLabel.custom,
-          customLabel: updateFunction(detail.customLabel),
+          formatted: detail.formatted,
+          label: Label(
+            AddressLabel.custom,
+            updateFunction(detail.label.customLabel ?? ''),
+          ),
           street: detail.street,
-          pobox: detail.pobox,
+          poBox: detail.poBox,
           neighborhood: detail.neighborhood,
           city: detail.city,
           state: detail.state,
           postalCode: detail.postalCode,
           country: detail.country,
-          isoCountry: detail.isoCountry,
-          subAdminArea: detail.subAdminArea,
+          isoCountryCode: detail.isoCountryCode,
+          subAdministrativeArea: detail.subAdministrativeArea,
           subLocality: detail.subLocality,
         )
         as T;
   }
   if (detail is Website) {
     return Website(
-          detail.url,
-          label: WebsiteLabel.custom,
-          customLabel: updateFunction(detail.customLabel),
+          url: detail.url,
+          label: Label(
+            WebsiteLabel.custom,
+            updateFunction(detail.label.customLabel ?? ''),
+          ),
         )
         as T;
   }
   if (detail is SocialMedia) {
     return SocialMedia(
-          detail.userName,
-          label: SocialMediaLabel.custom,
-          customLabel: updateFunction(detail.customLabel),
+          username: detail.username,
+          label: Label(
+            SocialMediaLabel.custom,
+            updateFunction(detail.label.customLabel ?? ''),
+          ),
         )
         as T;
   }
@@ -97,13 +107,15 @@ T updateContactDetailLabel<T>(
           year: detail.year,
           month: detail.month,
           day: detail.day,
-          label: EventLabel.custom,
-          customLabel: updateFunction(detail.customLabel),
+          label: Label(
+            EventLabel.custom,
+            updateFunction(detail.label.customLabel ?? ''),
+          ),
         )
         as T;
   }
   if (detail is Note) {
-    return Note(updateFunction(detail.note)) as T;
+    return Note(note: updateFunction(detail.note)) as T;
   }
   return detail;
 }
@@ -128,16 +140,16 @@ bool coveredByReunicorn<T>(T detail, List<T> coagDetails) {
   }
   if (detail is Address) {
     return coagDetails
-        .map((d) => (d as Address).address)
-        .contains(detail.address);
+        .map((d) => (d as Address).formatted)
+        .contains(detail.formatted);
   }
   if (detail is Website) {
     return coagDetails.map((d) => (d as Website).url).contains(detail.url);
   }
   if (detail is SocialMedia) {
     return coagDetails
-        .map((d) => (d as SocialMedia).userName)
-        .contains(detail.userName);
+        .map((d) => (d as SocialMedia).username)
+        .contains(detail.username);
   }
   if (detail is Note) {
     return coagDetails.map((d) => (d as Note).note).contains(detail.note);
@@ -159,78 +171,80 @@ String addCoagSuffixNewline(String value) =>
     '${removeCoagSuffix(value)}\n\n$appManagedLabelSuffix';
 
 // TODO: Figure out what to do about the (display) name
-Contact mergeSystemContacts(Contact system, Contact app) => system
-  ..phones = [
+Contact mergeSystemContacts(Contact system, Contact app) => system.copyWith(
+  phones: [
     ...system.phones
         .where(noAppLabelSuffix)
         .where((v) => !coveredByReunicorn(v, app.phones)),
     ...app.phones.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
-  ]
-  ..emails = [
+  ],
+  emails: [
     ...system.emails
         .where(noAppLabelSuffix)
         .where((v) => !coveredByReunicorn(v, app.emails)),
     ...app.emails.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
-  ]
-  ..addresses = [
+  ],
+  addresses: [
     ...system.addresses
         .where(noAppLabelSuffix)
         .where((v) => !coveredByReunicorn(v, app.addresses)),
     ...app.addresses.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
-  ]
-  ..websites = [
+  ],
+  websites: [
     ...system.websites
         .where(noAppLabelSuffix)
         .where((v) => !coveredByReunicorn(v, app.websites)),
     ...app.websites.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
-  ]
-  ..socialMedias = [
+  ],
+  socialMedias: [
     ...system.socialMedias
         .where(noAppLabelSuffix)
         .where((v) => !coveredByReunicorn(v, app.socialMedias)),
     ...app.socialMedias.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
-  ]
-  ..events = [
+  ],
+  events: [
     ...system.events
         .where(noAppLabelSuffix)
         .where((v) => !coveredByReunicorn(v, app.events)),
     ...app.events.map((v) => updateContactDetailLabel(v, addCoagSuffix)),
-  ]
-  ..notes = [
+  ],
+  notes: [
     ...system.notes
         .where(noAppLabelSuffix)
         .where((v) => !coveredByReunicorn(v, app.notes)),
     ...app.notes.map((v) => updateContactDetailLabel(v, addCoagSuffixNewline)),
-  ];
+  ],
+);
 
-Contact removeCoagManagedSuffixes(Contact contact) => contact
-  ..phones = [
+Contact removeCoagManagedSuffixes(Contact contact) => contact.copyWith(
+  phones: [
     ...contact.phones.map((v) => updateContactDetailLabel(v, removeCoagSuffix)),
-  ]
-  ..emails = [
+  ],
+  emails: [
     ...contact.emails.map((v) => updateContactDetailLabel(v, removeCoagSuffix)),
-  ]
-  ..addresses = [
+  ],
+  addresses: [
     ...contact.addresses.map(
       (v) => updateContactDetailLabel(v, removeCoagSuffix),
     ),
-  ]
-  ..websites = [
+  ],
+  websites: [
     ...contact.websites.map(
       (v) => updateContactDetailLabel(v, removeCoagSuffix),
     ),
-  ]
-  ..socialMedias = [
+  ],
+  socialMedias: [
     ...contact.socialMedias.map(
       (v) => updateContactDetailLabel(v, removeCoagSuffix),
     ),
-  ]
-  ..events = [
+  ],
+  events: [
     ...contact.events.map((v) => updateContactDetailLabel(v, removeCoagSuffix)),
-  ]
-  ..notes = [
+  ],
+  notes: [
     ...contact.notes.map((v) => updateContactDetailLabel(v, removeCoagSuffix)),
-  ];
+  ],
+);
 
 Set<String> getAllLinkedSystemContactIds(Iterable<CoagContact> contacts) =>
     contacts.map((c) => c.systemContactId).whereType<String>().toSet();
@@ -245,10 +259,9 @@ Future<CoagContact> updateSystemContact(CoagContact contact) async {
     return contact;
   }
 
-  final systemContact = await FlutterContacts.getContact(
+  final systemContact = await FlutterContacts.get(
     contact.systemContactId!,
-    withAccounts: true,
-    withGroups: true,
+    properties: ContactProperties.all,
   );
   if (systemContact == null) {
     // TODO: Is there a better way to remove it?
@@ -269,7 +282,7 @@ Future<CoagContact> updateSystemContact(CoagContact contact) async {
       contact.addressLocations,
     ),
   );
-  await FlutterContacts.updateContact(updatedSystemContact);
+  await FlutterContacts.update(updatedSystemContact);
 
   return contact;
 }
@@ -284,15 +297,12 @@ Future<CoagContact> unlinkSystemContact(CoagContact contact) async {
     return contact;
   }
 
-  final systemContact = await FlutterContacts.getContact(
+  final systemContact = await FlutterContacts.get(
     contact.systemContactId!,
-    withAccounts: true,
-    withGroups: true,
+    properties: ContactProperties.all,
   );
   if (systemContact != null) {
-    await FlutterContacts.updateContact(
-      removeCoagManagedSuffixes(systemContact),
-    );
+    await FlutterContacts.update(removeCoagManagedSuffixes(systemContact));
   }
   // TODO: Is there a better way to remove it?
   final contactJson = contact.toJson()..remove('system_contact_id');

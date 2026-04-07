@@ -11,47 +11,47 @@ class MissingSystemContactsPermissionError implements Exception {}
 class SystemContacts extends SystemContactsBase {
   @override
   Future<List<Contact>> getContacts() async {
-    if (!await FlutterContacts.requestPermission()) {
+    if (!await FlutterContacts.permissions.has(PermissionType.readWrite)) {
       throw MissingSystemContactsPermissionError();
     }
 
     // TODO: Offer loading them with just id and display name to speed things up in some cases?
-    // NOTE: withAccounts is required to update contact on Android
-    return FlutterContacts.getContacts(
-      withThumbnail: true,
-      withProperties: true,
-      withAccounts: true,
+    return FlutterContacts.getAll(
+      properties: ContactProperties.all,
     );
   }
 
   @override
-  Future<Contact> updateContact(Contact contact) async {
-    if (!await FlutterContacts.requestPermission()) {
+  Future<void> updateContact(Contact contact) async {
+    if (!await FlutterContacts.permissions.has(PermissionType.readWrite)) {
       throw MissingSystemContactsPermissionError();
     }
 
-    return FlutterContacts.updateContact(contact);
+    await FlutterContacts.update(contact);
   }
 
   @override
-  Future<Contact> getContact(String id) async {
-    if (!await FlutterContacts.requestPermission()) {
+  Future<Contact?> getContact(String id) async {
+    if (!await FlutterContacts.permissions.has(PermissionType.readWrite)) {
       throw MissingSystemContactsPermissionError();
     }
 
     // TODO: Error handling
-    return (await FlutterContacts.getContact(id))!;
+    return FlutterContacts.get(id, properties: ContactProperties.all);
   }
 
   @override
-  Future<Contact> insertContact(Contact contact) async {
-    if (!await FlutterContacts.requestPermission()) {
+  Future<String> insertContact(Contact contact) async {
+    if (!await FlutterContacts.permissions.has(PermissionType.readWrite)) {
       throw MissingSystemContactsPermissionError();
     }
 
-    return FlutterContacts.insertContact(contact);
+    return FlutterContacts.create(contact);
   }
 
   @override
-  Future<bool> requestPermission() => FlutterContacts.requestPermission();
+  Future<bool> requestPermission() async {
+    final status = await FlutterContacts.permissions.request(PermissionType.readWrite);
+    return status == PermissionStatus.granted;
+  }
 }

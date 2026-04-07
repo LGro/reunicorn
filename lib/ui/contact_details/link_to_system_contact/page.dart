@@ -1,8 +1,6 @@
 // Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
@@ -14,8 +12,8 @@ import '../../utils.dart';
 import '../../widgets/searchable_list.dart';
 import 'cubit.dart';
 
-String systemContactName(Contact contact) => (contact.displayName.isNotEmpty)
-    ? contact.displayName
+String systemContactName(Contact contact) => (contact.displayName?.isNotEmpty ?? false)
+    ? contact.displayName!
     : contact.emails.firstOrNull?.address ??
           contact.phones.firstOrNull?.number ??
           '(no name)';
@@ -130,12 +128,11 @@ class _LinkToSystemContactPageState extends State<LinkToSystemContactPage> {
           Expanded(
             child: SearchableList(
               items: state.contacts,
-              matchesItem: (search, contact) => jsonEncode(
-                contact.toJson(),
-              ).toLowerCase().contains(search.toLowerCase()),
+              matchesItem: (search, contact) =>
+                (contact.displayName ?? '').toLowerCase().contains(search.toLowerCase()),
               buildItemWidget: (contact) => ListTile(
                 leading: roundPictureOrPlaceholder(
-                  contact.photoOrThumbnail,
+                  contact.photo?.thumbnail ?? contact.photo?.fullSize,
                   radius: 18,
                 ),
                 title: Text(systemContactName(contact)),
@@ -175,9 +172,9 @@ class _LinkToSystemContactPageState extends State<LinkToSystemContactPage> {
                               child: const Text('Cancel'),
                             ),
                             FilledButton(
-                              onPressed: () => context
+                              onPressed: (contact.id == null) ? null : () => context
                                   .read<LinkToSystemContactCubit>()
-                                  .linkExistingSystemContact(contact.id)
+                                  .linkExistingSystemContact(contact.id!)
                                   .then(
                                     (_) => (alertContext.mounted)
                                         ? Navigator.of(alertContext).pop()

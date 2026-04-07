@@ -200,12 +200,12 @@ void main() {
     final result = contactUpdateSummary(
       minimalBaseContact.copyWith(
         details: ContactDetails(
-          organizations: {'o': Organization(company: 'LargeCorp A')},
+          organizations: {'o': Organization(name: 'LargeCorp A')},
         ),
       ),
       minimalBaseContact.copyWith(
         details: ContactDetails(
-          organizations: {'o': Organization(company: 'LargeCorp B')},
+          organizations: {'o': Organization(name: 'LargeCorp B')},
         ),
       ),
     );
@@ -321,7 +321,7 @@ void main() {
       contactUpdateSummary(
         minimalBaseContact.copyWith(
           details: ContactDetails(
-            organizations: {'job': Organization(company: 'corp')},
+            organizations: {'job': Organization(name: 'corp')},
           ),
         ),
         minimalBaseContact,
@@ -441,7 +441,7 @@ void main() {
         minimalBaseContact,
         minimalBaseContact.copyWith(
           details: ContactDetails(
-            organizations: {'job': Organization(company: 'corp')},
+            organizations: {'job': Organization(name: 'corp')},
           ),
         ),
       ),

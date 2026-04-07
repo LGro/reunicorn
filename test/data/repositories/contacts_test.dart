@@ -23,7 +23,7 @@ void main() {
   //       '2|CUZTOM');
   //   expect(
   //       contactDetailKey<Organization>(
-  //           3, Organization(company: 'corp', title: 'CEO')),
+  //           3, Organization(name: 'corp', title: 'CEO')),
   //       '3|corp');
   // });
 
@@ -65,7 +65,7 @@ void main() {
         emails: const {'e1': 'hi@mail.com'},
         socialMedias: const {'s': '@beste'},
         websites: const {'w': 'awesome.org'},
-        organizations: {'o': Organization(company: 'LargeCorp')},
+        organizations: {'o': Organization(name: 'LargeCorp')},
         events: {'e': DateTime.now()},
       ),
       const ProfileSharingSettings(),
@@ -140,8 +140,8 @@ void main() {
     final contact = Contact(
       displayName: 'Example Contact',
       name: Name(first: 'Example', last: 'Contact'),
-      phones: [Phone('12324')],
-      photo: Uint8List(64),
+      phones: [Phone(number: '12324')],
+      photo: Photo(fullSize: Uint8List(64)),
     );
     final contactJson = contact.toJson();
     contactJson['photo'] = null;

@@ -9,9 +9,10 @@ Widget avatar(
   double radius = 48.0,
   IconData defaultIcon = Icons.person,
 }) {
-  if (contact?.photoOrThumbnail != null) {
+  final photoBytes = contact?.photo?.thumbnail ?? contact?.photo?.fullSize;
+  if (photoBytes != null) {
     return CircleAvatar(
-      backgroundImage: MemoryImage(contact!.photoOrThumbnail!),
+      backgroundImage: MemoryImage(photoBytes),
       radius: radius,
     );
   }

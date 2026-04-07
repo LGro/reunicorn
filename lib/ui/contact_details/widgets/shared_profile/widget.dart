@@ -120,20 +120,20 @@ class SharedProfile extends StatelessWidget {
                     (id, org) => MapEntry(
                       id,
                       [
-                        org.company,
-                        org.title,
-                        org.department,
-                      ].where((v) => v.isNotEmpty).join('\n'),
+                        org.name,
+                        org.jobTitle,
+                        org.departmentName,
+                      ].where((v) => (v ?? '').isNotEmpty).join('\n'),
                     ),
                   ),
                   state.pending!.details.organizations.map(
                     (id, org) => MapEntry(
                       id,
                       [
-                        org.company,
-                        org.title,
-                        org.department,
-                      ].where((v) => v.isNotEmpty).join('\n'),
+                        org.name,
+                        org.jobTitle,
+                        org.departmentName,
+                      ].where((v) => (v ?? '').isNotEmpty).join('\n'),
                     ),
                   ),
                   state.diff!.details.organizations,

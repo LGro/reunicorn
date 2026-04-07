@@ -56,39 +56,37 @@ sealed class ContactDetails with _$ContactDetails {
     String displayName,
     Map<String, ContactAddressLocation> addresses,
   ) => Contact(
-    displayName: displayName,
-    photo: (picture == null) ? null : Uint8List.fromList(picture!),
+    name: Name(first: displayName),
+    photo: (picture == null) ? null : Photo(fullSize: Uint8List.fromList(picture!)),
     phones: phones.entries
         .map(
-          (e) => Phone(e.value, label: PhoneLabel.custom, customLabel: e.key),
+          (e) => Phone(number: e.value, label: Label(PhoneLabel.custom, e.key)),
         )
         .toList(),
     emails: emails.entries
         .map(
-          (e) => Email(e.value, label: EmailLabel.custom, customLabel: e.key),
+          (e) => Email(address: e.value, label: Label(EmailLabel.custom, e.key)),
         )
         .toList(),
     addresses: addresses.entries
         .map(
           (e) => Address(
-            e.value.address ?? '',
-            label: AddressLabel.custom,
-            customLabel: e.key,
+            formatted: e.value.address ?? '',
+            label: Label(AddressLabel.custom, e.key),
           ),
         )
         .toList(),
     websites: websites.entries
         .map(
           (e) =>
-              Website(e.value, label: WebsiteLabel.custom, customLabel: e.key),
+              Website(url: e.value, label: Label(WebsiteLabel.custom, e.key)),
         )
         .toList(),
     socialMedias: socialMedias.entries
         .map(
           (e) => SocialMedia(
-            e.value,
-            label: SocialMediaLabel.custom,
-            customLabel: e.key,
+            username: e.value,
+            label: Label(SocialMediaLabel.custom, e.key),
           ),
         )
         .toList(),
@@ -98,8 +96,7 @@ sealed class ContactDetails with _$ContactDetails {
             day: e.value.day,
             month: e.value.month,
             year: e.value.year,
-            label: EventLabel.custom,
-            customLabel: e.key,
+            label: Label(EventLabel.custom, e.key),
           ),
         )
         .toList(),
@@ -111,36 +108,36 @@ sealed class ContactDetails with _$ContactDetails {
   if (T == Phone) {
     final d = detail as Phone;
     return (
-      (d.label == PhoneLabel.custom) ? d.customLabel : d.label.name,
+      (d.label.label == PhoneLabel.custom) ? d.label.customLabel ?? '' : d.label.label.name,
       d.number,
     );
   }
   if (T == Email) {
     final d = detail as Email;
     return (
-      (d.label == EmailLabel.custom) ? d.customLabel : d.label.name,
+      (d.label.label == EmailLabel.custom) ? d.label.customLabel ?? '' : d.label.label.name,
       d.address,
     );
   }
   if (T == Address) {
     final d = detail as Address;
     return (
-      (d.label == AddressLabel.custom) ? d.customLabel : d.label.name,
-      d.address,
+      (d.label.label == AddressLabel.custom) ? d.label.customLabel ?? '' : d.label.label.name,
+      d.formatted ?? '',
     );
   }
   if (T == Website) {
     final d = detail as Website;
     return (
-      (d.label == WebsiteLabel.custom) ? d.customLabel : d.label.name,
+      (d.label.label == WebsiteLabel.custom) ? d.label.customLabel ?? '' : d.label.label.name,
       d.url,
     );
   }
   if (T == SocialMedia) {
     final d = detail as SocialMedia;
     return (
-      (d.label == SocialMediaLabel.custom) ? d.customLabel : d.label.name,
-      d.userName,
+      (d.label.label == SocialMediaLabel.custom) ? d.label.customLabel ?? '' : d.label.label.name,
+      d.username,
     );
   }
   throw Exception(

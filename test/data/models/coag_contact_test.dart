@@ -38,11 +38,10 @@ void main() {
         id: 'sys',
         displayName: 'Sys Name',
         phones: [
-          Phone('1234-sys'),
+          Phone(number: '1234-sys'),
           Phone(
-            '0000-coag',
-            label: PhoneLabel.custom,
-            customLabel: 'old mansion $appManagedLabelSuffix',
+            number: '0000-coag',
+            label: Label(PhoneLabel.custom, 'old mansion $appManagedLabelSuffix'),
           ),
         ],
       ),
@@ -50,7 +49,7 @@ void main() {
         id: 'coag',
         displayName: 'Coag Name',
         phones: [
-          Phone('54321-coag', label: PhoneLabel.custom, customLabel: 'mansion'),
+          Phone(number: '54321-coag', label: Label(PhoneLabel.custom, 'mansion')),
         ],
       ),
     );
@@ -65,13 +64,13 @@ void main() {
     );
     expect(merged.phones[0].number, '1234-sys');
     expect(merged.phones[1].number, '54321-coag');
-    expect(merged.phones[1].customLabel, 'mansion $appManagedLabelSuffix');
+    expect(merged.phones[1].label.customLabel, 'mansion $appManagedLabelSuffix');
   });
 
   test('coveredByReunicorn Email with mismatched label still covers', () {
-    final isCovered = coveredByReunicorn(Email('covered@coag.org'), [
-      Email('other@corp.co'),
-      Email('covered@coag.org', label: EmailLabel.school),
+    final isCovered = coveredByReunicorn(Email(address: 'covered@coag.org'), [
+      Email(address: 'other@corp.co'),
+      Email(address: 'covered@coag.org', label: Label(EmailLabel.school)),
     ]);
     expect(isCovered, true);
   });
@@ -81,15 +80,14 @@ void main() {
       Contact(
         phones: [
           Phone(
-            '123',
-            label: PhoneLabel.custom,
-            customLabel: addCoagSuffix('mobile'),
+            number: '123',
+            label: Label(PhoneLabel.custom, addCoagSuffix('mobile')),
           ),
         ],
       ),
     );
     expect(withoutSuffixes.phones.length, 1);
-    expect(withoutSuffixes.phones.first.customLabel, 'mobile');
+    expect(withoutSuffixes.phones.first.label.customLabel, 'mobile');
   });
 
   test('add and remove Reunicorn managed suffix', () {

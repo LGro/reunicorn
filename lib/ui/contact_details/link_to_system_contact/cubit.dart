@@ -7,7 +7,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:permission_handler/permission_handler.dart' hide PermissionStatus;
 
 import '../../../data/models/coag_contact.dart';
 import '../../../data/repositories/contact_system.dart';
@@ -57,40 +57,37 @@ class LinkToSystemContactCubit extends Cubit<LinkToSystemContactState> {
 
   /// Ask for system contact access (if not already granted)
   Future<void> requestPermission() =>
-      FlutterContacts.requestPermission().then((status) async {
+      FlutterContacts.permissions.request(PermissionType.readWrite).then((status) async {
+        final granted = status == PermissionStatus.granted;
         if (!isClosed) {
-          emit(state.copyWith(permissionGranted: status));
-          if (status) {
+          emit(state.copyWith(permissionGranted: granted));
+          if (granted) {
             await loadSystemContacts();
           }
         }
       });
 
   /// Load contacts from system address book
-  Future<void> loadSystemContacts() =>
-      FlutterContacts.getContacts(
-        withProperties: true,
-        withThumbnail: true,
-        withAccounts: true,
-      ).then((contacts) {
-        final uniqueAccounts = Map.fromEntries(
-          contacts
-              .map((c) => c.accounts)
-              .expand((a) => a)
-              .map((a) => MapEntry(a.name, a)),
-        ).values.toSet();
-        if (!isClosed) {
-          emit(
-            state.copyWith(
-              contacts: contacts,
-              accounts: uniqueAccounts,
-              selectedAccount: (uniqueAccounts.length > 1)
-                  ? uniqueAccounts.first
-                  : null,
-            ),
-          );
-        }
-      });
+  Future<void> loadSystemContacts() async {
+    final contacts = await FlutterContacts.getAll(
+      properties: {...ContactProperties.allProperties, ContactProperty.photoThumbnail},
+    );
+    final allAccounts = await FlutterContacts.accounts.getAll();
+    final uniqueAccounts = Map.fromEntries(
+      allAccounts.map((a) => MapEntry(a.name, a)),
+    ).values.toSet();
+    if (!isClosed) {
+      emit(
+        state.copyWith(
+          contacts: contacts,
+          accounts: uniqueAccounts,
+          selectedAccount: (uniqueAccounts.length > 1)
+              ? uniqueAccounts.first
+              : null,
+        ),
+      );
+    }
+  }
 
   /// Add new system contact from app contact
   Future<void> createNewSystemContact(
@@ -98,16 +95,15 @@ class LinkToSystemContactCubit extends Cubit<LinkToSystemContactState> {
     Account? account,
   }) async => (state.contact == null)
       ? null
-      : FlutterContacts.insertContact(
+      : FlutterContacts.create(
           Contact(
-            displayName: displayName,
             name: Name(first: displayName),
-            accounts: (account == null) ? null : [account],
           ),
+          account: account,
         ).then(
-          (systemContact) => _contactStorage.set(
+          (systemContactId) => _contactStorage.set(
             state.contact!.coagContactId,
-            state.contact!.copyWith(systemContactId: systemContact.id),
+            state.contact!.copyWith(systemContactId: systemContactId),
           ),
         );
 

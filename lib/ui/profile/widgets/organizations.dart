@@ -98,9 +98,9 @@ class __EditOrAddWidgetState extends State<_EditOrAddWidget> {
             ? widget.onAddOrSave(
                 widget.id,
                 Organization(
-                  company: _company?.trim() ?? '',
-                  title: _title?.trim() ?? '',
-                  department: _department?.trim() ?? '',
+                  name: _company?.trim() ?? '',
+                  jobTitle: _title?.trim() ?? '',
+                  departmentName: _department?.trim() ?? '',
                 ),
                 _circles.map((e) => (e.$1, e.$2, e.$3)).toList(),
               )
@@ -244,10 +244,10 @@ class ProfileOrganizationsWidget extends StatelessWidget {
       (key, value) => MapEntry(
         key,
         [
-          value.company,
-          value.title,
-          value.department,
-        ].where((v) => v.isNotEmpty).join('\n'),
+          value.name,
+          value.jobTitle,
+          value.departmentName,
+        ].where((v) => (v ?? '').isNotEmpty).join('\n'),
       ),
     ),
     title: Text(
@@ -292,9 +292,9 @@ class ProfileOrganizationsWidget extends StatelessWidget {
                 .toList(),
             headlineSuffix: context.loc.organization,
             id: id,
-            company: contact.organizations[id]?.company ?? '',
-            title: contact.organizations[id]?.title ?? '',
-            department: contact.organizations[id]?.department ?? '',
+            company: contact.organizations[id]?.name ?? '',
+            title: contact.organizations[id]?.jobTitle ?? '',
+            department: contact.organizations[id]?.departmentName ?? '',
             onDelete: () async {
               await context.read<ProfileCubit>().updateDetails(
                 contact.copyWith(

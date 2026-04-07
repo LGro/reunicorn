@@ -20,9 +20,10 @@ Future<void> pickCirclePicture(
   try {
     final pickedFile = await ImagePicker().pickImage(
       source: ImageSource.gallery,
-      maxWidth: 800,
-      maxHeight: 800,
+      maxWidth: 600,
+      maxHeight: 600,
       imageQuality: 90,
+      requestFullMetadata: false,
     );
     if (context.mounted && pickedFile != null) {
       final p = await pickedFile.readAsBytes();

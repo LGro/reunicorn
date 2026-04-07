@@ -522,6 +522,7 @@ class _ContactPageState extends State<ContactPage> {
             Text(
               'InitSec: ${_shorten(contact.connectionCrypto.initialSharedSecretOrNull.toString())}...',
             ),
+            Text('ContactID: ${_shorten(contact.coagContactId.toString())}...'),
             const SizedBox(height: 16),
           ],
         ),
