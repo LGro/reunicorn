@@ -4,6 +4,7 @@ import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
+  private let channelName = "apns_token"
   var methodChannel: FlutterMethodChannel?
 
   func setupMethodChannel(binaryMessenger: FlutterBinaryMessenger) {
