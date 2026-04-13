@@ -1,4 +1,4 @@
-// Copyright 2024 - 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2024 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 part of 'cubit.dart';
@@ -11,58 +11,47 @@ extension LinkToSystemContactStatusX on LinkToSystemContactStatus {
   bool get isDenied => this == LinkToSystemContactStatus.denied;
 }
 
-@JsonSerializable()
-final class LinkToSystemContactState extends Equatable {
-  const LinkToSystemContactState({
-    this.status = LinkToSystemContactStatus.initial,
-    this.contact,
-    this.contacts = const [],
-    this.accounts = const {},
-    this.linkedSystemContactIds = const {},
-    this.permissionGranted = false,
-    this.selectedAccount,
-  });
+class ContactConverter implements JsonConverter<Contact, Map<String, dynamic>> {
+  const ContactConverter();
+
+  @override
+  Contact fromJson(Map<String, dynamic> json) {
+    return Contact.fromJson(json);
+  }
+
+  @override
+  Map<String, dynamic> toJson(Contact object) {
+    return object.toJson();
+  }
+}
+
+class AccountConverter implements JsonConverter<Account, Map<String, dynamic>> {
+  const AccountConverter();
+
+  @override
+  Account fromJson(Map<String, dynamic> json) {
+    return Account.fromJson(json);
+  }
+
+  @override
+  Map<String, dynamic> toJson(Account object) {
+    return object.toJson();
+  }
+}
+
+@freezed
+sealed class LinkToSystemContactState with _$LinkToSystemContactState {
+  const factory LinkToSystemContactState({
+    @Default(LinkToSystemContactStatus.initial)
+    LinkToSystemContactStatus status,
+    @Default(false) bool permissionGranted,
+    CoagContact? contact,
+    @Default([]) @ContactConverter() List<Contact> contacts,
+    @Default({}) @AccountConverter() Set<Account> accounts,
+    @AccountConverter() Account? selectedAccount,
+    @Default({}) Set<String> linkedSystemContactIds,
+  }) = _LinkToSystemContactState;
 
   factory LinkToSystemContactState.fromJson(Map<String, dynamic> json) =>
       _$LinkToSystemContactStateFromJson(json);
-
-  final LinkToSystemContactStatus status;
-  final bool permissionGranted;
-  final CoagContact? contact;
-  final List<Contact> contacts;
-  final Set<Account> accounts;
-  final Account? selectedAccount;
-  final Set<String> linkedSystemContactIds;
-
-  Map<String, dynamic> toJson() => _$LinkToSystemContactStateToJson(this);
-
-  LinkToSystemContactState copyWith({
-    LinkToSystemContactStatus? status,
-    bool? permissionGranted,
-    CoagContact? contact,
-    List<Contact>? contacts,
-    Set<Account>? accounts,
-    Account? selectedAccount,
-    Set<String>? linkedSystemContactIds,
-  }) => LinkToSystemContactState(
-    status: status ?? this.status,
-    permissionGranted: permissionGranted ?? this.permissionGranted,
-    contact: contact ?? this.contact?.copyWith(),
-    contacts: contacts ?? [...this.contacts],
-    accounts: accounts ?? {...this.accounts},
-    linkedSystemContactIds:
-        linkedSystemContactIds ?? {...this.linkedSystemContactIds},
-    selectedAccount: selectedAccount ?? selectedAccount,
-  );
-
-  @override
-  List<Object?> get props => [
-    status,
-    permissionGranted,
-    accounts,
-    selectedAccount,
-    linkedSystemContactIds,
-    contact,
-    contacts,
-  ];
 }

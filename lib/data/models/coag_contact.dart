@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:equatable/equatable.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -17,11 +16,6 @@ import 'profile_sharing/status.dart';
 import 'utils.dart';
 
 part 'coag_contact.g.dart';
-
-// ignore: one_member_abstracts
-abstract interface class BinarySerializable {
-  Uint8List toBytes();
-}
 
 @JsonSerializable()
 class CoagContact extends Equatable implements JsonEncodable {
@@ -41,6 +35,8 @@ class CoagContact extends Equatable implements JsonEncodable {
     this.profileSharingStatus = const ProfileSharingStatus(),
     this.introductionsForThem = const [],
     this.introductionsByThem = const [],
+    this.myLinkedAppConnections = const {},
+    this.theirLinkedAppConnections = const {},
     this.origin,
     this.verified = false,
   });
@@ -62,6 +58,8 @@ class CoagContact extends Equatable implements JsonEncodable {
     required this.profileSharingStatus,
     required this.introductionsForThem,
     required this.introductionsByThem,
+    required this.myLinkedAppConnections,
+    required this.theirLinkedAppConnections,
     required this.origin,
     required this.verified,
   });
@@ -98,6 +96,12 @@ class CoagContact extends Equatable implements JsonEncodable {
 
   /// DHT record info for sharing with this contact
   final DhtConnectionState? dhtConnection;
+
+  /// Connection information for my linked apps with app ID as key
+  final Map<String, (RecordKey, KeyPair)> myLinkedAppConnections;
+
+  /// Connection information for their linked apps with app ID as key
+  final Map<String, RecordKey> theirLinkedAppConnections;
 
   /// Cryptographic keys for sharing with this contact
   final CryptoState connectionCrypto;
@@ -163,6 +167,8 @@ class CoagContact extends Equatable implements JsonEncodable {
     ProfileSharingStatus? profileSharingStatus,
     List<ContactIntroduction>? introductionsByThem,
     List<ContactIntroduction>? introductionsForThem,
+    Map<String, (RecordKey, KeyPair)>? myLinkedAppConnections,
+    Map<String, RecordKey>? theirLinkedAppConnections,
     String? origin,
     bool? verified,
   }) => CoagContact(
@@ -185,6 +191,12 @@ class CoagContact extends Equatable implements JsonEncodable {
     introductionsForThem: [
       ...introductionsForThem ?? this.introductionsForThem,
     ],
+    myLinkedAppConnections: {
+      ...myLinkedAppConnections ?? this.myLinkedAppConnections,
+    },
+    theirLinkedAppConnections: {
+      ...theirLinkedAppConnections ?? this.theirLinkedAppConnections,
+    },
     origin: origin ?? this.origin,
     verified: verified ?? this.verified,
   );
@@ -206,6 +218,8 @@ class CoagContact extends Equatable implements JsonEncodable {
     temporaryLocations,
     introductionsByThem,
     introductionsForThem,
+    myLinkedAppConnections,
+    theirLinkedAppConnections,
     origin,
     verified,
   ];

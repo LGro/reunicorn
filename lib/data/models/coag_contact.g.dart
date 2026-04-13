@@ -62,6 +62,25 @@ CoagContact _$CoagContactFromJson(Map<String, dynamic> json) => CoagContact(
           ?.map((e) => ContactIntroduction.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
+  myLinkedAppConnections:
+      (json['my_linked_app_connections'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(
+          k,
+          _$recordConvert(
+            e,
+            ($jsonValue) => (
+              RecordKey.fromJson($jsonValue[r'$1']),
+              KeyPair.fromJson($jsonValue[r'$2']),
+            ),
+          ),
+        ),
+      ) ??
+      const {},
+  theirLinkedAppConnections:
+      (json['their_linked_app_connections'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, RecordKey.fromJson(e)),
+      ) ??
+      const {},
   origin: json['origin'] as String?,
   verified: json['verified'] as bool? ?? false,
 );
@@ -83,6 +102,15 @@ Map<String, dynamic> _$CoagContactToJson(CoagContact instance) =>
         (k, e) => MapEntry(k, e.toJson()),
       ),
       'dht_connection': instance.dhtConnection?.toJson(),
+      'my_linked_app_connections': instance.myLinkedAppConnections.map(
+        (k, e) => MapEntry(k, <String, dynamic>{
+          r'$1': e.$1.toJson(),
+          r'$2': e.$2.toJson(),
+        }),
+      ),
+      'their_linked_app_connections': instance.theirLinkedAppConnections.map(
+        (k, e) => MapEntry(k, e.toJson()),
+      ),
       'connection_crypto': instance.connectionCrypto.toJson(),
       'profile_sharing_status': instance.profileSharingStatus.toJson(),
       'introductions_for_them': instance.introductionsForThem
@@ -94,3 +122,6 @@ Map<String, dynamic> _$CoagContactToJson(CoagContact instance) =>
       'origin': instance.origin,
       'verified': instance.verified,
     };
+
+$Rec _$recordConvert<$Rec>(Object? value, $Rec Function(Map) convert) =>
+    convert(value as Map<String, dynamic>);

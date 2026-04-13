@@ -8,7 +8,6 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:reunicorn/data/models/utils.dart';
 import 'package:veilid/veilid.dart';
 
-import '../coag_contact.dart';
 import '../contact_details.dart';
 import '../contact_introduction.dart';
 import '../contact_location.dart';
@@ -17,6 +16,11 @@ part 'schema.freezed.dart';
 part 'schema.g.dart';
 
 typedef ContactSharingSchema = ContactSharingSchemaV3;
+
+// ignore: one_member_abstracts
+abstract interface class BinarySerializable {
+  Uint8List toBytes();
+}
 
 @freezed
 sealed class ContactSharingSchemaV3

@@ -24,7 +24,7 @@ mixin _$ContactDetails {
  Map<String, String> get websites;/// Social media / instant messaging profiles
  Map<String, String> get socialMedias;/// Events / birthdays
  Map<String, DateTime> get events;/// Organizations like companies with role info
- Map<String, Organization> get organizations;/// Miscellaneous fields
+@OrganizationConverter() Map<String, Organization> get organizations;/// Miscellaneous fields
  Map<String, String> get misc;/// Tags to indicate topics, preferences with unique key
  Map<String, String> get tags;
 /// Create a copy of ContactDetails
@@ -59,7 +59,7 @@ abstract mixin class $ContactDetailsCopyWith<$Res>  {
   factory $ContactDetailsCopyWith(ContactDetails value, $Res Function(ContactDetails) _then) = _$ContactDetailsCopyWithImpl;
 @useResult
 $Res call({
- List<int>? picture, String? publicKey, Map<String, String> names, Map<String, String> phones, Map<String, String> emails, Map<String, String> websites, Map<String, String> socialMedias, Map<String, DateTime> events, Map<String, Organization> organizations, Map<String, String> misc, Map<String, String> tags
+ List<int>? picture, String? publicKey, Map<String, String> names, Map<String, String> phones, Map<String, String> emails, Map<String, String> websites, Map<String, String> socialMedias, Map<String, DateTime> events,@OrganizationConverter() Map<String, Organization> organizations, Map<String, String> misc, Map<String, String> tags
 });
 
 
@@ -171,7 +171,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<int>? picture,  String? publicKey,  Map<String, String> names,  Map<String, String> phones,  Map<String, String> emails,  Map<String, String> websites,  Map<String, String> socialMedias,  Map<String, DateTime> events,  Map<String, Organization> organizations,  Map<String, String> misc,  Map<String, String> tags)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<int>? picture,  String? publicKey,  Map<String, String> names,  Map<String, String> phones,  Map<String, String> emails,  Map<String, String> websites,  Map<String, String> socialMedias,  Map<String, DateTime> events, @OrganizationConverter()  Map<String, Organization> organizations,  Map<String, String> misc,  Map<String, String> tags)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ContactDetails() when $default != null:
 return $default(_that.picture,_that.publicKey,_that.names,_that.phones,_that.emails,_that.websites,_that.socialMedias,_that.events,_that.organizations,_that.misc,_that.tags);case _:
@@ -192,7 +192,7 @@ return $default(_that.picture,_that.publicKey,_that.names,_that.phones,_that.ema
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<int>? picture,  String? publicKey,  Map<String, String> names,  Map<String, String> phones,  Map<String, String> emails,  Map<String, String> websites,  Map<String, String> socialMedias,  Map<String, DateTime> events,  Map<String, Organization> organizations,  Map<String, String> misc,  Map<String, String> tags)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<int>? picture,  String? publicKey,  Map<String, String> names,  Map<String, String> phones,  Map<String, String> emails,  Map<String, String> websites,  Map<String, String> socialMedias,  Map<String, DateTime> events, @OrganizationConverter()  Map<String, Organization> organizations,  Map<String, String> misc,  Map<String, String> tags)  $default,) {final _that = this;
 switch (_that) {
 case _ContactDetails():
 return $default(_that.picture,_that.publicKey,_that.names,_that.phones,_that.emails,_that.websites,_that.socialMedias,_that.events,_that.organizations,_that.misc,_that.tags);}
@@ -209,7 +209,7 @@ return $default(_that.picture,_that.publicKey,_that.names,_that.phones,_that.ema
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<int>? picture,  String? publicKey,  Map<String, String> names,  Map<String, String> phones,  Map<String, String> emails,  Map<String, String> websites,  Map<String, String> socialMedias,  Map<String, DateTime> events,  Map<String, Organization> organizations,  Map<String, String> misc,  Map<String, String> tags)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<int>? picture,  String? publicKey,  Map<String, String> names,  Map<String, String> phones,  Map<String, String> emails,  Map<String, String> websites,  Map<String, String> socialMedias,  Map<String, DateTime> events, @OrganizationConverter()  Map<String, Organization> organizations,  Map<String, String> misc,  Map<String, String> tags)?  $default,) {final _that = this;
 switch (_that) {
 case _ContactDetails() when $default != null:
 return $default(_that.picture,_that.publicKey,_that.names,_that.phones,_that.emails,_that.websites,_that.socialMedias,_that.events,_that.organizations,_that.misc,_that.tags);case _:
@@ -224,7 +224,7 @@ return $default(_that.picture,_that.publicKey,_that.names,_that.phones,_that.ema
 @JsonSerializable()
 
 class _ContactDetails extends ContactDetails {
-  const _ContactDetails({final  List<int>? picture, this.publicKey, final  Map<String, String> names = const {}, final  Map<String, String> phones = const {}, final  Map<String, String> emails = const {}, final  Map<String, String> websites = const {}, final  Map<String, String> socialMedias = const {}, final  Map<String, DateTime> events = const {}, final  Map<String, Organization> organizations = const {}, final  Map<String, String> misc = const {}, final  Map<String, String> tags = const {}}): _picture = picture,_names = names,_phones = phones,_emails = emails,_websites = websites,_socialMedias = socialMedias,_events = events,_organizations = organizations,_misc = misc,_tags = tags,super._();
+  const _ContactDetails({final  List<int>? picture, this.publicKey, final  Map<String, String> names = const {}, final  Map<String, String> phones = const {}, final  Map<String, String> emails = const {}, final  Map<String, String> websites = const {}, final  Map<String, String> socialMedias = const {}, final  Map<String, DateTime> events = const {}, @OrganizationConverter() final  Map<String, Organization> organizations = const {}, final  Map<String, String> misc = const {}, final  Map<String, String> tags = const {}}): _picture = picture,_names = names,_phones = phones,_emails = emails,_websites = websites,_socialMedias = socialMedias,_events = events,_organizations = organizations,_misc = misc,_tags = tags,super._();
   factory _ContactDetails.fromJson(Map<String, dynamic> json) => _$ContactDetailsFromJson(json);
 
 /// Binary integer representation of an image
@@ -297,7 +297,7 @@ class _ContactDetails extends ContactDetails {
 /// Organizations like companies with role info
  final  Map<String, Organization> _organizations;
 /// Organizations like companies with role info
-@override@JsonKey() Map<String, Organization> get organizations {
+@override@JsonKey()@OrganizationConverter() Map<String, Organization> get organizations {
   if (_organizations is EqualUnmodifiableMapView) return _organizations;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableMapView(_organizations);
@@ -355,7 +355,7 @@ abstract mixin class _$ContactDetailsCopyWith<$Res> implements $ContactDetailsCo
   factory _$ContactDetailsCopyWith(_ContactDetails value, $Res Function(_ContactDetails) _then) = __$ContactDetailsCopyWithImpl;
 @override @useResult
 $Res call({
- List<int>? picture, String? publicKey, Map<String, String> names, Map<String, String> phones, Map<String, String> emails, Map<String, String> websites, Map<String, String> socialMedias, Map<String, DateTime> events, Map<String, Organization> organizations, Map<String, String> misc, Map<String, String> tags
+ List<int>? picture, String? publicKey, Map<String, String> names, Map<String, String> phones, Map<String, String> emails, Map<String, String> websites, Map<String, String> socialMedias, Map<String, DateTime> events,@OrganizationConverter() Map<String, Organization> organizations, Map<String, String> misc, Map<String, String> tags
 });
 
 

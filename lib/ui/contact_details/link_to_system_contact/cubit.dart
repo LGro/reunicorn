@@ -6,13 +6,15 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'package:permission_handler/permission_handler.dart' hide PermissionStatus;
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:permission_handler/permission_handler.dart'
+    hide PermissionStatus;
 
 import '../../../data/models/coag_contact.dart';
 import '../../../data/repositories/contact_system.dart';
 import '../../../data/services/storage/base.dart';
 
+part 'cubit.freezed.dart';
 part 'cubit.g.dart';
 part 'state.dart';
 
@@ -56,8 +58,9 @@ class LinkToSystemContactCubit extends Cubit<LinkToSystemContactState> {
   }
 
   /// Ask for system contact access (if not already granted)
-  Future<void> requestPermission() =>
-      FlutterContacts.permissions.request(PermissionType.readWrite).then((status) async {
+  Future<void> requestPermission() => FlutterContacts.permissions
+      .request(PermissionType.readWrite)
+      .then((status) async {
         final granted = status == PermissionStatus.granted;
         if (!isClosed) {
           emit(state.copyWith(permissionGranted: granted));
@@ -70,7 +73,10 @@ class LinkToSystemContactCubit extends Cubit<LinkToSystemContactState> {
   /// Load contacts from system address book
   Future<void> loadSystemContacts() async {
     final contacts = await FlutterContacts.getAll(
-      properties: {...ContactProperties.allProperties, ContactProperty.photoThumbnail},
+      properties: {
+        ...ContactProperties.allProperties,
+        ContactProperty.photoThumbnail,
+      },
     );
     final allAccounts = await FlutterContacts.accounts.getAll();
     final uniqueAccounts = Map.fromEntries(
@@ -96,9 +102,7 @@ class LinkToSystemContactCubit extends Cubit<LinkToSystemContactState> {
   }) async => (state.contact == null)
       ? null
       : FlutterContacts.create(
-          Contact(
-            name: Name(first: displayName),
-          ),
+          Contact(name: Name(first: displayName)),
           account: account,
         ).then(
           (systemContactId) => _contactStorage.set(

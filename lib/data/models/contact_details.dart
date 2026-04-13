@@ -11,6 +11,21 @@ import 'contact_location.dart';
 part 'contact_details.freezed.dart';
 part 'contact_details.g.dart';
 
+class OrganizationConverter
+    implements JsonConverter<Organization, Map<String, dynamic>> {
+  const OrganizationConverter();
+
+  @override
+  Organization fromJson(Map<String, dynamic> json) {
+    return Organization.fromJson(json);
+  }
+
+  @override
+  Map<String, dynamic> toJson(Organization object) {
+    return object.toJson();
+  }
+}
+
 @freezed
 sealed class ContactDetails with _$ContactDetails {
   const factory ContactDetails({
@@ -39,7 +54,9 @@ sealed class ContactDetails with _$ContactDetails {
     @Default({}) Map<String, DateTime> events,
 
     /// Organizations like companies with role info
-    @Default({}) Map<String, Organization> organizations,
+    @Default({})
+    @OrganizationConverter()
+    Map<String, Organization> organizations,
 
     /// Miscellaneous fields
     @Default({}) Map<String, String> misc,
@@ -57,7 +74,9 @@ sealed class ContactDetails with _$ContactDetails {
     Map<String, ContactAddressLocation> addresses,
   ) => Contact(
     name: Name(first: displayName),
-    photo: (picture == null) ? null : Photo(fullSize: Uint8List.fromList(picture!)),
+    photo: (picture == null)
+        ? null
+        : Photo(fullSize: Uint8List.fromList(picture!)),
     phones: phones.entries
         .map(
           (e) => Phone(number: e.value, label: Label(PhoneLabel.custom, e.key)),
@@ -65,7 +84,8 @@ sealed class ContactDetails with _$ContactDetails {
         .toList(),
     emails: emails.entries
         .map(
-          (e) => Email(address: e.value, label: Label(EmailLabel.custom, e.key)),
+          (e) =>
+              Email(address: e.value, label: Label(EmailLabel.custom, e.key)),
         )
         .toList(),
     addresses: addresses.entries
@@ -108,35 +128,45 @@ sealed class ContactDetails with _$ContactDetails {
   if (T == Phone) {
     final d = detail as Phone;
     return (
-      (d.label.label == PhoneLabel.custom) ? d.label.customLabel ?? '' : d.label.label.name,
+      (d.label.label == PhoneLabel.custom)
+          ? d.label.customLabel ?? ''
+          : d.label.label.name,
       d.number,
     );
   }
   if (T == Email) {
     final d = detail as Email;
     return (
-      (d.label.label == EmailLabel.custom) ? d.label.customLabel ?? '' : d.label.label.name,
+      (d.label.label == EmailLabel.custom)
+          ? d.label.customLabel ?? ''
+          : d.label.label.name,
       d.address,
     );
   }
   if (T == Address) {
     final d = detail as Address;
     return (
-      (d.label.label == AddressLabel.custom) ? d.label.customLabel ?? '' : d.label.label.name,
+      (d.label.label == AddressLabel.custom)
+          ? d.label.customLabel ?? ''
+          : d.label.label.name,
       d.formatted ?? '',
     );
   }
   if (T == Website) {
     final d = detail as Website;
     return (
-      (d.label.label == WebsiteLabel.custom) ? d.label.customLabel ?? '' : d.label.label.name,
+      (d.label.label == WebsiteLabel.custom)
+          ? d.label.customLabel ?? ''
+          : d.label.label.name,
       d.url,
     );
   }
   if (T == SocialMedia) {
     final d = detail as SocialMedia;
     return (
-      (d.label.label == SocialMediaLabel.custom) ? d.label.customLabel ?? '' : d.label.label.name,
+      (d.label.label == SocialMediaLabel.custom)
+          ? d.label.customLabel ?? ''
+          : d.label.label.name,
       d.username,
     );
   }

@@ -180,6 +180,8 @@ class BackupRepository extends BaseDhtRepository {
               verified: c.verified,
               systemContactId: c.systemContactId,
               introductionsForThem: c.introductionsForThem,
+              myLinkedAppConnections: c.myLinkedAppConnections,
+              theirLinkedAppConnections: c.theirLinkedAppConnections,
               details: null,
               theirIdentity: null,
               connectionAttestations: const [],
