@@ -78,6 +78,39 @@ void main() {
     expect(dec, payload);
   });
 
+  test('ciphertext differs between encryptions with same derived ke', () async {
+    final cryptoSystem = await DHTRecordPool.instance.veilid.getCryptoSystem(
+      cryptoKindVLD0,
+    );
+    final kpA = await cryptoSystem.generateKeyPair();
+    final kpB = await cryptoSystem.generateKeyPair();
+
+    final secA = await cryptoSystem.generateSharedSecret(
+      kpB.key,
+      kpA.secret,
+      utf8.encode('my_domain'),
+    );
+    final secB = await cryptoSystem.generateSharedSecret(
+      kpA.key,
+      kpB.secret,
+      utf8.encode('my_domain'),
+    );
+
+    final payload = utf8.encode('hello');
+    final ceA = await VeilidCryptoPrivate.fromSharedSecret(
+      cryptoSystem.kind(),
+      secA,
+    );
+    final encForB = await ceA.encrypt(payload);
+    final ceB = await VeilidCryptoPrivate.fromSharedSecret(
+      cryptoSystem.kind(),
+      secB,
+    );
+    final encForA = await ceB.encrypt(payload);
+
+    expect(encForB, isNot(equals(encForA)));
+  });
+
   test('Crypto member string lengths', () async {
     final cryptoSystem = await DHTRecordPool.instance.veilid.getCryptoSystem(
       cryptoKindVLD0,

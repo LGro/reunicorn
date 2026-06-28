@@ -16,10 +16,15 @@ abstract class DHTAdd {
   /// Return the number of elements successfully added.
   /// Throws DHTExceptionTryAgain if the state changed before any elements could
   /// be added or a newer value was found on the network.
-  /// Throws DHTConcurrencyLimit if the number values in the list was too large
-  /// at this time
+  /// Throws DHTExceptionLimit if the number of values exceeds maxAddLen()
   /// Throws a StateError if the container exceeds its maximum size.
   Future<void> addAll(List<Uint8List> values);
+
+  /// Returns the maximum number of items that can be added in a single
+  /// addAll call given the current state.
+  /// addAll will throw DHTExceptionLimit if the requested length
+  /// exceeds this value.
+  int addAllLimit();
 }
 
 extension DHTAddExt on DHTAdd {

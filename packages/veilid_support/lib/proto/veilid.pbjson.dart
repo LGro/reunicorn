@@ -1,13 +1,15 @@
+// This is a generated file - do not edit.
 //
-//  Generated code. Do not modify.
-//  source: veilid.proto
-//
-// @dart = 2.12
+// Generated from veilid.proto.
+
+// @dart = 3.3
 
 // ignore_for_file: annotate_overrides, camel_case_types, comment_references
-// ignore_for_file: constant_identifier_names, library_prefixes
-// ignore_for_file: non_constant_identifier_names, prefer_final_fields
-// ignore_for_file: unnecessary_import, unnecessary_this, unused_import
+// ignore_for_file: constant_identifier_names
+// ignore_for_file: curly_braces_in_flow_control_structures
+// ignore_for_file: deprecated_member_use_from_same_package, library_prefixes
+// ignore_for_file: non_constant_identifier_names, prefer_relative_imports
+// ignore_for_file: unused_import
 
 import 'dart:convert' as $convert;
 import 'dart:core' as $core;
@@ -22,8 +24,8 @@ const BarePublicKey$json = {
 };
 
 /// Descriptor for `BarePublicKey`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List barePublicKeyDescriptor = $convert.base64Decode(
-    'Cg1CYXJlUHVibGljS2V5EhIKBGRhdGEYASABKAxSBGRhdGE=');
+final $typed_data.Uint8List barePublicKeyDescriptor =
+    $convert.base64Decode('Cg1CYXJlUHVibGljS2V5EhIKBGRhdGEYASABKAxSBGRhdGE=');
 
 @$core.Deprecated('Use bareSignatureDescriptor instead')
 const BareSignature$json = {
@@ -34,8 +36,8 @@ const BareSignature$json = {
 };
 
 /// Descriptor for `BareSignature`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List bareSignatureDescriptor = $convert.base64Decode(
-    'Cg1CYXJlU2lnbmF0dXJlEhIKBGRhdGEYASABKAxSBGRhdGE=');
+final $typed_data.Uint8List bareSignatureDescriptor =
+    $convert.base64Decode('Cg1CYXJlU2lnbmF0dXJlEhIKBGRhdGEYASABKAxSBGRhdGE=');
 
 @$core.Deprecated('Use bareSecretKeyDescriptor instead')
 const BareSecretKey$json = {
@@ -46,8 +48,8 @@ const BareSecretKey$json = {
 };
 
 /// Descriptor for `BareSecretKey`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List bareSecretKeyDescriptor = $convert.base64Decode(
-    'Cg1CYXJlU2VjcmV0S2V5EhIKBGRhdGEYASABKAxSBGRhdGE=');
+final $typed_data.Uint8List bareSecretKeyDescriptor =
+    $convert.base64Decode('Cg1CYXJlU2VjcmV0S2V5EhIKBGRhdGEYASABKAxSBGRhdGE=');
 
 @$core.Deprecated('Use bareSharedSecretDescriptor instead')
 const BareSharedSecret$json = {
@@ -58,8 +60,8 @@ const BareSharedSecret$json = {
 };
 
 /// Descriptor for `BareSharedSecret`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List bareSharedSecretDescriptor = $convert.base64Decode(
-    'ChBCYXJlU2hhcmVkU2VjcmV0EhIKBGRhdGEYASABKAxSBGRhdGE=');
+final $typed_data.Uint8List bareSharedSecretDescriptor = $convert
+    .base64Decode('ChBCYXJlU2hhcmVkU2VjcmV0EhIKBGRhdGEYASABKAxSBGRhdGE=');
 
 @$core.Deprecated('Use bareHashDigestDescriptor instead')
 const BareHashDigest$json = {
@@ -70,8 +72,8 @@ const BareHashDigest$json = {
 };
 
 /// Descriptor for `BareHashDigest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List bareHashDigestDescriptor = $convert.base64Decode(
-    'Cg5CYXJlSGFzaERpZ2VzdBISCgRkYXRhGAEgASgMUgRkYXRh');
+final $typed_data.Uint8List bareHashDigestDescriptor =
+    $convert.base64Decode('Cg5CYXJlSGFzaERpZ2VzdBISCgRkYXRhGAEgASgMUgRkYXRh');
 
 @$core.Deprecated('Use bareOpaqueRecordKeyDescriptor instead')
 const BareOpaqueRecordKey$json = {
@@ -82,8 +84,8 @@ const BareOpaqueRecordKey$json = {
 };
 
 /// Descriptor for `BareOpaqueRecordKey`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List bareOpaqueRecordKeyDescriptor = $convert.base64Decode(
-    'ChNCYXJlT3BhcXVlUmVjb3JkS2V5EhIKBGRhdGEYASABKAxSBGRhdGE=');
+final $typed_data.Uint8List bareOpaqueRecordKeyDescriptor = $convert
+    .base64Decode('ChNCYXJlT3BhcXVlUmVjb3JkS2V5EhIKBGRhdGEYASABKAxSBGRhdGE=');
 
 @$core.Deprecated('Use bareRouteIdDescriptor instead')
 const BareRouteId$json = {
@@ -94,8 +96,8 @@ const BareRouteId$json = {
 };
 
 /// Descriptor for `BareRouteId`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List bareRouteIdDescriptor = $convert.base64Decode(
-    'CgtCYXJlUm91dGVJZBISCgRkYXRhGAEgASgMUgRkYXRh');
+final $typed_data.Uint8List bareRouteIdDescriptor =
+    $convert.base64Decode('CgtCYXJlUm91dGVJZBISCgRkYXRhGAEgASgMUgRkYXRh');
 
 @$core.Deprecated('Use bareNodeIdDescriptor instead')
 const BareNodeId$json = {
@@ -106,8 +108,8 @@ const BareNodeId$json = {
 };
 
 /// Descriptor for `BareNodeId`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List bareNodeIdDescriptor = $convert.base64Decode(
-    'CgpCYXJlTm9kZUlkEhIKBGRhdGEYASABKAxSBGRhdGE=');
+final $typed_data.Uint8List bareNodeIdDescriptor =
+    $convert.base64Decode('CgpCYXJlTm9kZUlkEhIKBGRhdGEYASABKAxSBGRhdGE=');
 
 @$core.Deprecated('Use bareMemberIdDescriptor instead')
 const BareMemberId$json = {
@@ -118,8 +120,8 @@ const BareMemberId$json = {
 };
 
 /// Descriptor for `BareMemberId`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List bareMemberIdDescriptor = $convert.base64Decode(
-    'CgxCYXJlTWVtYmVySWQSEgoEZGF0YRgBIAEoDFIEZGF0YQ==');
+final $typed_data.Uint8List bareMemberIdDescriptor =
+    $convert.base64Decode('CgxCYXJlTWVtYmVySWQSEgoEZGF0YRgBIAEoDFIEZGF0YQ==');
 
 @$core.Deprecated('Use nonceDescriptor instead')
 const Nonce$json = {
@@ -130,8 +132,8 @@ const Nonce$json = {
 };
 
 /// Descriptor for `Nonce`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List nonceDescriptor = $convert.base64Decode(
-    'CgVOb25jZRISCgRkYXRhGAEgASgMUgRkYXRh');
+final $typed_data.Uint8List nonceDescriptor =
+    $convert.base64Decode('CgVOb25jZRISCgRkYXRhGAEgASgMUgRkYXRh');
 
 @$core.Deprecated('Use publicKeyDescriptor instead')
 const PublicKey$json = {
@@ -285,7 +287,15 @@ const BareRecordKey$json = {
   '1': 'BareRecordKey',
   '2': [
     {'1': 'key', '3': 1, '4': 1, '5': 12, '10': 'key'},
-    {'1': 'encryption_key', '3': 2, '4': 1, '5': 12, '9': 0, '10': 'encryptionKey', '17': true},
+    {
+      '1': 'encryption_key',
+      '3': 2,
+      '4': 1,
+      '5': 12,
+      '9': 0,
+      '10': 'encryptionKey',
+      '17': true
+    },
   ],
   '8': [
     {'1': '_encryption_key'},
@@ -303,7 +313,15 @@ const RecordKey$json = {
   '2': [
     {'1': 'kind', '3': 1, '4': 1, '5': 7, '10': 'kind'},
     {'1': 'key', '3': 2, '4': 1, '5': 12, '10': 'key'},
-    {'1': 'encryption_key', '3': 3, '4': 1, '5': 12, '9': 0, '10': 'encryptionKey', '17': true},
+    {
+      '1': 'encryption_key',
+      '3': 3,
+      '4': 1,
+      '5': 12,
+      '9': 0,
+      '10': 'encryptionKey',
+      '17': true
+    },
   ],
   '8': [
     {'1': '_encryption_key'},
@@ -315,4 +333,3 @@ final $typed_data.Uint8List recordKeyDescriptor = $convert.base64Decode(
     'CglSZWNvcmRLZXkSEgoEa2luZBgBIAEoB1IEa2luZBIQCgNrZXkYAiABKAxSA2tleRIqCg5lbm'
     'NyeXB0aW9uX2tleRgDIAEoDEgAUg1lbmNyeXB0aW9uS2V5iAEBQhEKD19lbmNyeXB0aW9uX2tl'
     'eQ==');
-

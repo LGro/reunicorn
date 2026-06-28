@@ -1,13 +1,15 @@
+// This is a generated file - do not edit.
 //
-//  Generated code. Do not modify.
-//  source: dht.proto
-//
-// @dart = 2.12
+// Generated from dht.proto.
+
+// @dart = 3.3
 
 // ignore_for_file: annotate_overrides, camel_case_types, comment_references
-// ignore_for_file: constant_identifier_names, library_prefixes
-// ignore_for_file: non_constant_identifier_names, prefer_final_fields
-// ignore_for_file: unnecessary_import, unnecessary_this, unused_import
+// ignore_for_file: constant_identifier_names
+// ignore_for_file: curly_braces_in_flow_control_structures
+// ignore_for_file: deprecated_member_use_from_same_package, library_prefixes
+// ignore_for_file: non_constant_identifier_names, prefer_relative_imports
+// ignore_for_file: unused_import
 
 import 'dart:convert' as $convert;
 import 'dart:core' as $core;
@@ -17,8 +19,22 @@ import 'dart:typed_data' as $typed_data;
 const DHTData$json = {
   '1': 'DHTData',
   '2': [
-    {'1': 'keys', '3': 1, '4': 3, '5': 11, '6': '.veilid.RecordKey', '10': 'keys'},
-    {'1': 'hash', '3': 2, '4': 1, '5': 11, '6': '.veilid.HashDigest', '10': 'hash'},
+    {
+      '1': 'keys',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.veilid.RecordKey',
+      '10': 'keys'
+    },
+    {
+      '1': 'hash',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.veilid.HashDigest',
+      '10': 'hash'
+    },
     {'1': 'chunk', '3': 3, '4': 1, '5': 13, '10': 'chunk'},
     {'1': 'size', '3': 4, '4': 1, '5': 13, '10': 'size'},
   ],
@@ -49,7 +65,14 @@ final $typed_data.Uint8List dHTLogDescriptor = $convert.base64Decode(
 const DHTShortArray$json = {
   '1': 'DHTShortArray',
   '2': [
-    {'1': 'keys', '3': 1, '4': 3, '5': 11, '6': '.veilid.RecordKey', '10': 'keys'},
+    {
+      '1': 'keys',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.veilid.RecordKey',
+      '10': 'keys'
+    },
     {'1': 'index', '3': 2, '4': 1, '5': 12, '10': 'index'},
     {'1': 'seqs', '3': 3, '4': 3, '5': 13, '10': 'seqs'},
   ],
@@ -64,8 +87,22 @@ final $typed_data.Uint8List dHTShortArrayDescriptor = $convert.base64Decode(
 const OwnedDHTRecordPointer$json = {
   '1': 'OwnedDHTRecordPointer',
   '2': [
-    {'1': 'record_key', '3': 1, '4': 1, '5': 11, '6': '.veilid.RecordKey', '10': 'recordKey'},
-    {'1': 'owner', '3': 2, '4': 1, '5': 11, '6': '.veilid.BareKeyPair', '10': 'owner'},
+    {
+      '1': 'record_key',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.veilid.RecordKey',
+      '10': 'recordKey'
+    },
+    {
+      '1': 'owner',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.veilid.BareKeyPair',
+      '10': 'owner'
+    },
   ],
 };
 
@@ -74,4 +111,3 @@ final $typed_data.Uint8List ownedDHTRecordPointerDescriptor = $convert.base64Dec
     'ChVPd25lZERIVFJlY29yZFBvaW50ZXISMAoKcmVjb3JkX2tleRgBIAEoCzIRLnZlaWxpZC5SZW'
     'NvcmRLZXlSCXJlY29yZEtleRIpCgVvd25lchgCIAEoCzITLnZlaWxpZC5CYXJlS2V5UGFpclIF'
     'b3duZXI=');
-

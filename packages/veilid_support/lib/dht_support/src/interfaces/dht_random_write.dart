@@ -7,61 +7,42 @@ import '../../../veilid_support.dart';
 // ignore: one_member_abstracts
 abstract class DHTRandomWrite {
   /// Try to set an item at position 'pos' of the DHT container.
-  /// If the set was successful this returns:
-  ///   * A boolean true
-  ///   * outValue will return the prior contents of the element,
-  ///     or null if there was no value yet
-  ///
-  /// If the set was found a newer value on the network this returns:
-  ///   * A boolean false
-  ///   * outValue will return the newer value of the element,
-  ///     or null if the head record changed.
-  ///
-  /// Throws an IndexError if the position is not within the length
-  /// of the container.
-  Future<bool> tryWriteItem(
-    int pos,
-    Uint8List newValue, {
-    Output<Uint8List>? output,
-  });
+  /// Returns the prior contents of the element, or null if there
+  /// was no value yet.
+  /// Throws DHTExceptionOutdated if a newer value exists on the network.
+  /// Throws IndexError if the position is not within the length.
+  Future<Uint8List?> writeItem(int pos, Uint8List newValue);
 }
 
 extension DHTRandomWriteExt on DHTRandomWrite {
   /// Convenience function:
-  /// Like tryWriteItem but also encodes the input value as JSON and parses the
+  /// Like writeItem but also encodes the input value as JSON and parses the
   /// returned element as JSON
-  Future<bool> tryWriteItemJson<T>(
+  Future<T?> writeItemJson<T>(
     T Function(dynamic) fromJson,
     int pos,
-    T newValue, {
-    Output<T>? output,
-  }) async {
-    final outValueBytes = output == null ? null : Output<Uint8List>();
-    final out = await tryWriteItem(
-      pos,
-      jsonEncodeBytes(newValue),
-      output: outValueBytes,
-    );
-    output.mapSave(outValueBytes, (b) => jsonDecodeBytes(fromJson, b));
-    return out;
+    T newValue,
+  ) async {
+    final oldBytes = await writeItem(pos, jsonEncodeBytes(newValue));
+    if (oldBytes == null) {
+      return null;
+    }
+    return jsonDecodeBytes(fromJson, oldBytes);
   }
 
   /// Convenience function:
-  /// Like tryWriteItem but also migrates the input value
+  /// Like writeItem but also migrates the input value
   /// and migrates the returned element as well
-  Future<bool> tryWriteItemMigrated<T>(
+  Future<MigratedValue<T>?> writeItemMigrated<T>(
     MigrationCodec<T> migrationCodec,
     int pos,
-    T newValue, {
-    Output<MigratedValue<T>>? output,
-  }) async {
-    final outValueBytes = output == null ? null : Output<Uint8List>();
-    final out = await tryWriteItem(
-      pos,
-      migrationCodec.toBytes(newValue),
-      output: outValueBytes,
-    );
-    output.mapSave(outValueBytes, migrationCodec.fromBytes);
-    return out;
+    T newValue,
+  ) async {
+    final oldBytes =
+        await writeItem(pos, migrationCodec.toBytes(newValue));
+    if (oldBytes == null) {
+      return null;
+    }
+    return migrationCodec.fromBytes(oldBytes);
   }
 }

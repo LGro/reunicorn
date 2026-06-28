@@ -389,13 +389,17 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused) {
       // Detach Veilid to save battery; the background checker will
       // briefly re-attach for each periodic DHT poll.
-      debugPrint('rncrn-lifecycle: paused - detaching veilid, starting checker');
-      unawaited(ProcessorRepository.instance.detach());
+      debugPrint(
+        'rncrn-lifecycle: paused - detaching veilid, starting checker',
+      );
+      unawaited(VeilidProcessorRepository.instance.detach());
       checker.start(widget.contactDhtRepository);
     } else if (state == AppLifecycleState.resumed) {
-      debugPrint('rncrn-lifecycle: resumed - stopping checker, attaching veilid');
+      debugPrint(
+        'rncrn-lifecycle: resumed - stopping checker, attaching veilid',
+      );
       checker.stop();
-      unawaited(ProcessorRepository.instance.attach());
+      unawaited(VeilidProcessorRepository.instance.attach());
     }
   }
 

@@ -1,30 +1,30 @@
 part of 'dht_short_array.dart';
 
-class DHTShortArrayHeadLookup {
-  final DHTRecord record;
+typedef _DefaultDHTShortArrayComposable =
+    DefaultDHTComposable<
+      DHTShortArrayReadOperations,
+      DHTShortArrayWriteOperations,
+      void
+    >;
 
-  final int recordSubkey;
-
-  final int? seq;
-
-  DHTShortArrayHeadLookup({
-    required this.record,
-    required this.recordSubkey,
-    required this.seq,
-  });
-}
-
-class _DHTShortArrayHead {
+class _DHTShortArrayHead with _DefaultDHTShortArrayComposable {
   ////////////////////////////////////////////////////////////////////////////
 
-  // Head/element mutex to ensure we keep the representation valid
-  final _headMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
+  // Read-write lock for local state (index, seqs, linked records).
+  // READs acquire read lock (concurrent), SYNC/WRITE commit acquires write lock.
+  final _stateLock = ReadWriteMutex(debugLockTimeout: kIsDebugMode ? 60 : null);
+
+  // Serializes getOrCreateLinkedRecord. Concurrent _getImpl fans out via
+  // Future.wait; without this they can race on the create-and-extend path
+  // and leave a lookup record absent from the tx's recordTxContexts.
+  final _linkedRecordsLock = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
 
   // Subscription to head record internal changes
-  StreamSubscription<DHTRecordWatchChange>? _subscription;
+  DHTRecordWatchSubscription? _subscription;
 
-  // Notify closure for external head changes
-  void Function()? onUpdatedHead;
+  // Stateless processor for head change serialization — ensures
+  // the sync loop runs until no more updates are pending
+  final _headChangeProcessor = SingleStatelessProcessor();
 
   // Head DHT record
   final DHTRecord _headRecord;
@@ -32,36 +32,182 @@ class _DHTShortArrayHead {
   // How many elements per linked record
   late final int _stride;
 
-  // List of additional records after the head record used for element data
-  List<DHTRecord> _linkedRecords;
+  // The committed head state.
+  // Protected by _stateLock. READs see this.
+  // Initialized in constructor body because _DHTShortArrayHeadState
+  // needs a reference to this _DHTShortArrayHead.
+  late _DHTShortArrayHeadState _state;
 
-  // Ordering of the subkey indices.
-  // Elements are subkey numbers. Represents the element order.
-  List<int> _index;
-
-  // List of free subkeys for elements that have been removed.
-  // Used to optimize allocations.
-  List<int> _free;
-
-  // The sequence numbers of each subkey.
-  // Index is by subkey number not by element index.
-  // (n-1 for head record and then the next n for linked records)
-  List<int?> _seqs;
-
-  // The local sequence numbers for each subkey.
-  List<int?> _localSeqs;
+  // In-flight working state, set by beginWork and cleared by endWork.
+  _DHTShortArrayHeadState? _workingState;
 
   // Migration codec
   static final _migrationCodec = DHTShortArrayMigrationCodec();
 
-  _DHTShortArrayHead({required DHTRecord headRecord})
-    : _headRecord = headRecord,
-      _linkedRecords = [],
-      _index = [],
-      _free = [],
-      _seqs = [],
-      _localSeqs = [] {
+  _DHTShortArrayHead._({
+    required DHTRecord headRecord,
+    bool needsRefresh = true,
+  }) : _headRecord = headRecord {
     _calculateStride();
+    _state = _DHTShortArrayHeadState(
+      this,
+      linkedRecords: [],
+      index: [],
+      free: [],
+      seqs: [],
+      localSeqs: [],
+      needsRefresh: needsRefresh,
+    );
+  }
+
+  /// Create a new DHTShortArray head record and write initial state.
+  static Future<_DHTShortArrayHead> create({
+    required String debugName,
+    CryptoKind? kind,
+    int stride = DHTShortArray.maxElements,
+    VeilidRoutingContext? routingContext,
+    RecordKey? parent,
+    CryptoCodec? crypto,
+    KeyPair? writer,
+    EncryptionKeyOverride? encryptionKeyOverride,
+    DHTComposableSharedState? composableSharedState,
+  }) async {
+    assert(stride <= DHTShortArray.maxElements, 'stride too long');
+    final pool = DHTRecordPool.instance;
+
+    late final DHTRecord dhtRecord;
+    if (writer != null) {
+      final schema = DHTSchema.smpl(
+        oCnt: 0,
+        members: [
+          DHTSchemaMember(
+            mKey: (await pool.veilid.generateMemberId(writer.key)).value,
+            mCnt: stride + 1,
+          ),
+        ],
+      );
+      dhtRecord = await pool.createRecord(
+        debugName: debugName,
+        kind: kind,
+        parent: parent,
+        routingContext: routingContext,
+        schema: schema,
+        crypto: crypto,
+        writer: writer,
+        encryptionKeyOverride: encryptionKeyOverride,
+      );
+    } else {
+      final schema = DHTSchema.dflt(oCnt: stride + 1);
+      dhtRecord = await pool.createRecord(
+        debugName: debugName,
+        kind: kind,
+        parent: parent,
+        routingContext: routingContext,
+        schema: schema,
+        crypto: crypto,
+        encryptionKeyOverride: encryptionKeyOverride,
+      );
+    }
+
+    // Empty head is valid at creation time
+    final head = _DHTShortArrayHead._(
+      headRecord: dhtRecord,
+      needsRefresh: false,
+    );
+    try {
+      if (composableSharedState != null) {
+        // Composed: head joins the caller's tx (parent activates + flushes it);
+        // committing here would make the record independently live mid-append
+        // and race rehydration against the still-open parent transaction.
+        head.enterComposedMode(composableSharedState);
+      } else {
+        // Standalone: write the head to the network in its own transaction.
+        await head.standaloneSharedState.withWriteScope(
+          () => head.operateWrite(() async {}),
+        );
+      }
+      return head;
+    } on Exception {
+      await dhtRecord.close();
+      await pool.deleteRecord(dhtRecord.key);
+      rethrow;
+    }
+  }
+
+  /// Open a DHTShortArray head record for reading.
+  static Future<_DHTShortArrayHead> openRead(
+    RecordKey headRecordKey, {
+    required String debugName,
+    VeilidRoutingContext? routingContext,
+    RecordKey? parent,
+    CryptoCodec? crypto,
+    DHTComposableSharedState? composableSharedState,
+  }) async {
+    final dhtRecord = await DHTRecordPool.instance.openRecordRead(
+      headRecordKey,
+      debugName: debugName,
+      parent: parent,
+      routingContext: routingContext,
+      crypto: crypto,
+    );
+    try {
+      return await _loadFromRecord(dhtRecord, composableSharedState);
+    } on Exception {
+      await dhtRecord.close();
+      rethrow;
+    }
+  }
+
+  /// Open a DHTShortArray head record for writing.
+  static Future<_DHTShortArrayHead> openWrite(
+    RecordKey headRecordKey,
+    KeyPair writer, {
+    required String debugName,
+    VeilidRoutingContext? routingContext,
+    RecordKey? parent,
+    CryptoCodec? crypto,
+    DHTComposableSharedState? composableSharedState,
+  }) async {
+    final dhtRecord = await DHTRecordPool.instance.openRecordWrite(
+      headRecordKey,
+      writer,
+      debugName: debugName,
+      parent: parent,
+      routingContext: routingContext,
+      crypto: crypto,
+    );
+    try {
+      return await _loadFromRecord(dhtRecord, composableSharedState);
+    } on Exception {
+      await dhtRecord.close();
+      rethrow;
+    }
+  }
+
+  /// Build a head from a freshly opened DHTRecord. Loads the head proto from
+  /// the local cache when present; leaves the state empty (needsRefresh stays
+  /// true) when absent so the caller's open-time refresh fetches it from the
+  /// network. Mirrors _DHTLogSpine._loadFromRecord.
+  static Future<_DHTShortArrayHead> _loadFromRecord(
+    DHTRecord headRecord,
+    DHTComposableSharedState? composableSharedState,
+  ) async {
+    final head = _DHTShortArrayHead._(headRecord: headRecord);
+
+    final headProto = await headRecord.getMigrated(
+      _migrationCodec,
+      subkey: 0,
+      refreshMode: DHTRecordRefreshMode.local,
+    );
+    if (headProto != null) {
+      await head._state.updateFromProto(headProto);
+    }
+
+    if (composableSharedState != null) {
+      head.enterComposedMode(composableSharedState);
+    }
+
+    return head;
   }
 
   void _calculateStride() {
@@ -78,303 +224,291 @@ class _DHTShortArrayHead {
         _stride = members[0].mCnt - 1;
     }
     assert(_stride <= DHTShortArray.maxElements, 'stride too long');
+    assert(_stride >= DHTShortArray.minStride, 'stride too short');
   }
 
-  proto.DHTShortArray _toProto() {
-    assert(_headMutex.isLocked, 'should be in mutex here');
-
-    final head = proto.DHTShortArray();
-    head.keys.addAll(_linkedRecords.map((lr) => lr.key.toProto()));
-    head.index = List.of(_index);
-    head.seqs.addAll(_seqs.map((x) => x ?? 0xFFFFFFFF));
-    // Do not serialize free list, it gets recreated
-    // Do not serialize local seqs, they are only locally relevant
-    return head;
-  }
+  ////////////////////////////////////////////////////////////////////////////
+  // Properties
 
   RecordKey get recordKey => _headRecord.key;
 
+  KeyPair? get writer => _headRecord.writer;
+
   OwnedDHTRecordPointer? get recordPointer => _headRecord.ownedDHTRecordPointer;
 
-  int get length => _index.length;
+  @override
+  @override
+  String get debugName => _headRecord.debugName;
 
-  bool get isOpen => _headRecord.isOpen;
+  ////////////////////////////////////////////////////////////////////////////
+  // DHTCloseable
 
-  Future<void> close() async {
-    await _headMutex.protect(() async {
-      if (!isOpen) {
-        return;
-      }
-      final futures = <Future<void>>[_headRecord.close()];
-      for (final lr in _linkedRecords) {
-        futures.add(lr.close());
-      }
-      await Future.wait(futures);
-    });
-  }
-
-  /// Returns true if the deletion was processed immediately
-  /// Returns false if the deletion was marked for later
-  Future<bool> delete() => _headMutex.protect(_headRecord.delete);
-
-  Future<T> operate<T>(Future<T> Function(_DHTShortArrayHead) closure) =>
-      _headMutex.protect(() => closure(this));
-
-  Future<T> operateWrite<T>(Future<T> Function(_DHTShortArrayHead) closure) =>
-      _headMutex.protect(() async {
-        final oldLinkedRecords = List.of(_linkedRecords);
-        final oldIndex = List.of(_index);
-        final oldFree = List.of(_free);
-        final oldSeqs = List.of(_seqs);
-        try {
-          final out = await closure(this);
-          // Write head assuming it has been changed
-          if (!await _writeHead(allowOffline: false)) {
-            // Failed to write head means head got overwritten so write should
-            // be considered failed
-            throw const DHTExceptionOutdated();
-          }
-
-          onUpdatedHead?.call();
-          return out;
-        } on Exception {
-          // Exception means state needs to be reverted
-          _linkedRecords = oldLinkedRecords;
-          _index = oldIndex;
-          _free = oldFree;
-          _seqs = oldSeqs;
-
-          rethrow;
-        }
-      });
-
-  Future<T> operateWriteEventual<T>(
-    Future<T> Function(_DHTShortArrayHead) closure, {
-    Duration? timeout,
-  }) {
-    final timeoutTs = timeout == null
-        ? null
-        : Veilid.instance.now().offset(TimestampDuration.fromDuration(timeout));
-
-    return _headMutex.protect(() async {
-      late List<DHTRecord> oldLinkedRecords;
-      late List<int> oldIndex;
-      late List<int> oldFree;
-      late List<int?> oldSeqs;
-
-      late T out;
-      try {
-        // Iterate until we have a successful element and head write
-
-        do {
-          // Save off old values each pass of tryWriteHead because the head
-          // will have changed
-          oldLinkedRecords = List.of(_linkedRecords);
-          oldIndex = List.of(_index);
-          oldFree = List.of(_free);
-          oldSeqs = List.of(_seqs);
-
-          // Try to do the element write
-          while (true) {
-            if (timeoutTs != null) {
-              final now = Veilid.instance.now();
-              if (now >= timeoutTs) {
-                throw TimeoutException('timeout reached');
-              }
-            }
-            try {
-              out = await closure(this);
-              break;
-            } on DHTExceptionOutdated {
-              // Failed to write in closure resets state
-              _linkedRecords = List.of(oldLinkedRecords);
-              _index = List.of(oldIndex);
-              _free = List.of(oldFree);
-              _seqs = List.of(oldSeqs);
-            } on Exception {
-              // Failed to write in closure resets state
-              _linkedRecords = List.of(oldLinkedRecords);
-              _index = List.of(oldIndex);
-              _free = List.of(oldFree);
-              _seqs = List.of(oldSeqs);
-              rethrow;
-            }
-          }
-          // Try to do the head write
-        } while (!await _writeHead(allowOffline: false));
-
-        onUpdatedHead?.call();
-      } on Exception {
-        // Exception means state needs to be reverted
-        _linkedRecords = oldLinkedRecords;
-        _index = oldIndex;
-        _free = oldFree;
-        _seqs = oldSeqs;
-
-        rethrow;
-      }
-      return out;
-    });
-  }
-
-  /// Serialize and write out the current head record, possibly updating it
-  /// if a newer copy is available online. Returns true if the write was
-  /// successful
-  Future<bool> _writeHead({required bool allowOffline}) async {
-    assert(_headMutex.isLocked, 'should be in mutex here');
-
-    final existingHead = await _headRecord.tryWriteMigrated(
-      _migrationCodec,
-      _toProto(),
-      options: SetDHTValueOptions(allowOffline: allowOffline),
-    );
-    if (existingHead != null) {
-      // Head write failed, incorporate update
-      // Ignore migration, will be written back with the next _writeHead
-      await _updateHead(existingHead.value);
+  @override
+  Future<bool> close() async {
+    if (!await super.close()) {
       return false;
     }
+
+    // Close the records in use
+    await _stateLock.protectWrite(() async {
+      await Future.wait([
+        _headRecord.close(),
+        ..._state.linkedRecords.map((x) => x.close()),
+      ]);
+    });
 
     return true;
   }
 
-  /// Validate a new head record that has come in from the network
-  Future<void> _updateHead(proto.DHTShortArray head) async {
-    assert(_headMutex.isLocked, 'should be in mutex here');
+  ////////////////////////////////////////////////////////////////////////////
+  // DHTDeleteable
 
-    // Get the set of new linked keys and validate it
-    final updatedLinkedKeys = head.keys.map((p) => p.toDart()).toList();
-    final updatedIndex = List.of(head.index);
-    final updatedSeqs = List.of(
-      head.seqs.map((x) => x == 0xFFFFFFFF ? null : x),
-    );
-    final updatedFree = _makeFreeList(updatedLinkedKeys, updatedIndex);
-
-    // See which records are actually new
-    final oldRecords = Map<RecordKey, DHTRecord>.fromEntries(
-      _linkedRecords.map((lr) => MapEntry(lr.key, lr)),
-    );
-    final newRecords = <RecordKey, DHTRecord>{};
-    final sameRecords = <RecordKey, DHTRecord>{};
-    final updatedLinkedRecords = <DHTRecord>[];
-    try {
-      for (var n = 0; n < updatedLinkedKeys.length; n++) {
-        final newKey = updatedLinkedKeys[n];
-        final oldRecord = oldRecords[newKey];
-        if (oldRecord == null) {
-          // Open the new record
-          final newRecord = await _openLinkedRecord(newKey, n);
-          newRecords[newKey] = newRecord;
-          updatedLinkedRecords.add(newRecord);
-        } else {
-          sameRecords[newKey] = oldRecord;
-          updatedLinkedRecords.add(oldRecord);
-        }
-      }
-    } on Exception catch (_) {
-      // On any exception close the records we have opened
-      await newRecords.entries.map((e) => e.value.close()).wait;
-      rethrow;
+  @override
+  Future<bool> delete() {
+    // Deleting mid-transaction would race the in-flight SYNC/WRITE state
+    if (composableSharedState.inTransaction) {
+      throw StateError('cannot delete a DHTShortArray during a transaction');
     }
-
-    // From this point forward we should not throw an exception or everything
-    // is possibly invalid. Just pass the exception up it happens and the caller
-    // will have to delete this short array and reopen it if it can
-    await oldRecords.entries
-        .where((e) => !sameRecords.containsKey(e.key))
-        .map((e) => e.value.close())
-        .wait;
-
-    // Get the localseqs list from inspect results
-    final localReports = await [_headRecord, ...updatedLinkedRecords].map((r) {
-      final start = (r.key == _headRecord.key) ? 1 : 0;
-      return r.inspect(
-        subkeys: [ValueSubkeyRange.make(start, start + _stride - 1)],
-      );
-    }).wait;
-    final updatedLocalSeqs = localReports
-        .map((l) => l.localSeqs)
-        .expand((e) => e)
-        .toList();
-
-    // Make the new head cache
-    _linkedRecords = updatedLinkedRecords;
-    _index = updatedIndex;
-    _free = updatedFree;
-    _seqs = updatedSeqs;
-    _localSeqs = updatedLocalSeqs;
+    return _stateLock.protectWrite(
+      () async => (await Future.wait([
+        _headRecord.delete(),
+        ..._state.linkedRecords.map((x) => x.delete()),
+      ])).reduce((value, element) => value && element),
+    );
   }
 
-  // Pull the latest or updated copy of the head record from the network
-  Future<void> _loadHead() async {
-    // Get an updated head record copy if one exists
-    final head = await _headRecord.getMigrated(
+  @override
+  bool get isDeleted => _headRecord.isDeleted;
+
+  ////////////////////////////////////////////////////////////////////////////
+  // DHTComposable lifecycle
+
+  @override
+  bool get needsRefresh => _state.needsRefresh;
+
+  @override
+  void markNeedsRefresh() => _state.markNeedsRefresh();
+
+  @override
+  int get refreshGen => _state.refreshGen;
+
+  @override
+  Set<DHTRecord> operateInitialRecords() => {_headRecord};
+
+  @override
+  void beginWork() {
+    if (_workingState != null) {
+      throw StateError('already in work phase');
+    }
+    _workingState = _state.copy();
+  }
+
+  @override
+  Future<void> flushWork() async {
+    if (_workingState == null) {
+      return;
+    }
+    if (_headRecord.writer != null) {
+      await writeHead();
+    }
+  }
+
+  @override
+  Future<void> endWork(bool success) async {
+    if (success) {
+      if (await _commitWorkingState()) {
+        sendUpdate(null);
+      }
+    } else {
+      await _cleanupWorkingState();
+    }
+  }
+
+  @override
+  Future<Future<void> Function()?> syncCheck() async {
+    if (!composableSharedState.inTransaction) {
+      throw StateError('syncCheck requires an active transaction');
+    }
+
+    // A freshly opened record (no cached head) always needs sync; skip
+    // the inspect since begin may not report network seqs for it.
+    if (!needsRefresh) {
+      final headNeedsSync = await composableSharedState.withTransactionKey(
+        _headRecord.key,
+        closure: (ops) async => ops.subkeyNeedsSync(subkey: 0),
+      );
+      if (!headNeedsSync) {
+        return null;
+      }
+    }
+
+    return () async {
+      final ws = _workingState;
+      if (ws == null) {
+        throw StateError('working state must exist for sync');
+      }
+
+      // Sync the head proto only. Elements lazy-load on read via the
+      // tx-aware path so a refresh doesn't have to drag every element
+      // record into the transaction (which would overflow tx record
+      // limits for non-trivial arrays).
+      final head = await composableSharedState.withTransactionKey(
+        _headRecord.key,
+        closure: (ops) => ops.getMigrated(
+          _migrationCodec,
+          subkey: 0,
+          refreshMode: DHTRecordRefreshMode.network,
+        ),
+      );
+      if (head == null) {
+        throw const DHTExceptionNotAvailable(
+          cause: 'short array head not available on network',
+        );
+      }
+      await ws.updateFromProto(head);
+    };
+  }
+
+  @override
+  Future<T> read<T>(
+    Future<T> Function(DHTShortArrayReadOperations) closure, {
+    DHTRetryStrategy? elementRetry,
+  }) async {
+    final reader = isComposed
+        ? _DHTShortArrayComposedRead._(this, elementRetry)
+              as DHTShortArrayReadOperations
+        : _DHTShortArrayRead._(this, elementRetry)
+              as DHTShortArrayReadOperations;
+    return closure(reader);
+  }
+
+  @override
+  Future<T> write<T>(
+    Future<T> Function(DHTShortArrayWriteOperations) closure, {
+    DHTRetryStrategy? elementRetry,
+  }) async {
+    final writer = isComposed
+        ? _DHTShortArrayComposedWrite._(this, elementRetry)
+              as DHTShortArrayWriteOperations
+        : _DHTShortArrayWrite._(this, elementRetry)
+              as DHTShortArrayWriteOperations;
+    return closure(writer);
+  }
+
+  @override
+  Future<void> localReload() async => _stateLock.protectWrite(() async {
+    // Update the state locally without network access
+    final headProto = await _headRecord.getMigrated(
       _migrationCodec,
       subkey: 0,
-      refreshMode: DHTRecordRefreshMode.network,
+      refreshMode: DHTRecordRefreshMode.local,
     );
-    if (head == null) {
-      throw StateError('shortarray head missing during refresh');
+    if (headProto == null) {
+      // No head record locally, so local reload is not possible
+      throw DHTExceptionNotAvailable(cause: 'no head record locally');
+    }
+    await _state.updateFromProto(headProto);
+    sendUpdate(null);
+  });
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Working state management
+
+  Future<bool> _commitWorkingState() async => _stateLock.protectWrite(() async {
+    final ws = _workingState;
+    _workingState = null;
+    if (ws == null) {
+      return false;
     }
 
-    await _updateHead(head);
-  }
+    final newRecordKeys = ws.linkedRecords.map((r) => r.key).toSet();
+    for (final r in _state.linkedRecords) {
+      if (!newRecordKeys.contains(r.key)) {
+        await r.close();
+      }
+    }
 
-  /////////////////////////////////////////////////////////////////////////////
+    _state = ws;
+    return true;
+  });
+
+  Future<void> _cleanupWorkingState() async =>
+      _stateLock.protectWrite(() async {
+        final ws = _workingState;
+        _workingState = null;
+        if (ws == null) {
+          return;
+        }
+
+        final committedKeys = _state.linkedRecords.map((r) => r.key).toSet();
+        final orphanedRecords = ws.linkedRecords
+            .where((r) => !committedKeys.contains(r.key))
+            .toList();
+
+        for (final record in orphanedRecords) {
+          try {
+            await record.delete();
+            await record.close();
+          } on Exception catch (e) {
+            veilidLoggy.error(
+              'Failed to cleanup orphaned linked record '
+              '${record.key}: $e',
+            );
+          }
+        }
+      });
+
+  ////////////////////////////////////////////////////////////////////////////
   // Linked record management
 
-  Future<DHTRecord> _getOrCreateLinkedRecord(
+  /// Get or create a linked record by record number on the given state.
+  Future<DHTRecord> getOrCreateLinkedRecord(
+    _DHTShortArrayHeadState st,
     int recordNumber,
-    bool allowCreate,
-  ) async {
+  ) => _linkedRecordsLock.protect(() async {
     if (recordNumber == 0) {
       return _headRecord;
     }
-    recordNumber--;
-    if (recordNumber < _linkedRecords.length) {
-      return _linkedRecords[recordNumber];
+    final keyIdx = recordNumber - 1;
+
+    if (keyIdx >= st.linkedRecords.length) {
+      final pool = DHTRecordPool.instance;
+      for (var rn = st.linkedRecords.length; rn <= keyIdx; rn++) {
+        final smplWriter = _headRecord.writer!;
+        final parent = _headRecord.key;
+        final routingContext = _headRecord.routingContext;
+        final crypto = _headRecord.crypto;
+
+        final schema = DHTSchema.smpl(
+          oCnt: 0,
+          members: [
+            DHTSchemaMember(
+              mKey: (await pool.veilid.generateMemberId(smplWriter.key)).value,
+              mCnt: _stride,
+            ),
+          ],
+        );
+        final dhtRecord = await pool.createRecord(
+          debugName: '${_headRecord.debugName}_linked_$rn',
+          parent: parent,
+          routingContext: routingContext,
+          schema: schema,
+          crypto: crypto,
+          writer: smplWriter,
+          encryptionKeyOverride: EncryptionKeyOverride.fromRecordKey(parent),
+        );
+        st.linkedRecords.add(dhtRecord);
+      }
     }
-
-    if (!allowCreate) {
-      throw StateError("asked for non-existent record and can't create");
+    final record = st.linkedRecords[keyIdx];
+    if (composableSharedState.inTransaction) {
+      await composableSharedState.extendTransaction({record});
     }
+    return record;
+  });
 
-    final pool = DHTRecordPool.instance;
-    for (var rn = _linkedRecords.length; rn <= recordNumber; rn++) {
-      // Linked records must use SMPL schema so writer can be specified
-      // Use the same writer as the head record
-      final smplWriter = _headRecord.writer!;
-      final parent = _headRecord.key;
-      final routingContext = _headRecord.routingContext;
-      final crypto = _headRecord.crypto;
-
-      final schema = DHTSchema.smpl(
-        oCnt: 0,
-        members: [
-          DHTSchemaMember(
-            mKey: (await pool.veilid.generateMemberId(smplWriter.key)).value,
-            mCnt: _stride,
-          ),
-        ],
-      );
-      final dhtRecord = await pool.createRecord(
-        debugName: '${_headRecord.debugName}_linked_$recordNumber',
-        parent: parent,
-        routingContext: routingContext,
-        schema: schema,
-        crypto: crypto,
-        writer: smplWriter,
-        encryptionKeyOverride: EncryptionKeyOverride.fromRecordKey(parent),
-      );
-
-      // Add to linked records
-      _linkedRecords.add(dhtRecord);
-    }
-    return _linkedRecords[recordNumber];
-  }
-
-  /// Open a linked record for reading or writing, same as the head record
-  Future<DHTRecord> _openLinkedRecord(
+  /// Open a linked record for reading or writing.
+  Future<DHTRecord> openLinkedRecord(
     RecordKey recordKey,
     int recordNumber,
   ) async {
@@ -395,155 +529,30 @@ class _DHTShortArrayHead {
           );
   }
 
-  Future<DHTShortArrayHeadLookup> lookupPosition(int pos, bool allowCreate) {
-    final idx = _index[pos];
-    return lookupIndex(idx, allowCreate);
-  }
+  ////////////////////////////////////////////////////////////////////////////
+  // Head record management
 
-  Future<DHTShortArrayHeadLookup> lookupIndex(int idx, bool allowCreate) async {
-    final seq = idx < _seqs.length ? _seqs[idx] : null;
-    final recordNumber = idx ~/ _stride;
-    final record = await _getOrCreateLinkedRecord(recordNumber, allowCreate);
-    final recordSubkey = (idx % _stride) + ((recordNumber == 0) ? 1 : 0);
-    return DHTShortArrayHeadLookup(
-      record: record,
-      recordSubkey: recordSubkey,
-      seq: seq,
+  /// Serialize and write out the current head record through the transaction.
+  /// Throws DHTExceptionOutdated if the write conflicts.
+  Future<void> writeHead() async {
+    if (!composableSharedState.inWriteScope) {
+      throw StateError('writeHead must run inside withWriteScope');
+    }
+    if (!composableSharedState.inTransaction) {
+      throw StateError('writeHead requires an active transaction');
+    }
+    final ws = _workingState;
+    if (ws == null) {
+      throw StateError('working state must exist for writeHead');
+    }
+
+    final existingHead = await composableSharedState.withTransactionKey(
+      _headRecord.key,
+      closure: (ops) => ops.tryWriteMigrated(_migrationCodec, ws.toProto()),
     );
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Index management
-
-  /// Allocate an empty index slot at a specific position
-  void allocateIndex(int pos) {
-    // Allocate empty index
-    final idx = _emptyIndex();
-    _index.insert(pos, idx);
-  }
-
-  int _emptyIndex() {
-    if (_free.isNotEmpty) {
-      return _free.removeLast();
-    }
-    if (_index.length == DHTShortArray.maxElements) {
-      throw StateError('too many elements');
-    }
-    return _index.length;
-  }
-
-  void swapIndex(int aPos, int bPos) {
-    if (aPos == bPos) {
-      return;
-    }
-    final aIdx = _index[aPos];
-    final bIdx = _index[bPos];
-    _index[aPos] = bIdx;
-    _index[bPos] = aIdx;
-  }
-
-  void clearIndex() {
-    _index.clear();
-    _free.clear();
-  }
-
-  /// Release an index at a particular position
-  void freeIndex(int pos) {
-    final idx = _index.removeAt(pos);
-    _free.add(idx);
-    // xxx: free list optimization here?
-  }
-
-  /// Truncate index to a particular length
-  void truncate(int newLength) {
-    if (newLength >= _index.length) {
-      return;
-    } else if (newLength == 0) {
-      clearIndex();
-      return;
-    } else if (newLength < 0) {
-      throw StateError('can not truncate to negative length');
-    }
-
-    final newIndex = _index.sublist(0, newLength);
-    final freed = _index.sublist(newLength);
-
-    _index = newIndex;
-    _free.addAll(freed);
-  }
-
-  /// Validate the head from the DHT is properly formatted
-  /// and calculate the free list from it while we're here
-  List<int> _makeFreeList(List<RecordKey> linkedKeys, List<int> index) {
-    // Ensure nothing is duplicated in the linked keys set
-    final newKeys = linkedKeys.toSet();
-    assert(
-      newKeys.length <= (DHTShortArray.maxElements + (_stride - 1)) ~/ _stride,
-      'too many keys: $newKeys.length',
-    );
-    assert(newKeys.length == linkedKeys.length, 'duplicated linked keys');
-    final newIndex = index.toSet();
-    assert(newIndex.length <= DHTShortArray.maxElements, 'too many indexes');
-    assert(newIndex.length == index.length, 'duplicated index locations');
-
-    // Ensure all the index keys fit into the existing records
-    final indexCapacity = (linkedKeys.length + 1) * _stride;
-    int? maxIndex;
-    for (final idx in newIndex) {
-      assert(idx >= 0 || idx < indexCapacity, 'index out of range');
-      if (maxIndex == null || idx > maxIndex) {
-        maxIndex = idx;
-      }
-    }
-
-    // Figure out which indices are free
-    final free = <int>[];
-    if (maxIndex != null) {
-      for (var i = 0; i < maxIndex; i++) {
-        if (!newIndex.contains(i)) {
-          free.add(i);
-        }
-      }
-    }
-    return free;
-  }
-
-  /// Check if we know that the network has a copy of an index that is newer
-  /// than our local copy from looking at the seqs list in the head
-  bool positionNeedsRefresh(int pos) {
-    final idx = _index[pos];
-
-    // If our local sequence number is unknown or hasnt been written yet
-    // then a normal DHT operation is going to pull from the network anyway
-    if (_localSeqs.length < idx || _localSeqs[idx] == null) {
-      return false;
-    }
-
-    // If the remote sequence number record is unknown or hasnt been written
-    // at this index yet, then we also do not refresh at this time as it
-    // is the first time the index is being written to
-    if (_seqs.length < idx || _seqs[idx] == null) {
-      return false;
-    }
-
-    return _localSeqs[idx]! < _seqs[idx]!;
-  }
-
-  /// Update the sequence number for a particular index in
-  /// our local sequence number list.
-  /// If a write is happening, update the network copy as well.
-  void updatePositionSeq(int pos, bool write, int newSeq) {
-    final idx = _index[pos];
-
-    while (_localSeqs.length <= idx) {
-      _localSeqs.add(null);
-    }
-    _localSeqs[idx] = newSeq;
-    if (write) {
-      while (_seqs.length <= idx) {
-        _seqs.add(null);
-      }
-      _seqs[idx] = newSeq;
+    if (existingHead != null) {
+      await ws.updateFromProto(existingHead.value);
+      throw const DHTExceptionOutdated(cause: 'head write conflict');
     }
   }
 
@@ -551,7 +560,12 @@ class _DHTShortArrayHead {
   // Watch For Updates
 
   // Watch head for changes
+  @override
   Future<void> watch() async {
+    if (isComposed) {
+      throw StateError('cannot watch in composed mode');
+    }
+
     // This will update any existing watches if necessary
     try {
       // Update changes to the head record
@@ -566,9 +580,14 @@ class _DHTShortArrayHead {
   }
 
   // Stop watching for changes to head and linked records
+  @override
   Future<void> cancelWatch() async {
+    if (isComposed) {
+      throw StateError('cannot watch in composed mode');
+    }
+
     await _headRecord.cancelWatch();
-    await _subscription?.cancel();
+    await _subscription?.close();
     _subscription = null;
   }
 
@@ -576,27 +595,67 @@ class _DHTShortArrayHead {
   // but not when we make a change locally
   Future<void> _onHeadValueChanged(
     DHTRecord record,
-    Uint8List? data,
-    List<ValueSubkeyRange> subkeys,
+    DHTRecordWatchChange change,
   ) async {
-    // If head record subkey zero changes, then the layout
-    // of the dhtshortarray has changed
-    if (data == null) {
-      throw StateError('head value changed without data');
-    }
-    if (record.key != _headRecord.key ||
-        subkeys.length != 1 ||
-        subkeys[0] != ValueSubkeyRange.single(0)) {
-      throw StateError('watch returning wrong subkey range');
+    if (record.key != _headRecord.key) {
+      throw StateError(
+        'Unexpected head record change for wrong record key: ${record.key} != ${_headRecord.key}',
+      );
     }
 
-    // Decode updated head
-    final headData = _migrationCodec.fromBytes(data).value;
+    if (isComposed) {
+      throw StateError('cannot watch in composed mode');
+    }
 
-    // Then update the head record
-    await _headMutex.protect(() async {
-      await _updateHead(headData);
-      onUpdatedHead?.call();
-    });
+    // See if local changes are present, if so
+    // refresh the state locally without network access
+    if (change.localSubkeys.isNotEmpty) {
+      // Verify the change is in the expected format
+      if (change.localSubkeys.length != 1 ||
+          change.localSubkeys[0] != ValueSubkeyRange.single(0)) {
+        throw StateError(
+          'Unexpected local head record change for wrong subkey: ${change.localSubkeys} != ${ValueSubkeyRange.single(0)}',
+        );
+      }
+
+      // Update the state locally without network access
+      try {
+        await localReload();
+      } on DHTExceptionNotAvailable catch (e) {
+        throw StateError(
+          'Unexpected local head record change with unavailable local reload for record ${record.key}: $e',
+        );
+      }
+    }
+
+    // If remote changes happened, queue up a fetch for them
+    // Only process remote changes to the head record subkey 0
+    // (matches the watch we set up)
+    if (change.remoteSubkeys.isNotEmpty) {
+      // Verify the change is in the expected format
+      if (change.remoteSubkeys.length != 1 ||
+          change.remoteSubkeys[0] != ValueSubkeyRange.single(0)) {
+        throw StateError(
+          'Unexpected remote head record change for wrong subkey: ${change.remoteSubkeys} != ${ValueSubkeyRange.single(0)}',
+        );
+      }
+
+      // Queue up a refresh for the remote changes
+      _headChangeProcessor.update(() async {
+        if (!isOpen) return;
+        markNeedsRefresh();
+        try {
+          // Retry transient conditions (e.g. 'transaction begin contended') so a
+          // live update isn't dropped; needsRefresh stays true on final failure
+          // for the refresh driver to retry.
+          await DHTRecordPool.instance.retry(() async {
+            if (!isOpen) return;
+            await refresh();
+          });
+        } on Exception catch (e, st) {
+          veilidLoggy.warning('_onHeadValueChanged sync failed: $e\n$st');
+        }
+      });
+    }
   }
 }

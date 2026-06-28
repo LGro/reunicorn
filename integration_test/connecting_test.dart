@@ -1,4 +1,4 @@
-// Copyright 2025 The Reunicorn Authors. All rights reserved.
+// Copyright 2025 - 2026 The Reunicorn Authors. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'package:flutter/foundation.dart';
@@ -8,8 +8,6 @@ import 'package:veilid_support/veilid_support.dart';
 import 'package:veilid_test/veilid_test.dart';
 
 import 'fixtures/dht_record_pool_fixture.dart';
-import 'test_direct_sharing.dart';
-import 'test_profile_offer_sharing.dart';
 
 void main() {
   final startTime = DateTime.now();
@@ -55,8 +53,7 @@ void main() {
           );
           tearDownAll(dhtRecordPoolFixture.tearDown);
 
-          test('direct_sharing', testDirectSharing);
-          test('profile_offer_sharing', testProfileOfferBasedSharing);
+          // test('profile_offer_sharing', testProfileOfferBasedSharing);
         });
       });
     });

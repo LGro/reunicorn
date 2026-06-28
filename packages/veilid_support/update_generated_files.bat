@@ -1,5 +1,5 @@
 @echo off
-dart run build_runner build --delete-conflicting-outputs
+dart run build_runner build
 
 pushd lib
 protoc --dart_out=proto -I proto -I dht_support\proto dht.proto

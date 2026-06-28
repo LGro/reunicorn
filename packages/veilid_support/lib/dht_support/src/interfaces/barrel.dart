@@ -1,12 +1,13 @@
 export 'dht_add.dart';
 export 'dht_clear.dart';
+export 'dht_collection.dart';
+export 'dht_composable.dart';
 export 'dht_closeable.dart';
 export 'dht_insert_remove.dart';
 export 'dht_random_read.dart';
 export 'dht_random_swap.dart';
 export 'dht_random_write.dart';
+export 'dht_record_operations.dart';
 export 'dht_truncate.dart';
 export 'exceptions.dart';
-export '../../../src/protobuf_migration_codec.dart';
 export 'refreshable_cubit.dart';
-export 'retry.dart';

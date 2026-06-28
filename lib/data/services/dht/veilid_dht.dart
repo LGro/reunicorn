@@ -56,7 +56,7 @@ Future<Uint8List> getChunkedPayload(
   // Combine the remaining subkeys into the picture
   final chunks = await Future.wait(
     List.generate(numChunks, (i) => i + chunkOffset).map(
-      (i) => record.get(
+      (i) => record.getBytes(
         crypto: crypto ?? VeilidCryptoPublic(),
         refreshMode: refreshMode,
         subkey: i,
@@ -205,10 +205,14 @@ class VeilidDht implements BaseDht {
 
       await record.watch(subkeys: [const ValueSubkeyRange(low: 0, high: 32)]);
 
-      await record.listen((record, data, subkeys) async {
+      await record.listen((record, watchChange) async {
+        // Ignore local changes unless explicitly asked for
+        if (!_watchLocalChanges && watchChange.remoteSubkeys.isEmpty) {
+          return;
+        }
         log.debug('RCRN-D WTCH ${record.key} | CALLBACK');
         callback();
-      }, localChanges: _watchLocalChanges);
+      });
       log.debug('RCRN-D WTCH $recordKey | WATCHING');
       return true;
     } catch (e) {

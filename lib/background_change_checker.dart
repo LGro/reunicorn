@@ -40,7 +40,7 @@ class BackgroundChangeChecker {
       return;
     }
 
-    if (!ProcessorRepository.instance.startedUp) {
+    if (!VeilidProcessorRepository.instance.startedUp) {
       debugPrint('rncrn-bg: skip because veilid not started');
       return;
     }
@@ -48,15 +48,14 @@ class BackgroundChangeChecker {
     _checking = true;
     try {
       debugPrint('rncrn-bg: attaching veilid for background check');
-      await ProcessorRepository.instance.attach();
+      await VeilidProcessorRepository.instance.attach();
 
-      final ready = await ProcessorRepository.instance.waitForPublicInternet(
-        timeout: const Duration(seconds: 30),
-      );
+      final ready = await VeilidProcessorRepository.instance
+          .waitForPublicInternet(timeout: const Duration(seconds: 30));
       if (!ready) {
         debugPrint('rncrn-bg: timed out waiting for public internet');
         if (_timer != null) {
-          await ProcessorRepository.instance.detach();
+          await VeilidProcessorRepository.instance.detach();
         }
         return;
       }
@@ -72,12 +71,14 @@ class BackgroundChangeChecker {
       if (_timer != null) {
         debugPrint('rncrn-bg: detaching veilid after background check');
         try {
-          await ProcessorRepository.instance.detach();
+          await VeilidProcessorRepository.instance.detach();
         } catch (e) {
           debugPrint('rncrn-bg: error detaching - $e');
         }
       } else {
-        debugPrint('rncrn-bg: checker was stopped during check, skipping detach');
+        debugPrint(
+          'rncrn-bg: checker was stopped during check, skipping detach',
+        );
       }
       _checking = false;
     }
@@ -88,9 +89,7 @@ class BackgroundChangeChecker {
     final updates = await _contactDhtRepository?.updateAndWatchReceivingDHT(
       shuffle: true,
     );
-    debugPrint(
-      'rncrn-bg: finished checking (${updates?.length ?? 'null'})',
-    );
+    debugPrint('rncrn-bg: finished checking (${updates?.length ?? 'null'})');
     // Notifications are handled downstream by UpdateRepository, which
     // listens to contact storage change events triggered by the DHT sync.
   }

@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-dart run build_runner build --delete-conflicting-outputs
+dart run build_runner build
 
 pushd lib > /dev/null
 protoc --dart_out=proto -I proto -I dht_support/proto dht.proto

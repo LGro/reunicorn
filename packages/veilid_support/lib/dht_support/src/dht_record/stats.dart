@@ -138,12 +138,48 @@ class DHTPerKeyStats {
   }
 }
 
+/// Kinds of retries observed in the DHT layer. Bumped from the retry hooks
+/// in `DHTRecordPool.instance.retry` and `operateWriteEventual`. Cumulative since the
+/// containing `DHTRecordPool` was created; consumers (benchmarks, debug UIs)
+/// take a snapshot before/after an operation and diff to get per-op counts.
+enum DHTRetryKind {
+  outdated,
+  tryAgain,
+  notAvailable,
+  keyNotFound,
+  /// Transient network/connection error (Timeout, NoConnection, or a
+  /// Generic with a "failed to connect" message). Retried by
+  /// `DHTRecordPool.retry`.
+  transient,
+}
+
+/// Cumulative retry counters keyed by [DHTRetryKind]. Returned by
+/// [DHTStats.retrySnapshot]; subtract two snapshots to get per-op deltas.
+class DHTRetrySnapshot {
+  final Map<DHTRetryKind, int> counts;
+
+  const DHTRetrySnapshot(this.counts);
+
+  int operator [](DHTRetryKind kind) => counts[kind] ?? 0;
+
+  /// Per-kind delta: `this - other`. Used to compute per-op retry totals.
+  DHTRetrySnapshot diff(DHTRetrySnapshot other) =>
+      DHTRetrySnapshot({
+        for (final k in DHTRetryKind.values)
+          k: (counts[k] ?? 0) - (other.counts[k] ?? 0),
+      });
+}
+
 class DHTStats {
   //////////////////////////////
 
   final _statsPerKey = <RecordKey, DHTPerKeyStats>{};
 
   final _statsPerFunc = <String, DHTCallStats>{};
+
+  final _retryCounts = <DHTRetryKind, int>{
+    for (final k in DHTRetryKind.values) k: 0,
+  };
 
   DHTStats();
 
@@ -179,6 +215,21 @@ class DHTStats {
     }
   }
 
+  /// Bump the cumulative retry counter for [kind] and log via the pool's
+  /// logger. Single hook for all retry sites so the diagnostic message is
+  /// consistent across `DHTRecordPool.instance.retry` and `operateWriteEventual`.
+  void recordRetry(DHTRetryKind kind, {String? context}) {
+    final next = (_retryCounts[kind] ?? 0) + 1;
+    _retryCounts[kind] = next;
+    DHTRecordPool.instance.log(
+      'DHT retry: ${kind.name} #$next${context == null ? '' : ' ($context)'}',
+    );
+  }
+
+  /// Snapshot the cumulative retry counters. Diff two snapshots to get
+  /// per-op deltas without mutating shared state.
+  DHTRetrySnapshot retrySnapshot() => DHTRetrySnapshot({..._retryCounts});
+
   String debugString() {
     //
     final out = StringBuffer()..writeln('Per-Function:');
@@ -192,6 +243,10 @@ class DHTStats {
       final keyName = entry.key;
       final keyStats = entry.value.debugString().indent(4);
       out.write('$keyName:\n$keyStats\n'.indent(4));
+    }
+    out.writeln('Retries:');
+    for (final entry in _retryCounts.entries) {
+      out.write('${entry.key.name}: ${entry.value}\n'.indent(4));
     }
 
     return out.toString();

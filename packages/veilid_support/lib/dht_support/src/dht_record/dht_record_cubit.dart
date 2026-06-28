@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc/bloc.dart';
@@ -8,29 +7,16 @@ import 'package:meta/meta.dart';
 import '../../../veilid_support.dart';
 
 typedef InitialStateFunction<T> = Future<T?> Function(DHTRecord);
-typedef StateFunction<T> =
-    Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, Uint8List?);
+typedef StateFunction<T> = Future<T?> Function(DHTRecord, DHTRecordWatchChange);
 typedef WatchFunction = Future<void> Function(DHTRecord);
 
 abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
-  @protected
-  final WaitSet<void, bool> initWait = WaitSet();
-
-  StreamSubscription<DHTRecordWatchChange>? _subscription;
-
-  DHTRecord? record;
-
-  bool _wantsCloseRecord;
-
-  final StateFunction<T> _stateFunction;
-
   DHTRecordCubit({
     required Future<DHTRecord> Function() open,
     required InitialStateFunction<T> initialStateFunction,
     required StateFunction<T> stateFunction,
     required WatchFunction watchFunction,
   }) : _wantsCloseRecord = false,
-       _stateFunction = stateFunction,
        super(const AsyncValue.loading()) {
     initWait.add((cancel) async {
       try {
@@ -80,9 +66,9 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
       return;
     }
 
-    _subscription = await record!.listen((record, data, subkeys) async {
+    _subscription = await record!.listen((record, change) async {
       try {
-        final newState = await stateFunction(record, subkeys, data);
+        final newState = await stateFunction(record, change);
         if (newState != null) {
           emit(AsyncValue.data(newState));
         }
@@ -99,7 +85,7 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
   Future<void> close() async {
     await initWait(cancelValue: true);
     await record?.cancelWatch();
-    await _subscription?.cancel();
+    await _subscription?.close();
     _subscription = null;
     if (_wantsCloseRecord) {
       await record?.close();
@@ -112,29 +98,15 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
     await initWait();
   }
 
-  Future<void> refresh(List<ValueSubkeyRange> subkeys) async {
-    await initWait();
+  // Fields
+  ////////////////////////////////////////////////////////////////////////////
 
-    var updateSubkeys = [...subkeys];
+  @protected
+  final WaitSet<void, bool> initWait = WaitSet();
 
-    for (final skr in subkeys) {
-      for (var sk = skr.low; sk <= skr.high; sk++) {
-        final data = await record!.get(
-          subkey: sk,
-          refreshMode: DHTRecordRefreshMode.update,
-        );
-        if (data != null) {
-          final newState = await _stateFunction(record!, updateSubkeys, data);
-          if (newState != null) {
-            // Emit the new state
-            emit(AsyncValue.data(newState));
-          }
-          return;
-        }
-        // remove sk from update list
-        // if we did not get an update for that subkey
-        updateSubkeys = updateSubkeys.removeSubkey(sk);
-      }
-    }
-  }
+  DHTRecordWatchSubscription? _subscription;
+
+  DHTRecord? record;
+
+  bool _wantsCloseRecord;
 }

@@ -1,14 +1,17 @@
-include: package:lint_hard/all.yaml
+include: package:flutter_lints/flutter.yaml
+
 analyzer:
   errors:
     invalid_annotation_target: ignore
+    one_member_abstracts: ignore
   exclude:
-    - '**/*.g.dart'
-    - '**/*.freezed.dart'
-    - '**/*.pb.dart'
-    - '**/*.pbenum.dart'
-    - '**/*.pbjson.dart'
-    - '**/*.pbserver.dart'
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/*.pb.dart"
+    - "**/*.pbenum.dart"
+    - "**/*.pbjson.dart"
+    - "**/*.pbserver.dart"
+
 linter:
   rules:
     unawaited_futures: true

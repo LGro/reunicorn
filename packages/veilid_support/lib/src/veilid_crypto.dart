@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import '../../../veilid_support.dart';
-import 'crypto_codec.dart';
 
 ////////////////////////////////////
 /// Encrypted for a specific symmetric key

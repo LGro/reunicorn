@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc/bloc.dart';
-import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:equatable/equatable.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
@@ -50,15 +50,17 @@ class DHTLogStateData<T> extends Equatable {
 }
 
 typedef DHTLogState<T> = AsyncValue<DHTLogStateData<T>>;
-typedef DHTLogBusyState<T> = BlocBusyState<DHTLogState<T>>;
+typedef DHTLogBusyState<T> = DHTLogState<T>;
 
-class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
-    with BlocBusyWrapper<DHTLogState<T>>, RefreshableCubit {
+class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>> with RefreshableCubit {
   final WaitSet<void, bool> _initWait = WaitSet();
 
   late final DHTLog _log;
 
   final T Function(Uint8List data) _decodeElement;
+
+  // Optional per-element in-tx retry override; null uses the collection default.
+  final DHTRetryStrategy? _elementRetry;
 
   StreamSubscription<void>? _subscription;
 
@@ -81,8 +83,10 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
   DHTLogCubit({
     required Future<DHTLog> Function() open,
     required T Function(Uint8List data) decodeElement,
+    DHTRetryStrategy? elementRetry,
   }) : _decodeElement = decodeElement,
-       super(const BlocBusyState(AsyncValue.loading())) {
+       _elementRetry = elementRetry,
+       super(const AsyncValue.loading()) {
     _initWait.add((cancel) async {
       try {
         // Do record open/create
@@ -97,14 +101,22 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
             await asyncSleep();
           }
         }
+
+        // Emit local-cache data first so we have a usable (offline-first) state.
+        _initialUpdate();
+
+        // Subscribe to changes. listen() establishes the watch and does a
+        // best-effort initial network refresh — it no longer throws on a
+        // transient offline condition, so this does not block or loop.
+        _subscription = await _log.listen(_update);
+
+        // Drive catch-up refreshes when the log is behind.
+        startRefreshDriver();
       } on Exception catch (e, st) {
         addError(e, st);
-        emit(DHTLogBusyState(AsyncValue.error(e, st)));
+        emit(AsyncValue.error(e, st));
         return;
       }
-      // Make initial state update
-      _initialUpdate();
-      _subscription = await _log.listen(_update);
     });
   }
 
@@ -118,7 +130,6 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
     int? windowTail,
     int? windowSize,
     bool? follow,
-    bool forceRefresh = false,
   }) async {
     await _initWait();
     if (windowTail != null) {
@@ -130,29 +141,42 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
     if (follow != null) {
       _follow = follow;
     }
-    await _refreshNoWait(forceRefresh: forceRefresh);
+    await _refreshInner();
   }
 
   @override
-  Future<void> refresh({bool forceRefresh = false}) async {
+  bool get collectionNeedsRefresh => _log.needsRefresh;
+
+  @override
+  Future<void> refresh() async {
     await _initWait();
-    await _refreshNoWait(forceRefresh: forceRefresh);
+    // Network sync (gated on needsRefresh); then re-read the window from cache.
+    try {
+      await _log.refresh();
+    } on DHTExceptionNotAvailable {
+      return; // needsRefresh stays true; driver retries
+    } on DHTExceptionOutdated {
+      return;
+    }
+    await _refreshInner();
   }
 
-  Future<void> _refreshNoWait({bool forceRefresh = false}) =>
-      busy((emit) => _refreshInner(emit, forceRefresh: forceRefresh));
-
-  Future<void> _refreshInner(
-    void Function(AsyncValue<DHTLogStateData<T>>) emit, {
-    bool forceRefresh = false,
-  }) async {
+  Future<void> _refreshInner() async {
     late final int length;
-    final windowElements = await _log.operate((reader) {
-      length = reader.length;
-      return _loadElementsFromReader(reader, _windowTail, _windowSize);
-    });
+    final (int, IList<OnlineElementState<T>>)? windowElements;
+    try {
+      windowElements = await _log.operateRead((reader) {
+        length = reader.length;
+        return _loadElementsFromReader(reader, _windowTail, _windowSize);
+      }, elementRetry: _elementRetry);
+    } on DHTExceptionNotAvailable {
+      // Transient: collection needsRefresh stays set; driver retries
+      return;
+    } on DHTExceptionOutdated {
+      // Transient: a transaction lost consensus; driver retries
+      return;
+    }
     if (windowElements == null) {
-      setWantsRefresh();
       return;
     }
 
@@ -167,16 +191,14 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
         ),
       ),
     );
-    setRefreshed();
   }
 
   // Tail is one past the last element to load
   Future<(int, IList<OnlineElementState<T>>)?> _loadElementsFromReader(
     DHTLogReadOperations reader,
     int tail,
-    int count, {
-    bool forceRefresh = false,
-  }) async {
+    int count,
+  ) async {
     final length = reader.length;
     final end = ((tail - 1) % length) + 1;
     final start = (count < end) ? end - count : 0;
@@ -190,23 +212,44 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
       offlinePositions = await reader.getOfflinePositions();
     }
 
-    // Get the items
-    final allItems =
-        (await reader.getRange(
-              start,
-              length: end - start,
-              forceRefresh: forceRefresh,
-            ))?.indexed
-            .map(
-              (x) => OnlineElementState(
-                value: _decodeElement(x.$2),
-                isOffline: offlinePositions?.contains(x.$1) ?? false,
-              ),
-            )
-            .toIList();
-    if (allItems == null) {
+    // Read elements in chunks respecting getRangeLimit
+    final totalLen = end - start;
+    final allData = <Uint8List>[];
+    var pos = start;
+    var remaining = totalLen;
+    while (remaining > 0) {
+      final limit = reader.getRangeLimit(pos);
+      final chunkLen = min(remaining, limit);
+      if (chunkLen == 0) {
+        // Can't read any more — return what we have or null
+        break;
+      }
+      try {
+        final chunk = await reader.getRange(
+          pos,
+          length: chunkLen,
+        );
+        allData.addAll(chunk);
+      } on DHTExceptionNotAvailable {
+        // Data not available — return what we have so far or null
+        break;
+      }
+      pos += chunkLen;
+      remaining -= chunkLen;
+    }
+
+    if (allData.isEmpty && totalLen > 0) {
       return null;
     }
+
+    final allItems = allData.indexed
+        .map(
+          (x) => OnlineElementState(
+            value: _decodeElement(x.$2),
+            isOffline: offlinePositions?.contains(x.$1 + start) ?? false,
+          ),
+        )
+        .toIList();
 
     return (start, allItems);
   }
@@ -221,7 +264,7 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
     _headDelta += upd.headDelta;
     _tailDelta += upd.tailDelta;
 
-    _sspUpdate.busyUpdate<T, DHTLogState<T>>(busy, (emit) async {
+    _sspUpdate.update(() async {
       // apply follow
       if (_follow) {
         if (_windowTail <= 0) {
@@ -243,19 +286,18 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
       _headDelta = 0;
       _tailDelta = 0;
 
-      await _refreshInner(emit);
+      await _refreshInner();
     });
   }
 
   void _initialUpdate() {
-    _sspUpdate.busyUpdate<T, DHTLogState<T>>(busy, (emit) async {
-      await _refreshInner(emit);
-    });
+    _sspUpdate.update(_refreshInner);
   }
 
   @override
   Future<void> close() async {
     await _initWait(cancelValue: true);
+    await closeRefreshDriver();
     await _subscription?.cancel();
     _subscription = null;
     if (_wantsCloseRecord) {
@@ -264,23 +306,32 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
     await super.close();
   }
 
-  Future<R> operate<R>(Future<R> Function(DHTLogReadOperations) closure) async {
-    await _initWait();
-    return _log.operate(closure);
-  }
-
-  Future<R> operateAppend<R>(
-    Future<R> Function(DHTLogWriteOperations) closure,
-  ) async {
-    await _initWait();
-    return _log.operateAppend(closure);
-  }
-
-  Future<R> operateAppendEventual<R>(
-    Future<R> Function(DHTLogWriteOperations) closure, {
-    Duration? timeout,
+  Future<R> operateRead<R>(
+    Future<R> Function(DHTLogReadOperations) closure, {
+    DHTRetryStrategy? elementRetry,
   }) async {
     await _initWait();
-    return _log.operateAppendEventual(closure, timeout: timeout);
+    return _log.operateRead(closure, elementRetry: elementRetry ?? _elementRetry);
+  }
+
+  Future<R> operateWrite<R>(
+    Future<R> Function(DHTLogWriteOperations) closure, {
+    DHTRetryStrategy? elementRetry,
+  }) async {
+    await _initWait();
+    return _log.operateWrite(closure, elementRetry: elementRetry ?? _elementRetry);
+  }
+
+  Future<R> operateWriteEventual<R>(
+    Future<R> Function(DHTLogWriteOperations) closure, {
+    Duration? timeout,
+    DHTRetryStrategy? elementRetry,
+  }) async {
+    await _initWait();
+    return _log.operateWriteEventual(
+      closure,
+      timeout: timeout,
+      elementRetry: elementRetry ?? _elementRetry,
+    );
   }
 }

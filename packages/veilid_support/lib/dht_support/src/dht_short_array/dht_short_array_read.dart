@@ -1,138 +1,123 @@
 part of 'dht_short_array.dart';
 
 ////////////////////////////////////////////////////////////////////////////
-// Reader-only implementation
+// Reader-only operations interface
 
 abstract class DHTShortArrayReadOperations implements DHTRandomRead {}
 
-class _DHTShortArrayRead implements DHTShortArrayReadOperations {
-  ////////////////////////////////////////////////////////////////////////////
-  // Fields
+////////////////////////////////////////////////////////////////////////////
+// Composed reader — cache-only; throws DHTExceptionNotAvailable on miss.
+
+class _DHTShortArrayComposedRead implements DHTShortArrayReadOperations {
   final _DHTShortArrayHead _head;
 
-  _DHTShortArrayRead._(_DHTShortArrayHead head) : _head = head;
+  // In-place retry for transient element failures inside an open tx.
+  // Null disables retries for the operation.
+  final DHTRetryStrategy? _elementRetry;
+
+  _DHTShortArrayComposedRead._(this._head, this._elementRetry);
+
+  // Inside our operateWrite scope, see in-flight working state when
+  // beginWork has run. Outside the scope, see committed state only so
+  // concurrent reads can't observe another task's working state.
+  _DHTShortArrayHeadState get _state => _head.composableSharedState.inWriteScope
+      ? (_head._workingState ?? _head._state)
+      : _head._state;
 
   @override
-  int get length => _head.length;
+  int get length => _state.length;
 
   @override
-  Future<Uint8List?> get(int pos, {bool forceRefresh = false}) async {
+  int getRangeLimit(int start) => _state.getRangeLimit(start);
+
+  /// Internal element fetch. Not virtual so [getRange]'s loop stays in
+  /// the composed reader and isn't re-wrapped by the standalone subclass.
+  Future<Uint8List> _getImpl(int pos) async {
     if (pos < 0 || pos >= length) {
       throw IndexError.withLength(pos, length);
     }
+    final lookup = await _state.lookupPosition(pos);
 
-    try {
-      final lookup = await _head.lookupPosition(pos, false);
-
-      final refresh = forceRefresh || _head.positionNeedsRefresh(pos);
-      final outSeqNum = Output<int>();
-      final out = await lookup.record.get(
-        subkey: lookup.recordSubkey,
-        refreshMode: refresh
-            ? DHTRecordRefreshMode.network
-            : DHTRecordRefreshMode.cached,
-        outSeqNum: outSeqNum,
-      );
-      if (outSeqNum.value != null) {
-        _head.updatePositionSeq(pos, false, outSeqNum.value!);
-      }
-      return out;
-    } on DHTExceptionNotAvailable {
-      // If any element is not available, return null
-      return null;
-    }
-  }
-
-  (int, int) _clampStartLen(int start, int? len) {
-    len ??= _head.length;
-    if (start < 0) {
-      throw IndexError.withLength(start, _head.length);
-    }
-    if (start > _head.length) {
-      throw IndexError.withLength(start, _head.length);
-    }
-    if ((len + start) > _head.length) {
-      len = _head.length - start;
-    }
-    return (start, len);
-  }
-
-  @override
-  Future<List<Uint8List>?> getRange(
-    int start, {
-    int? length,
-    bool forceRefresh = false,
-  }) async {
-    final out = <Uint8List>[];
-    (start, length) = _clampStartLen(start, length);
-
-    final chunks = Iterable<int>.generate(length)
-        .slices(kMaxDHTConcurrency)
-        .map(
-          (chunk) => chunk.map((pos) async {
-            try {
-              return await get(pos + start, forceRefresh: forceRefresh);
-              // Need some way to debug ParallelWaitError
-              // ignore: avoid_catches_without_on_clauses
-            } catch (e, st) {
-              veilidLoggy.error('$e\n$st\n');
-              rethrow;
-            }
-          }),
+    Uint8List? out;
+    if (_head.composableSharedState.inTransaction) {
+      // Retry transient element failures in place within the open tx.
+      Future<Uint8List> getElement() async {
+        final v = await _head.composableSharedState.withTransactionKey(
+          lookup.record.key,
+          closure: (ops) => ops.getBytes(
+            subkey: lookup.recordSubkey,
+            refreshMode: DHTRecordRefreshMode.network,
+          ),
         );
-
-    for (final chunk in chunks) {
-      var elems = await chunk.wait;
-
-      // Return only the first contiguous range, anything else is garbage
-      // due to a representational error in the head or shortarray legnth
-      final nullPos = elems.indexOf(null);
-      if (nullPos != -1) {
-        elems = elems.sublist(0, nullPos);
+        if (v == null) {
+          // Every index 0..length-1 must have a value; a null network seq is a
+          // representational error, not a transient miss — fail fast, no retry.
+          throw const DHTExceptionInvalidData(
+            cause: 'element value missing network seq',
+          );
+        }
+        return v;
       }
 
-      out.addAll(elems.cast<Uint8List>());
-
-      if (nullPos != -1) {
-        break;
+      out = await (_elementRetry?.retry(getElement) ?? getElement());
+    } else {
+      if (!lookup.isLocallyAvailable) {
+        throw const DHTExceptionNotAvailable(
+          cause: 'element not available in local cache',
+        );
       }
+      out = await lookup.record.getBytes(
+        subkey: lookup.recordSubkey,
+        refreshMode: DHTRecordRefreshMode.local,
+      );
     }
-
+    if (out == null) {
+      throw const DHTExceptionNotAvailable(cause: 'element not returned');
+    }
     return out;
   }
 
+  /// Read an element. Inside a transaction, route through the tx so the
+  /// element gets lazy-loaded with the transaction's authoritative network
+  /// seq. Outside a transaction, serve from the local cache and surface a
+  /// miss as `DHTExceptionNotAvailable` for the operateRead retry path.
   @override
-  Future<Set<int>> getOfflinePositions() async {
-    final (start, length) = _clampStartLen(0, DHTShortArray.maxElements);
+  Future<Uint8List> get(int pos) => _getImpl(pos);
 
-    final indexOffline = <int>{};
-    final inspects = await [
-      _head._headRecord.inspect(),
-      ..._head._linkedRecords.map((lr) => lr.inspect()),
-    ].wait;
-
-    // Add to offline index
-    var strideOffset = 0;
-    for (final inspect in inspects) {
-      for (final r in inspect.offlineSubkeys) {
-        for (var i = r.low; i <= r.high; i++) {
-          // If this is the head record, ignore the first head subkey
-          if (strideOffset != 0 || i != 0) {
-            indexOffline.add(i + ((strideOffset == 0) ? -1 : strideOffset));
-          }
-        }
-      }
-      strideOffset += _head._stride;
+  (int, int) _clampStartLen(int start, int? len) {
+    var effectiveLen = len ?? _state.length;
+    if (start < 0) {
+      throw IndexError.withLength(start, _state.length);
     }
-
-    // See which positions map to offline indexes
-    final positionOffline = <int>{};
-    for (var i = start; i < (start + length); i++) {
-      final idx = _head._index[i];
-      if (indexOffline.contains(idx)) {
-        positionOffline.add(i);
-      }
+    if (start > _state.length) {
+      throw IndexError.withLength(start, _state.length);
     }
-    return positionOffline;
+    if ((effectiveLen + start) > _state.length) {
+      effectiveLen = _state.length - start;
+    }
+    return (start, effectiveLen);
   }
+
+  @override
+  Future<List<Uint8List>> getRange(int start, {int? length}) async {
+    (start, length) = _clampStartLen(start, length);
+    return Future.wait([for (var i = 0; i < length; i++) _getImpl(start + i)]);
+  }
+
+  @override
+  Future<Set<int>> getOfflinePositions() async => {};
+}
+
+////////////////////////////////////////////////////////////////////////////
+// Standalone reader — retries cache miss inside an operateWrite tx.
+
+class _DHTShortArrayRead extends _DHTShortArrayComposedRead {
+  _DHTShortArrayRead._(super.head, super.elementRetry) : super._();
+
+  @override
+  Future<Uint8List> get(int pos) => _head.operateRead(() => super.get(pos));
+
+  @override
+  Future<List<Uint8List>> getRange(int start, {int? length}) =>
+      _head.operateRead(() => super.getRange(start, length: length));
 }

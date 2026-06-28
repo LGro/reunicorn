@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc/bloc.dart';
-import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:equatable/equatable.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
@@ -41,12 +40,10 @@ class TableDBArrayMigratedStateData<T> extends Equatable {
 
 typedef TableDBArrayMigratedState<T> =
     AsyncValue<TableDBArrayMigratedStateData<T>>;
-typedef TableDBArrayMigratedBusyState<T> =
-    BlocBusyState<TableDBArrayMigratedState<T>>;
+typedef TableDBArrayMigratedBusyState<T> = TableDBArrayMigratedState<T>;
 
 class TableDBArrayMigratedCubit<T>
-    extends Cubit<TableDBArrayMigratedBusyState<T>>
-    with BlocBusyWrapper<TableDBArrayMigratedState<T>> {
+    extends Cubit<TableDBArrayMigratedBusyState<T>> {
   final WaitSet<void, void> _initWait = WaitSet();
 
   late final TableDBArrayMigrated<T> _array;
@@ -71,14 +68,14 @@ class TableDBArrayMigratedCubit<T>
 
   TableDBArrayMigratedCubit({
     required Future<TableDBArrayMigrated<T>> Function() open,
-  }) : super(const BlocBusyState(AsyncValue.loading())) {
+  }) : super(const AsyncValue.loading()) {
     _initWait.add((_) async {
       // Open table db array
       _array = await open();
       _wantsCloseArray = true;
 
       // Make initial state update
-      await _refreshNoWait();
+      await _refreshInner();
       _subscription = await _array.listen(_update);
     });
   }
@@ -89,12 +86,7 @@ class TableDBArrayMigratedCubit<T>
   // length.
   // If tail is positive, the position is absolute from the head of the array
   // If follow is enabled, the tail offset will update when the array changes
-  Future<void> setWindow({
-    int? tail,
-    int? count,
-    bool? follow,
-    bool forceRefresh = false,
-  }) async {
+  Future<void> setWindow({int? tail, int? count, bool? follow}) async {
     await _initWait();
     if (tail != null) {
       _tail = tail;
@@ -105,21 +97,15 @@ class TableDBArrayMigratedCubit<T>
     if (follow != null) {
       _follow = follow;
     }
-    await _refreshNoWait(forceRefresh: forceRefresh);
+    await _refreshInner();
   }
 
-  Future<void> refresh({bool forceRefresh = false}) async {
+  Future<void> refresh() async {
     await _initWait();
-    await _refreshNoWait(forceRefresh: forceRefresh);
+    await _refreshInner();
   }
 
-  Future<void> _refreshNoWait({bool forceRefresh = false}) =>
-      busy((emit) => _refreshInner(emit, forceRefresh: forceRefresh));
-
-  Future<void> _refreshInner(
-    void Function(AsyncValue<TableDBArrayMigratedStateData<T>>) emit, {
-    bool forceRefresh = false,
-  }) async {
+  Future<void> _refreshInner() async {
     final avElements = await _loadElements(_tail, _count);
     final err = avElements.asError;
     if (err != null) {
@@ -172,7 +158,7 @@ class TableDBArrayMigratedCubit<T>
     _headDelta += upd.headDelta;
     _tailDelta += upd.tailDelta;
 
-    _sspUpdate.busyUpdate<T, TableDBArrayMigratedState<T>>(busy, (emit) async {
+    _sspUpdate.update(() async {
       // apply follow
       if (_follow) {
         if (_tail <= 0) {
@@ -194,7 +180,7 @@ class TableDBArrayMigratedCubit<T>
       _headDelta = 0;
       _tailDelta = 0;
 
-      await _refreshInner(emit);
+      await _refreshInner();
     });
   }
 

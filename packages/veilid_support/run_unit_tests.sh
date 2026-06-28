@@ -1,2 +1,2 @@
 #!/bin/bash
-flutter test -r expanded $@
+flutter test -r github $@

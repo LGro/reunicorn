@@ -1,143 +1,150 @@
 part of 'dht_log.dart';
 
 ////////////////////////////////////////////////////////////////////////////
-// Reader-only implementation
+// Reader-only operations interface
 
 abstract class DHTLogReadOperations implements DHTRandomRead {}
 
-class _DHTLogRead implements DHTLogReadOperations {
-  ////////////////////////////////////////////////////////////////////////////
-  // Fields
+////////////////////////////////////////////////////////////////////////////
+// Composed reader — cache-only; throws DHTExceptionNotAvailable on miss.
+
+class _DHTLogComposedRead implements DHTLogReadOperations {
   final _DHTLogSpine _spine;
 
-  _DHTLogRead._(_DHTLogSpine spine) : _spine = spine;
+  // In-place retry for transient element failures inside an open tx.
+  // Null disables retries for the operation.
+  final DHTRetryStrategy? _elementRetry;
+
+  _DHTLogComposedRead._(this._spine, this._elementRetry);
+
+  // Inside our operateWrite scope, see in-flight working state when
+  // beginWork has run. Outside the scope, see committed state only so
+  // concurrent reads can't observe another task's working state.
+  _DHTLogSpineState get _state => _spine.composableSharedState.inWriteScope
+      ? (_spine._workingState ?? _spine._state)
+      : _spine._state;
 
   @override
-  int get length => _spine.length;
+  int get length => _state.length;
+
+  /// Returns the absolute position one-past-end of the segment containing
+  /// the logical position [pos], translated back into a logical position.
+  int _segmentBoundaryAfter(int pos) {
+    final absPos = (_state.head + pos) % _spine._layout.positionLimit;
+    final nextSegStart =
+        ((absPos ~/ DHTShortArray.maxElements) + 1) * DHTShortArray.maxElements;
+    final delta = nextSegStart - absPos;
+    return pos + delta;
+  }
 
   @override
-  Future<Uint8List?> get(int pos, {bool forceRefresh = false}) async {
+  int getRangeLimit(int start) {
+    final remaining = _state.length - start;
+    if (remaining <= 0) {
+      return 0;
+    }
+    // If [start] sits in an unavailable segment the caller can't read any
+    // positions here; signal zero so they skip via getOfflinePositions.
+    final absStart = (_state.head + start) % _spine._layout.positionLimit;
+    final startSeg = absStart ~/ DHTShortArray.maxElements;
+    if (_spine._unavailableSegments.contains(startSeg)) {
+      return 0;
+    }
+    // Clamp the run at the next unavailable segment boundary so a single
+    // getRange call only spans contiguous available segments.
+    var limit = remaining;
+    var probePos = start;
+    while (probePos < start + limit) {
+      final boundary = _segmentBoundaryAfter(probePos);
+      if (boundary >= start + limit) {
+        break;
+      }
+      final boundaryAbs =
+          (_state.head + boundary) % _spine._layout.positionLimit;
+      final boundarySeg = boundaryAbs ~/ DHTShortArray.maxElements;
+      if (_spine._unavailableSegments.contains(boundarySeg)) {
+        limit = boundary - start;
+        break;
+      }
+      probePos = boundary;
+    }
+    return limit;
+  }
+
+  /// Internal element fetch. Not virtual so [getRange]'s loop stays in
+  /// the composed reader and isn't re-wrapped by the standalone subclass.
+  Future<Uint8List> _getImpl(int pos) async {
     if (pos < 0 || pos >= length) {
       throw IndexError.withLength(pos, length);
     }
-    final lookup = await _spine.lookupPosition(pos);
-    if (lookup == null) {
-      return null;
-    }
-
-    return lookup.scope(
-      (sa) => sa.operate((read) async {
-        if (lookup.pos >= read.length) {
-          veilidLoggy.error(
-            'DHTLog shortarray read @ ${lookup.pos}'
-            ' >= length ${read.length}',
-          );
-          return null;
-        }
-        return read.get(lookup.pos, forceRefresh: forceRefresh);
-      }),
+    return _state.withPosition(
+      pos,
+      closure: (lookup) => lookup.composable.read(
+        (read) => read.get(lookup.pos),
+        elementRetry: _elementRetry,
+      ),
     );
   }
 
+  @override
+  Future<Uint8List> get(int pos) => _getImpl(pos);
+
   (int, int) _clampStartLen(int start, int? len) {
-    len ??= _spine.length;
+    var effectiveLen = len ?? _state.length;
     if (start < 0) {
-      throw IndexError.withLength(start, _spine.length);
+      throw IndexError.withLength(start, _state.length);
     }
-    if (start > _spine.length) {
-      throw IndexError.withLength(start, _spine.length);
+    if (start > _state.length) {
+      throw IndexError.withLength(start, _state.length);
     }
-    if ((len + start) > _spine.length) {
-      len = _spine.length - start;
+    if ((effectiveLen + start) > _state.length) {
+      effectiveLen = _state.length - start;
     }
-    return (start, len);
+    return (start, effectiveLen);
   }
 
   @override
-  Future<List<Uint8List>?> getRange(
-    int start, {
-    int? length,
-    bool forceRefresh = false,
-  }) async {
-    final out = <Uint8List>[];
+  Future<List<Uint8List>> getRange(int start, {int? length}) async {
     (start, length) = _clampStartLen(start, length);
-
-    final chunks = Iterable<int>.generate(length)
-        .slices(kMaxDHTConcurrency)
-        .map(
-          (chunk) => chunk.map((pos) async {
-            try {
-              return await get(pos + start, forceRefresh: forceRefresh);
-              // Need some way to debug ParallelWaitError
-              // ignore: avoid_catches_without_on_clauses
-            } catch (e, st) {
-              veilidLoggy.error('$e\n$st\n');
-              rethrow;
-            }
-          }),
-        );
-
-    for (final chunk in chunks) {
-      var elems = await chunk.wait;
-
-      // Return only the first contiguous range, anything else is garbage
-      // due to a representational error in the head or shortarray legnth
-      final nullPos = elems.indexOf(null);
-      if (nullPos != -1) {
-        elems = elems.sublist(0, nullPos);
-      }
-
-      out.addAll(elems.cast<Uint8List>());
-
-      if (nullPos != -1) {
-        break;
-      }
-    }
-
-    return out;
+    return Future.wait([for (var i = 0; i < length; i++) _getImpl(start + i)]);
   }
 
   @override
   Future<Set<int>> getOfflinePositions() async {
-    final positionOffline = <int>{};
-
-    // Iterate positions backward from most recent
-    for (var pos = _spine.length - 1; pos >= 0; pos--) {
-      // Get position
-      final lookup = await _spine.lookupPosition(pos);
-      // If position doesn't exist then it definitely wasn't written to offline
-      if (lookup == null) {
-        continue;
-      }
-
-      // Check each segment for offline positions
-      var foundOffline = false;
-      await lookup.scope(
-        (sa) => sa.operate((read) async {
-          final segmentOffline = await read.getOfflinePositions();
-
-          // For each shortarray segment go through their segment positions
-          // in reverse order and see if they are offline
-          for (
-            var segmentPos = lookup.pos;
-            segmentPos >= 0 && pos >= 0;
-            segmentPos--, pos--
-          ) {
-            // If the position in the segment is offline, then
-            // mark the position in the log as offline
-            if (segmentOffline.contains(segmentPos)) {
-              positionOffline.add(pos);
-              foundOffline = true;
-            }
-          }
-        }),
-      );
-      // If we found nothing offline in this segment then we can stop
-      if (!foundOffline) {
-        break;
+    if (_spine._unavailableSegments.isEmpty) {
+      return {};
+    }
+    final logicalLen = _state.length;
+    final out = <int>{};
+    for (final seg in _spine._unavailableSegments) {
+      final segStart = seg * DHTShortArray.maxElements;
+      final segEnd = segStart + DHTShortArray.maxElements;
+      for (var absPos = segStart; absPos < segEnd; absPos++) {
+        // Translate absolute -> logical using the ring head.
+        final logical = _DHTLogSpine._ringDistance(
+          absPos,
+          _state.head,
+          _spine._layout.positionLimit,
+        );
+        if (logical >= 0 && logical < logicalLen) {
+          out.add(logical);
+        }
       }
     }
-
-    return positionOffline;
+    return out;
   }
+}
+
+////////////////////////////////////////////////////////////////////////////
+// Standalone reader — retries cache miss inside an operateWrite tx.
+
+class _DHTLogRead extends _DHTLogComposedRead {
+  _DHTLogRead._(super.spine, super.elementRetry) : super._();
+
+  @override
+  Future<Uint8List> get(int pos) => _spine.operateRead(() => super.get(pos));
+
+  @override
+  Future<List<Uint8List>> getRange(int start, {int? length}) =>
+      _spine.operateRead(() => super.getRange(start, length: length));
 }

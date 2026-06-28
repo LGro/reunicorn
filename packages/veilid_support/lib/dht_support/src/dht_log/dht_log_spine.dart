@@ -1,37 +1,32 @@
 part of 'dht_log.dart';
 
-class _DHTLogPosition extends DHTCloseable<DHTShortArray> {
-  final int pos;
+class _DHTLogLayout {
+  final int recordKeyLength;
+  final int spineSubkeys;
+  final int segmentsPerSubkey;
+  final int positionLimit;
+  final int stride;
 
-  final _DHTLogSpine _dhtLogSpine;
+  // Example layout for VLD0:
+  // 55 subkeys * 512 segments * 36 bytes per typedkey =
+  //   1013760 bytes per record
+  // Leaves 34816 bytes for 0th subkey as head, 56 subkeys total
+  // 512*36 = 18432 bytes per subkey
+  // 28160 shortarrays * 256 elements = 7208960 elements
+  // Defaults for VLD0:
+  // XXX: Eliminate this in favor of actual calculation from cryptokind
+  static const _defaultRecordKeyLength = 36;
+  static const _defaultSpineSubkeys = 55;
+  static const _defaultSegmentsPerSubkey = 512;
 
-  final DHTShortArray shortArray;
-
-  final int _segmentNumber;
-
-  _DHTLogPosition._({
-    required _DHTLogSpine dhtLogSpine,
-    required this.shortArray,
-    required this.pos,
-    required int segmentNumber,
-  }) : _dhtLogSpine = dhtLogSpine,
-       _segmentNumber = segmentNumber;
-
-  /// Check if the DHTLogPosition is open
-  @override
-  bool get isOpen => shortArray.isOpen;
-
-  /// The type of the openable scope
-  @override
-  FutureOr<DHTShortArray> scoped() => shortArray;
-
-  /// Add a reference to this log
-  @override
-  void ref() => shortArray.ref();
-
-  /// Free all resources for the DHTLogPosition
-  @override
-  Future<bool> close() => _dhtLogSpine._segmentClosed(_segmentNumber);
+  _DHTLogLayout({required this.stride})
+    : recordKeyLength = _defaultRecordKeyLength,
+      spineSubkeys = _defaultSpineSubkeys,
+      segmentsPerSubkey = _defaultSegmentsPerSubkey,
+      positionLimit =
+          _defaultSegmentsPerSubkey *
+          _defaultSpineSubkeys *
+          DHTShortArray.maxElements;
 }
 
 class _DHTLogSegmentLookup extends Equatable {
@@ -57,294 +52,672 @@ class _SubkeyData {
   _SubkeyData({required this.subkey, required this.data});
 }
 
-class _DHTLogSpine {
-  // Spine head mutex to ensure we keep the representation valid
-  final _spineMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
+typedef _DefaultDHTLogComposable =
+    DefaultDHTComposable<
+      DHTLogReadOperations,
+      DHTLogWriteOperations,
+      DHTLogUpdate
+    >;
+
+class _DHTLogSpine with _DefaultDHTLogComposable {
+  // Read-write lock for local state (head, tail, opened segments).
+  // READs acquire read lock (concurrent), SYNC/WRITE commit acquires write lock.
+  final _stateLock = ReadWriteMutex(debugLockTimeout: kIsDebugMode ? 60 : null);
 
   // Subscription to head record internal changes
-  StreamSubscription<DHTRecordWatchChange>? _subscription;
+  DHTRecordWatchSubscription? _subscription;
 
-  // Notify closure for external spine head changes
-  void Function(DHTLogUpdate)? onUpdatedSpine;
-
-  // Single state processor for spine updates
-  final _spineChangeProcessor = SingleStateProcessor<proto.DHTLog>();
+  // Single state processor for spine update serialization
+  final _spineChangeProcessor = SingleStatelessProcessor();
 
   // Spine DHT record
   final DHTRecord _spineRecord;
 
-  // Segment stride to use for spine elements
-  final int _segmentStride;
-
-  // Layout of dhtlog
+  // Layout of dhtlog (includes stride)
   final _DHTLogLayout _layout;
 
   // An empty segment key to check for null with
   final Uint8List _emptySegmentKey;
 
-  // Position of the start of the log (oldest items)
-  int _head;
+  // The committed spine state (head, tail).
+  // Protected by _stateLock. READs see this.
+  // Initialized in constructor body because _DHTLogSpineState
+  // needs a reference to this _DHTLogSpine.
+  late _DHTLogSpineState _state;
 
-  // Position of the end of the log (newest items) (exclusive)
-  int _tail;
+  // In-flight working state, set by beginWork and cleared by endWork.
+  _DHTLogSpineState? _workingState;
+
+  // Segments touched during the active operate. Iterated for flush/endWork.
+  final Set<DHTShortArrayComposable> _activeSegments = {};
 
   // LRU cache of DHT spine elements accessed recently
   // Pair of position and associated shortarray segment
-  final _spineCacheMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
+  final _openedSegmentsMutex = Mutex(
+    debugLockTimeout: kIsDebugMode ? 60 : null,
+  );
+  final Map<int, DHTShortArray> _openedSegments = {};
+  final List<int> _openCache = [];
 
-  final List<int> _openCache;
+  // Segments whose lazy open failed (DHTExceptionNotAvailable). Surfaced
+  // through getOfflinePositions so readers can skip them rather than getting
+  // stuck on a single bad segment. Cleared by refresh() so a recovered
+  // network can re-attempt.
+  final Set<int> _unavailableSegments = {};
 
-  final Map<int, DHTShortArray> _openedSegments;
+  static const _openedSegmentsLimit = 3;
 
   static final _migrationCodec = DHTLogMigrationCodec();
-
-  static const _openCacheSize = 3;
 
   _DHTLogSpine._({
     required DHTRecord spineRecord,
     required int head,
     required int tail,
-    required int stride,
     required _DHTLogLayout layout,
+    bool needsRefresh = true,
   }) : _spineRecord = spineRecord,
-       _head = head,
-       _tail = tail,
-       _segmentStride = stride,
-       _openedSegments = {},
-       _openCache = [],
        _layout = layout,
        _emptySegmentKey = Uint8List.fromList(
          List.filled(spineRecord.key.opaque.toBytes().lengthInBytes, 0),
-       );
+       ) {
+    _state = _DHTLogSpineState(
+      this,
+      head: head,
+      tail: tail,
+      needsRefresh: needsRefresh,
+    );
+  }
 
   // Create a new spine record and push it to the network
   static Future<_DHTLogSpine> create({
-    required DHTRecord spineRecord,
-    required int segmentStride,
-    required _DHTLogLayout layout,
+    required String debugName,
+    required int stride,
+    CryptoKind? kind,
+    VeilidRoutingContext? routingContext,
+    RecordKey? parent,
+    CryptoCodec? crypto,
+    KeyPair? writer,
+    EncryptionKeyOverride? encryptionKeyOverride,
+    DHTComposableSharedState? composableSharedState,
   }) async {
-    // Construct new spinehead
+    final pool = DHTRecordPool.instance;
+    final layout = _DHTLogLayout(stride: stride);
+
+    late final DHTRecord spineRecord;
+    if (writer != null) {
+      final schema = DHTSchema.smpl(
+        oCnt: 0,
+        members: [
+          DHTSchemaMember(
+            mKey: (await pool.veilid.generateMemberId(writer.key)).value,
+            mCnt: layout.spineSubkeys + 1,
+          ),
+        ],
+      );
+      spineRecord = await pool.createRecord(
+        debugName: debugName,
+        kind: kind,
+        parent: parent,
+        routingContext: routingContext,
+        schema: schema,
+        crypto: crypto,
+        writer: writer,
+        encryptionKeyOverride: encryptionKeyOverride,
+      );
+    } else {
+      final schema = DHTSchema.dflt(oCnt: layout.spineSubkeys + 1);
+      spineRecord = await pool.createRecord(
+        debugName: debugName,
+        kind: kind,
+        parent: parent,
+        routingContext: routingContext,
+        schema: schema,
+        crypto: crypto,
+        encryptionKeyOverride: encryptionKeyOverride,
+      );
+    }
+
+    // Empty spine is valid at creation time
     final spine = _DHTLogSpine._(
       spineRecord: spineRecord,
       head: 0,
       tail: 0,
-      stride: segmentStride,
       layout: layout,
+      needsRefresh: false,
     );
 
-    // Write new spine head record to the network
-    await spine.operate((spine) async {
-      // Write first empty subkey
-      final subkeyData = spine._makeEmptySubkey();
-      final existingSubkeyData = await spineRecord.tryWriteBytes(
-        subkeyData,
-        subkey: 1,
-        options: const SetDHTValueOptions(allowOffline: false),
+    if (composableSharedState != null) {
+      // Composed: spine joins the caller's tx (mirrors DHTShortArray.create);
+      // committing here would race rehydration against the open parent tx. The
+      // empty spine subkey is initialized lazily on first segment write.
+      spine.enterComposedMode(composableSharedState);
+    } else {
+      // Standalone: initialize and push the spine to the network in its own tx.
+      await spine.standaloneSharedState.withWriteScope(
+        () => spine.operateWrite(() async {
+          final subkeyData = spine._makeEmptySubkey();
+          final existingSubkeyData = await spine.standaloneSharedState
+              .withTransactionKey(
+                spineRecord.key,
+                closure: (ops) => ops.tryWriteBytes(subkeyData, subkey: 1),
+              );
+          if (existingSubkeyData != null) {
+            throw StateError('Should never conflict on create');
+          }
+        }),
       );
-      assert(existingSubkeyData == null, 'Should never conflict on create');
-
-      final success = await spine.writeSpineHead();
-      assert(success, 'false return should never happen on create');
-    });
+    }
 
     return spine;
   }
 
-  // Pull the latest or updated copy of the spine head record from the network
-  static Future<_DHTLogSpine> load({
-    required DHTRecord spineRecord,
-    required _DHTLogLayout layout,
+  /// Open and load spine state from local cache — no network access.
+  /// If no data in local cache (first open before SYNC), returns
+  /// a spine with empty state (head=0, tail=0).
+  static Future<_DHTLogSpine> openRead(
+    RecordKey logRecordKey, {
+    required String debugName,
+    VeilidRoutingContext? routingContext,
+    RecordKey? parent,
+    CryptoCodec? crypto,
+    DHTComposableSharedState? composableSharedState,
   }) async {
-    // Get an updated spine head record copy if one exists
-    final spineHead = await spineRecord.getMigrated(
+    final spineRecord = await DHTRecordPool.instance.openRecordRead(
+      logRecordKey,
+      debugName: debugName,
+      parent: parent,
+      routingContext: routingContext,
+      crypto: crypto,
+    );
+    return _loadFromRecord(spineRecord, composableSharedState);
+  }
+
+  /// Open and load spine state with write access.
+  static Future<_DHTLogSpine> openWrite(
+    RecordKey logRecordKey,
+    KeyPair writer, {
+    required String debugName,
+    VeilidRoutingContext? routingContext,
+    RecordKey? parent,
+    CryptoCodec? crypto,
+    DHTComposableSharedState? composableSharedState,
+  }) async {
+    final spineRecord = await DHTRecordPool.instance.openRecordWrite(
+      logRecordKey,
+      writer,
+      debugName: debugName,
+      parent: parent,
+      routingContext: routingContext,
+      crypto: crypto,
+    );
+    return _loadFromRecord(spineRecord, composableSharedState);
+  }
+
+  static Future<_DHTLogSpine> _loadFromRecord(
+    DHTRecord spineRecord,
+    DHTComposableSharedState? composableSharedState,
+  ) async {
+    // Try local cache first for the spine head
+    var spineHead = await spineRecord.getMigrated(
       _migrationCodec,
       subkey: 0,
-      refreshMode: DHTRecordRefreshMode.network,
+      refreshMode: DHTRecordRefreshMode.local,
     );
+
+    // If not in local cache, peek at the network via transaction. Commit so
+    // the fetched spine head is persisted to the local cache.
     if (spineHead == null) {
-      throw StateError('spine head missing during refresh');
-    }
-    return _DHTLogSpine._(
-      spineRecord: spineRecord,
-      head: spineHead.head,
-      tail: spineHead.tail,
-      stride: spineHead.stride,
-      layout: layout,
-    );
-  }
-
-  proto.DHTLog _toProto() {
-    assert(_spineMutex.isLocked, 'should be in mutex here');
-
-    final logHead = proto.DHTLog()
-      ..head = _head
-      ..tail = _tail
-      ..stride = _segmentStride;
-    return logHead;
-  }
-
-  Future<void> close() async {
-    await _spineMutex.protect(() async {
-      if (!isOpen) {
-        return;
-      }
-      final futures = <Future<void>>[_spineRecord.close()];
-      for (final seg in _openCache.toList()) {
-        futures.add(_segmentClosed(seg));
-      }
-      await Future.wait(futures);
-
-      assert(_openedSegments.isEmpty, 'should have closed all segments by now');
-    });
-  }
-
-  // Will deep delete all segment records as they are children
-  Future<bool> delete() => _spineMutex.protect(_spineRecord.delete);
-
-  Future<T> operate<T>(Future<T> Function(_DHTLogSpine) closure) =>
-      _spineMutex.protect(() => closure(this));
-
-  Future<T> operateAppend<T>(Future<T> Function(_DHTLogSpine) closure) =>
-      _spineMutex.protect(() async {
-        final oldHead = _head;
-        final oldTail = _tail;
-        try {
-          final out = await closure(this);
-          // Write head assuming it has been changed
-          if (!await writeSpineHead(old: (oldHead, oldTail))) {
-            // Failed to write head means head got overwritten so write should
-            // be considered failed
-            throw const DHTExceptionOutdated();
-          }
-          return out;
-        } on Exception {
-          // Exception means state needs to be reverted
-          _head = oldHead;
-          _tail = oldTail;
-          rethrow;
-        }
-      });
-
-  Future<T> operateAppendEventual<T>(
-    Future<T> Function(_DHTLogSpine) closure, {
-    Duration? timeout,
-  }) {
-    final timeoutTs = timeout == null
-        ? null
-        : Veilid.instance.now().offset(TimestampDuration.fromDuration(timeout));
-
-    return _spineMutex.protect(() async {
-      late int oldHead;
-      late int oldTail;
-      late T out;
+      final tx = await DHTRecordPool.instance.transact([
+        spineRecord,
+      ], debugName: 'DHTLog._loadFromRecord(${spineRecord.debugName})');
       try {
-        // Iterate until we have a successful element and head write
-        do {
-          // Save off old values each pass of writeSpineHead because the head
-          // will have changed
-          oldHead = _head;
-          oldTail = _tail;
-
-          // Try to do the element write
-          while (true) {
-            if (timeoutTs != null) {
-              final now = Veilid.instance.now();
-              if (now >= timeoutTs) {
-                throw TimeoutException('timeout reached');
-              }
-            }
-            try {
-              out = await closure(this);
-              break;
-            } on DHTExceptionOutdated {
-              // Failed to write in closure resets state
-              _head = oldHead;
-              _tail = oldTail;
-            } on Exception {
-              // Failed to write in closure resets state
-              _head = oldHead;
-              _tail = oldTail;
-              rethrow;
-            }
-          }
-          // Try to do the head write
-        } while (!await writeSpineHead(old: (oldHead, oldTail)));
+        spineHead = await tx.withKey(
+          spineRecord.key,
+          closure: (ops) => ops.getMigrated(
+            _migrationCodec,
+            subkey: 0,
+            refreshMode: DHTRecordRefreshMode.network,
+          ),
+        );
+        await tx.commit();
       } on Exception {
-        // Exception means state needs to be reverted
-        _head = oldHead;
-        _tail = oldTail;
+        await tx.rollback();
         rethrow;
       }
 
-      return out;
-    });
-  }
-
-  /// Serialize and write out the current spine head subkey, possibly updating
-  /// it if a newer copy is available online. Returns true if the write was
-  /// successful
-  Future<bool> writeSpineHead({(int, int)? old}) async {
-    assert(_spineMutex.isLocked, 'should be in mutex here');
-
-    final existingHead = await _spineRecord.tryWriteMigrated(
-      _migrationCodec,
-      _toProto(),
-      options: const SetDHTValueOptions(allowOffline: false),
-    );
-    if (existingHead != null) {
-      // Head write failed, incorporate update if possible
-      _updateHead(existingHead.value.head, existingHead.value.tail, old: old);
-      if (old != null) {
-        sendUpdate(old.$1, old.$2);
-      }
-      return false;
-    }
-    if (old != null) {
-      sendUpdate(old.$1, old.$2);
-    }
-    return true;
-  }
-
-  /// Send a spine update callback
-  void sendUpdate(int oldHead, int oldTail) {
-    final oldLength = _ringDistance(oldTail, oldHead);
-    if (oldHead != _head || oldTail != _tail || oldLength != length) {
-      onUpdatedSpine?.call(
-        DHTLogUpdate(
-          headDelta: _ringDistance(_head, oldHead),
-          tailDelta: _ringDistance(_tail, oldTail),
-          length: length,
-        ),
-      );
-    }
-  }
-
-  /// Validate a new spine head subkey that has come in from the network
-  void _updateHead(int newHead, int newTail, {(int, int)? old}) {
-    assert(_spineMutex.isLocked, 'should be in mutex here');
-
-    if (old != null) {
-      final oldHead = old.$1;
-      final oldTail = old.$2;
-
-      final headDelta = _ringDistance(newHead, oldHead);
-      final tailDelta = _ringDistance(newTail, oldTail);
-      if (headDelta > _layout.positionLimit ~/ 2 ||
-          tailDelta > _layout.positionLimit ~/ 2) {
-        throw DHTExceptionInvalidData(
-          cause:
-              '_DHTLogSpine::_updateHead '
-              '_head=$_head _tail=$_tail '
-              'oldHead=$oldHead oldTail=$oldTail '
-              'newHead=$newHead newTail=$newTail '
-              'headDelta=$headDelta tailDelta=$tailDelta '
-              '_positionLimit=${_layout.positionLimit}',
+      if (spineHead == null) {
+        throw const DHTExceptionNotAvailable(
+          cause: 'spine head not available — record may not exist on network',
         );
       }
     }
 
-    _head = newHead;
-    _tail = newTail;
+    final layout = _DHTLogLayout(stride: spineHead.stride);
+    final spine = _DHTLogSpine._(
+      spineRecord: spineRecord,
+      head: spineHead.head,
+      tail: spineHead.tail,
+      layout: layout,
+    );
+
+    // See if we can open the tail segment locally
+    final length = _ringDistance(
+      spineHead.tail,
+      spineHead.head,
+      layout.positionLimit,
+    );
+    if (length != 0) {
+      try {
+        await spine._withPositionBySegment(
+          (spineHead.tail - 1) ~/ DHTShortArray.maxElements,
+          (spineHead.tail - 1) % DHTShortArray.maxElements,
+          allowCreate: false,
+          allowNetwork: false,
+          closure: (tailSegment) async {
+            // If the opened tail segment needs a refresh then the whole
+            // spine/log needs a refresh
+            if (!tailSegment.composable.needsRefresh) {
+              // If we have the tail segment available locally
+              // we don't need to refresh the spine
+              spine._state._needsRefresh = false;
+            }
+          },
+        );
+      } on DHTExceptionNotAvailable {
+        // If we need the tail segment, then we need to refresh the spine
+        // The default is _needsRefresh = true, so do nothing here
+      }
+    }
+
+    // If a shared state is provided, enter composed mode as the last step
+    if (composableSharedState != null) {
+      spine.enterComposedMode(composableSharedState);
+    }
+
+    return spine;
+  }
+
+  @override
+  Future<bool> close() async {
+    if (!await super.close()) {
+      return false;
+    }
+
+    await _stateLock.protectWrite(() async {
+      // Two-phase drain: each open segment carries up to two spine-held
+      // refs (create + LRU). Release LRU refs first, then any remaining
+      // create refs for segments evicted from the cache during the
+      // spine's lifetime.
+      final lruFutures = <Future<void>>[];
+      for (final seg in _openCache.toList()) {
+        lruFutures.add(_segmentClosed(seg));
+      }
+      _openCache.clear();
+      await Future.wait(lruFutures);
+
+      final remainingFutures = <Future<void>>[];
+      for (final seg in _openedSegments.keys.toList()) {
+        remainingFutures.add(_segmentClosed(seg));
+      }
+      await Future.wait(remainingFutures);
+
+      await _spineRecord.close();
+
+      if (_openedSegments.isNotEmpty) {
+        throw StateError(
+          'should have closed all segments by now '
+          '(${_openedSegments.length} remaining)',
+        );
+      }
+    });
+
+    return true;
+  }
+
+  // Will deep delete all segment records as they are children
+  @override
+  Future<bool> delete() {
+    // Deleting mid-transaction would race the in-flight SYNC/WRITE state
+    if (composableSharedState.inTransaction) {
+      throw StateError('cannot delete a DHTLog during a transaction');
+    }
+    return _stateLock.protectWrite(_spineRecord.delete);
+  }
+
+  @override
+  bool get isDeleted => _spineRecord.isDeleted;
+
+  ////////////////////////////////////////////////////////////////////////////
+  // DHTComposable lifecycle
+
+  @override
+  bool get needsRefresh => _state.needsRefresh;
+
+  @override
+  void markNeedsRefresh() => _state.markNeedsRefresh();
+
+  @override
+  int get refreshGen => _state.refreshGen;
+
+  @override
+  Set<DHTRecord> operateInitialRecords() => {_spineRecord};
+
+  @override
+  void beginWork() {
+    if (_workingState != null) {
+      throw StateError('already in work phase');
+    }
+    _workingState = _state.copy();
+    _activeSegments.clear();
+  }
+
+  @override
+  Future<void> flushWork() async {
+    final ws = _workingState;
+    if (ws == null) {
+      return;
+    }
+    await Future.wait(
+      _activeSegments.map((segment) => segment.flushWork()),
+      eagerError: true,
+    );
+    if (_spineRecord.writer != null) {
+      await writeSpineHead();
+    }
+  }
+
+  @override
+  Future<void> endWork(bool success) async {
+    final ws = _workingState;
+    if (ws == null) {
+      return;
+    }
+    _workingState = null;
+
+    final activeSegments = _activeSegments.toList(growable: false);
+    _activeSegments.clear();
+    await Future.wait(
+      activeSegments.map((segment) => segment.endWork(success)),
+    );
+
+    if (success) {
+      if (ws.postCommitDeleteKeys.isNotEmpty) {
+        await _deleteSegmentRecords(ws.postCommitDeleteKeys);
+      }
+
+      await _stateLock.protectWrite(() async {
+        final oldState = _state;
+        _state = ws;
+        final pl = _layout.positionLimit;
+        final oldLength = _DHTLogSpine._ringDistance(
+          oldState.tail,
+          oldState.head,
+          pl,
+        );
+        if (oldState.head != _state.head ||
+            oldState.tail != _state.tail ||
+            oldLength != _state.length) {
+          sendUpdate(
+            DHTLogUpdate(
+              headDelta: _DHTLogSpine._ringDistance(
+                _state.head,
+                oldState.head,
+                pl,
+              ),
+              tailDelta: _DHTLogSpine._ringDistance(
+                _state.tail,
+                oldState.tail,
+                pl,
+              ),
+              length: _state.length,
+            ),
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  Future<Future<void> Function()?> syncCheck() async {
+    if (!composableSharedState.inTransaction) {
+      throw StateError('syncCheck requires an active transaction');
+    }
+
+    final spineNeedsSync = await composableSharedState.withTransactionKey(
+      _spineRecord.key,
+      closure: (ops) async => ops.subkeyNeedsSync(subkey: 0),
+    );
+
+    // Tail segment lives in a separate record. If the spine head is current
+    // but the tail segment has never been opened locally, the segment record
+    // hasn't been faulted in yet and the closure needs to load it.
+    final tail = _state.tail;
+    final tailSegmentNumber = tail > 0
+        ? (tail - 1) ~/ DHTShortArray.maxElements
+        : null;
+    final tailSegmentNeedsLoad =
+        tailSegmentNumber != null &&
+        !_openedSegments.containsKey(tailSegmentNumber);
+
+    if (!spineNeedsSync && !tailSegmentNeedsLoad) {
+      return null;
+    }
+
+    return () async {
+      final ws = _workingState;
+      if (ws == null) {
+        throw StateError('working state must exist for sync');
+      }
+
+      _unavailableSegments.clear();
+
+      if (spineNeedsSync) {
+        final spineHead = await composableSharedState.withTransactionKey(
+          _spineRecord.key,
+          closure: (ops) => ops.getMigrated(
+            _migrationCodec,
+            subkey: 0,
+            refreshMode: DHTRecordRefreshMode.update,
+          ),
+        );
+        if (spineHead != null) {
+          ws.updateFromProto(spineHead);
+        }
+      }
+
+      final tail = ws.tail;
+      final tailSegmentNumber = tail > 0
+          ? (tail - 1) ~/ DHTShortArray.maxElements
+          : null;
+      if (tailSegmentNumber != null) {
+        // Track cached-ness BEFORE _withPositionBySegment so we know whether
+        // _openSegment's fresh-open syncCheck ran or not.
+        final wasCached = _openedSegments.containsKey(tailSegmentNumber);
+
+        await _withPositionBySegment(
+          tailSegmentNumber,
+          (tail - 1) % DHTShortArray.maxElements,
+          closure: (_) async {},
+        );
+
+        // _openSegment syncs on fresh opens; for a cached tail segment we
+        // must explicitly syncCheck so its length picks up elements appended
+        // since the segment was last synced (spine head advanced).
+        if (wasCached) {
+          final seg = _openedSegments[tailSegmentNumber];
+          if (seg != null) {
+            await _activateSegment(seg.composable());
+            final segSync = await seg.composable().syncCheck();
+            if (segSync != null) {
+              await segSync();
+            }
+          }
+        }
+      }
+    };
+  }
+
+  Future<void> _activateSegment(DHTShortArrayComposable segment) async {
+    if (_activeSegments.add(segment)) {
+      await composableSharedState.extendTransaction(
+        segment.operateInitialRecords(),
+      );
+      segment.beginWork();
+    }
+  }
+
+  @override
+  Future<T> read<T>(
+    Future<T> Function(DHTLogReadOperations) closure, {
+    DHTRetryStrategy? elementRetry,
+  }) async {
+    final reader = isComposed
+        ? _DHTLogComposedRead._(this, elementRetry) as DHTLogReadOperations
+        : _DHTLogRead._(this, elementRetry) as DHTLogReadOperations;
+    return closure(reader);
+  }
+
+  @override
+  Future<T> write<T>(
+    Future<T> Function(DHTLogWriteOperations) closure, {
+    DHTRetryStrategy? elementRetry,
+  }) async {
+    final writer = isComposed
+        ? _DHTLogComposedWrite._(this, elementRetry) as DHTLogWriteOperations
+        : _DHTLogWrite._(this, elementRetry) as DHTLogWriteOperations;
+    return closure(writer);
+  }
+
+  @override
+  Future<void> localReload() => _stateLock.protectWrite(() async {
+    // Get spine head locally
+    final headProto = await _spineRecord.getMigrated(
+      _migrationCodec,
+      subkey: 0,
+      refreshMode: DHTRecordRefreshMode.local,
+    );
+    if (headProto == null) {
+      // No spine head record locally, so local reload is not possible
+      throw DHTExceptionNotAvailable(cause: 'no spine head record locally');
+    }
+
+    // See if we can reload the tail segment locally
+    final newLength = _ringDistance(
+      headProto.tail,
+      headProto.head,
+      _layout.positionLimit,
+    );
+
+    final oldHead = _state.head, oldTail = _state.tail;
+    final oldLength = _DHTLogSpine._ringDistance(
+      oldTail,
+      oldHead,
+      _layout.positionLimit,
+    );
+
+    var reloaded = false;
+
+    if (newLength != 0) {
+      // Reload the tail segment if the tail has changed from the local state
+      if (headProto.tail != _state.tail) {
+        try {
+          await _withPositionBySegment(
+            (headProto.tail - 1) ~/ DHTShortArray.maxElements,
+            (headProto.tail - 1) % DHTShortArray.maxElements,
+            allowCreate: false,
+            allowNetwork: false,
+            closure: (tailSegment) async {
+              // Try to reload the tail segment locally
+              await tailSegment.composable.localReload();
+            },
+          );
+        } on DHTExceptionNotAvailable catch (e) {
+          // If we need the tail segment, then local reload is not possible
+          DHTRecordPool.instance.log('local reload of tail segment failed: $e');
+          rethrow;
+        }
+        reloaded = true;
+      }
+
+      // Reload the head segment if the head has changed from the local state
+      if (headProto.head != _state.head) {
+        try {
+          await _withPositionBySegment(
+            headProto.head ~/ DHTShortArray.maxElements,
+            headProto.head % DHTShortArray.maxElements,
+            allowCreate: false,
+            allowNetwork: false,
+            closure: (headSegment) async {
+              // Try to reload the head segment locally
+              await headSegment.composable.localReload();
+            },
+          );
+        } on DHTExceptionNotAvailable {
+          // If we need the head segment, then local reload IS possible
+          // because all segments other than the tail are lazily loaded
+          // and we just haven't loaded the head segment yet
+        }
+        reloaded = true;
+      }
+    }
+
+    if (reloaded) {
+      // Local reload of tail segment worked, so update the state
+      // and send an update if the state has changed
+      _state.updateFromProto(headProto);
+
+      if (oldHead != _state.head ||
+          oldTail != _state.tail ||
+          oldLength != _state.length) {
+        sendUpdate(
+          DHTLogUpdate(
+            headDelta: _DHTLogSpine._ringDistance(
+              _state.head,
+              oldHead,
+              _layout.positionLimit,
+            ),
+            tailDelta: _DHTLogSpine._ringDistance(
+              _state.tail,
+              oldTail,
+              _layout.positionLimit,
+            ),
+            length: _state.length,
+          ),
+        );
+      }
+    }
+  });
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Standalone write lifecycle (sync-or-execute)
+
+  // standaloneWrite and refresh are provided by
+  // DefaultDHTComposableStandaloneWrite mixin.
+
+  /// Serialize and write out the current spine head subkey.
+  /// Throws DHTExceptionOutdated if the write conflicts.
+  /// Routes through _currentTransaction.
+  Future<void> writeSpineHead() async {
+    if (!composableSharedState.inWriteScope) {
+      throw StateError('writeSpineHead must run inside withWriteScope');
+    }
+    if (!composableSharedState.inTransaction) {
+      throw StateError('writeSpineHead requires an active transaction');
+    }
+    final ws = _workingState;
+    if (ws == null) {
+      throw StateError('working state must exist for writeSpineHead');
+    }
+
+    final existingHead = await composableSharedState.withTransactionKey(
+      _spineRecord.key,
+      closure: (ops) => ops.tryWriteMigrated(_migrationCodec, ws.toProto()),
+    );
+
+    if (existingHead != null) {
+      ws.updateFromProto(existingHead.value);
+      throw const DHTExceptionOutdated(cause: 'spine head write conflict');
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -386,125 +759,201 @@ class _DHTLogSpine {
     );
   }
 
-  Future<DHTShortArray?> _openOrCreateSegment(int segmentNumber) async {
-    assert(_spineMutex.isLocked, 'should be in mutex here');
-    assert(_spineRecord.writer != null, 'should be writable');
+  Future<DHTShortArray> _openOrCreateSegment(int segmentNumber) async {
+    // In standalone mode, caller holds _networkMutex.
+    // In composed mode, the outer collection holds its own mutex.
+    if (_spineRecord.writer == null) {
+      throw StateError('should be writable');
+    }
 
-    // Lookup what subkey and segment subrange has this position's segment
-    // shortarray
     final l = _lookupSegment(segmentNumber);
     final subkey = l.subkey;
     final segment = l.segment;
 
-    try {
-      var subkeyData = await _spineRecord.get(subkey: subkey);
-      subkeyData ??= _makeEmptySubkey();
+    var subkeyData = await composableSharedState.withTransactionKey(
+      _spineRecord.key,
+      closure: (ops) async => ops.getBytes(subkey: subkey),
+    );
+    subkeyData ??= _makeEmptySubkey();
 
-      while (true) {
-        final segmentKey = _getSegmentKey(subkeyData!, segment);
-        if (segmentKey == null) {
-          // Create a shortarray segment
-          final segmentRec = await DHTShortArray.create(
-            debugName: '${_spineRecord.debugName}_spine_${subkey}_$segment',
-            stride: _segmentStride,
-            crypto: _spineRecord.crypto,
-            parent: _spineRecord.key,
-            routingContext: _spineRecord.routingContext,
-            writer: _spineRecord.writer,
-            encryptionKeyOverride: EncryptionKeyOverride.fromRecordKey(
-              _spineRecord.key,
-            ),
-          );
-          var success = false;
-          try {
-            // Write it back to the spine record
-            _setSegmentKey(subkeyData, segment, segmentRec.recordKey);
-            subkeyData = await _spineRecord.tryWriteBytes(
-              subkeyData,
-              subkey: subkey,
-            );
-            // If the write was successful then we're done
-            if (subkeyData == null) {
-              // Return it
-              success = true;
-              return segmentRec;
-            }
-          } finally {
-            if (!success) {
-              await segmentRec.close();
-              await segmentRec.delete();
-            }
+    while (true) {
+      final segmentKey = _getSegmentKey(subkeyData!, segment);
+      if (segmentKey == null) {
+        final segmentRec = await DHTShortArray.create(
+          debugName: '${_spineRecord.debugName}_spine_${subkey}_$segment',
+          stride: _layout.stride,
+          crypto: _spineRecord.crypto,
+          parent: _spineRecord.key,
+          routingContext: _spineRecord.routingContext,
+          writer: _spineRecord.writer,
+          encryptionKeyOverride: EncryptionKeyOverride.fromRecordKey(
+            _spineRecord.key,
+          ),
+          composableSharedState: composableSharedState,
+        );
+        var success = false;
+        try {
+          _setSegmentKey(subkeyData, segment, segmentRec.recordKey);
+          final writeResult = await composableSharedState
+              .withTransactionKey<Uint8List?>(
+                _spineRecord.key,
+                closure: (ops) async =>
+                    ops.tryWriteBytes(subkeyData!, subkey: subkey),
+              );
+          subkeyData = writeResult;
+          if (subkeyData == null) {
+            success = true;
+            return segmentRec;
           }
-        } else {
-          // Open a shortarray segment
-          final segmentRec = await DHTShortArray.openWrite(
-            segmentKey,
-            _spineRecord.writer!,
-            debugName: '${_spineRecord.debugName}_spine_${subkey}_$segment',
-            crypto: _spineRecord.crypto,
-            parent: _spineRecord.key,
-            routingContext: _spineRecord.routingContext,
-          );
-          return segmentRec;
+        } finally {
+          if (!success) {
+            await segmentRec.delete();
+            await segmentRec.close();
+          }
         }
-        // Loop if we need to try again with the new data from the network
+      } else {
+        // Open a shortarray segment in composed mode
+        final segmentRec = await DHTShortArray.openWrite(
+          segmentKey,
+          _spineRecord.writer!,
+          debugName: '${_spineRecord.debugName}_spine_${subkey}_$segment',
+          crypto: _spineRecord.crypto,
+          parent: _spineRecord.key,
+          routingContext: _spineRecord.routingContext,
+          composableSharedState: composableSharedState,
+        );
+        await _syncOpenedSegmentOrThrow(segmentRec);
+        return segmentRec;
       }
-    } on DHTExceptionNotAvailable {
-      return null;
+      // Loop if we need to try again with the new data from the network
     }
   }
 
-  Future<DHTShortArray?> _openSegment(int segmentNumber) async {
-    assert(_spineMutex.isLocked, 'should be in mutex here');
-
+  /// Open a segment for reading. Throws DHTExceptionNotAvailable if the
+  /// segment is not available locally or from the network.
+  /// [requiredMinLength] (if set) flows to _syncOpenedSegmentOrThrow so a
+  /// stale-but-present cached segment head triggers fallback to refresh.
+  Future<DHTShortArray> _openSegment(
+    int segmentNumber, {
+    required bool allowNetwork,
+    int? requiredMinLength,
+  }) async {
     // Lookup what subkey and segment subrange has this position's segment
     // shortarray
     final l = _lookupSegment(segmentNumber);
     final subkey = l.subkey;
     final segment = l.segment;
 
-    // See if we have the segment key locally
-    try {
-      RecordKey? segmentKey;
-      var subkeyData = await _spineRecord.get(
-        subkey: subkey,
-        refreshMode: DHTRecordRefreshMode.local,
-      );
-      if (subkeyData != null) {
-        segmentKey = _getSegmentKey(subkeyData, segment);
+    // Try local first.
+    RecordKey? segmentKey;
+    var subkeyData = await _spineRecord.getBytes(
+      subkey: subkey,
+      refreshMode: DHTRecordRefreshMode.local,
+    );
+    if (subkeyData != null) {
+      segmentKey = _getSegmentKey(subkeyData, segment);
+    }
+    if (segmentKey == null) {
+      // Network reads must go through an active tx (strong-consensus fanout).
+      if (!allowNetwork || !composableSharedState.inTransaction) {
+        throw const DHTExceptionNotAvailable(
+          cause: 'segment subkey data not available locally',
+        );
       }
-      if (segmentKey == null) {
-        // If not, try from the network
-        subkeyData = await _spineRecord.get(
+      subkeyData = await composableSharedState.withTransactionKey(
+        _spineRecord.key,
+        closure: (ops) => ops.getBytes(
           subkey: subkey,
           refreshMode: DHTRecordRefreshMode.network,
+        ),
+      );
+      if (subkeyData == null) {
+        throw const DHTExceptionNotAvailable(
+          cause: 'segment subkey data not available',
         );
-        if (subkeyData == null) {
-          return null;
+      }
+      segmentKey = _getSegmentKey(subkeyData, segment);
+      if (segmentKey == null) {
+        throw const DHTExceptionNotAvailable(
+          cause: 'segment key not found in subkey data',
+        );
+      }
+    }
+
+    // Open the segment with the same access level as the parent spine.
+    // Opening read-only on a writable log would make subsequent writes through
+    // the cached segment throw "value is not writable".
+    final writer = _spineRecord.writer;
+    final segmentRec = writer != null
+        ? await DHTShortArray.openWrite(
+            segmentKey,
+            writer,
+            debugName: '${_spineRecord.debugName}_spine_${subkey}_$segment',
+            crypto: _spineRecord.crypto,
+            parent: _spineRecord.key,
+            routingContext: _spineRecord.routingContext,
+            composableSharedState: composableSharedState,
+          )
+        : await DHTShortArray.openRead(
+            segmentKey,
+            debugName: '${_spineRecord.debugName}_spine_${subkey}_$segment',
+            crypto: _spineRecord.crypto,
+            parent: _spineRecord.key,
+            routingContext: _spineRecord.routingContext,
+            composableSharedState: composableSharedState,
+          );
+
+    await _syncOpenedSegmentOrThrow(
+      segmentRec,
+      requiredMinLength: requiredMinLength,
+    );
+    return segmentRec;
+  }
+
+  /// After opening a segment in composed mode, ensure its data is available.
+  /// In an active transaction: extend the tx with the segment, run its
+  /// syncCheck, and execute the returned sync closure. If sync fails the
+  /// segment is closed and DHTExceptionNotAvailable is thrown.
+  /// Outside a transaction: the segment must have loaded its head from the
+  /// local cache (tryLoadCachedHead). If not, throw DHTExceptionNotAvailable.
+  /// If [requiredMinLength] is non-null, also throw when the cached segment
+  /// length is below it, so operateRead can fall back to operateWrite.
+  Future<void> _syncOpenedSegmentOrThrow(
+    DHTShortArray segmentRec, {
+    int? requiredMinLength,
+  }) async {
+    try {
+      if (composableSharedState.inTransaction) {
+        await _activateSegment(segmentRec.composable());
+        final segSyncClosure = await segmentRec.composable().syncCheck();
+        if (segSyncClosure != null) {
+          await segSyncClosure();
         }
-        segmentKey = _getSegmentKey(subkeyData, segment);
-        if (segmentKey == null) {
-          return null;
+      } else {
+        if (segmentRec.composable().needsRefresh) {
+          throw const DHTExceptionNotAvailable(
+            cause: 'segment data not available locally',
+          );
+        }
+        if (requiredMinLength != null) {
+          final len = await segmentRec.operateRead((r) async => r.length);
+          if (len < requiredMinLength) {
+            throw const DHTExceptionNotAvailable(
+              cause: 'segment length behind spine; needs sync',
+            );
+          }
         }
       }
-
-      // Open a shortarray segment
-      final segmentRec = await DHTShortArray.openRead(
-        segmentKey,
-        debugName: '${_spineRecord.debugName}_spine_${subkey}_$segment',
-        crypto: _spineRecord.crypto,
-        parent: _spineRecord.key,
-        routingContext: _spineRecord.routingContext,
-      );
-      return segmentRec;
-    } on DHTExceptionNotAvailable {
-      return null;
+    } on Exception catch (e) {
+      await segmentRec.close();
+      if (e is DHTExceptionNotAvailable) {
+        rethrow;
+      }
+      throw DHTExceptionNotAvailable(cause: 'segment sync failed: $e');
     }
   }
 
   _DHTLogSegmentLookup _lookupSegment(int segmentNumber) {
-    assert(_spineMutex.isLocked, 'should be in mutex here');
-
     if (segmentNumber < 0) {
       throw IndexError.withLength(
         segmentNumber,
@@ -525,43 +974,82 @@ class _DHTLogSpine {
   ///////////////////////////////////////////
   // API for public interfaces
 
-  Future<_DHTLogPosition?> lookupPositionBySegmentNumber(
+  /// Run [closure] with a looked-up [_DHTLogPosition] for a specific
+  /// segment, guaranteeing the position is closed on exit. See
+  /// [_lookupPositionBySegment] for the bare lookup.
+  Future<T> _withPositionBySegment<T>(
     int segmentNumber,
     int segmentPos, {
-    bool onlyOpened = false,
-  }) => _spineCacheMutex.protect(() async {
-    // See if we have this segment opened already
-    final openedSegment = _openedSegments[segmentNumber];
-    late DHTShortArray shortArray;
-    if (openedSegment != null) {
-      // If so, return a ref
-      openedSegment.ref();
-      shortArray = openedSegment;
-    } else {
-      // Otherwise open a segment
-      if (onlyOpened) {
-        return null;
-      }
+    bool allowCreate = false,
+    bool allowNetwork = true,
+    required Future<T> Function(_DHTLogPosition) closure,
+  }) async {
+    final lookup = await _lookupPositionBySegment(
+      segmentNumber,
+      segmentPos,
+      allowCreate: allowCreate,
+      allowNetwork: allowNetwork,
+    );
+    try {
+      return await closure(lookup);
+    } finally {
+      await lookup.close();
+    }
+  }
 
-      final newShortArray = (_spineRecord.writer == null)
-          ? await _openSegment(segmentNumber)
-          : await _openOrCreateSegment(segmentNumber);
-      if (newShortArray == null) {
-        return null;
+  /// Open or lookup a segment position with LRU caching.
+  /// When [allowCreate] is true (write mode), creates the segment if needed.
+  /// When false (read mode), only opens existing segments.
+  /// Caller MUST close the returned position. Prefer
+  /// [_withPositionBySegment].
+  Future<_DHTLogPosition> _lookupPositionBySegment(
+    int segmentNumber,
+    int segmentPos, {
+    bool allowCreate = false,
+    bool allowNetwork = true,
+  }) => _openedSegmentsMutex.protect(() async {
+    final openedSegment = _openedSegments[segmentNumber];
+    late DHTShortArray segment;
+    if (openedSegment != null) {
+      openedSegment.ref();
+      segment = openedSegment;
+    } else {
+      // Short-circuit only for non-tx attempts; an in-tx attempt has the
+      // means to lazy-load the segment and should always be allowed to try.
+      if (!composableSharedState.inTransaction &&
+          _unavailableSegments.contains(segmentNumber)) {
+        throw DHTExceptionNotAvailable(
+          cause:
+              'segment $segmentNumber previously unavailable; '
+              'call refresh() to retry',
+        );
       }
-      // Keep in the opened segments table
-      _openedSegments[segmentNumber] = newShortArray;
-      shortArray = newShortArray;
+      _unavailableSegments.remove(segmentNumber);
+      try {
+        final newShortArray = (allowCreate && allowNetwork)
+            ? await _openOrCreateSegment(segmentNumber)
+            : await _openSegment(
+                segmentNumber,
+                allowNetwork: allowNetwork,
+                requiredMinLength: segmentPos + 1,
+              );
+        _openedSegments[segmentNumber] = newShortArray;
+        segment = newShortArray;
+      } on DHTExceptionNotAvailable {
+        // Only cache as unavailable when the network was actually consulted.
+        if (allowNetwork) {
+          _unavailableSegments.add(segmentNumber);
+        }
+        rethrow;
+      }
     }
 
     // LRU cache the segment number
     if (!_openCache.remove(segmentNumber)) {
-      // If this is new to the cache ref it when it goes in
-      shortArray.ref();
+      segment.ref();
     }
     _openCache.add(segmentNumber);
-    if (_openCache.length > _openCacheSize) {
-      // Trim the LRU cache
+    if (_openCache.length > _openedSegmentsLimit) {
       final lruseg = _openCache.removeAt(0);
       final lrusa = _openedSegments[lruseg]!;
       if (await lrusa.close()) {
@@ -569,36 +1057,20 @@ class _DHTLogSpine {
       }
     }
 
+    if (composableSharedState.inTransaction) {
+      await _activateSegment(segment.composable());
+    }
+
     return _DHTLogPosition._(
       dhtLogSpine: this,
-      shortArray: shortArray,
+      composable: segment.composable(),
       pos: segmentPos,
       segmentNumber: segmentNumber,
     );
   });
 
-  Future<_DHTLogPosition?> lookupPosition(int pos) {
-    assert(_spineMutex.isLocked, 'should be locked');
-
-    // Check if our position is in bounds
-    final endPos = length;
-    if (pos < 0 || pos >= endPos) {
-      throw IndexError.withLength(pos, endPos);
-    }
-
-    // Calculate absolute position, ring-buffer style
-    final absolutePosition = (_head + pos) % _layout.positionLimit;
-
-    // Determine the segment number and position within the segment
-    final segmentNumber = absolutePosition ~/ DHTShortArray.maxElements;
-    final segmentPos = absolutePosition % DHTShortArray.maxElements;
-
-    return lookupPositionBySegmentNumber(segmentNumber, segmentPos);
-  }
-
   Future<bool> _segmentClosed(int segmentNumber) {
-    assert(_spineMutex.isLocked, 'should be locked');
-    return _spineCacheMutex.protect(() async {
+    return _openedSegmentsMutex.protect(() async {
       final sa = _openedSegments[segmentNumber]!;
       if (await sa.close()) {
         _openedSegments.remove(segmentNumber);
@@ -608,42 +1080,14 @@ class _DHTLogSpine {
     });
   }
 
-  void allocateTail(int count) {
-    assert(_spineMutex.isLocked, 'should be locked');
-
-    final currentLength = length;
-    if (count <= 0) {
-      throw StateError('count should be > 0');
-    }
-    if (currentLength + count >= _layout.positionLimit) {
-      throw StateError('ring buffer overflow');
-    }
-
-    _tail = (_tail + count) % _layout.positionLimit;
-  }
-
-  Future<void> releaseHead(int count) async {
-    assert(_spineMutex.isLocked, 'should be locked');
-
-    final currentLength = length;
-    if (count <= 0) {
-      throw StateError('count should be > 0');
-    }
-    if (count > currentLength) {
-      throw StateError('ring buffer underflow');
-    }
-
-    final oldHead = _head;
-    _head = (_head + count) % _layout.positionLimit;
-    final newHead = _head;
-    await _purgeSegments(oldHead, newHead);
-  }
-
-  Future<void> _deleteSegmentsContiguous(int start, int end) async {
-    assert(_spineMutex.isLocked, 'should be in mutex here');
+  /// Phase 1: Null out segment keys in spine subkeys via the current
+  /// transaction and collect the record keys to delete locally after commit.
+  Future<List<RecordKey>> _clearSegmentsContiguous(int start, int end) async {
     DHTRecordPool.instance.log(
-      '_deleteSegmentsContiguous: start=$start, end=$end',
+      '_clearSegmentsContiguous: start=$start, end=$end',
     );
+
+    final keysToDelete = <RecordKey>[];
 
     final startSegmentNumber = start ~/ DHTShortArray.maxElements;
     final startSegmentPos = start % DHTShortArray.maxElements;
@@ -671,12 +1115,14 @@ class _DHTLogSpine {
       final segment = l.segment;
 
       if (subkey != lastSubkeyData?.subkey) {
-        // Flush subkey writes
+        // Flush subkey writes through transaction
         if (lastSubkeyData != null && lastSubkeyData.changed) {
-          final result = await _spineRecord.tryWriteBytes(
-            lastSubkeyData.data,
-            subkey: lastSubkeyData.subkey,
-            options: const SetDHTValueOptions(allowOffline: false),
+          final result = await composableSharedState.withTransactionKey(
+            _spineRecord.key,
+            closure: (ops) => ops.tryWriteBytes(
+              lastSubkeyData!.data,
+              subkey: lastSubkeyData.subkey,
+            ),
           );
           if (result != null) {
             throw const DHTExceptionOutdated();
@@ -684,9 +1130,12 @@ class _DHTLogSpine {
         }
 
         // Get next subkey if available locally
-        final data = await _spineRecord.get(
-          subkey: subkey,
-          refreshMode: DHTRecordRefreshMode.local,
+        final data = await composableSharedState.withTransactionKey(
+          _spineRecord.key,
+          closure: (ops) => ops.getBytes(
+            subkey: subkey,
+            refreshMode: DHTRecordRefreshMode.local,
+          ),
         );
         if (data != null) {
           lastSubkeyData = _SubkeyData(subkey: subkey, data: data);
@@ -700,32 +1149,50 @@ class _DHTLogSpine {
       if (lastSubkeyData != null) {
         final segmentKey = _getSegmentKey(lastSubkeyData.data, segment);
         if (segmentKey != null) {
-          await DHTRecordPool.instance.deleteRecord(segmentKey);
+          keysToDelete.add(segmentKey);
           _setSegmentKey(lastSubkeyData.data, segment, null);
           lastSubkeyData.changed = true;
         }
       }
     }
-    // Flush subkey writes
+    // Flush subkey writes through transaction
     if (lastSubkeyData != null && lastSubkeyData.changed) {
-      final result = await _spineRecord.tryWriteBytes(
-        lastSubkeyData.data,
-        subkey: lastSubkeyData.subkey,
-        options: const SetDHTValueOptions(allowOffline: false),
+      final result = await composableSharedState.withTransactionKey(
+        _spineRecord.key,
+        closure: (ops) => ops.tryWriteBytes(
+          lastSubkeyData!.data,
+          subkey: lastSubkeyData.subkey,
+        ),
       );
       if (result != null) {
         throw const DHTExceptionOutdated();
       }
     }
+
+    return keysToDelete;
   }
 
-  Future<void> _purgeSegments(int from, int to) async {
-    assert(_spineMutex.isLocked, 'should be in mutex here');
+  /// Phase 1: Clear segment keys from spine subkeys for the range
+  /// [from, to) in the ring buffer. Returns keys to delete after commit.
+  Future<List<RecordKey>> clearReleasedSegments(int from, int to) async {
+    // In standalone mode, caller holds _networkMutex.
+    // In composed mode, the outer collection holds its own mutex.
+    final keysToDelete = <RecordKey>[];
     if (from < to) {
-      await _deleteSegmentsContiguous(from, to);
+      keysToDelete.addAll(await _clearSegmentsContiguous(from, to));
     } else if (from > to) {
-      await _deleteSegmentsContiguous(from, _layout.positionLimit);
-      await _deleteSegmentsContiguous(0, to);
+      keysToDelete.addAll(
+        await _clearSegmentsContiguous(from, _layout.positionLimit),
+      );
+      keysToDelete.addAll(await _clearSegmentsContiguous(0, to));
+    }
+    return keysToDelete;
+  }
+
+  /// Phase 2: Delete collected segment records locally after commit.
+  Future<void> _deleteSegmentRecords(List<RecordKey> keys) async {
+    for (final key in keys) {
+      await DHTRecordPool.instance.deleteRecord(key);
     }
   }
 
@@ -733,7 +1200,12 @@ class _DHTLogSpine {
   // Watch For Updates
 
   // Watch head for changes
+  @override
   Future<void> watch() async {
+    if (isComposed) {
+      throw StateError('cannot watch in composed mode');
+    }
+
     // This will update any existing watches if necessary
     try {
       // Update changes to the head record
@@ -747,9 +1219,14 @@ class _DHTLogSpine {
   }
 
   // Stop watching for changes to head and linked records
+  @override
   Future<void> cancelWatch() async {
+    if (isComposed) {
+      throw StateError('cannot cancel watch in composed mode');
+    }
+
     await _spineRecord.cancelWatch();
-    await _subscription?.cancel();
+    await _subscription?.close();
     _subscription = null;
   }
 
@@ -757,83 +1234,81 @@ class _DHTLogSpine {
   // but not when we make a change locally
   Future<void> _onSpineChanged(
     DHTRecord record,
-    Uint8List? data,
-    List<ValueSubkeyRange> subkeys,
+    DHTRecordWatchChange change,
   ) async {
-    // If head record subkey zero changes, then the layout
-    // of the dhtshortarray has changed
-    if (data == null) {
-      throw StateError('spine head changed without data');
-    }
-    if (record.key != _spineRecord.key ||
-        subkeys.length != 1 ||
-        subkeys[0] != ValueSubkeyRange.single(0)) {
-      throw StateError('watch returning wrong subkey range');
+    if (record.key != _spineRecord.key) {
+      throw StateError(
+        'Unexpected spine record change for wrong record key: ${record.key} != ${_spineRecord.key}',
+      );
     }
 
-    // Decode updated head
-    final headData = _migrationCodec.fromBytes(data).value;
+    if (isComposed) {
+      throw StateError('cannot watch in composed mode');
+    }
 
-    // Then update the head record
-    _spineChangeProcessor.updateState(headData, (headData) async {
-      await _spineMutex.protect(() async {
-        final oldHead = _head;
-        final oldTail = _tail;
+    // See if local changes are present, if so
+    // refresh the state locally without network access
+    if (change.localSubkeys.isNotEmpty) {
+      // Verify the change is in the expected format
+      if (change.localSubkeys.length != 1 ||
+          change.localSubkeys[0] != ValueSubkeyRange.single(0)) {
+        throw StateError(
+          'Unexpected local spine record change for wrong subkey for record ${record.key}: ${change.localSubkeys} != ${ValueSubkeyRange.single(0)}',
+        );
+      }
 
-        _updateHead(headData.head, headData.tail, old: (oldHead, oldTail));
+      // Update the state locally without network access
+      try {
+        await localReload();
+      } on DHTExceptionNotAvailable catch (e) {
+        throw StateError(
+          'Unexpected local spine record change with unavailable local reload for record ${record.key}: $e',
+        );
+      }
+    }
 
-        // Lookup tail position segments that have changed
-        // and force their short arrays to refresh their heads if
-        // they are opened
-        final segmentsToRefresh = <_DHTLogPosition>[];
-        var curTail = oldTail;
-        final endSegmentNumber = _tail ~/ DHTShortArray.maxElements;
-        while (true) {
-          final segmentNumber = curTail ~/ DHTShortArray.maxElements;
-          final segmentPos = curTail % DHTShortArray.maxElements;
-          final dhtLogPosition = await lookupPositionBySegmentNumber(
-            segmentNumber,
-            segmentPos,
-            onlyOpened: true,
-          );
-          if (dhtLogPosition != null) {
-            segmentsToRefresh.add(dhtLogPosition);
-          }
+    // If remote changes happened, queue up a fetch for them
+    // Only process remote changes to the head record subkey 0
+    // (matches the watch we set up)
+    if (change.remoteSubkeys.isNotEmpty) {
+      // Verify the change is in the expected format
+      if (change.remoteSubkeys.length != 1 ||
+          change.remoteSubkeys[0] != ValueSubkeyRange.single(0)) {
+        throw StateError(
+          'Unexpected remote head record change for wrong subkey: ${change.remoteSubkeys} != ${ValueSubkeyRange.single(0)}',
+        );
+      }
 
-          if (segmentNumber == endSegmentNumber) {
-            break;
-          }
-
-          curTail =
-              (curTail +
-                  (DHTShortArray.maxElements -
-                      (curTail % DHTShortArray.maxElements))) %
-              _layout.positionLimit;
+      // Queue up a refresh for the remote changes
+      _spineChangeProcessor.update(() async {
+        if (!isOpen) return;
+        markNeedsRefresh();
+        try {
+          // Retry transient conditions (e.g. 'transaction begin contended') so a
+          // live update isn't dropped; needsRefresh stays true on final failure
+          // for the refresh driver to retry.
+          await DHTRecordPool.instance.retry(() async {
+            if (!isOpen) return;
+            await refresh();
+          });
+        } on Exception catch (e, st) {
+          veilidLoggy.warning('_onSpineChanged sync failed: $e\n$st');
         }
-
-        // Refresh the segments that have probably changed
-        await segmentsToRefresh.map((p) async {
-          await p.shortArray.refresh();
-          await p.close();
-        }).wait;
-
-        sendUpdate(oldHead, oldTail);
       });
-    });
+    }
   }
 
   ////////////////////////////////////////////////////////////////////////////
 
   RecordKey get recordKey => _spineRecord.key;
 
+  @override
+  String get debugName => 'DHTLog($recordKey)';
+
   OwnedDHTRecordPointer? get recordPointer =>
       _spineRecord.ownedDHTRecordPointer;
 
-  int get length => _ringDistance(_tail, _head);
-
-  bool get isOpen => _spineRecord.isOpen;
-
   // Ring buffer distance from old to new
-  int _ringDistance(int n, int o) =>
-      (n < o) ? (_layout.positionLimit - o) + n : n - o;
+  static int _ringDistance(int n, int o, int positionLimit) =>
+      (n < o) ? (positionLimit - o) + n : n - o;
 }

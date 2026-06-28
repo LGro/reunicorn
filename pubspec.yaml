@@ -1,7 +1,7 @@
 name: reunicorn
 description: Where & how to get in contact, shared securely and privately.
 publish_to: 'none'
-version: "0.2.13+82"
+version: "0.2.14+83"
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
@@ -57,11 +57,7 @@ dependencies:
   phone_numbers_parser: ^9.0.15
   badges: ^3.1.2
   http_cache_file_store: ^2.0.1
-  # TODO: Switch back to release once this is resolved: https://github.com/KasemJaffer/receive_sharing_intent/issues/344
-  receive_sharing_intent:
-    git:
-      url: https://github.com/KasemJaffer/receive_sharing_intent
-      ref: 2cea396843cd3ab1b5ec4334be4233864637874e
+  receive_sharing_intent: ^1.9.0
   # TODO: Switch to official release once https://github.com/builttoroam/device_calendar/pull/590 is in
   device_calendar:
     git:

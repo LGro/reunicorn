@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -395,6 +396,374 @@ Future<void> reReadStaleDataInAsymmetricState() async {
   await comm.bobExpects('final');
 }
 
+/// A writes many times in a row (each overwriting the previous in DHT) before
+/// B reads. Then B writes many times before A reads. Tests whether the 4-combo
+/// decrypt in establishedAsymmetric can still find the right key after many
+/// unread overwrites.
+Future<void> manyConsecutiveOverwritesThenRead() async {
+  final comm = await EncryptedCommunication.create();
+  await comm.evolveToEstablishedAsymmetric();
+
+  // A writes 5 times — each overwrites the previous in DHT
+  for (var i = 1; i <= 5; i++) {
+    await comm.aliceWrites('A-overwrite-$i');
+  }
+
+  // B reads only the last one
+  await comm.bobExpects('A-overwrite-5');
+  expect(comm.cryptoB, isA<CryptoEstablishedAsymmetric>());
+
+  // B writes 5 times
+  for (var i = 1; i <= 5; i++) {
+    await comm.bobWrites('B-overwrite-$i');
+  }
+
+  // A reads only the last one
+  await comm.aliceExpects('B-overwrite-5');
+  expect(comm.cryptoA, isA<CryptoEstablishedAsymmetric>());
+
+  // Verify further communication works
+  await comm.aliceWrites('after-overwrite-A');
+  await comm.bobExpects('after-overwrite-A');
+  await comm.bobWrites('after-overwrite-B');
+  await comm.aliceExpects('after-overwrite-B');
+}
+
+/// One side reads + writes many rounds while the other side's writes are lost.
+/// This drives key rotations on the reading side far ahead. When propagation
+/// resumes, the side that fell behind must still decrypt.
+///
+/// This is the most aggressive test for key divergence: Alice rotates her keys
+/// on each read of Bob's messages, but Bob never sees Alice's intermediate
+/// writes. When Alice finally gets a write through, Bob must be able to decrypt
+/// even though Alice's key material has rotated multiple times.
+Future<void> oneWayRotationStormThenCatchUp() async {
+  final comm = await EncryptedCommunication.create();
+  await comm.evolveToEstablishedAsymmetric();
+
+  // One normal round to establish a baseline
+  await comm.aliceWrites('baseline-A');
+  await comm.bobExpects('baseline-A');
+  await comm.bobWrites('baseline-B');
+  await comm.aliceExpects('baseline-B');
+
+  // Block A's propagation
+  comm.dhtA.propagationPaused = true;
+
+  // B writes, A reads → A rotates keys. A writes back but B never sees it.
+  // Repeat several times to push A's key material far ahead of B's view.
+  for (var i = 0; i < 4; i++) {
+    await comm.bobWrites('storm-B-$i');
+    await comm.aliceExpects('storm-B-$i');
+    await comm.aliceWrites('lost-A-$i'); // lost — propagation paused
+  }
+
+  // Restore propagation: A writes with heavily rotated keys
+  comm.dhtA.propagationPaused = false;
+  await comm.aliceWrites('catch-up-A');
+
+  expect(
+    await comm.bobReads(),
+    'catch-up-A',
+    reason:
+        'B must decrypt after A rotated keys 4 extra times '
+        'without B seeing any of A\'s intermediate writes',
+  );
+  expect(comm.cryptoB, isA<CryptoEstablishedAsymmetric>());
+
+  // Verify the reverse direction also still works
+  await comm.bobWrites('after-storm-B');
+  await comm.aliceExpects('after-storm-B');
+  expect(comm.cryptoA, isA<CryptoEstablishedAsymmetric>());
+
+  // And another full round-trip
+  await comm.aliceWrites('final-A');
+  await comm.bobExpects('final-A');
+  await comm.bobWrites('final-B');
+  await comm.aliceExpects('final-B');
+}
+
+/// Both sides write before reading, creating concurrent key evolution.
+/// Repeat this pattern multiple rounds to maximize divergence.
+Future<void> repeatedConcurrentWritesThenReads() async {
+  final comm = await EncryptedCommunication.create();
+  await comm.evolveToEstablishedAsymmetric();
+
+  for (var round = 0; round < 5; round++) {
+    // Both write before either reads (concurrent evolution)
+    await comm.aliceWrites('concurrent-A-$round');
+    await comm.bobWrites('concurrent-B-$round');
+
+    // Both read
+    await comm.bobExpects('concurrent-A-$round');
+    await comm.aliceExpects('concurrent-B-$round');
+
+    expect(comm.cryptoA, isA<CryptoEstablishedAsymmetric>(),
+        reason: 'round $round');
+    expect(comm.cryptoB, isA<CryptoEstablishedAsymmetric>(),
+        reason: 'round $round');
+  }
+
+  // Final round-trip to confirm state is consistent
+  await comm.aliceWrites('end-A');
+  await comm.bobExpects('end-A');
+  await comm.bobWrites('end-B');
+  await comm.aliceExpects('end-B');
+}
+
+/// Simulates the contact_dht.dart pattern: read evolves crypto, but the
+/// subsequent write doesn't happen immediately. Instead, another read occurs
+/// first (from a re-triggered updateContact). Tests that the double-read
+/// before write doesn't corrupt key material.
+Future<void> readReadWritePatternFromContactDht() async {
+  final comm = await EncryptedCommunication.create();
+  await comm.evolveToEstablishedAsymmetric();
+
+  // Normal round
+  await comm.aliceWrites('r1-A');
+  await comm.bobExpects('r1-A');
+
+  // Bob's crypto evolved from the read. Now simulate the contact_dht pattern:
+  // Bob reads again (stale data) BEFORE writing, as happens when updateContact
+  // is re-triggered by the storage change event.
+  final cryptoBAfterFirstRead = comm.cryptoB;
+  await comm.bobReads(); // stale re-read
+  expect(
+    comm.cryptoB.myKeyPairOrNull,
+    cryptoBAfterFirstRead.myKeyPairOrNull,
+    reason: 'stale re-read before write must not rotate keys',
+  );
+
+  // Now Bob writes (as the second updateContact call would)
+  await comm.bobWrites('delayed-write-B');
+  await comm.aliceExpects('delayed-write-B');
+
+  // Alice writes back
+  await comm.aliceWrites('reply-A');
+  await comm.bobExpects('reply-A');
+
+  // Repeat the pattern: Alice writes, Bob reads, Bob re-reads stale, Bob writes
+  await comm.aliceWrites('r2-A');
+  await comm.bobExpects('r2-A');
+  await comm.bobReads(); // stale
+  await comm.bobReads(); // stale again
+  await comm.bobWrites('delayed-write-B-2');
+  await comm.aliceExpects('delayed-write-B-2');
+
+  expect(comm.cryptoA, isA<CryptoEstablishedAsymmetric>());
+  expect(comm.cryptoB, isA<CryptoEstablishedAsymmetric>());
+}
+
+/// During the symmetric→asymmetric handshake, one side's writes are lost for
+/// multiple rounds. The offline side keeps reading stale data while the other
+/// side advances. When propagation resumes, the handshake must still complete.
+Future<void> handshakeWithProlongedOneWayOutage() async {
+  final comm = await EncryptedCommunication.create();
+
+  // A writes first message (initializedSymmetric)
+  await comm.aliceWrites('hello');
+  await comm.bobExpects('hello');
+
+  // Block B's propagation: B writes but A never sees it
+  comm.dhtB.propagationPaused = true;
+  await comm.bobWrites('lost-1');
+  await comm.bobWrites('lost-2');
+
+  // A reads stale data (A's own initial write reflected back? or null?)
+  // Since B's write didn't propagate, A sees no new data
+  final staleRead = await comm.aliceReads();
+  // We don't assert the value — it could be null or stale
+
+  // Restore B's propagation
+  comm.dhtB.propagationPaused = false;
+  await comm.bobWrites('visible-B');
+
+  // Now A should be able to read B's message
+  await comm.aliceExpects('visible-B');
+
+  // Continue the handshake until established
+  var rounds = 0;
+  while (comm.cryptoA is! CryptoEstablishedAsymmetric ||
+      comm.cryptoB is! CryptoEstablishedAsymmetric) {
+    if (++rounds > 20) {
+      fail(
+        'Did not reach CryptoEstablishedAsymmetric after $rounds extra rounds.\n'
+        'cryptoA: ${comm.cryptoA}\ncryptoB: ${comm.cryptoB}',
+      );
+    }
+    await comm.aliceWrites('handshake-A-$rounds');
+    await comm.bobExpects('handshake-A-$rounds');
+
+    if (comm.cryptoA is CryptoEstablishedAsymmetric &&
+        comm.cryptoB is CryptoEstablishedAsymmetric) {
+      break;
+    }
+
+    await comm.bobWrites('handshake-B-$rounds');
+    await comm.aliceExpects('handshake-B-$rounds');
+  }
+
+  expect(comm.cryptoA, isA<CryptoEstablishedAsymmetric>());
+  expect(comm.cryptoB, isA<CryptoEstablishedAsymmetric>());
+
+  // Verify post-handshake communication
+  await comm.aliceWrites('post-A');
+  await comm.bobExpects('post-A');
+  await comm.bobWrites('post-B');
+  await comm.aliceExpects('post-B');
+}
+
+/// Both sides write before reading during the handshake (not just in
+/// established asymmetric). This can cause both sides to evolve their
+/// symmetric→asymmetric transition concurrently.
+Future<void> concurrentWritesDuringHandshake() async {
+  final comm = await EncryptedCommunication.create();
+
+  // A's first write — kicks off the handshake
+  await comm.aliceWrites('init-A');
+  await comm.bobExpects('init-A');
+
+  // Now both write before either reads (concurrent during handshake)
+  await comm.bobWrites('concurrent-B-1');
+  await comm.aliceWrites('concurrent-A-1');
+
+  // Both read
+  await comm.aliceExpects('concurrent-B-1');
+  await comm.bobExpects('concurrent-A-1');
+
+  // Continue handshake to completion
+  var rounds = 0;
+  while (comm.cryptoA is! CryptoEstablishedAsymmetric ||
+      comm.cryptoB is! CryptoEstablishedAsymmetric) {
+    if (++rounds > 20) {
+      fail(
+        'Did not reach CryptoEstablishedAsymmetric.\n'
+        'cryptoA: ${comm.cryptoA}\ncryptoB: ${comm.cryptoB}',
+      );
+    }
+    await comm.bobWrites('hs-B-$rounds');
+    await comm.aliceExpects('hs-B-$rounds');
+
+    if (comm.cryptoA is CryptoEstablishedAsymmetric &&
+        comm.cryptoB is CryptoEstablishedAsymmetric) {
+      break;
+    }
+
+    await comm.aliceWrites('hs-A-$rounds');
+    await comm.bobExpects('hs-A-$rounds');
+  }
+
+  expect(comm.cryptoA, isA<CryptoEstablishedAsymmetric>());
+  expect(comm.cryptoB, isA<CryptoEstablishedAsymmetric>());
+
+  // Post-handshake round-trip
+  await comm.aliceWrites('post-A');
+  await comm.bobExpects('post-A');
+  await comm.bobWrites('post-B');
+  await comm.aliceExpects('post-B');
+}
+
+/// Runs a single fuzz iteration with the given [seed]. Both sides alternate
+/// writes and reads through the entire handshake until both reach
+/// [CryptoEstablishedAsymmetric], then perform one more messaging round.
+///
+/// At each write step, the writer randomly (seeded by [seed]) either:
+///   - writes once (normal), or
+///   - writes twice ("double write") with the first write's propagation
+///     optionally paused (simulating message loss).
+///
+/// On failure the assertion message includes the seed and full action log so
+/// the exact sequence can be reproduced deterministically.
+Future<void> fuzzKeyEvolutionWithSeed(int seed) async {
+  final rng = Random(seed);
+  final comm = await EncryptedCommunication.create();
+  var msgCounter = 0;
+  final actions = <String>[];
+
+  String describeState() =>
+      'seed=$seed\n'
+      'actions:\n${actions.indexed.map((e) => '  ${e.$1}: ${e.$2}').join('\n')}\n'
+      'cryptoA: ${comm.cryptoA}\n'
+      'cryptoB: ${comm.cryptoB}';
+
+  Future<String> writeWithFuzz(bool isAlice) async {
+    final who = isAlice ? 'Alice' : 'Bob';
+    final dht = isAlice ? comm.dhtA : comm.dhtB;
+    final doDouble = rng.nextBool();
+    final firstPaused = doDouble && rng.nextBool();
+
+    if (doDouble) {
+      actions.add('$who double-write (firstPaused=$firstPaused)');
+      if (firstPaused) dht.propagationPaused = true;
+      final ghost = 'ghost-${++msgCounter}';
+      if (isAlice) {
+        await comm.aliceWrites(ghost);
+      } else {
+        await comm.bobWrites(ghost);
+      }
+      dht.propagationPaused = false;
+    } else {
+      actions.add('$who single-write');
+    }
+
+    final msg = '${++msgCounter}';
+    if (isAlice) {
+      await comm.aliceWrites(msg);
+    } else {
+      await comm.bobWrites(msg);
+    }
+    return msg;
+  }
+
+  // --- Handshake: evolve to established asymmetric ---
+  var rounds = 0;
+  var msg = await writeWithFuzz(true);
+  actions.add('Bob reads');
+  expect(await comm.bobReads(), msg, reason: describeState());
+
+  while (comm.cryptoA is! CryptoEstablishedAsymmetric ||
+      comm.cryptoB is! CryptoEstablishedAsymmetric) {
+    if (++rounds > 20) {
+      fail(
+        'Did not reach CryptoEstablishedAsymmetric after $rounds rounds.\n'
+        '${describeState()}',
+      );
+    }
+
+    msg = await writeWithFuzz(false);
+    actions.add('Alice reads');
+    expect(await comm.aliceReads(), msg, reason: describeState());
+
+    if (comm.cryptoA is CryptoEstablishedAsymmetric &&
+        comm.cryptoB is CryptoEstablishedAsymmetric) {
+      break;
+    }
+
+    msg = await writeWithFuzz(true);
+    actions.add('Bob reads');
+    expect(await comm.bobReads(), msg, reason: describeState());
+  }
+
+  expect(comm.cryptoA, isA<CryptoEstablishedAsymmetric>(),
+      reason: describeState());
+  expect(comm.cryptoB, isA<CryptoEstablishedAsymmetric>(),
+      reason: describeState());
+
+  // --- One more messaging round after established ---
+  msg = await writeWithFuzz(true);
+  actions.add('Bob reads (post-established)');
+  expect(await comm.bobReads(), msg, reason: describeState());
+
+  msg = await writeWithFuzz(false);
+  actions.add('Alice reads (post-established)');
+  expect(await comm.aliceReads(), msg, reason: describeState());
+
+  expect(comm.cryptoA, isA<CryptoEstablishedAsymmetric>(),
+      reason: describeState());
+  expect(comm.cryptoB, isA<CryptoEstablishedAsymmetric>(),
+      reason: describeState());
+}
+
 // TODO(LGro): What does it take for this to be a unit instead of an
 //             integration test? We just need the Veilid cryptoSystem, no DHT.
 void main() {
@@ -433,4 +802,41 @@ void main() {
     'asymmetric: re-reading stale data does not corrupt state (mock DHT)',
     reReadStaleDataInAsymmetricState,
   );
+
+  test(
+    'asymmetric: many consecutive overwrites then read (mock DHT)',
+    manyConsecutiveOverwritesThenRead,
+  );
+
+  test(
+    'asymmetric: one-way rotation storm then catch-up (mock DHT)',
+    oneWayRotationStormThenCatchUp,
+  );
+
+  test(
+    'asymmetric: repeated concurrent writes then reads (mock DHT)',
+    repeatedConcurrentWritesThenReads,
+  );
+
+  test(
+    'asymmetric: read-read-write pattern from contact_dht (mock DHT)',
+    readReadWritePatternFromContactDht,
+  );
+
+  test(
+    'handshake: prolonged one-way outage then recovery (mock DHT)',
+    handshakeWithProlongedOneWayOutage,
+  );
+
+  test(
+    'handshake: concurrent writes during handshake (mock DHT)',
+    concurrentWritesDuringHandshake,
+  );
+
+  for (var seed = 0; seed < 100; seed++) {
+    test(
+      'fuzz: key evolution with random double-writes (seed=$seed)',
+      () => fuzzKeyEvolutionWithSeed(seed),
+    );
+  }
 }

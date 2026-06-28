@@ -1,0 +1,1 @@
+veilid_processor is adapted from veilidchat licensed MPL-2.0

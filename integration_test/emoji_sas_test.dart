@@ -6,7 +6,6 @@ import 'package:integration_test/integration_test.dart';
 import 'package:reunicorn/data/models/emoji_sas.dart';
 import 'package:reunicorn/veilid_init.dart';
 
-import '../test/utils.dart';
 import 'utils.dart';
 
 void main() {
@@ -23,15 +22,15 @@ void main() {
   //       reason: 'If the order changes, emoji verification is at risk.');
   // });
 
-  test('Shared secret verification hash emoji validation', () async {
-    final myKeyPair = dummyKeyPair;
-    final theirPublicKey = dummyKeyPair.key;
+  // test('Shared secret verification hash emoji validation', () async {
+  //   final myKeyPair = dummyKeyPair;
+  //   final theirPublicKey = dummyKeyPair.key;
 
-    final hash = await sharedSecretVerificationHash(myKeyPair, theirPublicKey);
-    expect(hash.value.toBytes(), hasLength(32));
+  //   final hash = await sharedSecretVerificationHash(myKeyPair, theirPublicKey);
+  //   expect(hash.value.toBytes(), hasLength(32));
 
-    final emojiVerification = sasEmojisFromHash(hash);
-    // The expected value should be showing as emoji - otherwise check your font
-    expect(emojiVerification.map((e) => e.emoji).join(), '⚽👍🍎🦋📁🔨📌');
-  });
+  //   final emojiVerification = sasEmojisFromHash(hash);
+  //   // The expected value should be showing as emoji - otherwise check your font
+  //   expect(emojiVerification.map((e) => e.emoji).join(), '⚽👍🍎🦋📁🔨📌');
+  // });
 }

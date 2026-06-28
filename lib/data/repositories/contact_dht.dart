@@ -14,7 +14,6 @@ import 'package:reunicorn/data/repositories/base_dht.dart';
 import 'package:uuid/uuid.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../../veilid_processor/models/processor_connection_state.dart';
 import '../../veilid_processor/repository/processor_repository.dart';
 import '../models/circle.dart';
 import '../models/contact_introduction.dart';
@@ -324,7 +323,7 @@ class ContactDhtRepository {
   ) {
     _nextContactPrep = NextContactPrep(_dhtStorage);
     unawaited(_initVeilidNetworkAvailable());
-    ProcessorRepository.instance.streamProcessorConnectionState().listen(
+    VeilidProcessorRepository.instance.streamProcessorConnectionState().listen(
       _veilidConnectionStateChangeCallback,
     );
     _contactStorage.changeEvents.listen(
@@ -363,7 +362,7 @@ class ContactDhtRepository {
       final state = await Veilid.instance.getVeilidState();
       veilidNetworkAvailable =
           state.attachment.publicInternetReady &&
-          state.attachment.state == AttachmentState.fullyAttached;
+          state.attachment.state == AttachmentState.attachedFull;
     } on VeilidAPIExceptionNotInitialized {
       veilidNetworkAvailable = false;
     }
@@ -645,7 +644,7 @@ class ContactDhtRepository {
   Future<Iterable<ContactUpdate>?> updateAndWatchReceivingDHT({
     bool shuffle = false,
   }) async {
-    if (!ProcessorRepository
+    if (!VeilidProcessorRepository
         .instance
         .processorConnectionState
         .attachment

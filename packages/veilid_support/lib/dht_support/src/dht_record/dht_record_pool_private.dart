@@ -4,8 +4,9 @@ part of 'dht_record_pool.dart';
 const _cryptoDomainDHT = 'dht';
 
 // Singlefuture keys
-const _sfPollWatch = '_pollWatch';
-const _sfListen = 'listen';
+const _sfPollWatch = '_sfPollWatch';
+const _sfListen = '_sfListen';
+const _sfFinalizers = '_sfFinalizers';
 
 /// Watch state
 @immutable
@@ -78,3 +79,6 @@ class _OpenedRecordInfo {
 
   String get sharedDetails => shared.toString();
 }
+
+// Things that can be finalized
+abstract class DHTFinalizer {}

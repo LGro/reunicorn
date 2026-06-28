@@ -1,21 +1,30 @@
 part of 'dht_record_pool.dart';
 
+/// Type of a listen onUpdate callback for watch listen subscriptions
+typedef DHTRecordWatchOnUpdate =
+    Future<void> Function(DHTRecord record, DHTRecordWatchChange change);
+
+/// A change reported by a DHTRecord watch's listen subscription
 @immutable
 class DHTRecordWatchChange extends Equatable {
-  final bool local;
+  /// The data for a single subkey that changed remotely
+  /// Will be the fist subkey in the `remoteSubkeys` range if not null
+  final Uint8List? remoteData;
 
-  final Uint8List? data;
+  /// The subkeys that changed remotely
+  final List<ValueSubkeyRange> remoteSubkeys;
 
-  final List<ValueSubkeyRange> subkeys;
+  /// The subkeys that changed locally
+  final List<ValueSubkeyRange> localSubkeys;
 
-  const DHTRecordWatchChange({
-    required this.local,
-    required this.data,
-    required this.subkeys,
+  const DHTRecordWatchChange._({
+    required this.remoteData,
+    required this.remoteSubkeys,
+    required this.localSubkeys,
   });
 
   @override
-  List<Object?> get props => [local, data, subkeys];
+  List<Object?> get props => [remoteData, remoteSubkeys, localSubkeys];
 }
 
 /// Refresh mode for DHT record 'get'
@@ -41,8 +50,17 @@ enum DHTRecordRefreshMode {
 
 /////////////////////////////////////////////////
 
-class DHTRecord implements DHTDeleteable<DHTRecord> {
+class DHTRecord
+    with
+        DefaultDHTRefCounted,
+        DefaultDHTDeleteable,
+        DefaultDHTRecordOperations<SetDHTValueOptions>
+    implements
+        DHTRecordOperations<SetDHTValueOptions>,
+        DHTDeleteScoped<DHTRecord> {
   //////////////////////////////////////////////////////////////
+
+  final DHTRecordPool _pool;
 
   final _SharedDHTRecordData _sharedDHTRecordData;
 
@@ -54,53 +72,39 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
 
   final CryptoCodec _crypto;
 
+  @override
   final String debugName;
-
-  int _openCount;
 
   StreamController<DHTRecordWatchChange>? _watchController;
 
   _WatchState? _watchState;
 
   DHTRecord._({
+    required DHTRecordPool pool,
     required VeilidRoutingContext routingContext,
     required _SharedDHTRecordData sharedDHTRecordData,
     required int defaultSubkey,
     required KeyPair? writer,
     required CryptoCodec crypto,
     required this.debugName,
-  }) : _crypto = crypto,
+  }) : _pool = pool,
+       _crypto = crypto,
        _routingContext = routingContext,
        _defaultSubkey = defaultSubkey,
        _writer = writer,
-       _openCount = 1,
        _sharedDHTRecordData = sharedDHTRecordData;
 
   ////////////////////////////////////////////////////////////////////////////
   // DHTCloseable
 
-  /// Check if the DHTRecord is open
-  @override
-  bool get isOpen => _openCount > 0;
-
   /// The type of the openable scope
   @override
   FutureOr<DHTRecord> scoped() => this;
 
-  /// Add a reference to this DHTRecord
-  @override
-  void ref() {
-    _openCount++;
-  }
-
   /// Free all resources for the DHTRecord
   @override
-  Future<bool> close() async {
-    if (_openCount == 0) {
-      throw StateError('already closed');
-    }
-    _openCount--;
-    if (_openCount != 0) {
+  Future<bool> close() => DHTException.wrap(() async {
+    if (!await super.close()) {
       return false;
     }
 
@@ -108,43 +112,31 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
     _watchController = null;
     await serialFutureClose((this, _sfListen));
 
-    await DHTRecordPool.instance._recordClosed(this);
+    // The pool may already be torn down when this runs from a late
+    // GC finalizer; in that case there's nothing more to do.
+    await DHTRecordPool._singleton?._recordClosed(this);
 
     return true;
-  }
+  });
+
+  ////////////////////////////////////////////////////////////////////////////
+  // DHTDeleteable
 
   /// Free all resources for the DHTRecord and delete it from the DHT
+  ///
+  /// delete() should not be called if the record is already deleted.
+  ///
   /// Returns true if the deletion was processed immediately
   /// Returns false if the deletion was marked for later
   @override
-  Future<bool> delete() => DHTRecordPool.instance.deleteRecord(key);
+  Future<bool> delete() => DHTException.wrap(() async {
+    await super.delete();
+    final res = await DHTRecordPool.instance.deleteRecord(key);
+    return res;
+  });
 
   ////////////////////////////////////////////////////////////////////////////
-  // Public API
-
-  VeilidRoutingContext get routingContext => _routingContext;
-
-  RecordKey get key => _sharedDHTRecordData.recordDescriptor.key;
-
-  PublicKey get owner => _sharedDHTRecordData.recordDescriptor.owner;
-
-  KeyPair? get ownerKeyPair =>
-      _sharedDHTRecordData.recordDescriptor.ownerKeyPair;
-
-  DHTSchema get schema => _sharedDHTRecordData.recordDescriptor.schema;
-
-  int get subkeyCount =>
-      _sharedDHTRecordData.recordDescriptor.schema.subkeyCount;
-
-  KeyPair? get writer => _writer;
-
-  CryptoCodec get crypto => _crypto;
-
-  OwnedDHTRecordPointer? get ownedDHTRecordPointer => ownerKeyPair == null
-      ? null
-      : OwnedDHTRecordPointer(recordKey: key, owner: ownerKeyPair!.value);
-
-  int subkeyOrDefault(int subkey) => (subkey == -1) ? _defaultSubkey : subkey;
+  // DHTRecordOperations<SetDHTValueOptions>
 
   /// Get a subkey value from this record.
   /// Returns the most recent value data for this subkey or null if this subkey
@@ -153,12 +145,13 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
   ///   value or always check the network
   /// * 'outSeqNum' optionally returns the sequence number of the value being
   ///   returned if one was returned.
-  Future<Uint8List?> get({
+  @override
+  Future<Uint8List?> getBytes({
     int subkey = -1,
     CryptoCodec? crypto,
     DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.cached,
     Output<int>? outSeqNum,
-  }) => _wrapStats('get', () async {
+  }) => _wrapStats('getBytes', () async {
     subkey = subkeyOrDefault(subkey);
 
     // Get the last sequence number if we need it
@@ -172,7 +165,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
       return null;
     }
 
-    final valueData = await dhtRetryLoop(
+    final valueData = await DHTRecordPool.instance._veilidApiRetry(
       () => _routingContext.getDHTValue(
         key,
         subkey,
@@ -198,63 +191,10 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
     return out;
   });
 
-  /// Get a subkey value from this record.
-  /// Process the record returned with a JSON unmarshal function 'fromJson'.
-  /// Returns the most recent value data for this subkey or null if this subkey
-  /// has not yet been written to.
-  /// * 'refreshMode' determines whether or not to return a locally existing
-  ///   value or always check the network
-  /// * 'outSeqNum' optionally returns the sequence number of the value being
-  ///   returned if one was returned.
-  Future<T?> getJson<T>(
-    T Function(dynamic) fromJson, {
-    int subkey = -1,
-    CryptoCodec? crypto,
-    DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.cached,
-    Output<int>? outSeqNum,
-  }) async {
-    final data = await get(
-      subkey: subkey,
-      crypto: crypto,
-      refreshMode: refreshMode,
-      outSeqNum: outSeqNum,
-    );
-    if (data == null) {
-      return null;
-    }
-    return jsonDecodeBytes(fromJson, data);
-  }
-
-  /// Get a subkey value from this record.
-  /// Process the record returned with a migration codec
-  /// Returns the most recent value data for this subkey or null if this subkey
-  /// has not yet been written to.
-  /// * 'refreshMode' determines whether or not to return a locally existing
-  ///   value or always check the network
-  /// * 'outSeqNum' optionally returns the sequence number of the value being
-  ///   returned if one was returned.
-  Future<T?> getMigrated<T>(
-    MigrationCodec<T> migrationCodec, {
-    int subkey = -1,
-    CryptoCodec? crypto,
-    DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.cached,
-    Output<int>? outSeqNum,
-  }) async {
-    final data = await get(
-      subkey: subkey,
-      crypto: crypto,
-      refreshMode: refreshMode,
-      outSeqNum: outSeqNum,
-    );
-    if (data == null) {
-      return null;
-    }
-    return migrationCodec.fromBytes(data).value;
-  }
-
   /// Attempt to write a byte buffer to a DHTRecord subkey
   /// If a newer value was found on the network, it is returned
   /// If the value was succesfully written, null is returned
+  @override
   Future<Uint8List?> tryWriteBytes(
     Uint8List newValue, {
     int subkey = -1,
@@ -267,7 +207,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
     final encryptedNewValue = await (crypto ?? _crypto).encrypt(newValue);
 
     // Set the new data if possible
-    var newValueData = await dhtRetryLoop(
+    var newValueData = await DHTRecordPool.instance._veilidApiRetry(
       () => _routingContext.setDHTValue(
         key,
         subkey,
@@ -278,287 +218,88 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
         ),
       ),
     );
+    // A clean write (no conflicting newer value) returns null. This is the
+    // common case, and still commits our value, so notify on a seq change.
     if (newValueData == null) {
-      // A newer value wasn't found on the set, but we may get a newer value
-      // when getting the value for the sequence number
-      newValueData = await dhtRetryLoop(
-        () => _routingContext.getDHTValue(key, subkey),
-      );
-      if (newValueData == null) {
-        assert(newValueData != null, "can't get value that was just set");
-        return null;
+      final newSeqNum = await _localSubkeySeq(subkey);
+      if (newSeqNum == null) {
+        throw StateError(
+          "can't get sequence number for value that was just set",
+        );
       }
+      if (newSeqNum != lastSeq) {
+        if (outSeqNum != null) {
+          outSeqNum.save(newSeqNum);
+        }
+        DHTRecordPool.instance._addLocalValueChange(key, [
+          ValueSubkeyRange.single(subkey),
+        ]);
+      }
+      return null;
     }
 
-    // Record new sequence number
+    // A newer conflicting value came back; commit it locally and notify
     final isUpdated = newValueData.seq != lastSeq;
     if (isUpdated && outSeqNum != null) {
       outSeqNum.save(newValueData.seq);
+    }
+    if (isUpdated) {
+      DHTRecordPool.instance._addLocalValueChange(key, [
+        ValueSubkeyRange.single(subkey),
+      ]);
     }
 
     // See if the encrypted data returned is exactly the same
     // if so, shortcut and don't bother decrypting it
     if (newValueData.data.equals(encryptedNewValue)) {
-      if (isUpdated) {
-        DHTRecordPool.instance._processLocalValueChange(key, newValue, subkey);
-      }
       return null;
     }
 
     // Decrypt value to return it
-    final decryptedNewValue = await (crypto ?? _crypto).decrypt(
-      newValueData.data,
-    );
-    if (isUpdated) {
-      DHTRecordPool.instance._processLocalValueChange(
-        key,
-        decryptedNewValue,
-        subkey,
-      );
-    }
-    return decryptedNewValue;
+    return (crypto ?? _crypto).decrypt(newValueData.data);
   });
 
-  /// Attempt to write a byte buffer to a DHTRecord subkey
-  /// If a newer value was found on the network, another attempt
-  /// will be made to write the subkey until this succeeds
-  /// This operation must be performed online or it will throw
-  /// DHTExceptionNotAvailable
-  Future<void> eventualWriteBytes(
-    Uint8List newValue, {
-    int subkey = -1,
-    CryptoCodec? crypto,
-    KeyPair? writer,
-    Output<int>? outSeqNum,
-  }) => _wrapStats('eventualWriteBytes', () async {
-    subkey = subkeyOrDefault(subkey);
-    final lastSeq = await _localSubkeySeq(subkey);
-    final encryptedNewValue = await (crypto ?? _crypto).encrypt(newValue);
+  /// Builds options for eventual operations
+  @override
+  SetDHTValueOptions eventualOptions(KeyPair? writer) =>
+      SetDHTValueOptions(writer: writer ?? _writer, allowOffline: false);
 
-    ValueData? newValueData;
-    do {
-      do {
-        // Set the new data
-        newValueData = await dhtRetryLoop(
-          () => _routingContext.setDHTValue(
-            key,
-            subkey,
-            encryptedNewValue,
-            options: SetDHTValueOptions(
-              writer: writer ?? _writer,
-              allowOffline: false,
-            ),
-          ),
-        );
+  ////////////////////////////////////////////////////////////////////////////
+  // Public API
 
-        // Repeat if newer data on the network was found
-      } while (newValueData != null);
+  DHTRecordPool get pool => _pool;
 
-      // Get the data to check its sequence number
-      newValueData = await dhtRetryLoop(
-        () => _routingContext.getDHTValue(key, subkey),
-      );
-      if (newValueData == null) {
-        assert(newValueData != null, "can't get value that was just set");
-        return;
-      }
+  VeilidRoutingContext get routingContext => _routingContext;
 
-      // Record new sequence number
-      if (outSeqNum != null) {
-        outSeqNum.save(newValueData.seq);
-      }
+  RecordKey get key => _sharedDHTRecordData.recordDescriptor.key;
 
-      // The encrypted data returned should be exactly the same
-      // as what we are trying to set,
-      // otherwise we still need to keep trying to set the value
-    } while (!newValueData.data.equals(encryptedNewValue));
+  PublicKey get owner => _sharedDHTRecordData.recordDescriptor.owner;
 
-    final isUpdated = newValueData.seq != lastSeq;
-    if (isUpdated) {
-      DHTRecordPool.instance._processLocalValueChange(key, newValue, subkey);
-    }
-  });
+  KeyPair? get ownerKeyPair =>
+      _sharedDHTRecordData.recordDescriptor.ownerKeyPair;
 
-  /// Attempt to write a byte buffer to a DHTRecord subkey
-  /// If a newer value was found on the network, another attempt
-  /// will be made to write the subkey until this succeeds
-  /// Each attempt to write the value calls an update function with the
-  /// old value to determine what new value should be attempted for that write.
-  /// This operation must be performed online or it will throw
-  /// DHTExceptionNotAvailable
-  Future<void> eventualUpdateBytes(
-    Future<Uint8List?> Function(Uint8List? oldValue) update, {
-    int subkey = -1,
-    CryptoCodec? crypto,
-    KeyPair? writer,
-    Output<int>? outSeqNum,
-  }) => _wrapStats('eventualUpdateBytes', () async {
-    subkey = subkeyOrDefault(subkey);
+  DHTSchema get schema => _sharedDHTRecordData.recordDescriptor.schema;
 
-    // Get the existing data, do not allow force refresh here
-    // because if we need a refresh the setDHTValue will fail anyway
-    var oldValue = await get(
-      subkey: subkey,
-      crypto: crypto,
-      outSeqNum: outSeqNum,
-    );
+  int get subkeyCount =>
+      _sharedDHTRecordData.recordDescriptor.schema.subkeyCount;
 
-    do {
-      // Update the data
-      final updatedValue = await update(oldValue);
-      if (updatedValue == null) {
-        // If null is returned from the update, stop trying to do the update
-        break;
-      }
-      // Try to write it back to the network
-      oldValue = await tryWriteBytes(
-        updatedValue,
-        subkey: subkey,
-        crypto: crypto,
-        options: SetDHTValueOptions(
-          writer: writer ?? _writer,
-          allowOffline: false,
-        ),
-        outSeqNum: outSeqNum,
-      );
+  KeyPair? get writer => _writer;
 
-      // Repeat update if newer data on the network was found
-    } while (oldValue != null);
-  });
+  CryptoCodec get crypto => _crypto;
 
-  /// Like 'tryWriteBytes' but with JSON marshal/unmarshal of the value
-  Future<T?> tryWriteJson<T>(
-    T Function(dynamic) fromJson,
-    T newValue, {
-    int subkey = -1,
-    CryptoCodec? crypto,
-    SetDHTValueOptions? options,
-    Output<int>? outSeqNum,
-  }) =>
-      tryWriteBytes(
-        jsonEncodeBytes(newValue),
-        subkey: subkey,
-        crypto: crypto,
-        options: options,
-        outSeqNum: outSeqNum,
-      ).then((out) {
-        if (out == null) {
-          return null;
-        }
-        return jsonDecodeBytes(fromJson, out);
-      });
+  OwnedDHTRecordPointer? get ownedDHTRecordPointer => ownerKeyPair == null
+      ? null
+      : OwnedDHTRecordPointer(recordKey: key, owner: ownerKeyPair!.value);
 
-  /// Like 'tryWriteBytes' but with migrated marshal/unmarshal of the value
-  Future<MigratedValue<T>?> tryWriteMigrated<T>(
-    MigrationCodec<T> migrationCodec,
-    T newValue, {
-    int subkey = -1,
-    CryptoCodec? crypto,
-    SetDHTValueOptions? options,
-    Output<int>? outSeqNum,
-  }) =>
-      tryWriteBytes(
-        migrationCodec.toBytes(newValue),
-        subkey: subkey,
-        crypto: crypto,
-        options: options,
-        outSeqNum: outSeqNum,
-      ).then((out) {
-        if (out == null) {
-          return null;
-        }
-        return migrationCodec.fromBytes(out);
-      });
-
-  /// Like 'eventualWriteBytes' but with JSON marshal/unmarshal of the value
-  Future<void> eventualWriteJson<T>(
-    T newValue, {
-    int subkey = -1,
-    CryptoCodec? crypto,
-    KeyPair? writer,
-    Output<int>? outSeqNum,
-  }) => eventualWriteBytes(
-    jsonEncodeBytes(newValue),
-    subkey: subkey,
-    crypto: crypto,
-    writer: writer,
-    outSeqNum: outSeqNum,
-  );
-
-  /// Like 'eventualWriteBytes' but with migrated marshal/unmarshal of the value
-  Future<void> eventualWriteMigrated<T>(
-    MigrationCodec<T> migrationCodec,
-    T newValue, {
-    int subkey = -1,
-    CryptoCodec? crypto,
-    KeyPair? writer,
-    Output<int>? outSeqNum,
-  }) => eventualWriteBytes(
-    migrationCodec.toBytes(newValue),
-    subkey: subkey,
-    crypto: crypto,
-    writer: writer,
-    outSeqNum: outSeqNum,
-  );
-
-  /// Like 'eventualUpdateBytes' but with JSON marshal/unmarshal of the value
-  Future<void> eventualUpdateJson<T>(
-    T Function(dynamic) fromJson,
-    Future<T?> Function(T?) update, {
-    int subkey = -1,
-    CryptoCodec? crypto,
-    KeyPair? writer,
-    Output<int>? outSeqNum,
-  }) => eventualUpdateBytes(
-    jsonUpdate(fromJson, update),
-    subkey: subkey,
-    crypto: crypto,
-    writer: writer,
-    outSeqNum: outSeqNum,
-  );
-
-  Future<Uint8List?> _migrationUpdateBytes<T>(
-    MigrationCodec<T> migrationCodec,
-    Uint8List? oldBytes,
-    Future<T?> Function(MigratedValue<T>?) update,
-  ) async {
-    final oldObj = oldBytes == null ? null : migrationCodec.fromBytes(oldBytes);
-    final newObj = await update(oldObj);
-    if (newObj == null) {
-      return null;
-    }
-    return migrationCodec.toBytes(newObj);
-  }
-
-  Future<Uint8List?> Function(Uint8List?) _migratedUpdate<T>(
-    MigrationCodec<T> migrationCodec,
-    Future<T?> Function(MigratedValue<T>?) update,
-  ) =>
-      (oldBytes) => _migrationUpdateBytes(migrationCodec, oldBytes, update);
-
-  /// Like 'eventualUpdateBytes' but with migrated marshal/unmarshal of the value
-  Future<void> eventualUpdateMigrated<T>(
-    MigrationCodec<T> migrationCodec,
-    Future<T?> Function(MigratedValue<T>?) update, {
-    int subkey = -1,
-    CryptoCodec? crypto,
-    KeyPair? writer,
-    Output<int>? outSeqNum,
-  }) => eventualUpdateBytes(
-    _migratedUpdate(migrationCodec, update),
-    subkey: subkey,
-    crypto: crypto,
-    writer: writer,
-    outSeqNum: outSeqNum,
-  );
+  int subkeyOrDefault(int subkey) => (subkey == -1) ? _defaultSubkey : subkey;
 
   /// Watch a subkey range of this DHT record for changes
-  /// Takes effect on the next DHTRecordPool tick
+  /// Takes effect on the next DHTRecordPool tick.
   Future<void> watch({
     List<ValueSubkeyRange>? subkeys,
     Timestamp? expiration,
     int? count,
-  }) async {
+  }) => DHTException.wrap(() async {
     // Set up watch requirements which will get picked up by the next tick
     final oldWatchState = _watchState;
     _watchState = _WatchState(
@@ -569,7 +310,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
     if (oldWatchState != _watchState) {
       _sharedDHTRecordData.needsWatchStateUpdate = true;
     }
-  }
+  });
 
   /// Register a callback for changes made on this this DHT record.
   /// You must 'watch' the record as well as listen to it in order for this
@@ -578,16 +319,11 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
   ///   locally, otherwise only changes seen from the network itself are
   ///   reported
   ///
-  Future<StreamSubscription<DHTRecordWatchChange>> listen(
-    Future<void> Function(
-      DHTRecord record,
-      Uint8List? data,
-      List<ValueSubkeyRange> subkeys,
-    )
-    onUpdate, {
-    bool localChanges = true,
+  @useResult
+  Future<DHTRecordWatchSubscription> listen(
+    DHTRecordWatchOnUpdate onUpdate, {
     CryptoCodec? crypto,
-  }) async {
+  }) => DHTException.wrap(() async {
     // Set up watch requirements
     _watchController ??= StreamController<DHTRecordWatchChange>.broadcast(
       onCancel: () {
@@ -596,25 +332,23 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
       },
     );
 
-    return _watchController!.stream.listen(
-      (change) {
-        if (change.local && !localChanges) {
-          return;
-        }
-
+    final subscription = _watchController!.stream.listen(
+      (rawChange) {
         serialFuture((this, _sfListen), () async {
-          final Uint8List? data;
-          if (change.local) {
-            // local changes are not encrypted
-            data = change.data;
-          } else {
-            // incoming/remote changes are encrypted
-            final changeData = change.data;
-            data = changeData == null
-                ? null
-                : await (crypto ?? _crypto).decrypt(changeData);
-          }
-          await onUpdate(this, data, change.subkeys);
+          // Notification-only remote changes carry no data
+          //  * Transactions will not have data for changes
+          //  * Local changes will not have data for changes
+          // The subscriber must perform their own read in this case
+          final rawRemoteData = rawChange.remoteData;
+          final remoteData = rawRemoteData == null
+              ? null
+              : await (crypto ?? _crypto).decrypt(rawRemoteData);
+          final change = DHTRecordWatchChange._(
+            remoteData: remoteData,
+            remoteSubkeys: rawChange.remoteSubkeys,
+            localSubkeys: rawChange.localSubkeys,
+          );
+          await onUpdate(this, change);
         });
       },
       cancelOnError: true,
@@ -623,24 +357,33 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
         _watchController = null;
       },
     );
-  }
+
+    return DHTRecordWatchSubscription._(
+      record: this,
+      subscription: subscription,
+      debugName: 'WatchSubscription($debugName)',
+    );
+  });
 
   /// Stop watching this record for changes
   /// Takes effect on the next DHTRecordPool tick
-  Future<void> cancelWatch() async {
+  Future<void> cancelWatch() => DHTException.wrap(() async {
     // Tear down watch requirements
     if (_watchState != null) {
       _watchState = null;
       _sharedDHTRecordData.needsWatchStateUpdate = true;
     }
-  }
+  });
 
   /// Return the inspection state of a set of subkeys of the DHTRecord
   /// See Veilid's 'inspectDHTRecord' call for details on how this works
+  @override
   Future<DHTRecordReport> inspect({
     List<ValueSubkeyRange>? subkeys,
     DHTReportScope scope = DHTReportScope.local,
-  }) => _routingContext.inspectDHTRecord(key, subkeys: subkeys, scope: scope);
+  }) => DHTException.wrap(
+    () => _routingContext.inspectDHTRecord(key, subkeys: subkeys, scope: scope),
+  );
 
   //////////////////////////////////////////////////////////////////////////
 
@@ -653,9 +396,9 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
   }
 
   void _addValueChange({
-    required bool local,
-    required Uint8List? data,
-    required List<ValueSubkeyRange> subkeys,
+    required Uint8List? remoteData,
+    required List<ValueSubkeyRange> remoteSubkeys,
+    required List<ValueSubkeyRange> localSubkeys,
   }) {
     final ws = _watchState;
     if (ws != null) {
@@ -663,27 +406,42 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
       if (watchedSubkeys == null) {
         // Report all subkeys
         _watchController?.add(
-          DHTRecordWatchChange(local: local, data: data, subkeys: subkeys),
+          DHTRecordWatchChange._(
+            remoteData: remoteData,
+            remoteSubkeys: remoteSubkeys,
+            localSubkeys: localSubkeys,
+          ),
         );
       } else {
         // Only some subkeys are being watched, see if the reported update
         // overlaps the subkeys being watched
-        final overlappedSubkeys = watchedSubkeys.intersectSubkeys(subkeys);
-        // If the reported data isn't within the
-        // range we care about, don't pass it through
-        final overlappedFirstSubkey = overlappedSubkeys.firstSubkey;
-        final updateFirstSubkey = subkeys.firstSubkey;
-        if (overlappedFirstSubkey != null && updateFirstSubkey != null) {
-          final updatedData = overlappedFirstSubkey == updateFirstSubkey
-              ? data
-              : null;
+        final overlappedRemoteSubkeys = watchedSubkeys.intersectSubkeys(
+          remoteSubkeys,
+        );
+        final overlappedLocalSubkeys = watchedSubkeys.intersectSubkeys(
+          localSubkeys,
+        );
 
-          // Report only watched subkeys
+        // If the reported data isn't within the range we care about,
+        // then don't pass it through
+        final overlappedRemoteFirstSubkey = overlappedRemoteSubkeys.firstSubkey;
+        final originalRemoteFirstSubkey = remoteSubkeys.firstSubkey;
+        final updatedRemoteData =
+            (overlappedRemoteFirstSubkey != null &&
+                originalRemoteFirstSubkey != null &&
+                overlappedRemoteFirstSubkey == originalRemoteFirstSubkey)
+            ? remoteData
+            : null;
+
+        // Report only watched subkeys
+        if (overlappedRemoteSubkeys.isNotEmpty ||
+            overlappedLocalSubkeys.isNotEmpty) {
+          // Report the change
           _watchController?.add(
-            DHTRecordWatchChange(
-              local: local,
-              data: updatedData,
-              subkeys: overlappedSubkeys,
+            DHTRecordWatchChange._(
+              remoteData: updatedRemoteData,
+              remoteSubkeys: overlappedRemoteSubkeys,
+              localSubkeys: overlappedLocalSubkeys,
             ),
           );
         }
@@ -691,22 +449,19 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
     }
   }
 
-  void _addLocalValueChange(Uint8List data, int subkey) {
-    _addValueChange(
-      local: true,
-      data: data,
-      subkeys: [ValueSubkeyRange.single(subkey)],
-    );
-  }
-
   void _addRemoteValueChange(VeilidUpdateValueChange update) {
     _addValueChange(
-      local: false,
-      data: update.value?.data,
-      subkeys: update.subkeys,
+      remoteData: update.value?.data,
+      remoteSubkeys: update.subkeys,
+      localSubkeys: List.empty(),
     );
   }
 
   Future<T> _wrapStats<T>(String func, Future<T> Function() closure) =>
-      DHTRecordPool.instance._stats.measure(key, debugName, func, closure);
+      DHTRecordPool.instance._stats.measure(
+        key,
+        debugName,
+        func,
+        () => DHTException.wrap(closure),
+      );
 }

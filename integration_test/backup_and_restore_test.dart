@@ -8,14 +8,13 @@ import 'package:reunicorn/data/models/circle.dart';
 import 'package:reunicorn/data/models/community.dart';
 import 'package:reunicorn/data/models/models.dart';
 import 'package:reunicorn/data/models/profile_info.dart';
-import 'package:reunicorn/data/models/profile_sharing_settings.dart';
 import 'package:reunicorn/data/models/setting.dart';
 import 'package:reunicorn/data/repositories/backup_dht.dart';
 import 'package:reunicorn/data/repositories/contact_dht.dart';
 import 'package:reunicorn/data/services/storage/memory.dart';
 import 'package:reunicorn/data/utils.dart';
 import 'package:reunicorn/ui/receive_request/cubit.dart';
-import 'package:reunicorn/ui/receive_request/utils/profile_based.dart';
+import 'package:reunicorn/ui/receive_request/utils/direct_sharing.dart';
 import 'package:reunicorn/ui/utils.dart';
 import 'package:reunicorn/veilid_init.dart';
 
@@ -69,6 +68,7 @@ void main() {
           ),
         ),
       ),
+      MemoryStorage<Setting>(),
       dhtStorage,
     );
 
@@ -88,6 +88,7 @@ void main() {
           ),
         ),
       ),
+      MemoryStorage<Setting>(),
       dhtStorage,
     );
 
@@ -122,33 +123,21 @@ void main() {
         contactBobFromProfile.coagContactId,
       ))!;
       expect(
-        contactBobFromProfile.dhtSettings.theirNextPublicKey,
-        bobsMainKeyPair.key,
-        reason: 'Used given profile public key',
-      );
-      expect(
-        contactBobFromProfile.dhtSettings.recordKeyMeSharing,
-        isNotNull,
-        reason: 'Sharing record prepared',
-      );
-      expect(
-        contactBobFromProfile.dhtSettings.recordKeyThemSharing,
-        isNotNull,
-        reason: 'Receiving record prepared',
+        contactBobFromProfile.dhtConnection,
+        isA<DhtConnectionEstablished>(),
       );
     });
-    final profileBasedOfferLinkFromAliceForBob = ProfileBasedInvite(
+    final directSharingInviteFromAliceForBob = DirectSharingInvite(
       'Alice Sharing',
-      contactBobFromProfile.dhtSettings.recordKeyMeSharing!,
-      contactBobFromProfile.dhtSettings.myKeyPair!.key,
+      contactBobFromProfile.dhtConnection!.recordKeyMeSharingOrNull!,
+      contactBobFromProfile.connectionCrypto.sharedSecretOrNull!,
     );
 
     // Bob accepts profile based offer from Alice and shares via default circle
     debugPrint('---');
     debugPrint('BOB ACTING');
-    final contactAliceFromBobsRepo = await createContactFromProfileInvite(
-      profileBasedOfferLinkFromAliceForBob.uri.fragment,
-      bobsMainKeyPair,
+    final contactAliceFromBobsRepo = await createContactFromDirectSharing(
+      directSharingInviteFromAliceForBob.uri.fragment,
       _contactStorageB,
     );
     await _circleStorageB.set(
@@ -216,7 +205,13 @@ void main() {
     expect(restoredContactB?.details?.phones.values.first, '123');
     expect(restoredContactB?.details?.names.values.first, 'UserB');
     expect(
-      restoredContactB?.sharedProfile?.details.names.values.first,
+      restoredContactB
+          ?.profileSharingStatus
+          .sharedProfile
+          ?.details
+          .names
+          .values
+          .first,
       'UserA',
     );
   });

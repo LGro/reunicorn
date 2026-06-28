@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:async_tools/async_tools.dart';
+import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -17,9 +18,9 @@ part 'dht_record_pool.freezed.dart';
 part 'dht_record_pool.g.dart';
 part 'dht_record.dart';
 part 'dht_record_pool_private.dart';
-
-/// Maximum number of concurrent DHT operations to perform on the network
-const kMaxDHTConcurrency = 8;
+part 'dht_record_transaction.dart';
+part 'dht_record_watch_subscription.dart';
+part 'dht_retry_strategy.dart';
 
 typedef DHTRecordPoolLogger = void Function(String message);
 
@@ -104,6 +105,9 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   // Default crypto kind for new keys
   final CryptoKind _defaultKind;
 
+  // Optional processor used to gate DHT-level retries on network readiness
+  final VeilidProcessorInterface? _processor;
+
   // Watch state processors
   final _watchStateProcessors =
       SingleStateProcessorMap<RecordKey, _WatchState?>();
@@ -111,12 +115,16 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   // Statistics
   final _stats = DHTStats();
 
+  /// Cumulative DHT statistics for this pool.
+  DHTStats get stats => _stats;
+
   static DHTRecordPool? _singleton;
 
   DHTRecordPool._({
     required Veilid veilid,
     required VeilidRoutingContext routingContext,
     required CryptoKind defaultKind,
+    VeilidProcessorInterface? processor,
   }) : _state = const DHTRecordPoolAllocations(),
        _mutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null),
        _recordTagLock = AsyncTagLock(),
@@ -124,7 +132,8 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
        _markedForDelete = <RecordKey>{},
        _routingContext = routingContext,
        _veilid = veilid,
-       _defaultKind = defaultKind;
+       _defaultKind = defaultKind,
+       _processor = processor;
 
   //////////////////////////////////////////////////////////////
 
@@ -133,25 +142,31 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   static Future<void> init({
     required CryptoKind defaultKind,
     DHTRecordPoolLogger? logger,
-  }) async {
+    VeilidProcessorInterface? processor,
+  }) => DHTException.wrap(() async {
     final routingContext = await Veilid.instance.routingContext();
     final globalPool = DHTRecordPool._(
       veilid: Veilid.instance,
       routingContext: routingContext,
       defaultKind: defaultKind,
+      processor: processor,
     );
     globalPool
       .._logger = logger
       .._state = await globalPool.load() ?? const DHTRecordPoolAllocations();
     _singleton = globalPool;
-  }
+  });
 
-  static Future<void> close() async {
+  static Future<void> close() => DHTException.wrap(() async {
     if (_singleton != null) {
       _singleton!._routingContext.close();
+
+      // Close out any delayed serialfutures
+      await serialFutureClose((_singleton, _sfFinalizers));
+
       _singleton = null;
     }
-  }
+  });
 
   ////////////////////////////////////////////////////////////////////////////
   // Public Interface
@@ -167,36 +182,39 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     CryptoCodec? crypto,
     KeyPair? writer,
     EncryptionKeyOverride? encryptionKeyOverride,
-  }) => _mutex.protect(() async {
-    final dhtctx = routingContext ?? _routingContext;
+  }) => DHTException.wrap(
+    () => _mutex.protect(() async {
+      final dhtctx = routingContext ?? _routingContext;
 
-    final openedRecordInfo = await _recordCreateInner(
-      debugName: debugName,
-      dhtctx: dhtctx,
-      kind: kind ?? _defaultKind,
-      schema: schema,
-      writer: writer,
-      parent: parent,
-      encryptionKeyOverride: encryptionKeyOverride,
-    );
+      final openedRecordInfo = await _recordCreateInner(
+        debugName: debugName,
+        dhtctx: dhtctx,
+        kind: kind ?? _defaultKind,
+        schema: schema,
+        writer: writer,
+        parent: parent,
+        encryptionKeyOverride: encryptionKeyOverride,
+      );
 
-    final rec = DHTRecord._(
-      debugName: debugName,
-      routingContext: dhtctx,
-      defaultSubkey: defaultSubkey,
-      sharedDHTRecordData: openedRecordInfo.shared,
-      writer: writer ?? openedRecordInfo.shared.recordDescriptor.ownerKeyPair,
-      crypto:
-          crypto ??
-          await privateCryptoFromSecretKey(
-            openedRecordInfo.shared.recordDescriptor.ownerSecret!,
-          ),
-    );
+      final rec = DHTRecord._(
+        pool: this,
+        debugName: debugName,
+        routingContext: dhtctx,
+        defaultSubkey: defaultSubkey,
+        sharedDHTRecordData: openedRecordInfo.shared,
+        writer: writer ?? openedRecordInfo.shared.recordDescriptor.ownerKeyPair,
+        crypto:
+            crypto ??
+            await privateCryptoFromSecretKey(
+              openedRecordInfo.shared.recordDescriptor.ownerSecret!,
+            ),
+      );
 
-    openedRecordInfo.records.add(rec);
+      openedRecordInfo.records.add(rec);
 
-    return rec;
-  });
+      return rec;
+    }),
+  );
 
   /// Open a DHTRecord readonly
   Future<DHTRecord> openRecordRead(
@@ -206,23 +224,25 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     RecordKey? parent,
     int defaultSubkey = 0,
     CryptoCodec? crypto,
-  }) => _recordTagLock.protect(
-    recordKey,
-    closure: () async {
-      final dhtctx = routingContext ?? _routingContext;
+  }) => DHTException.wrap(
+    () => _recordTagLock.protect(
+      recordKey,
+      closure: () async {
+        final dhtctx = routingContext ?? _routingContext;
 
-      final rec = await _recordOpenCommon(
-        debugName: debugName,
-        dhtctx: dhtctx,
-        recordKey: recordKey,
-        crypto: crypto ?? const VeilidCryptoPublic(),
-        writer: null,
-        parent: parent,
-        defaultSubkey: defaultSubkey,
-      );
+        final rec = await _recordOpenCommon(
+          debugName: debugName,
+          dhtctx: dhtctx,
+          recordKey: recordKey,
+          crypto: crypto ?? const VeilidCryptoPublic(),
+          writer: null,
+          parent: parent,
+          defaultSubkey: defaultSubkey,
+        );
 
-      return rec;
-    },
+        return rec;
+      },
+    ),
   );
 
   /// Open a DHTRecord writable
@@ -234,23 +254,25 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     RecordKey? parent,
     int defaultSubkey = 0,
     CryptoCodec? crypto,
-  }) => _recordTagLock.protect(
-    recordKey,
-    closure: () async {
-      final dhtctx = routingContext ?? _routingContext;
+  }) => DHTException.wrap(
+    () => _recordTagLock.protect(
+      recordKey,
+      closure: () async {
+        final dhtctx = routingContext ?? _routingContext;
 
-      final rec = await _recordOpenCommon(
-        debugName: debugName,
-        dhtctx: dhtctx,
-        recordKey: recordKey,
-        crypto: crypto ?? await privateCryptoFromSecretKey(writer.secret),
-        writer: writer,
-        parent: parent,
-        defaultSubkey: defaultSubkey,
-      );
+        final rec = await _recordOpenCommon(
+          debugName: debugName,
+          dhtctx: dhtctx,
+          recordKey: recordKey,
+          crypto: crypto ?? await privateCryptoFromSecretKey(writer.secret),
+          writer: writer,
+          parent: parent,
+          defaultSubkey: defaultSubkey,
+        );
 
-      return rec;
-    },
+        return rec;
+      },
+    ),
   );
 
   /// Open a DHTRecord owned
@@ -276,28 +298,135 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     crypto: crypto,
   );
 
+  /// Begin a transaction over a set of opened records.
+  Future<DHTRecordTransaction> transact(
+    Iterable<DHTRecord> records, {
+    required String debugName,
+    TransactDHTRecordsOptions? options,
+  }) => DHTException.wrap(
+    () => _transactInner(records, debugName: debugName, options: options),
+  );
+
+  /// Create a transaction, run a closure, and commit or rollback.
+  /// If the closure completes normally, the transaction is committed
+  /// and the result is returned.
+  /// If the closure throws, the transaction is rolled back and the
+  /// exception is rethrown.
+  Future<T> withTransaction<T>(
+    Iterable<DHTRecord> records, {
+    required String debugName,
+    TransactDHTRecordsOptions? options,
+    required Future<T> Function(DHTRecordTransaction tx) closure,
+  }) async {
+    final tx = await transact(records, debugName: debugName, options: options);
+    try {
+      final result = await closure(tx);
+      await tx.commit();
+      return result;
+    } on Exception {
+      await tx.rollback();
+      rethrow;
+    }
+  }
+
+  /// DHT-level retry: re-run [closure] on transient DHTExceptions
+  /// (notAvailable/outdated) per [strategy] (default [DHTRetryStrategy], which
+  /// waits for network readiness via this pool's processor before a
+  /// notAvailable retry). This is the sole DHT-level retry; wrap DHT operations
+  /// in it. VeilidAPI-level retrying happens inside the operations themselves.
+  Future<T> retry<T>(
+    Future<T> Function() closure, {
+    RetryStrategy? strategy,
+  }) async {
+    try {
+      return await (strategy ?? DHTRetryStrategy(pool: this)).retry(closure);
+    } on TimeoutException catch (e) {
+      // The retry budget exhausted while still transient (offline). Surface the
+      // DHT-level transient so callers' `on DHTException` handlers catch it,
+      // rather than leaking a raw TimeoutException.
+      log('DHT operation gave up: offline / not ready (${e.message})');
+      throw DHTExceptionNotAvailable(cause: 'retry timed out: ${e.message}');
+    }
+  }
+
+  /// VeilidAPI-level retry for the pool's own record/transaction operations:
+  /// re-run [closure] on transient VeilidAPIExceptions (default
+  /// [VeilidAPIRetryStrategy] with retry telemetry). Exhausted/terminal
+  /// VeilidAPIExceptions are translated to DHTExceptions by [DHTException.wrap].
+  Future<T> _veilidApiRetry<T>(
+    Future<T> Function() closure, {
+    RetryStrategy? strategy,
+  }) =>
+      (strategy ??
+              VeilidAPIRetryStrategy(
+                tryAgainRetry: (n) async {
+                  _stats.recordRetry(DHTRetryKind.tryAgain);
+                  return VeilidAPIRetryStrategy.defaultRetry(n);
+                },
+                transientRetry: (n) async {
+                  _stats.recordRetry(DHTRetryKind.transient);
+                  return VeilidAPIRetryStrategy.defaultRetry(n);
+                },
+              ))
+          .retry(closure);
+
+  /// Whether refreshing collections is currently worthwhile (network ready).
+  /// True when no processor is configured (e.g. tests).
+  bool get refreshEnabled =>
+      _processor?.processorConnectionState.isPublicInternetReady ?? true;
+
+  /// Distinct stream of [refreshEnabled]. Refresh drivers subscribe to catch up
+  /// `needsRefresh` collections on the offline->online edge. Emits `true` once
+  /// when no processor is configured.
+  Stream<bool> streamRefreshEnable() {
+    final processor = _processor;
+    if (processor == null) {
+      return Stream<bool>.value(true);
+    }
+    return processor
+        .streamProcessorConnectionState()
+        .map((s) => s.isPublicInternetReady)
+        .distinct();
+  }
+
+  /// Wait for network readiness via the configured processor (falling back to
+  /// [fallbackDelay] when already online or when no processor is set).
+  Future<void> waitReadyOrDelay(Duration? fallbackDelay) {
+    final processor = _processor;
+    if (processor != null) {
+      return processor.waitReadyOrDelay(fallbackDelay);
+    }
+    return fallbackDelay == null
+        ? Future<void>.value()
+        : Future<void>.delayed(fallbackDelay);
+  }
+
   /// Get the parent of a DHTRecord key if it exists
-  Future<RecordKey?> getParentRecordKey(RecordKey child) =>
-      _mutex.protect(() async => _getParentRecordKeyInner(child));
+  Future<RecordKey?> getParentRecordKey(RecordKey child) => DHTException.wrap(
+    () => _mutex.protect(() async => _getParentRecordKeyInner(child)),
+  );
 
   /// Check if record is allocated
-  Future<bool> isValidRecordKey(RecordKey key) =>
-      _mutex.protect(() async => _isValidRecordKeyInner(key));
+  Future<bool> isValidRecordKey(RecordKey key) => DHTException.wrap(
+    () => _mutex.protect(() async => _isValidRecordKeyInner(key)),
+  );
 
   /// Check if record is marked for deletion or already gone
-  Future<bool> isDeletedRecordKey(RecordKey key) =>
-      _mutex.protect(() async => _isDeletedRecordKeyInner(key));
+  Future<bool> isDeletedRecordKey(RecordKey key) => DHTException.wrap(
+    () => _mutex.protect(() async => _isDeletedRecordKeyInner(key)),
+  );
 
   /// Delete a record and its children if they are all closed
   /// otherwise mark that record for deletion eventually
   /// Returns true if the deletion was processed immediately
   /// Returns false if the deletion was marked for later
-  Future<bool> deleteRecord(RecordKey recordKey) =>
-      _mutex.protect(() => _deleteRecordInner(recordKey));
+  Future<bool> deleteRecord(RecordKey recordKey) => DHTException.wrap(
+    () => _mutex.protect(() => _deleteRecordInner(recordKey)),
+  );
 
   // If everything underneath is closed including itself, return the
   // list of children (and itself) to finally actually delete
-  List<RecordKey> _readyForDeleteInner(RecordKey recordKey) {
+  List<RecordKey> _prepareDeleteInner(RecordKey recordKey) {
     final allDeps = _collectChildrenInner(recordKey);
     for (final dep in allDeps) {
       if (_opened.containsKey(dep)) {
@@ -310,7 +439,9 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   /// Collect all dependencies (including the record itself)
   /// in reverse (bottom-up/delete order)
   Future<List<RecordKey>> collectChildren(RecordKey recordKey) =>
-      _mutex.protect(() async => _collectChildrenInner(recordKey));
+      DHTException.wrap(
+        () => _mutex.protect(() async => _collectChildrenInner(recordKey)),
+      );
 
   /// Print children
   String debugChildren(RecordKey recordKey, {List<RecordKey>? allDeps}) {
@@ -385,11 +516,13 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
 
   /// Generate default VeilidCrypto for a writer
   static Future<CryptoCodec> privateCryptoFromSecretKey(SecretKey secretKey) =>
-      VeilidCryptoPrivate.fromSecretKey(secretKey, _cryptoDomainDHT);
+      DHTException.wrap(
+        () => VeilidCryptoPrivate.fromSecretKey(secretKey, _cryptoDomainDHT),
+      );
 
   /// Get default crypto kind for this pool
   Future<VeilidCryptoSystem> defaultCryptoSystem() =>
-      veilid.getCryptoSystem(_defaultKind);
+      DHTException.wrap(() => veilid.getCryptoSystem(_defaultKind));
 
   ////////////////////////////////////////////////////////////////////////////
   // Private Implementation
@@ -474,7 +607,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
 
     if (openedRecordInfo == null) {
       // Fresh open, just open the record
-      final recordDescriptor = await dhtRetryLoop(
+      final recordDescriptor = await DHTRecordPool.instance.retry(
         () => dhtctx.openDHTRecord(recordKey, writer: writer),
       );
 
@@ -485,6 +618,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
       );
 
       final rec = DHTRecord._(
+        pool: this,
         debugName: debugName,
         routingContext: dhtctx,
         defaultSubkey: defaultSubkey,
@@ -520,6 +654,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     }
 
     final rec = DHTRecord._(
+      pool: this,
       debugName: debugName,
       routingContext: dhtctx,
       defaultSubkey: defaultSubkey,
@@ -617,12 +752,12 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   }
 
   // Actual delete function
-  Future<void> _finalizeDeleteRecordInner(RecordKey recordKey) async {
+  Future<void> _finishDeleteRecordInner(RecordKey recordKey) async {
     if (!_mutex.isLocked) {
       throw StateError('should be locked here');
     }
 
-    log('_finalizeDeleteRecordInner: key=$recordKey');
+    log('_finishDeleteRecordInner: key=$recordKey');
 
     // Remove this child from parents
     await _removeDependenciesInner([recordKey]);
@@ -636,11 +771,11 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
       throw StateError('should be locked here');
     }
 
-    final toDelete = _readyForDeleteInner(recordKey);
+    final toDelete = _prepareDeleteInner(recordKey);
     if (toDelete.isNotEmpty) {
       // delete now
       for (final deleteKey in toDelete) {
-        await _finalizeDeleteRecordInner(deleteKey);
+        await _finishDeleteRecordInner(deleteKey);
       }
       return true;
     }
@@ -797,13 +932,16 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     return false;
   }
 
-  /// Handle the DHT record updates coming from internal to this app
-  void _processLocalValueChange(RecordKey key, Uint8List data, int subkey) {
-    // Change
+  // Notification-only fan-out to every open handle for this key
+  void _addLocalValueChange(RecordKey key, List<ValueSubkeyRange> subkeys) {
     for (final kv in _opened.entries) {
       if (kv.key == key) {
         for (final rec in kv.value.records) {
-          rec._addLocalValueChange(data, subkey);
+          rec._addValueChange(
+            remoteData: null,
+            remoteSubkeys: List.empty(),
+            localSubkeys: subkeys,
+          );
         }
         break;
       }
@@ -951,6 +1089,47 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     if (openedRecordInfo.shared.needsWatchStateUpdate) {
       _pollWatch(openedRecordKey, openedRecordInfo, unionWatchState);
     }
+  }
+
+  // Begin a transaction
+  Future<DHTRecordTransaction> _transactInner(
+    Iterable<DHTRecord> records, {
+    required String debugName,
+    TransactDHTRecordsOptions? options,
+  }) async {
+    final dhttx = await DHTRecordPool.instance.retry(
+      () => _veilid.transactDHTRecords(
+        records.map((rec) => rec.key).toList(),
+        options: options,
+      ),
+    );
+
+    try {
+      // Pull the whole sequence number set for all records
+      final recordInfos = await Future.wait(
+        records.map((x) async {
+          final rep = await dhttx.inspect(x.key, scope: DHTReportScope.syncGet);
+          return _DHTRecordTxContext(x, rep);
+        }),
+        eagerError: true,
+      );
+      return DHTRecordTransaction._(
+        pool: this,
+        recordTxContexts: recordInfos,
+        dhttx: dhttx,
+        debugName: debugName,
+      );
+    } on Exception {
+      await dhttx.rollback();
+      rethrow;
+    }
+  }
+
+  // Late-close a transaction if it wasn't committed or rolled back
+  void lateFinalizer(Finalize finalizeable) {
+    serialFuture((this, _sfFinalizers), () async {
+      await finalizeable.finalize();
+    });
   }
 
   // In lieu of a completed watch, set off a polling operation

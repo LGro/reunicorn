@@ -1,14 +1,30 @@
-// Contains code from VeilidChat MPL-2.0 licensed and changes from Reunicorn authors under AGPL
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../tools/tools.dart';
-import '../models/models.dart';
 
-class ProcessorRepository {
-  ProcessorRepository._()
+class VeilidProcessorRepository implements VeilidProcessorInterface {
+  //////////////////////////////////////////////////////////////
+  /// Singleton initialization
+
+  // Public API
+  // ignore: omit_obvious_property_types
+  static VeilidProcessorRepository instance = VeilidProcessorRepository._();
+
+  ////////////////////////////////////////////
+
+  StreamSubscription<VeilidUpdate>? _updateSubscription;
+
+  final StreamController<ProcessorConnectionState> _controllerConnectionState;
+
+  bool startedUp;
+
+  @override
+  ProcessorConnectionState processorConnectionState;
+
+  VeilidProcessorRepository._()
     : startedUp = false,
       _controllerConnectionState = StreamController.broadcast(sync: true),
       processorConnectionState = ProcessorConnectionState(
@@ -18,6 +34,11 @@ class ProcessorRepository {
           localNetworkReady: false,
           uptime: TimestampDuration(value: BigInt.zero),
           attachedUptime: null,
+          reliablePeerCount: BigInt.zero,
+          livePeerCount: BigInt.zero,
+          estimatedNetworkSize: BigInt.zero,
+          medianLatency: null,
+          overAttachedNodes: BigInt.zero,
         ),
         network: VeilidStateNetwork(
           started: false,
@@ -27,12 +48,7 @@ class ProcessorRepository {
         ),
       );
 
-  //////////////////////////////////////////////////////////////
-  /// Singleton initialization
-
-  static ProcessorRepository instance = ProcessorRepository._();
-
-  Future<void> startup(String bootstrapUrl, {bool deleteStores = false}) async {
+  Future<void> startup(String bootstrapUrl) async {
     if (startedUp) {
       return;
     }
@@ -47,13 +63,7 @@ class ProcessorRepository {
 
     log.info('Veilid version: $veilidVersion');
 
-    // HACK: In case of hot restart shut down first
-    try {
-      await Veilid.instance.shutdownVeilidCore();
-    } on Exception {
-      // Do nothing on failure here
-    }
-    var veilidConfig = await getVeilidConfig(kIsWeb, 'Reunicorn').then(
+    final veilidConfig = await getVeilidConfig(kIsWeb, 'Reunicorn').then(
       (c) => kIsWeb
           ? c
           : c.copyWith(
@@ -64,18 +74,6 @@ class ProcessorRepository {
               ),
             ),
     );
-
-    if (deleteStores) {
-      veilidConfig = veilidConfig.copyWith(
-        tableStore: veilidConfig.tableStore.copyWith(delete: true),
-      );
-      veilidConfig = veilidConfig.copyWith(
-        protectedStore: veilidConfig.protectedStore.copyWith(delete: true),
-      );
-      veilidConfig = veilidConfig.copyWith(
-        blockStore: veilidConfig.blockStore.copyWith(delete: true),
-      );
-    }
 
     Stream<VeilidUpdate> updateStream;
     try {
@@ -161,6 +159,7 @@ class ProcessorRepository {
     }
   }
 
+  @override
   Stream<ProcessorConnectionState> streamProcessorConnectionState() =>
       _controllerConnectionState.stream;
 
@@ -173,6 +172,11 @@ class ProcessorRepository {
         localNetworkReady: updateAttachment.localNetworkReady,
         uptime: updateAttachment.uptime,
         attachedUptime: updateAttachment.attachedUptime,
+        reliablePeerCount: updateAttachment.reliablePeerCount,
+        livePeerCount: updateAttachment.livePeerCount,
+        estimatedNetworkSize: updateAttachment.estimatedNetworkSize,
+        medianLatency: updateAttachment.medianLatency,
+        overAttachedNodes: updateAttachment.overAttachedNodes,
       ),
     );
     _controllerConnectionState.add(processorConnectionState);
@@ -205,11 +209,4 @@ class ProcessorRepository {
     // Send value updates to DHTRecordPool
     DHTRecordPool.instance.processRemoteValueChange(updateValueChange);
   }
-
-  ////////////////////////////////////////////
-
-  StreamSubscription<VeilidUpdate>? _updateSubscription;
-  final StreamController<ProcessorConnectionState> _controllerConnectionState;
-  bool startedUp;
-  ProcessorConnectionState processorConnectionState;
 }

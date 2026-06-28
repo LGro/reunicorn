@@ -29,6 +29,12 @@ abstract class DHTInsertRemove {
   /// Throws an IndexError if the position removed exceeds the length of
   /// the container.
   Future<void> remove(int pos, {Output<Uint8List>? output});
+
+  /// Returns the maximum number of items that can be inserted in a single
+  /// insertAll call at position [pos] given the current state.
+  /// insertAll will throw DHTExceptionLimit if the requested length
+  /// exceeds this value.
+  int insertAllLimit(int pos);
 }
 
 extension DHTInsertRemoveExt on DHTInsertRemove {

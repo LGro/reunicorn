@@ -292,7 +292,7 @@ class _DeveloperPageState extends State<DeveloperPage> {
                     setState(() {
                       _logLevelDropDown = item.value;
                       Loggy('').level = getLogOptions(item.value);
-                      setVeilidLogLevel(
+                      setVeilidLogDirectives(
                         '#common=${item.value.name.toLowerCase()}',
                       );
                     });

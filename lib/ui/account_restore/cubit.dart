@@ -16,7 +16,7 @@ class RestoreCubit extends Cubit<RestoreState> {
 
   RestoreCubit(this._backupRepository)
     : super(const RestoreState(status: RestoreStatus.attaching)) {
-    ProcessorRepository.instance.streamProcessorConnectionState().listen(
+    VeilidProcessorRepository.instance.streamProcessorConnectionState().listen(
       _veilidConnectionStateChangeCallback,
     );
   }

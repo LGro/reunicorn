@@ -16,13 +16,13 @@ Future<Map<String, dynamic>> getDefaultVeilidPlatformConfig(
   bool isWeb,
   String appName,
 ) async {
-  final directivesStr =
+  final logDirectivesStr =
       // Allowed to change settings
       // ignore: do_not_use_environment
-      const String.fromEnvironment('IGNORE_LOG_TARGETS').trim();
-  final directives = directivesStr.isEmpty
+      const String.fromEnvironment('LOG_DIRECTIVES').trim();
+  final logDirectives = logDirectivesStr.isEmpty
       ? <String>[]
-      : directivesStr.split(',').map((e) => e.trim()).toList();
+      : logDirectivesStr.split(',').map((e) => e.trim()).toList();
 
   // Allowed to change settings
   // ignore: do_not_use_environment
@@ -37,6 +37,26 @@ Future<Map<String, dynamic>> getDefaultVeilidPlatformConfig(
     print('Flame data logged to $flamePathStr');
   }
 
+  // OTLP settings: enable by setting OTLP=1 at run time. Requires veilid-flutter
+  // to be built with the `opentelemetry` cargo feature
+  // (VEILID_CARGO_EXTRA_OPTIONS="--features opentelemetry") for spans to exist.
+  // Allowed to change settings
+  // ignore: do_not_use_environment
+  final otlpEnabled = const String.fromEnvironment('OTLP').trim() == '1';
+  final otlpEndpoint = const String.fromEnvironment(
+    // Allowed to change settings
+    // ignore: do_not_use_environment
+    'OTLP_GRPC_ENDPOINT',
+    defaultValue: '127.0.0.1:4317',
+  ).trim();
+  final otlpDirectivesStr =
+      // Allowed to change settings
+      // ignore: do_not_use_environment
+      const String.fromEnvironment('OTLP_DIRECTIVES').trim();
+  final otlpDirectives = otlpDirectivesStr.isEmpty
+      ? <String>[]
+      : otlpDirectivesStr.split(',').map((e) => e.trim()).toList();
+
   if (isWeb) {
     return VeilidWASMConfig(
       logging: VeilidWASMConfigLogging(
@@ -46,12 +66,15 @@ Future<Map<String, dynamic>> getDefaultVeilidPlatformConfig(
               ? VeilidConfigLogLevel.debug
               : VeilidConfigLogLevel.info,
           timings: true,
-          directives: directives,
+          console: VeilidWASMConfigLoggingPerformanceConsole(
+            enabled: kIsDebugMode,
+          ),
+          directives: logDirectives,
         ),
         api: VeilidWASMConfigLoggingApi(
           enabled: true,
           level: VeilidConfigLogLevel.info,
-          directives: directives,
+          directives: logDirectives,
         ),
       ),
     ).toJson();
@@ -63,19 +86,19 @@ Future<Map<String, dynamic>> getDefaultVeilidPlatformConfig(
         level: kIsDebugMode
             ? VeilidConfigLogLevel.debug
             : VeilidConfigLogLevel.info,
-        directives: directives,
-      ),
-      otlp: VeilidFFIConfigLoggingOtlp(
-        enabled: false,
-        level: VeilidConfigLogLevel.trace,
-        grpcEndpoint: '127.0.0.1:4317',
-        serviceName: appName,
-        directives: directives,
+        directives: logDirectives,
       ),
       api: VeilidFFIConfigLoggingApi(
         enabled: true,
         level: VeilidConfigLogLevel.info,
-        directives: directives,
+        directives: logDirectives,
+      ),
+      otlp: VeilidFFIConfigLoggingOtlp(
+        enabled: otlpEnabled,
+        level: VeilidConfigLogLevel.trace,
+        grpcEndpoint: otlpEndpoint,
+        serviceName: appName,
+        directives: otlpDirectives,
       ),
       flame: VeilidFFIConfigLoggingFlame(
         enabled: flamePathStr.isNotEmpty,

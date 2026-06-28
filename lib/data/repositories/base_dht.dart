@@ -13,7 +13,7 @@ abstract class BaseDhtRepository {
 
   BaseDhtRepository() {
     unawaited(_initIsDhtAvailable());
-    ProcessorRepository.instance.streamProcessorConnectionState().listen(
+    VeilidProcessorRepository.instance.streamProcessorConnectionState().listen(
       _veilidConnectionStateChangeCallback,
     );
   }
@@ -23,7 +23,7 @@ abstract class BaseDhtRepository {
       final state = await Veilid.instance.getVeilidState();
       isDhtAvailable =
           state.attachment.publicInternetReady &&
-          state.attachment.state == AttachmentState.fullyAttached;
+          state.attachment.state == AttachmentState.attachedFull;
     } on VeilidAPIExceptionNotInitialized {}
   }
 

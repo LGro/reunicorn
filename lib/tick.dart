@@ -1,14 +1,16 @@
+// From veilidchat licensed MPL-2.0
 import 'dart:async';
 
+import 'package:async_tools/async_tools.dart';
 import 'package:flutter/material.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import 'veilid_processor/veilid_processor.dart';
 
 class BackgroundTicker extends StatefulWidget {
-  const BackgroundTicker({required this.child, super.key});
-
   final Widget child;
+
+  const BackgroundTicker({required this.child, super.key});
 
   @override
   BackgroundTickerState createState() => BackgroundTickerState();
@@ -16,25 +18,18 @@ class BackgroundTicker extends StatefulWidget {
 
 class BackgroundTickerState extends State<BackgroundTicker> {
   Timer? _tickTimer;
-  bool _inTick = false;
 
   @override
   void initState() {
     super.initState();
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!_inTick) {
-        unawaited(_onTick());
-      }
+      singleFuture(this, _onTick);
     });
   }
 
   @override
   void dispose() {
-    final tickTimer = _tickTimer;
-    if (tickTimer != null) {
-      tickTimer.cancel();
-    }
-
+    _tickTimer?.cancel();
     super.dispose();
   }
 
@@ -45,17 +40,14 @@ class BackgroundTickerState extends State<BackgroundTicker> {
   }
 
   Future<void> _onTick() async {
-    if (!ProcessorRepository
-        .instance.processorConnectionState.isPublicInternetReady) {
+    if (!VeilidProcessorRepository
+        .instance
+        .processorConnectionState
+        .isPublicInternetReady) {
       return;
     }
 
-    _inTick = true;
-    try {
-      // Tick DHT record pool
-      unawaited(DHTRecordPool.instance.tick());
-    } finally {
-      _inTick = false;
-    }
+    // Tick DHT record pool
+    await DHTRecordPool.instance.tick();
   }
 }

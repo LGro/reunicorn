@@ -256,14 +256,12 @@ void main() {
     // Alice shares something else for Bob
     // Leave this here, since sharing two things used to break the crypto until
     // the other contact shared back.
-    debugPrint('DBG: Share phone 1');
     final phoneId1 = await _sharePhone(
       profileStorageA,
       contactStorageA,
       contactId: contactBobInvitedByA.coagContactId,
       number: '123',
     );
-    debugPrint('DBG: Share phone 2');
     final phoneId2 = await _sharePhone(
       profileStorageA,
       contactStorageA,
@@ -342,6 +340,26 @@ void main() {
       expect(
         contactBobFromAlicesRepo.connectionCrypto,
         isA<CryptoEstablishedAsymmetric>(),
+      );
+    });
+    final phoneId3 = await _sharePhone(
+      profileStorageA,
+      contactStorageA,
+      contactId: contactBobInvitedByA.coagContactId,
+      number: '999',
+    );
+
+    // Bob checks for updated info
+    debugPrint('---');
+    debugPrint('BOB ACTING (check handshake completed)');
+    await retryUntilTimeout(10, () async {
+      contactAliceFromBobsRepo = (await contactStorageB.get(
+        contactAliceFromBobsRepo!.coagContactId,
+      ))!;
+      expect(
+        contactAliceFromBobsRepo!.details?.phones.keys ?? [],
+        contains(phoneId3),
+        reason: 'Expect the new phone number 3',
       );
     });
   });
