@@ -6,7 +6,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
-import 'package:device_calendar/device_calendar.dart';
+import 'package:eventide/eventide.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -202,7 +202,7 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
     updateReadyToSubmit();
   }
 
-  Future<void> _importCalendarEvent(Event e) async {
+  Future<void> _importCalendarEvent(ETEvent e) async {
     // Attempt to geocode the event address location
     SearchResult? location;
     if (e.location != null && e.location!.isNotEmpty) {
@@ -215,26 +215,16 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
         location = options.first;
       }
     }
-    // TODO: Notify user if location could not be geocoded?
-    // TODO: Do we want to avoid overriding existing text input?
-    if (e.title != null) {
-      _titleController.text = e.title!;
-    }
+    _titleController.text = e.title;
     if (e.description != null) {
       _detailsController.text = e.description!;
     }
     if (!mounted) {
       return;
     }
-    if (e.title != null) {
-      _titleController.text = e.title!;
-    }
-    if (e.description != null) {
-      _detailsController.text = e.description!;
-    }
     setState(() {
-      _start = e.start;
-      _end = e.end;
+      _start = e.startDate;
+      _end = e.endDate;
       _location = location;
       _toggleMapLocationKey = !_toggleMapLocationKey;
     });

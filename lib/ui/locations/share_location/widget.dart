@@ -6,7 +6,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
-import 'package:device_calendar/device_calendar.dart';
+import 'package:eventide/eventide.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -245,7 +245,7 @@ class _ShareLocationWidgetState extends State<ShareLocationWidget> with UiLoggy 
     updateReadyToSubmit();
   }
 
-  Future<void> _importCalendarEvent(Event e) async {
+  Future<void> _importCalendarEvent(ETEvent e) async {
     // Attempt to geocode the event address location
     SearchResult? location;
     if (e.location != null && e.location!.isNotEmpty) {
@@ -258,9 +258,7 @@ class _ShareLocationWidgetState extends State<ShareLocationWidget> with UiLoggy 
         location = options.first;
       }
     }
-    if (e.title != null) {
-      _titleController.text = e.title!;
-    }
+    _titleController.text = e.title;
     if (e.description != null) {
       _detailsController.text = e.description!;
     }
@@ -268,13 +266,11 @@ class _ShareLocationWidgetState extends State<ShareLocationWidget> with UiLoggy 
       return;
     }
     setState(() {
-      _start = e.start;
-      _end = e.end;
+      _start = e.startDate;
+      _end = e.endDate;
       _location = location;
       _toggleMapLocationKey = !_toggleMapLocationKey;
-      if (e.start != null) {
-        _userHasSetStartTime = true;
-      }
+      _userHasSetStartTime = true;
     });
     updateReadyToSubmit();
   }

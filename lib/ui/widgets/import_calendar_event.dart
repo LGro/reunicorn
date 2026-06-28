@@ -3,7 +3,7 @@
 
 import 'dart:async';
 
-import 'package:device_calendar/device_calendar.dart';
+import 'package:eventide/eventide.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -16,7 +16,7 @@ enum _Status { loading, permissionDenied, success }
 class CalendarEventsPage extends StatefulWidget {
   const CalendarEventsPage({required this.onSelectEvent, super.key});
 
-  final void Function(Event) onSelectEvent;
+  final void Function(ETEvent) onSelectEvent;
 
   @override
   _CalendarEventsPageState createState() => _CalendarEventsPageState();
@@ -24,9 +24,9 @@ class CalendarEventsPage extends StatefulWidget {
 
 class _CalendarEventsPageState extends State<CalendarEventsPage>
     with WidgetsBindingObserver {
-  final DeviceCalendarPlugin _deviceCalendarPlugin = DeviceCalendarPlugin();
-  List<Calendar> _calendars = [];
-  final List<Event> _events = [];
+  final _eventide = Eventide();
+  List<ETCalendar> _calendars = [];
+  final List<ETEvent> _events = [];
   _Status _status = _Status.loading;
   // Without bookkeeping about when the app went hidden, we run into an infinite
   // loop when trying to detect AppLifecycleState.resumed
@@ -66,42 +66,25 @@ class _CalendarEventsPageState extends State<CalendarEventsPage>
       _status = _Status.loading;
     });
 
-    var calendarPermission = await Permission.calendarFullAccess.status;
-    if (calendarPermission.isDenied) {
-      calendarPermission = await Permission.calendarFullAccess.request();
-    }
-    if (calendarPermission.isDenied ||
-        calendarPermission.isPermanentlyDenied ||
-        calendarPermission.isRestricted) {
+    try {
+      _calendars = (await _eventide.retrieveCalendars()).toList();
+    } on ETPermissionException {
       return setState(() {
         _status = _Status.permissionDenied;
       });
     }
 
-    final calendarsResult = await _deviceCalendarPlugin.retrieveCalendars();
-    setState(() {
-      _calendars = calendarsResult.data ?? [];
-    });
-
     final now = DateTime.now();
     for (final calendar in _calendars) {
-      final eventsResult = await _deviceCalendarPlugin.retrieveEvents(
-        calendar.id,
-        RetrieveEventsParams(
-          startDate: now.subtract(const Duration(days: 30)),
-          // look ahead for up to 1 year
-          endDate: now.add(const Duration(days: 365)),
-        ),
+      final events = await _eventide.retrieveEvents(
+        calendarId: calendar.id,
+        startDate: now.subtract(const Duration(days: 30)),
+        // look ahead for up to 1 year
+        endDate: now.add(const Duration(days: 365)),
       );
 
-      final filteredEvents = (eventsResult.data ?? [])
-          .whereType<Event>()
-          .where(
-            (event) =>
-                event.end != null &&
-                event.end!.isAfter(now) &&
-                event.recurrenceRule == null,
-          )
+      final filteredEvents = events
+          .where((event) => event.endDate.isAfter(now))
           .toList();
 
       if (filteredEvents.isNotEmpty) {
@@ -154,12 +137,7 @@ class _CalendarEventsPageState extends State<CalendarEventsPage>
   );
 }
 
-String _eventTitle(Event e) {
-  final title = <String>[];
-  if (e.start != null) {
-    final date = e.start!.toLocal();
-    title.add('${DateFormat('MMM').format(date)} ${date.day}');
-  }
-  title.add(e.title ?? '???');
-  return title.join(' | ');
+String _eventTitle(ETEvent e) {
+  final date = e.startDate.toLocal();
+  return '${DateFormat('MMM').format(date)} ${date.day} | ${e.title}';
 }

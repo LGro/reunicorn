@@ -58,11 +58,7 @@ dependencies:
   badges: ^3.1.2
   http_cache_file_store: ^2.0.1
   receive_sharing_intent: ^1.9.0
-  # TODO: Switch to official release once https://github.com/builttoroam/device_calendar/pull/590 is in
-  device_calendar:
-    git:
-      url: https://github.com/bardram/device_calendar
-      ref: 32f9eac659731b6f0f941fab88fa4c749c75f716
+  eventide: ^2.2.1
   file_picker: ^10.3.3
   maplibre_gl: ^0.25.0
   multiple_result: ^5.2.0

@@ -305,15 +305,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.14"
-  device_calendar:
-    dependency: "direct main"
-    description:
-      path: "."
-      ref: "32f9eac659731b6f0f941fab88fa4c749c75f716"
-      resolved-ref: "32f9eac659731b6f0f941fab88fa4c749c75f716"
-      url: "https://github.com/bardram/device_calendar"
-    source: git
-    version: "4.3.1"
   diff_match_patch:
     dependency: transitive
     description:
@@ -330,6 +321,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.8"
+  eventide:
+    dependency: "direct main"
+    description:
+      name: eventide
+      sha256: "7e483060df1fd127f4ff54f3e152a26def7b4e17d8966ec90085df53bf6b2f2e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.1"
   fake_async:
     dependency: transitive
     description:
@@ -1381,14 +1380,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.2"
-  rrule:
-    dependency: transitive
-    description:
-      name: rrule
-      sha256: f6f6ad5bf7b19d218d4c985d6055d3c9717f1d6efd5d1c0127b1146f1eb3640c
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.18"
   rxdart:
     dependency: "direct main"
     description:
@@ -1674,14 +1665,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.17"
-  time:
-    dependency: transitive
-    description:
-      name: time
-      sha256: "46187cf30bffdab28c56be9a63861b36e4ab7347bf403297595d6a97e10c789f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.6"
   timezone:
     dependency: transitive
     description:
