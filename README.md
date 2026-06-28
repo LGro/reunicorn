@@ -58,6 +58,11 @@ Start this script to re-build and run WidgetBook in Chrome:
 ./widgetbook/run.sh
 ```
 
+### Gradle Version Upgrades
+
+- https://gradle.org/releases/
+- https://developer.android.com/build/releases/about-agp#updating-gradle
+
 ### Fastlane
 
 For Fastlane setup see https://docs.fastlane.tools/
