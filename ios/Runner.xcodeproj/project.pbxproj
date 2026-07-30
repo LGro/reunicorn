@@ -224,11 +224,10 @@
 			outputPaths = (
 				"$(SRCROOT)/../../veilid/target/lipo-ios/libveilid_flutter.a",
 				"$(SRCROOT)/../../veilid/target/lipo-ios-sim/libveilid_flutter.a",
-				"$(SRCROOT)/Flutter/veilid_exported_symbols.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\n\"$SRCROOT/../../veilid/scripts/ios_build.sh\" veilid_flutter\n\n# veilid's ~90 C-ABI functions (free_string, initialize_veilid_core, ...) are only ever\n# looked up at runtime via dlsym(RTLD_DEFAULT, ...) from Dart, never referenced by any\n# Swift/ObjC symbol. That makes them invisible to the linker's dead-strip liveness\n# analysis, so -force_load alone isn't enough to keep them in a release/archive build.\n# Generate an exported-symbols list from the freshly built static lib so OTHER_LDFLAGS\n# can pin them as link roots, instead of hand-maintaining a list that'd drift out of sync\n# with veilid's FFI surface.\nnm -gU \"$SRCROOT/../../veilid/target/lipo-ios/libveilid_flutter.a\" | awk '$2 == \"T\" {print $3}' | grep -v '^__' | sort -u > \"$SRCROOT/Flutter/veilid_exported_symbols.txt\"\n";
+			shellScript = "set -e\n\"$SRCROOT/../../veilid/scripts/ios_build.sh\" veilid_flutter\n";
 		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -356,18 +355,15 @@
 				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
 					"$(inherited)",
 					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios/libveilid_flutter.a",
-					"-Wl,-exported_symbols_list,$(SRCROOT)/Flutter/veilid_exported_symbols.txt",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*]" = (
 					"$(inherited)",
 					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios-sim/libveilid_flutter.a",
-					"-Wl,-exported_symbols_list,$(SRCROOT)/Flutter/veilid_exported_symbols.txt",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.coagulate.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Lukas Grossberger Reunicorn Distribution";
-				STRIP_STYLE = "non-global";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -507,18 +503,15 @@
 				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
 					"$(inherited)",
 					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios/libveilid_flutter.a",
-					"-Wl,-exported_symbols_list,$(SRCROOT)/Flutter/veilid_exported_symbols.txt",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*]" = (
 					"$(inherited)",
 					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios-sim/libveilid_flutter.a",
-					"-Wl,-exported_symbols_list,$(SRCROOT)/Flutter/veilid_exported_symbols.txt",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.coagulate.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Lukas Grossberger Reunicorn Distribution";
-				STRIP_STYLE = "non-global";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -549,18 +542,15 @@
 				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
 					"$(inherited)",
 					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios/libveilid_flutter.a",
-					"-Wl,-exported_symbols_list,$(SRCROOT)/Flutter/veilid_exported_symbols.txt",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*]" = (
 					"$(inherited)",
 					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios-sim/libveilid_flutter.a",
-					"-Wl,-exported_symbols_list,$(SRCROOT)/Flutter/veilid_exported_symbols.txt",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.coagulate.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Lukas Grossberger Reunicorn Distribution";
-				STRIP_STYLE = "non-global";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
