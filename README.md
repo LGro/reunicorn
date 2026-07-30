@@ -41,6 +41,12 @@ To (re-)generate all app icons, run
 dart run icons_launcher:create
 ```
 
+### Fastlane
+
+On MacOS, use brew to install fastlane.
+
+Then run fastlane in the `ios/` or `android/` subfolder.
+
 ### Testing
 
 Using `lcov`, run:

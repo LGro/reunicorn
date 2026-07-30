@@ -19,6 +19,7 @@ Flutter/App.framework
 Flutter/Flutter.framework
 Flutter/Flutter.podspec
 Flutter/Generated.xcconfig
+Flutter/veilid_exported_symbols.txt
 Flutter/ephemeral/
 Flutter/app.flx
 Flutter/app.zip

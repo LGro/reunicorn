@@ -1,4 +1,5 @@
 app_identifier("social.coagulate.app") # The bundle identifier of your app
+apple_id("lukas@grossberger.xyz") # Your Apple Developer Portal username
 
 itc_team_id("127078747") # App Store Connect Team ID
 team_id("G42ZSYUPFC") # Developer Portal Team ID

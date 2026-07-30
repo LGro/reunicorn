@@ -16,9 +16,20 @@
 default_platform(:ios)
 
 platform :ios do
+  before_all do
+    # Resolves to project root (2 directories up from ios/fastlane or android/fastlane)
+    project_root = File.expand_path('../..', __dir__)
+
+    # Set FLUTTER_ROOT dynamically to the FVM symlink
+    ENV['FLUTTER_ROOT'] = File.join(project_root, '.fvm', 'flutter_sdk')
+  end
+
   desc "Push a new beta build to TestFlight"
   lane :beta do
-    build_app(workspace: "Runner.xcworkspace", scheme: "Runner")
-    upload_to_testflight
+  build_app(
+    skip_build_archive: true,
+    archive_path: "../build/ios/archive/Runner.xcarchive",
+  )
+  upload_to_testflight
   end
 end
