@@ -355,10 +355,12 @@
 				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
 					"$(inherited)",
 					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios/libveilid_flutter.a",
+					"-Wl,-export_dynamic",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*]" = (
 					"$(inherited)",
 					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios-sim/libveilid_flutter.a",
+					"-Wl,-export_dynamic",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.coagulate.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -503,10 +505,12 @@
 				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
 					"$(inherited)",
 					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios/libveilid_flutter.a",
+					"-Wl,-export_dynamic",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*]" = (
 					"$(inherited)",
 					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios-sim/libveilid_flutter.a",
+					"-Wl,-export_dynamic",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.coagulate.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -542,10 +546,12 @@
 				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
 					"$(inherited)",
 					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios/libveilid_flutter.a",
+					"-Wl,-export_dynamic",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*]" = (
 					"$(inherited)",
 					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios-sim/libveilid_flutter.a",
+					"-Wl,-export_dynamic",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.coagulate.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
