@@ -1060,6 +1060,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.3.0"
+  native_toolchain_rust:
+    dependency: transitive
+    description:
+      name: native_toolchain_rust
+      sha256: faa57d2258a3b0fd2a634054f54e4496c9fcbd971977e7d2b7e6916d56892857
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.4+0"
   nested:
     dependency: transitive
     description:
@@ -1673,6 +1681,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.11.0"
+  toml:
+    dependency: transitive
+    description:
+      name: toml
+      sha256: "35a35f782228656a2af31e8c73d1353cc4ef3d683fd68af1111b44631879c05e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.18.0"
   typed_data:
     dependency: transitive
     description:

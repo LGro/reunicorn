@@ -119,7 +119,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
 			buildPhases = (
-				8051CE632FF10F6300BBD609 /* Cargo Build veilid */,
 				9740EEB61CF901F6004384FC /* Run Script */,
 				97C146EA1CF9000F007C117D /* Sources */,
 				97C146EB1CF9000F007C117D /* Frameworks */,
@@ -207,27 +206,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
-		};
-		8051CE632FF10F6300BBD609 /* Cargo Build veilid */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Cargo Build veilid";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(SRCROOT)/../../veilid/target/lipo-ios/libveilid_flutter.a",
-				"$(SRCROOT)/../../veilid/target/lipo-ios-sim/libveilid_flutter.a",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "set -e\n\"$SRCROOT/../../veilid/scripts/ios_build.sh\" veilid_flutter\n";
 		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -351,16 +329,6 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
-				);
-				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
-					"$(inherited)",
-					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios/libveilid_flutter.a",
-					"-Wl,-export_dynamic",
-				);
-				"OTHER_LDFLAGS[sdk=iphonesimulator*]" = (
-					"$(inherited)",
-					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios-sim/libveilid_flutter.a",
-					"-Wl,-export_dynamic",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.coagulate.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -502,16 +470,6 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
-					"$(inherited)",
-					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios/libveilid_flutter.a",
-					"-Wl,-export_dynamic",
-				);
-				"OTHER_LDFLAGS[sdk=iphonesimulator*]" = (
-					"$(inherited)",
-					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios-sim/libveilid_flutter.a",
-					"-Wl,-export_dynamic",
-				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.coagulate.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -542,16 +500,6 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
-				);
-				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
-					"$(inherited)",
-					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios/libveilid_flutter.a",
-					"-Wl,-export_dynamic",
-				);
-				"OTHER_LDFLAGS[sdk=iphonesimulator*]" = (
-					"$(inherited)",
-					"-Wl,-force_load,$(SRCROOT)/../../veilid/target/lipo-ios-sim/libveilid_flutter.a",
-					"-Wl,-export_dynamic",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = social.coagulate.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
