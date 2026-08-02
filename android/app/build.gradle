@@ -32,7 +32,8 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    ndkVersion "29.0.14206865"
+    // Check that the ANDROID_NDK_ROOT env var - if it exists - matches
+    ndkVersion "28.2.13676358"
     // This was originally set to flutter.compileSdkVersion but that was too low for receive_sharing_intent
     // TODO: Double check during later flutter version upgrades if we can switch this back
     compileSdkVersion 37
