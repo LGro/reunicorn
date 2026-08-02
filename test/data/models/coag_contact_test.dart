@@ -41,7 +41,10 @@ void main() {
           Phone(number: '1234-sys'),
           Phone(
             number: '0000-coag',
-            label: Label(PhoneLabel.custom, 'old mansion $appManagedLabelSuffix'),
+            label: Label(
+              PhoneLabel.custom,
+              'old mansion $appManagedLabelSuffix',
+            ),
           ),
         ],
       ),
@@ -49,7 +52,10 @@ void main() {
         id: 'coag',
         displayName: 'Coag Name',
         phones: [
-          Phone(number: '54321-coag', label: Label(PhoneLabel.custom, 'mansion')),
+          Phone(
+            number: '54321-coag',
+            label: Label(PhoneLabel.custom, 'mansion'),
+          ),
         ],
       ),
     );
@@ -64,7 +70,10 @@ void main() {
     );
     expect(merged.phones[0].number, '1234-sys');
     expect(merged.phones[1].number, '54321-coag');
-    expect(merged.phones[1].label.customLabel, 'mansion $appManagedLabelSuffix');
+    expect(
+      merged.phones[1].label.customLabel,
+      'mansion $appManagedLabelSuffix',
+    );
   });
 
   test('coveredByReunicorn Email with mismatched label still covers', () {
@@ -113,9 +122,9 @@ void main() {
       dhtConnection: DhtConnectionState.invited(
         recordKeyThemSharing: fakeDhtRecordKey(),
       ),
-      connectionCrypto: CryptoState.symmetric(
-        sharedSecret: fakePsk(0),
-        accountVod: '',
+      connectionCrypto: CryptoState.initializedSymmetric(
+        initialSharedSecret: fakePsk(0),
+        myNextKeyPair: fakeKeyPair(),
       ),
       myIdentity: fakeKeyPair(),
       details: null,
@@ -128,6 +137,8 @@ void main() {
       profileSharingStatus: const ProfileSharingStatus(),
       introductionsForThem: const [],
       introductionsByThem: const [],
+      myLinkedAppConnections: {},
+      theirLinkedAppConnections: {},
       origin: null,
       verified: false,
     );
@@ -151,18 +162,5 @@ void main() {
     );
     await saveJsonModelAsset(contactMinimal, versionSuffix: 'minimal');
     await saveJsonModelAsset(contactFull, versionSuffix: 'full');
-  });
-
-  test('test loading previous json schema versions', () async {
-    for (final jsonEntry
-        in loadAllPreviousSchemaVersionJsonFiles<CoagContact>().entries) {
-      final jsonData =
-          await jsonDecode(jsonEntry.value) as Map<String, dynamic>;
-      final migrated = await migrateContactAddIdentityAndIntroductionKeyPairs(
-        jsonData,
-        generateKeyPair: () async => fakeKeyPair(),
-      );
-      CoagContact.fromJson(migrated);
-    }
   });
 }

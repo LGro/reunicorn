@@ -7,7 +7,6 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reunicorn/data/models/models.dart';
 import 'package:reunicorn/data/models/profile_info.dart';
-import 'package:reunicorn/data/providers/legacy/sqlite.dart';
 
 import '../../mocked_providers.dart';
 
@@ -69,17 +68,5 @@ void main() {
     const schema = ContactSharingSchemaV3(details: ContactDetails());
     final deserialized = ContactSharingSchemaV3.fromJson(schema.toJson());
     expect(schema, deserialized);
-  });
-
-  test('contacts deserialization for backwards compatibility', () async {
-    final file = File('test/assets/example_contact.json');
-    final contents = await file.readAsString();
-    final contactJson = (json.decode(contents) as List<dynamic>).first;
-    final migratedJson = await migrateContactAddIdentityAndIntroductionKeyPairs(
-      contactJson as Map<String, dynamic>,
-      generateKeyPair: () async => fakeKeyPair(),
-    );
-    final contact = CoagContact.fromJson(migratedJson);
-    expect(contact.name, 'Display Name');
   });
 }

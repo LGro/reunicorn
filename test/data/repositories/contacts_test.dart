@@ -128,7 +128,6 @@ void main() {
         theirNextPublicKey: fakeKeyPair().key,
       ),
       identityKey: null,
-      introductionKey: null,
       introductions: [],
     );
     expect(filtered.temporaryLocations.length, 1);

@@ -13,8 +13,7 @@ void main() {
   test('00 save current json schema version', () async {
     final contactIntro = ContactIntroduction(
       otherName: 'other name',
-      otherPublicKey: fakeKeyPair(1).key,
-      publicKey: fakeKeyPair(2).key,
+      sharedSecret: fakePsk(1),
       dhtRecordKeyReceiving: fakeDhtRecordKey(3),
       dhtRecordKeySharing: fakeDhtRecordKey(4),
       dhtWriterSharing: fakeKeyPair(5, 6),
