@@ -6,8 +6,8 @@ import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:kaisel/kaisel.dart';
 
 import '../../data/models/circle.dart';
 import '../../data/models/close_by_match.dart';
@@ -19,6 +19,8 @@ import '../../data/models/profile_info.dart';
 import '../../data/services/storage/base.dart';
 import '../introductions/cubit.dart';
 import '../introductions/page.dart';
+import '../navigation.dart';
+import '../routes.dart';
 import '../updates/page.dart';
 import '../utils.dart';
 import 'cubit.dart';
@@ -95,7 +97,7 @@ class _DashboardPageState extends State<DashboardPage> {
       title: const Text('Dashboard'),
       actions: [
         IconButton(
-          onPressed: () => context.pushNamed('settings'),
+          onPressed: () => context.router<DashboardRoute>().push(const Settings()),
           icon: const Icon(Icons.settings),
         ),
       ],
@@ -170,7 +172,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ),
                           ),
                     ),
-                    ShowMoreButton(() => context.pushNamed('introductions')),
+                    ShowMoreButton(() => context.router<AppRoute>().push(const Introductions())),
                   ] else
                     const Padding(
                       padding: EdgeInsetsGeometry.only(
@@ -227,7 +229,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       itemBuilder: (context, update) =>
                           _ContactUpdateRow(update),
                     ),
-                    ShowMoreButton(() => context.pushNamed('updates')),
+                    ShowMoreButton(() => context.router<DashboardRoute>().push(const Updates())),
                   ] else
                     const Padding(
                       padding: EdgeInsetsGeometry.only(
@@ -321,7 +323,7 @@ class _CloseByRow extends StatelessWidget {
           if (!match.theyKnow) '\nThey do not know about this, let them know.',
         ].join(),
       ),
-      onTap: () => context.pushNamed('contactDetails', extra: match.contact),
+      onTap: () => context.goToContact(match.contact),
     );
   }
 }
@@ -338,7 +340,7 @@ class _ContactUpdateRow extends StatelessWidget {
     contactUpdateSummary(update.oldContact, update.newContact),
     onTap: (update.coagContactId == null)
         ? null
-        : () => context.pushNamed('contactDetails', extra: update.newContact),
+        : () => context.goToContact(update.newContact),
     picture: update.newContact.details?.picture,
   );
 }

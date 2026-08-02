@@ -6,7 +6,7 @@ import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
+import 'package:kaisel/kaisel.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../data/models/models.dart';
@@ -14,8 +14,8 @@ import '../data/models/circle.dart';
 import '../data/models/profile_info.dart';
 import '../data/services/storage/base.dart';
 import '../data/utils.dart';
-import 'legal/privacy_policy.dart';
-import 'legal/terms_and_conditions.dart';
+import 'navigation.dart';
+import 'routes.dart';
 import 'utils.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -69,7 +69,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
     // Redirect to contacts
     if (mounted) {
-      context.pushReplacementNamed('contacts');
+      context.finishOnboarding(landOn: AppBranch.contacts);
     }
   }
 
@@ -130,16 +130,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                         preAcceptSlopTolerance: 4,
                                         postAcceptSlopTolerance: 4,
                                       )
-                                      ..onTap = () =>
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute<
-                                              TermsAndConditions
-                                            >(
-                                              fullscreenDialog: true,
-                                              builder: (context) =>
-                                                  const TermsAndConditions(),
-                                            ),
-                                          ),
+                                      ..onTap = () => context
+                                          .router<AppRoute>()
+                                          .push(const Terms()),
                               ),
                               const TextSpan(
                                 text:
@@ -158,14 +151,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                         preAcceptSlopTolerance: 4,
                                         postAcceptSlopTolerance: 4,
                                       )
-                                      ..onTap = () =>
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute<PrivacyPolicy>(
-                                              fullscreenDialog: true,
-                                              builder: (context) =>
-                                                  const PrivacyPolicy(),
-                                            ),
-                                          ),
+                                      ..onTap = () => context
+                                          .router<AppRoute>()
+                                          .push(const Privacy()),
                               ),
                               const TextSpan(text: '.'),
                             ],
@@ -206,7 +194,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
-                            onPressed: () => context.pushNamed('restoreBackup'),
+                            onPressed: () => context.router<AppRoute>().push(const RestoreBackup()),
                             child: Text(context.loc.welcomeRestoreBackupButton),
                           ),
                         ),

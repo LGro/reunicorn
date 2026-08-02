@@ -5,7 +5,6 @@ import 'package:ansicolor/ansicolor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:loggy/loggy.dart';
 import 'package:veilid_support/veilid_support.dart';
 import 'package:xterm/xterm.dart';
@@ -224,7 +223,10 @@ class _DeveloperPageState extends State<DeveloperPage> {
         leading: IconButton(
           iconSize: 24,
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => GoRouterHelper(context).pop(),
+          // Plain Navigator pop: this page is also used as the pre-init
+          // splash, where no kaisel router exists above it. kaisel syncs
+          // its stack via onDidRemovePage when it is a routed page.
+          onPressed: () => Navigator.of(context).maybePop(),
         ),
         actions: [
           IconButton(

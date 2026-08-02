@@ -1,1 +1,10 @@
 include: package:flutter_lints/flutter.yaml
+
+plugins:
+  kaisel_lint:
+    version: ^0.3.0
+    diagnostics:
+      # Catches a KaiselRoute subclass with fields but no `props` override,
+      # which silently breaks the equality the stack operations rely on.
+      require_route_props: true
+      avoid_modal_route_on_main_stack: true

@@ -21,11 +21,6 @@ Widget _buildLicenseWidget(Package p) => Column(
 class LicensesPage extends StatelessWidget {
   const LicensesPage({super.key});
 
-  static Route<void> route() => MaterialPageRoute(
-    fullscreenDialog: true,
-    builder: (context) => const LicensesPage(),
-  );
-
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Open Source Licenses')),

@@ -3,12 +3,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
+import 'package:kaisel/kaisel.dart';
 
 import '../../data/models/coag_contact.dart';
 import '../../data/models/community.dart';
 import '../../data/services/storage/base.dart';
-import '../introduce_contacts/page.dart';
+import '../navigation.dart';
+import '../routes.dart';
 import '../utils.dart';
 import 'cubit.dart';
 
@@ -49,7 +50,7 @@ class IntroductionListTile extends StatelessWidget {
               onPressed: () async {
                 final contact = await acceptCallback();
                 if (context.mounted) {
-                  context.goNamed('contactDetails', extra: contact);
+                  context.goToContact(contact);
                   // FIXME: This doesn't seem to work correctly
                   alertContext.pop();
                 }
@@ -79,11 +80,8 @@ class IntroductionsPage extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         FilledButton(
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute<IntroduceContactsPage>(
-              builder: (context) => const IntroduceContactsPage(),
-            ),
-          ),
+          onPressed: () =>
+              context.router<AppRoute>().push(const IntroduceContact()),
           child: const Text('Make an introduction'),
         ),
       ],

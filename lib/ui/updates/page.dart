@@ -5,11 +5,11 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../data/models/contact_update.dart';
 import '../../data/repositories/contact_dht.dart';
 import '../../data/services/storage/base.dart';
+import '../navigation.dart';
 import '../utils.dart';
 import 'cubit.dart';
 
@@ -123,10 +123,7 @@ class UpdatesPage extends StatelessWidget {
                             // TODO: For location updates, bring to map, centered around location with time slider at right time instead
                             onTap: (u.coagContactId == null)
                                 ? null
-                                : () => context.goNamed(
-                                    'contactDetails',
-                                    extra: u.newContact,
-                                  ),
+                                : () => context.goToContact(u.newContact),
                             picture: u.newContact.details?.picture,
                           ),
                         )

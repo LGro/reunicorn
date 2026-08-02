@@ -4,18 +4,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kaisel/kaisel.dart';
 
 import '../../data/repositories/backup_dht.dart';
 import '../../data/repositories/settings.dart';
 import '../../notification_service.dart';
-import '../../veilid_processor/views/developer.dart';
-import '../account_backup/page.dart';
-import '../legal/privacy_policy.dart';
-import '../legal/terms_and_conditions.dart';
+import '../routes.dart';
 import '../widgets/veilid_status/widget.dart';
 import 'cubit.dart';
-import 'debug_info/page.dart';
-import 'licenses/page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -70,12 +66,8 @@ class SettingsPage extends StatelessWidget {
                 padding: EdgeInsets.only(right: 20),
                 child: Icon(Icons.arrow_right),
               ),
-              // TODO: navigate via go router
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<ManageBackupPage>(
-                  builder: (_) => const ManageBackupPage(),
-                ),
-              ),
+              onTap: () =>
+                  context.router<DashboardRoute>().push(const ManageBackup()),
             ),
             ListTile(
               title: const Text('Show open source licenses'),
@@ -83,7 +75,7 @@ class SettingsPage extends StatelessWidget {
                 padding: EdgeInsets.only(right: 20),
                 child: Icon(Icons.arrow_right),
               ),
-              onTap: () => Navigator.of(context).push(LicensesPage.route()),
+              onTap: () => context.router<DashboardRoute>().push(const Licenses()),
             ),
             ListTile(
               title: const Text('Show Reunicorn debug info'),
@@ -91,7 +83,7 @@ class SettingsPage extends StatelessWidget {
                 padding: EdgeInsets.only(right: 20),
                 child: Icon(Icons.arrow_right),
               ),
-              onTap: () => Navigator.of(context).push(DebugInfoPage.route()),
+              onTap: () => context.router<DashboardRoute>().push(const DebugInfo()),
             ),
             ListTile(
               title: const Text('Show Veilid debug info'),
@@ -99,11 +91,8 @@ class SettingsPage extends StatelessWidget {
                 padding: EdgeInsets.only(right: 20),
                 child: Icon(Icons.arrow_right),
               ),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<DeveloperPage>(
-                  builder: (_) => const DeveloperPage(),
-                ),
-              ),
+              onTap: () =>
+                  context.router<DashboardRoute>().push(const Developer()),
             ),
             if (kDebugMode)
               ListTile(
@@ -126,12 +115,7 @@ class SettingsPage extends StatelessWidget {
                 padding: EdgeInsets.only(right: 20),
                 child: Icon(Icons.arrow_right),
               ),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<TermsAndConditions>(
-                  fullscreenDialog: true,
-                  builder: (context) => const TermsAndConditions(),
-                ),
-              ),
+              onTap: () => context.router<AppRoute>().push(const Terms()),
             ),
             ListTile(
               title: const Text('Privacy policy'),
@@ -139,12 +123,7 @@ class SettingsPage extends StatelessWidget {
                 padding: EdgeInsets.only(right: 20),
                 child: Icon(Icons.arrow_right),
               ),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<PrivacyPolicy>(
-                  fullscreenDialog: true,
-                  builder: (context) => const PrivacyPolicy(),
-                ),
-              ),
+              onTap: () => context.router<AppRoute>().push(const Privacy()),
             ),
           ],
         ),

@@ -5,8 +5,8 @@ import 'dart:async';
 
 import 'package:eventide/eventide.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:kaisel/kaisel.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'searchable_list.dart';
@@ -14,9 +14,7 @@ import 'searchable_list.dart';
 enum _Status { loading, permissionDenied, success }
 
 class CalendarEventsPage extends StatefulWidget {
-  const CalendarEventsPage({required this.onSelectEvent, super.key});
-
-  final void Function(ETEvent) onSelectEvent;
+  const CalendarEventsPage({super.key});
 
   @override
   _CalendarEventsPageState createState() => _CalendarEventsPageState();
@@ -125,10 +123,8 @@ class _CalendarEventsPageState extends State<CalendarEventsPage>
             (_eventTitle(e).toLowerCase().contains(s.toLowerCase())) ||
             (e.location?.toLowerCase().contains(s.toLowerCase()) ?? false),
         buildItemWidget: (e) => ListTile(
-          onTap: () {
-            widget.onSelectEvent(e);
-            context.pop();
-          },
+          // Hands the picked event back to the `pushForResult` awaiter.
+          onTap: () => context.pop(e),
           title: Text(_eventTitle(e)),
           subtitle: (e.location == null) ? null : Text(e.location!),
         ),

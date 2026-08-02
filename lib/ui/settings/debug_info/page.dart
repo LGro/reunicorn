@@ -9,11 +9,6 @@ import '../../../debug_log.dart';
 class DebugInfoPage extends StatelessWidget {
   const DebugInfoPage({super.key});
 
-  static Route<void> route() => MaterialPageRoute(
-    fullscreenDialog: true,
-    builder: (context) => const DebugInfoPage(),
-  );
-
   @override
   Widget build(BuildContext context) {
     final combinedInfo = [

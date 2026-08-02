@@ -3,8 +3,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
+import 'package:kaisel/kaisel.dart';
 import 'package:reunicorn/data/repositories/contact_dht.dart';
+
+import '../routes.dart';
 
 class CreateNewContactPage extends StatefulWidget {
   const CreateNewContactPage({super.key});
@@ -59,7 +61,9 @@ class _CreateNewContactPageState extends State<CreateNewContactPage> {
                     .read<ContactDhtRepository>()
                     .createContactForInvite(_nameController.text.trim());
                 if (context.mounted) {
-                  context.goNamed('contactDetails', extra: contact);
+                  context.router<ContactsRoute>().replaceTop(
+                    ContactView(contact),
+                  );
                 }
               },
               child: const Text('Prepare invite'),

@@ -4,12 +4,10 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:go_router/go_router.dart';
 import 'package:loggy/loggy.dart';
 import 'package:provider/provider.dart';
 import 'package:reunicorn/data/repositories/contact_update.dart';
@@ -17,7 +15,6 @@ import 'package:reunicorn/data/repositories/contact_update.dart';
 import '../data/models/circle.dart';
 import '../data/models/coag_contact.dart';
 import '../data/models/community.dart';
-import '../data/models/contact_location.dart';
 import '../data/models/contact_update.dart';
 import '../data/models/profile_info.dart';
 import '../data/models/setting.dart';
@@ -33,253 +30,7 @@ import '../tick.dart';
 import '../veilid_init.dart';
 import '../veilid_processor/veilid_processor.dart';
 import '../veilid_processor/views/developer.dart';
-import 'account_restore/page.dart';
-import 'circles_list/page.dart';
-import 'contact_details/page.dart';
-import 'contact_list/page.dart';
-import 'dashboard/page.dart';
-import 'import_ics/page.dart';
-import 'introduce_contacts/page.dart';
-import 'introductions/page.dart';
-import 'locations/schedule/widget.dart';
-import 'locations/share_location/widget.dart';
-import 'map/list_page.dart';
-import 'map/page.dart';
-import 'profile/page.dart';
-import 'receive_request/cubit.dart';
-import 'receive_request/page.dart';
-import 'settings/page.dart';
-import 'updates/page.dart';
-import 'welcome.dart';
-
-// TODO: It seems odd to require the knowledge about which other route names should map to the relevant navigation items here
-const navBarItems = [
-  (
-    '/',
-    ['dashboard'],
-    BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
-  ),
-  (
-    '/profile',
-    ['profile'],
-    BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-  ),
-  (
-    '/circles',
-    ['circles'],
-    BottomNavigationBarItem(
-      icon: Icon(Icons.bubble_chart_outlined),
-      label: 'Circles',
-    ),
-  ),
-  (
-    '/contacts',
-    [
-      'contacts',
-      'handleDirectSharing',
-      'handleProfileLink',
-      'handleSharingOffer',
-      'handleCommunityInvite',
-      'contactDetails',
-    ],
-    BottomNavigationBarItem(icon: Icon(Icons.contacts), label: 'Contacts'),
-  ),
-  (
-    '/map',
-    ['map'],
-    BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
-  ),
-];
-
-GoRouter buildAppRouter(
-  GlobalKey<NavigatorState> rootNavigatorKey,
-  bool isFirstTime,
-) => GoRouter(
-  navigatorKey: rootNavigatorKey,
-  initialLocation: isFirstTime ? '/welcome' : '/profile',
-  routes: [
-    GoRoute(
-      path: '/welcome',
-      name: 'welcome',
-      // Force fullscreen
-      parentNavigatorKey: rootNavigatorKey,
-      builder: (context, state) => const WelcomeScreen(),
-    ),
-    GoRoute(
-      path: '/restoreBackup',
-      name: 'restoreBackup',
-      // Force fullscreen
-      parentNavigatorKey: rootNavigatorKey,
-      builder: (context, state) => RestoreBackupPage(),
-    ),
-    ShellRoute(
-      navigatorKey: GlobalKey<NavigatorState>(),
-      builder: (context, state, child) => Scaffold(
-        body: child,
-        bottomNavigationBar: BottomNavigationBar(
-          items: navBarItems.map((i) => i.$3).asList(),
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: Theme.of(context).colorScheme.primary,
-          selectedFontSize: 12,
-          // Use index of the first level path member (also for nested paths)
-          currentIndex: (state.topRoute?.name == null)
-              ? 0
-              : (navBarItems.indexWhere(
-                      (i) => i.$2.contains(state.topRoute?.name),
-                    ) ==
-                    -1)
-              ? 0
-              : navBarItems.indexWhere(
-                  (i) => i.$2.contains(state.topRoute?.name),
-                ),
-          showUnselectedLabels: true,
-          onTap: (i) => context.go(navBarItems[i].$1),
-        ),
-      ),
-      routes: [
-        GoRoute(
-          path: '/',
-          name: 'dashboard',
-          builder: (context, state) => const DashboardPage(),
-        ),
-        GoRoute(
-          path: '/profile',
-          name: 'profile',
-          builder: (context, state) => const ProfilePage(),
-        ),
-        GoRoute(
-          path: '/circles',
-          name: 'circles',
-          builder: (context, state) => const CirclesListPage(),
-        ),
-        GoRoute(
-          path: '/contacts',
-          name: 'contacts',
-          builder: (context, state) => const ContactListPage(),
-          routes: [
-            GoRoute(
-              path: 'details',
-              name: 'contactDetails',
-              builder: (_, state) =>
-                  ContactPage(contact: state.extra! as CoagContact),
-              routes: [
-                GoRoute(
-                  path: 'introduction',
-                  name: 'contactIntroduction',
-                  builder: (_, state) => IntroduceContactsPage(
-                    contact: (state.extra == null)
-                        ? null
-                        : state.extra! as CoagContact,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        GoRoute(
-          path: '/map',
-          name: 'map',
-          builder: (_, state) => const MapPage(),
-          routes: [
-            GoRoute(
-              path: 'importIcs',
-              name: 'importIcs',
-              builder: (_, state) =>
-                  ImportIcsPage(icsData: state.extra.toString()),
-            ),
-            GoRoute(
-              path: 'scheduleLocation',
-              name: 'scheduleLocation',
-              // TODO: Handle if extra cannot be casted
-              builder: (_, state) => ScheduleWidget(
-                location: (state.extra == null)
-                    ? null
-                    : state.extra! as ContactTemporaryLocation,
-              ),
-            ),
-            GoRoute(
-              path: 'shareLocation',
-              name: 'shareLocation',
-              builder: (_, state) => ShareLocationWidget(
-                location: (state.extra == null)
-                    ? null
-                    : state.extra! as ContactTemporaryLocation,
-              ),
-            ),
-            GoRoute(
-              path: 'locationListPage',
-              name: 'locationListPage',
-              builder: (_, __) => const LocationListPage(),
-            ),
-          ],
-        ),
-        GoRoute(
-          path: '/mapAtLocation/:latitude/:longitude',
-          name: 'mapAtLocation',
-          builder: (_, state) => MapPage(
-            latitude: double.tryParse(state.pathParameters['latitude'] ?? ''),
-            longitude: double.tryParse(state.pathParameters['longitude'] ?? ''),
-          ),
-        ),
-        GoRoute(
-          path: '/updates',
-          name: 'updates',
-          builder: (_, __) => const UpdatesPage(),
-        ),
-        GoRoute(
-          path: '/introductions',
-          name: 'introductions',
-          builder: (_, __) => const IntroductionsPage(),
-        ),
-        GoRoute(
-          path: '/settings',
-          name: 'settings',
-          builder: (_, __) => const SettingsPage(),
-        ),
-        GoRoute(
-          path: '/c',
-          name: 'handleDirectSharing',
-          builder: (_, state) => ReceiveRequestPage(
-            initialState: ReceiveRequestState(
-              ReceiveRequestStatus.handleDirectSharing,
-              fragment: state.uri.fragment,
-            ),
-          ),
-        ),
-        GoRoute(
-          path: '/p',
-          name: 'handleProfileLink',
-          builder: (_, state) => ReceiveRequestPage(
-            initialState: ReceiveRequestState(
-              ReceiveRequestStatus.handleProfileLink,
-              fragment: state.uri.fragment,
-            ),
-          ),
-        ),
-        GoRoute(
-          path: '/o',
-          name: 'handleSharingOffer',
-          builder: (_, state) => ReceiveRequestPage(
-            initialState: ReceiveRequestState(
-              ReceiveRequestStatus.handleSharingOffer,
-              fragment: state.uri.fragment,
-            ),
-          ),
-        ),
-        GoRoute(
-          path: '/i',
-          name: 'handleCommunityInvite',
-          builder: (_, state) => ReceiveRequestPage(
-            initialState: ReceiveRequestState(
-              ReceiveRequestStatus.handleCommunityInvite,
-              fragment: state.uri.fragment,
-            ),
-          ),
-        ),
-      ],
-    ),
-  ],
-);
+import 'router.dart';
 
 class App extends StatefulWidget {
   const App(
@@ -315,8 +66,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> with WidgetsBindingObserver {
   static const _apnsChannel = MethodChannel('apns_token');
-  final _rootNavigatorKey = GlobalKey<NavigatorState>();
-  late final GoRouter _appRouter;
+  late final AppRouters _routers;
   late final AppLifecycleListener _lifecycleListener;
 
   final _seedColor = Colors.indigo;
@@ -368,7 +118,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     // _lifecycleListener = AppLifecycleListener(onRestart: _handleAppRestart);
 
-    _appRouter = buildAppRouter(_rootNavigatorKey, widget.isFirstRun);
+    _routers = AppRouters(isFirstRun: widget.isFirstRun);
 
     unawaited(_initAPNs());
   }
@@ -378,6 +128,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     BackgroundChangeChecker().stop();
     WidgetsBinding.instance.removeObserver(this);
     _lifecycleListener.dispose();
+    _routers.dispose();
     super.dispose();
   }
 
@@ -490,6 +241,9 @@ class _AppState extends State<App> with WidgetsBindingObserver {
                     Brightness.dark,
               ),
             ),
+            // Above the router, so cross-branch navigation helpers can reach
+            // the branch routers from any screen.
+            Provider<AppRouters>.value(value: _routers),
           ],
           child: MaterialApp.router(
             title: 'Reunicorn',
@@ -506,9 +260,8 @@ class _AppState extends State<App> with WidgetsBindingObserver {
               ),
               useMaterial3: true,
             ),
-            routerDelegate: _appRouter.routerDelegate,
-            routeInformationProvider: _appRouter.routeInformationProvider,
-            routeInformationParser: _appRouter.routeInformationParser,
+            routerConfig: _routers.config,
+            restorationScopeId: 'reunicorn',
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
           ),

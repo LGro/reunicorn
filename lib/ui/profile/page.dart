@@ -7,12 +7,12 @@ import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
 import '../../data/models/circle.dart';
 import '../../data/models/profile_info.dart';
 import '../../data/services/storage/base.dart';
+import '../navigation.dart';
 import '../utils.dart';
 import 'cubit.dart';
 import 'widgets/addresses.dart';
@@ -58,7 +58,7 @@ class ProfileViewState extends State<ProfileView> {
     //   if (files.isNotEmpty) {
     //     final ics = File(files.first.path).readAsStringSync();
     //     if (context.mounted) {
-    //       context.goNamed('importIcs', extra: ics);
+    //       context.goToImportIcs(ics);
     //     }
     //   }
     // }, onError: (err) {
@@ -70,7 +70,7 @@ class ProfileViewState extends State<ProfileView> {
       if (files.isNotEmpty) {
         final ics = File(files.first.path).readAsStringSync();
         if (context.mounted) {
-          context.goNamed('importIcs', extra: ics);
+          context.goToImportIcs(ics);
         }
       }
       ReceiveSharingIntent.instance.reset();

@@ -4,7 +4,6 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/models/circle.dart';
@@ -13,6 +12,7 @@ import '../../data/models/profile_info.dart';
 import '../../data/repositories/contact_dht.dart';
 import '../../data/services/storage/base.dart';
 import '../contact_details/page.dart';
+import '../navigation.dart';
 import '../profile/widgets/pictures.dart';
 import '../utils.dart';
 import '../widgets/searchable_list.dart';
@@ -49,7 +49,7 @@ Widget contactsListView(
         circleMemberships[contact.coagContactId]?.contains(circleId) ?? false,
     title: GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => context.goNamed('contactDetails', extra: contact),
+      onTap: () => context.goToContact(contact),
       child: Row(
         children: [
           roundPictureOrPlaceholder(contact.details?.picture, radius: 18),
@@ -591,10 +591,6 @@ class CircleDetailsPage extends StatefulWidget {
   const CircleDetailsPage({required this.circleId, super.key});
 
   final String circleId;
-
-  static Route<void> route(String circleId) => MaterialPageRoute(
-    builder: (context) => CircleDetailsPage(circleId: circleId),
-  );
 
   @override
   _CircleDetailsPageState createState() => _CircleDetailsPageState();

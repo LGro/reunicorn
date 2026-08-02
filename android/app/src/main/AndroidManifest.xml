@@ -39,6 +39,11 @@
                 <data android:scheme="http" android:host="reunicorn.app" android:path="/c" />
                 <data android:scheme="http" android:host="reunicorn.app" android:path="/p" />
                 <data android:scheme="http" android:host="reunicorn.app" android:path="/o" />
+                <!-- Community invites. Previously missing here, so /i links
+                     could not open the app from a browser. -->
+                <data android:scheme="http" android:host="reunicorn.app" android:path="/i" />
+                <!-- TODO: /b has never had a matching route. Remove it if it
+                     is a dead legacy path, or add the route it was meant for. -->
                 <data android:scheme="http" android:host="reunicorn.app" android:path="/b" />
                 <data android:scheme="https" />
             </intent-filter>

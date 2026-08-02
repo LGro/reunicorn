@@ -10,8 +10,8 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:kaisel/kaisel.dart';
 import 'package:maplibre_gl/maplibre_gl.dart' hide Circle;
 import 'package:reunicorn/tools/tools.dart';
 import 'package:share_plus/share_plus.dart';
@@ -20,11 +20,12 @@ import '../../data/models/circle.dart';
 import '../../data/models/coag_contact.dart';
 import '../../data/models/contact_location.dart';
 import '../../data/models/profile_info.dart';
+import '../../data/providers/geocoding/maptiler.dart';
 import '../../data/repositories/contact_dht.dart';
 import '../../data/repositories/settings.dart';
 import '../../data/services/storage/base.dart';
-import '../../data/providers/geocoding/maptiler.dart';
-import '../locations/schedule/widget.dart';
+import '../navigation.dart';
+import '../routes.dart';
 import '../utils.dart';
 import 'cubit.dart';
 import 'widgets/widgets.dart';
@@ -132,7 +133,7 @@ Future<void> showModalAddressLocationDetails(
                         .read<Storage<CoagContact>>()
                         .get(location.coagContactId!);
                     if (contact != null && context.mounted) {
-                      context.goNamed('contactDetails', extra: contact);
+                      context.goToContact(contact);
                     }
                     // TODO(LGro): Show snack bar if mounted but no contact?
                   },
@@ -265,7 +266,7 @@ Future<void> showModalTemporaryLocationDetails(
                         .read<Storage<CoagContact>>()
                         .get(location.coagContactId!);
                     if (contact != null && context.mounted) {
-                      context.goNamed('contactDetails', extra: contact);
+                      context.goToContact(contact);
                     }
                     // TODO(LGro): Show snack bar if mounted but no contact?
                   },
@@ -274,13 +275,10 @@ Future<void> showModalTemporaryLocationDetails(
               const SizedBox(height: 8),
               Center(
                 child: FilledButton.tonal(
-                  onPressed: () async => Navigator.push(
-                    context,
-                    MaterialPageRoute<ScheduleWidget>(
-                      builder: (_) => ScheduleWidget(
-                        locationId: locationId,
-                        location: location,
-                      ),
+                  onPressed: () async => context.router<MapRoute>().push(
+                    ScheduleLocation(
+                      locationId: locationId,
+                      location: location,
                     ),
                   ),
                   child: const Text('Add to my locations'),
@@ -313,12 +311,10 @@ Future<void> showModalTemporaryLocationDetails(
                     ),
                   ),
                   FilledButton(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<ScheduleWidget>(
-                        builder: (context) => ScheduleWidget(
-                          locationId: locationId,
-                          location: location,
-                        ),
+                    onPressed: () => context.router<MapRoute>().push(
+                      ScheduleLocation(
+                        locationId: locationId,
+                        location: location,
                       ),
                     ),
                     child: const Text('Edit'),
@@ -1144,7 +1140,7 @@ class _MapPageState extends State<MapPage> {
                               : EdgeInsets.only(top: 48, right: 8),
                           child: IconButton.filledTonal(
                             onPressed: () =>
-                                context.goNamed('locationListPage'),
+                                context.router<MapRoute>().push(const LocationList()),
                             icon: const Icon(Icons.list),
                           ),
                         ),

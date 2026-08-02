@@ -2,13 +2,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:kaisel/kaisel.dart';
 
 import '../../data/models/contact_location.dart';
 import '../../data/providers/geocoding/maptiler.dart';
 import '../../data/repositories/settings.dart';
 import '../../ics_parser.dart';
+import '../routes.dart';
 
 class ImportIcsPage extends StatefulWidget {
   const ImportIcsPage({required this.icsData, super.key});
@@ -53,7 +55,12 @@ class _ImportIcsPageState extends State<ImportIcsPage>
           address: options.first.placeName,
         );
         if (context.mounted) {
-          return context.goNamed('scheduleLocation', extra: location);
+          // Replace rather than push: the import screen has done its job and
+          // shouldn't sit in the back stack behind the schedule editor.
+          context.router<MapRoute>().replaceTop(
+            ScheduleLocation(location: location),
+          );
+          return;
         }
       }
     }

@@ -3,13 +3,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
+import 'package:kaisel/kaisel.dart';
 
 import '../../data/models/coag_contact.dart';
 import '../../data/models/community.dart';
 import '../../data/models/profile_info.dart';
 import '../../data/repositories/contact_dht.dart';
 import '../../data/services/storage/base.dart';
+import '../routes.dart';
 import '../widgets/scan_qr_code.dart';
 import 'cubit.dart';
 
@@ -37,7 +38,7 @@ class ReceiveRequestPage extends StatelessWidget {
           ).showSnackBar(const SnackBar(content: Text('Invalid URL')));
           context.read<ReceiveRequestCubit>().scanQrCode();
         } else if (state.status.isSuccess && state.profile != null) {
-          context.goNamed('contactDetails', extra: state.profile);
+          context.router<ContactsRoute>().replaceTop(ContactView(state.profile!));
         }
       },
       builder: (context, state) {

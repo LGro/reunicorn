@@ -10,6 +10,7 @@ import 'package:eventide/eventide.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:kaisel/kaisel.dart';
 import 'package:loggy/loggy.dart';
 import 'package:maplibre_gl/maplibre_gl.dart' hide Circle;
 import 'package:reunicorn/tools/tools.dart';
@@ -22,8 +23,8 @@ import '../../../data/providers/geocoding/maptiler.dart';
 import '../../../data/repositories/settings.dart';
 import '../../../data/services/storage/base.dart';
 import '../../../data/utils.dart';
+import '../../routes.dart';
 import '../../utils.dart';
-import '../../widgets/import_calendar_event.dart';
 import '../../widgets/location_search/widget.dart';
 
 class MapWidget extends StatefulWidget {
@@ -366,7 +367,7 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
             ),
           ),
         );
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      context.router<MapRoute>().set(const [MapView()]);
     }
   }
 
@@ -385,12 +386,12 @@ class _ScheduleWidgetState extends State<ScheduleWidget> {
         // # TODO: Remove check once #58 is solved
         if (!isWeb && Platform.isAndroid)
           IconButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<CalendarEventsPage>(
-                builder: (c) =>
-                    CalendarEventsPage(onSelectEvent: _importCalendarEvent),
-              ),
-            ),
+            onPressed: () async {
+              final event = await context
+                  .router<MapRoute>()
+                  .pushForResult<ETEvent>(const CalendarEvents());
+              if (event != null) _importCalendarEvent(event);
+            },
             icon: const Icon(Icons.calendar_month),
           ),
       ],

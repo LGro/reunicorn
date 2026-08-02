@@ -3,13 +3,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
+import 'package:kaisel/kaisel.dart';
 
 import '../../data/models/circle.dart';
 import '../../data/models/models.dart';
 import '../../data/services/storage/base.dart';
 import '../create_new_contact/page.dart';
-import '../receive_request/page.dart';
+import '../receive_request/cubit.dart';
+import '../routes.dart';
 import '../utils.dart';
 import '../widgets/introductions_summary.dart';
 import '../widgets/searchable_list.dart';
@@ -31,7 +32,7 @@ Widget contactsListView(
       contact,
       circleMemberships[contact.coagContactId]?.isNotEmpty ?? false,
     ),
-    onTap: () => context.goNamed('contactDetails', extra: contact),
+    onTap: () => context.router<ContactsRoute>().push(ContactView(contact)),
   ),
   // TODO: Rank matches by weighting name matches higher than temp loc
   matchesItem: (search, contact) =>
@@ -88,10 +89,8 @@ class _ContactListPageState extends State<ContactListPage> {
                 ],
               ),
               onPressed: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<CreateNewContactPage>(
-                    builder: (_) => CreateNewContactPage(),
-                  ),
+                await context.router<ContactsRoute>().push(
+                  const CreateNewContact(),
                 );
               },
             ),
@@ -105,10 +104,8 @@ class _ContactListPageState extends State<ContactListPage> {
                 ],
               ),
               onPressed: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<ReceiveRequestPage>(
-                    builder: (_) => ReceiveRequestPage(),
-                  ),
+                await context.router<ContactsRoute>().push(
+                  const ReceiveRequest(ReceiveRequestStatus.qrcode),
                 );
               },
             ),
@@ -162,10 +159,8 @@ class _ContactListPageState extends State<ContactListPage> {
                 ],
               ),
               onPressed: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<ReceiveRequestPage>(
-                    builder: (_) => const ReceiveRequestPage(),
-                  ),
+                await context.router<ContactsRoute>().push(
+                  const ReceiveRequest(ReceiveRequestStatus.qrcode),
                 );
               },
             ),

@@ -5,10 +5,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:veilid/veilid.dart';
 
 import '../../data/repositories/backup_dht.dart';
+import '../navigation.dart';
+import '../routes.dart';
 import 'cubit.dart';
 
 class RestoreBackupPage extends StatelessWidget {
@@ -23,7 +24,8 @@ class RestoreBackupPage extends StatelessWidget {
       create: (context) => RestoreCubit(context.read<BackupRepository>()),
       child: BlocConsumer<RestoreCubit, RestoreState>(
         listener: (context, state) => {
-          if (state.status.isSuccess) {context.pushReplacementNamed('profile')},
+          if (state.status.isSuccess)
+            {context.finishOnboarding(landOn: AppBranch.profile)},
         },
         builder: (context, state) => SingleChildScrollView(
           padding: const EdgeInsets.all(16),

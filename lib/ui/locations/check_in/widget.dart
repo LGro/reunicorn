@@ -6,10 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
+import 'package:kaisel/kaisel.dart';
 
 import '../../../data/models/circle.dart';
 import '../../../data/models/profile_info.dart';
 import '../../../data/services/storage/base.dart';
+import '../../routes.dart';
 import '../../utils.dart';
 import 'cubit.dart';
 
@@ -140,7 +142,7 @@ class _MyFormState extends State<MyForm> {
           ),
         );
     } else {
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      context.router<MapRoute>().set(const [MapView()]);
       _resetForm();
     }
   }

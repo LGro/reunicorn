@@ -8,11 +8,13 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:kaisel/kaisel.dart';
 import 'package:reunicorn/data/models/models.dart';
 
 import '../../data/models/circle.dart';
 import '../../data/services/storage/base.dart';
 import '../circle_details/page.dart';
+import '../routes.dart';
 import '../utils.dart';
 import 'cubit.dart';
 
@@ -155,8 +157,9 @@ class _CirclesListPageState extends State<CirclesListPage> {
     children: (circles.entries.toList()..sortBy((c) => c.value.toLowerCase()))
         .map<Widget>(
           (circle) => GestureDetector(
-            onTap: () =>
-                Navigator.of(context).push(CircleDetailsPage.route(circle.key)),
+            onTap: () => context
+                .router<CirclesRoute>()
+                .push(CircleDetails(circle.key)),
             child: _GridCircleItem(
               circle.value,
               circleMemberships.values
@@ -216,9 +219,9 @@ class _CirclesListPageState extends State<CirclesListPage> {
                         .addCircle(_newCircleName);
                     _resetState();
                     if (context.mounted) {
-                      await Navigator.of(
-                        context,
-                      ).push(CircleDetailsPage.route(circleId));
+                      await context.router<CirclesRoute>().push(
+                        CircleDetails(circleId),
+                      );
                     }
                   }
                 },

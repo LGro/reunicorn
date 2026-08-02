@@ -8,7 +8,7 @@ import 'dart:math';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
+import 'package:kaisel/kaisel.dart';
 
 import '../../data/models/circle.dart';
 import '../../data/models/models.dart';
@@ -16,12 +16,11 @@ import '../../data/models/profile_info.dart';
 import '../../data/repositories/contact_dht.dart';
 import '../../data/services/storage/base.dart';
 import '../../ui/profile/cubit.dart';
-import '../introductions/page.dart';
+import '../routes.dart';
 import '../utils.dart';
 import '../widgets/dht_status/widget.dart';
 import '../widgets/veilid_status/widget.dart';
 import 'cubit.dart';
-import 'link_to_system_contact/page.dart';
 import 'widgets/circles.dart';
 import 'widgets/connecting.dart';
 import 'widgets/contact_details_and_locations.dart';
@@ -245,12 +244,8 @@ class _ContactPageState extends State<ContactPage> {
                         ? 'Link to address book contact'
                         : 'Unlink from address book contact',
                     onPressed: contact.systemContactId == null
-                        ? () => Navigator.of(context).push(
-                            MaterialPageRoute<LinkToSystemContactPage>(
-                              builder: (_) => LinkToSystemContactPage(
-                                coagContactId: contact.coagContactId,
-                              ),
-                            ),
+                        ? () => context.router<ContactsRoute>().push(
+                            LinkToSystemContact(contact.coagContactId),
                           )
                         : () => context
                               .read<ContactDetailsCubit>()
@@ -265,9 +260,8 @@ class _ContactPageState extends State<ContactPage> {
                     padding: EdgeInsetsGeometry.only(left: 2),
                     child: IconButton(
                       tooltip: 'Introduce them to someone',
-                      onPressed: () => context.goNamed(
-                        'contactIntroduction',
-                        extra: contact,
+                      onPressed: () => context.router<AppRoute>().push(
+                        IntroduceContact(contact),
                       ),
                       icon: const Icon(Icons.group_add),
                     ),
@@ -374,11 +368,9 @@ class _ContactPageState extends State<ContactPage> {
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: FilledButton.tonal(
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute<IntroductionsPage>(
-                              builder: (context) => const IntroductionsPage(),
-                            ),
-                          ),
+                          onPressed: () => context
+                              .router<AppRoute>()
+                              .push(const Introductions()),
                           child: const Text('View pending introductions'),
                         ),
                       ),

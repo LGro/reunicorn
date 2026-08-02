@@ -3,10 +3,10 @@
 
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/contact_location.dart';
+import '../../navigation.dart';
 
 int numberContactsShared(
   Iterable<Iterable<String>> circleMemberships,
@@ -89,13 +89,8 @@ class TemporaryLocationsCard extends StatelessWidget {
                     ),
                     child: LocationTile(
                       l,
-                      onTap: () async => context.goNamed(
-                        'mapAtLocation',
-                        pathParameters: {
-                          'latitude': l.latitude.toString(),
-                          'longitude': l.longitude.toString(),
-                        },
-                      ),
+                      onTap: () async =>
+                          context.goToMapAt(l.latitude, l.longitude),
                     ),
                   ),
                 )
