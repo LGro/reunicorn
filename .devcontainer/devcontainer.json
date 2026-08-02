@@ -1,0 +1,47 @@
+{
+  // Reuses the same image as CI and ./docker/build-apk.sh, so the dev environment
+  // cannot drift from the build environment.
+  //
+  // No mount configuration is needed for veilid: VS Code mounts this repo at
+  // /workspaces/reunicorn (the container's WORKDIR), and the image already
+  // carries the pinned veilid at /workspaces/veilid, so pubspec.yaml's
+  // `path: ../veilid/veilid-flutter` resolves as-is.
+  //
+  // Versions come from the Dockerfile's ARG defaults; docker/check-versions.sh
+  // keeps those in step with docker/versions.env.
+  "name": "Reunicorn Android",
+  "build": {
+    "dockerfile": "../docker/Dockerfile",
+    "context": "../docker"
+  },
+  "workspaceFolder": "/workspaces/reunicorn",
+
+  // Without this the image's CMD (build-apk) would run on every container start.
+  "overrideCommand": true,
+
+  // Gradle and pub caches survive rebuilds; both live outside the bind mount.
+  "mounts": [
+    "source=reunicorn-gradle-cache,target=/opt/gradle-home,type=volume",
+    "source=reunicorn-pub-cache,target=/opt/pub-cache,type=volume"
+  ],
+
+  "remoteEnv": {
+    // Set REUNICORN_MAPTILER_TOKEN on the host to get address search working in
+    // the devcontainer; it is a compile-time --dart-define, so it must be present
+    // when you build, not just when you run.
+    "REUNICORN_MAPTILER_TOKEN": "${localEnv:REUNICORN_MAPTILER_TOKEN}"
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Dart-Code.dart-code",
+        "Dart-Code.flutter",
+        "rust-lang.rust-analyzer"
+      ],
+      "settings": {
+        "dart.flutterSdkPath": "/opt/flutter"
+      }
+    }
+  }
+}

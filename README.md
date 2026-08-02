@@ -14,16 +14,46 @@ Accordingly, the Copyright to all code files belongs to the Veilid developers li
 
 The map style files `assets/map-style-*.json` originate from https://maps.protomaps.com, so the Copyright belongs to them.
 
+## Building an APK from source
+
+To build an APK locally, you only need Docker:
+
+```
+git clone <this repository> && cd reunicorn
+./docker/build-apk.sh
+```
+
+which generates: `build/app/outputs/flutter-apk/app-release.apk` (signed with a debug key unless you provide `android/key.properties`)
+
+To pass a MapTiler token into the build, or to run the tests instead:
+
+```
+REUNICORN_MAPTILER_TOKEN=<token> ./docker/build-apk.sh
+./docker/build-apk.sh test
+./docker/build-apk.sh shell     # interactive shell in the build environment
+```
+
 ## Development Setup
 
-While this is still in development, you must have a clone of the [Veilid](https://gitlab.com/veilid/veilid/) source checked out at `../veilid` relative to the working directory of this repository.
+The container above can also be used with the [Dev Containers extension](https://code.visualstudio.com/docs/devcontainers/containers), "Reopen in Container" gives you the pinned toolchain and the matching Veilid checkout with no host setup; `.devcontainer/devcontainer.json` reuses the same `docker/Dockerfile` that is built in CI/CD.
 
-Check the CI/CD workflows in `.github/` for a compatible development setup.
+If you are working on Reunicorn and Veilid together, point the container at your own checkout:
+
+```
+VEILID_SRC=../veilid ./docker/build-apk.sh
+```
+
+For a native setup instead, you need
+
+- Flutter (see `docker/versions.env`)
+- Android SDK/NDK (see `docker/versions.env`)
+- Rust (see `docker/versions.env`)
+- [Veilid](https://gitlab.com/veilid/veilid/) source checked out at `../veilid` relative to this repository (check `docker/check-versions.sh` for exact veilid version)
 
 For the address search and geocoding to work, you need to provide the environment variable `REUNICORN_MAPTILER_TOKEN` with an API token that can be obtained for free from maptiler.com.
-The map itself can also be switched to the OSM foundation's server if no MapTiler token is available.
+This is a compile-time value (`String.fromEnvironment`), so it has to be set when you build, not just when you run.
 
-### Building
+### Running on a device
 
 ```
 flutter clean

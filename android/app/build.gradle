@@ -36,7 +36,15 @@ android {
     ndkVersion "28.2.13676358"
     // This was originally set to flutter.compileSdkVersion but that was too low for receive_sharing_intent
     // TODO: Double check during later flutter version upgrades if we can switch this back
-    compileSdkVersion 37
+    //
+    // Not 37: Google only publishes "platforms;android-37.0", whose metadata
+    // declares AndroidVersion.ApiLevel=37.0. The SDK tooling parses that as API
+    // level 0, so AGP looks for hash string "android-37", finds nothing, and
+    // fails with "Failed to find target with hash string 'android-37'". This
+    // reproduces on a normal host SDK as well as in the build container, on
+    // cmdline-tools revisions 12 and 19 alike. Revisit once AGP handles
+    // minor-versioned platforms.
+    compileSdkVersion 36
     
     compileOptions {
         // Flag to enable support for the new language APIs

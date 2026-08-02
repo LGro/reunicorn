@@ -13,98 +13,88 @@ on:
 jobs:
   android:
     runs-on: ubuntu-latest
-    container: ubuntu:24.04
-    env:
-      LANG: C.UTF-8
-      LC_ALL: C.UTF-8
     defaults:
       run:
         shell: bash
     steps:
-      - name: System dependencies with apt
-        run: apt -qq update && apt -q install build-essential git curl jq unzip xz-utils android-sdk -y
-
-      # Steps run as root inside the container, but the tool cache (/__t) and
-      # workspace are owned by the runner user, so git rejects them as "dubious
-      # ownership". Must be set before any action that shells out to git.
-      - name: Trust container-mounted repositories
-        run: git config --global --add safe.directory '*'
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      # Platform must match compileSdkVersion in android/app/build.gradle and
-      # the NDK must match ndkVersion there. Build-tools are intentionally not
-      # pinned: AGP downloads the revision it requires.
-      - name: Install Android SDK components
-        run: |
-          sdkmanager "cmdline-tools;latest"
-          sdkmanager --install "platforms;android-37" "ndk;28.2.13676358"
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: 3.44.8
-
-      - name: Rust
-        run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-
-      - name: Checkout Veilid
-        run: cd .. && git clone https://gitlab.com/veilid/veilid.git
-
       - uses: actions/checkout@v4
 
-      - name: Add Rust Targets
-        run: |
-          source "$HOME/.cargo/env"
-          rustup target add armv7-linux-androideabi
-          rustup target add aarch64-linux-android
-          rustup target add i686-linux-android
-          rustup target add x86_64-linux-android
+      # Cheap and first: catches the toolchain pins drifting away from
+      # android/app/build.gradle, .fvmrc or veilid before spending a build on it.
+      - name: Check pinned toolchain versions
+        run: ./docker/check-versions.sh
 
+      # versions.env is the single source of truth; export it so the image build
+      # below uses the same pins as ./docker/build-apk.sh does locally.
+      - name: Load pinned versions
+        run: sed -nE 's/^([A-Z_]+)="(.*)"$/\1=\2/p' docker/versions.env >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Built inline rather than pulled from a registry. The layer cache carries
+      # the toolchain between runs; only the veilid layer (deliberately last in
+      # the Dockerfile) is invalidated when VEILID_REF moves.
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker
+          load: true
+          tags: reunicorn-build:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            FLUTTER_VERSION=${{ env.FLUTTER_VERSION }}
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
+            RUST_VERSION=${{ env.RUST_VERSION }}
+            ANDROID_NDK_VERSION=${{ env.ANDROID_NDK_VERSION }}
+            ANDROID_PLATFORM_VERSIONS=${{ env.ANDROID_PLATFORM_VERSIONS }}
+            ANDROID_BUILD_TOOLS_VERSIONS=${{ env.ANDROID_BUILD_TOOLS_VERSIONS }}
+            ANDROID_CMAKE_VERSIONS=${{ env.ANDROID_CMAKE_VERSIONS }}
+            ANDROID_CMDLINE_TOOLS_VERSION=${{ env.ANDROID_CMDLINE_TOOLS_VERSION }}
+            VEILID_REPO=${{ env.VEILID_REPO }}
+            VEILID_REF=${{ env.VEILID_REF }}
+
+      # No Gradle/pub volume here on purpose: a runner VM is fresh every time, so
+      # a named volume would persist nothing. The Docker layer cache above is
+      # what actually carries between runs. Caching the Gradle home across runs
+      # would be a further win but needs its own actions/cache wiring.
+      # HOST_UID/HOST_GID are passed for the same reason as locally: the
+      # container runs as root, and without them everything it writes into the
+      # checkout stays root-owned for later steps.
       - name: Test
         run: |
-          source "$HOME/.cargo/env"
-          flutter config --no-analytics
-          flutter pub get
-          flutter test
+          docker run --rm \
+            -v "$PWD:/workspaces/reunicorn" \
+            -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
+            reunicorn-build:ci test
 
+      # Built on every event, not just main: a pull request that breaks the
+      # Android build should fail the pull request.
       - name: Build APK
-        if: github.ref == 'refs/heads/main'
+        env:
+          REUNICORN_MAPTILER_TOKEN: ${{ secrets.REUNICORN_MAPTILER_TOKEN }}
         run: |
-          source "$HOME/.cargo/env"
-          flutter clean
-          flutter pub get
-          flutter build apk --release
+          docker run --rm \
+            -v "$PWD:/workspaces/reunicorn" \
+            -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
+            -e REUNICORN_MAPTILER_TOKEN \
+            reunicorn-build:ci build-apk
 
       - uses: actions/upload-artifact@v4
-        if: github.ref == 'refs/heads/main'
         with:
           name: android
           path: build/app/outputs/flutter-apk/app-release.apk
 
   upload-apk:
     needs: [android]
-    if: github.ref == 'refs/heads/main'
+    # github.ref is refs/tags/... on a release, so a plain refs/heads/main test
+    # would skip releases entirely — which is what used to happen.
+    if: github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
-    container: ubuntu:24.04
-    env:
-      LANG: C.UTF-8
-      LC_ALL: C.UTF-8
     defaults:
       run:
         shell: bash
     steps:
-      - name: System dependencies with apt
-        run: apt -qq update && apt -q install curl -y
-
       - name: Download APK Artifact
         uses: actions/download-artifact@v4
         with:
